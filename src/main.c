@@ -7,10 +7,15 @@
 
 void   init_sdl(App *app);
 void uninit_sdl(App *app);
+void init_globals(App *app);
+void uninit_globals();
+
+// -- for delta time calculation
+Uint64 NOW = 0;
+Uint64 LAST = 0;
 
 int main (int argc, char *argv[]) {
-    App app;
-    global_app = &app; // @temp put app on the heap
+    App app; // @temp put app on the heap
     app.window_width  = 1000;
     app.window_height = 800;
 
@@ -18,21 +23,27 @@ int main (int argc, char *argv[]) {
     init_sdl(&app);
     reset_render_draw_color(app.renderer);
 
+    // -- init globals declared in core.h
+    init_globals(&app);
     UI_Button button_1;
-    ui_init_button(&button_1);
+    ui_init_button(&button_1, global_ui_theme);
     button_1.rect = (Rect) {100, 100, 128, 48};
 
     // -- loop
     bool should_close = false;
     while (!should_close) {
-        delta_time = (f32)SDL_GetTicks();
+        // -- delta time
+        LAST = NOW;
+        NOW = SDL_GetPerformanceCounter();
+        delta_time = (f32)( (NOW - LAST)*1000 / (f32)SDL_GetPerformanceFrequency() );
+
+        // -- events
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
+            if (event.type == SDL_QUIT) { // -- wanting to quit
                 should_close = true;
             } else
-            // SDL_Event
-            if (event.type == SDL_WINDOWEVENT_SIZE_CHANGED) {
+            if (event.type == SDL_WINDOWEVENT_SIZE_CHANGED) { // -- resized window
                 printf("LOL\n");
                 SDL_GetWindowSize(global_app->window, &global_app->window_width, &global_app->window_height);
                 SDL_RenderSetLogicalSize(global_app->renderer, global_app->window_width, global_app->window_height);
@@ -51,14 +62,14 @@ int main (int argc, char *argv[]) {
 
         SDL_RenderClear(app.renderer);
         // -- draw
-        ui_draw_button(&button_1);
+        ui_draw_button(&button_1, global_ui_theme);
         // -- swap buffers
         SDL_RenderPresent(app.renderer);
     }
 
     // -- uninit SDL
     uninit_sdl(&app);
-    
+    uninit_globals();    
     return 0;
 }
 /// init SDL stuff
@@ -81,9 +92,23 @@ void init_sdl(App *app) {
     }
     SDL_RenderSetLogicalSize(app->renderer, app->window_width, app->window_height);
 }
+
 /// uninit SDL
 void uninit_sdl(App *app) {
     SDL_DestroyWindow(app->window);
     SDL_DestroyRenderer(app->renderer);
     SDL_Quit();
+}
+
+/// init globals defined in core.h
+void init_globals(App *app) {
+    global_app = app;
+    delta_time = 0.f;
+    global_ui_theme = (UI_Theme*) malloc (sizeof(UI_Theme));
+    ui_init_theme(global_ui_theme);
+}
+
+/// init globals defined in core.h
+void uninit_globals() {
+    free(global_ui_theme);
 }
