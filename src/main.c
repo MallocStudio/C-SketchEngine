@@ -4,6 +4,7 @@
 #include "test.h"
 #include "renderer.h"
 #include "ui.h"
+#include "SDL_ttf.h"
 
 void   init_sdl(App *app);
 void uninit_sdl(App *app);
@@ -15,6 +16,7 @@ Uint64 NOW = 0;
 Uint64 LAST = 0;
 
 int main (int argc, char *argv[]) {
+    SDL_Surface* text; // @temp @nocheckin
     App app; // @temp put app on the heap
     app.window_width  = 1000;
     app.window_height = 800;
@@ -25,13 +27,38 @@ int main (int argc, char *argv[]) {
 
     // -- init globals declared in core.h
     init_globals(&app);
+
+    if (TTF_Init() != 0) {
+        printf("TTF_Init failed:\n");
+        print_ttf_error();
+    }
+
+    // -- @temp
+    TTF_Font *font = TTF_OpenFont(DEFAULT_FONT_PATH, 16);
+    if (font == NULL) {
+        printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
+        print_ttf_error();
+    }
+    text = TTF_RenderText_Solid(font, "yo shit it worked!", (SDL_Color){255, 255, 255, 255});
+    if (text == NULL) {
+        printf("Error: text surface was null\n");
+    }
+    SDL_Texture *text_texture = SDL_CreateTextureFromSurface(global_app->renderer, text);
+    if (text_texture == NULL) {
+        printf("Error: text texture is null\n");
+    }
+    if (SDL_RenderCopy(global_app->renderer, text_texture, NULL, NULL) != 0) {
+        print_sdl_error();
+    }
+
     UI_Button button_1;
     ui_init_button(&button_1, global_ui_theme);
     button_1.rect = (Rect) {100, 100, 128, 48};
+    f32 i = 0;
 
     // -- loop
     bool should_close = false;
-    while (!should_close) {
+    while (should_close == false) {
         // -- delta time
         LAST = NOW;
         NOW = SDL_GetPerformanceCounter();
@@ -52,8 +79,8 @@ int main (int argc, char *argv[]) {
 
         // -- keyboard state
         // SDL_PumpEvents();
-        SDL_GetKeyboardState(app.keyboard);
-        if (app.keyboard[SDL_SCANCODE_ESCAPE] == 1) should_close = true;
+        // SDL_GetKeyboardState(app.keyboard);
+        // if (app.keyboard[SDL_SCANCODE_ESCAPE] == 1) should_close = true;
 
         // -- update window surface // ! (matink dec 2021) we cannot use window surface if we're using the renderer according to https://dev.to/noah11012/using-sdl2-2d-accelerated-renderering-1kcb
         // app.surface = sdl.GetWindowSurface(app.window)
@@ -62,13 +89,17 @@ int main (int argc, char *argv[]) {
 
         SDL_RenderClear(app.renderer);
         // -- draw
-        ui_draw_button(&button_1, global_ui_theme);
+        if (ui_draw_button(&button_1, global_ui_theme)) {
+            printf("haleloya: %f\n", i);
+            ++i;
+        }
         // -- swap buffers
         SDL_RenderPresent(app.renderer);
     }
 
     // -- uninit SDL
     uninit_sdl(&app);
+    TTF_Quit();
     uninit_globals();    
     return 0;
 }

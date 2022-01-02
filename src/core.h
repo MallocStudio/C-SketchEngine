@@ -2,6 +2,7 @@
 #define CORE_H
 
 #include "SDL.h"
+#include "SDL_ttf.h"
 #include "types.h"
 #include "math.h"
 #include <stdio.h>
@@ -20,5 +21,6 @@ f32  delta_time;
 
 /// debugging for SDL2
 void print_sdl_error();
+void print_ttf_error();
 
 #endif //CORE_H

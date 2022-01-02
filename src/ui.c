@@ -10,6 +10,7 @@ void ui_init_button (UI_Button *button, UI_Theme *theme) {
 
 ///
 bool ui_draw_button(UI_Button *button, UI_Theme *theme) {
+    bool result = false;
     // -- get the state of button
     UI_STATES state = ui_get_button_state(button);
     // -- update button based on state
@@ -22,6 +23,7 @@ bool ui_draw_button(UI_Button *button, UI_Theme *theme) {
         } break;
         case UI_STATES_PRESSED: {
             button->color_target = theme->color_pressed;
+            result = true;
         } break;
         case UI_STATES_DISABLED: {
             button->color_target = theme->color_disabled;
@@ -33,6 +35,7 @@ bool ui_draw_button(UI_Button *button, UI_Theme *theme) {
     // -- draw the base based on state
     RGBA color = button->color_current;
     render_rect_filled_color(&button->rect, &color);
+    return result;
 }
 
 ///

@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "sdl.h": "c"
+        "sdl.h": "c",
+        "core.h": "c",
+        "types.h": "c",
+        "sdl_test_font.h": "c"
     }
 }

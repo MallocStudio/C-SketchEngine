@@ -1,3 +1,23 @@
+=== JAN ===
+- [ ] Get a simple level editor / UI toolkit going in the custom engine
+- [ ] Load and render 3D Models (no shadows or advanced lighting)
+
+== TODO ==
+- [ ] Functional Buttons
+- [ ] Render text
+- [ ] Allow and research transparency
+- [ ] Label
+- [ ] One line text editor
+- [ ] Dropdown item
+- [ ] Toggle
+- [ ] Panels
+- [ ] Allow simple layouts for Panels and the items inside
+- [ ] Custom subwindow (a panel that can freely move around and be closed)
+- [ ] Research importing 3D Models
+...
+
+== LOG ==
+
 1 Jan 2022:
 + button color animation
 + UI_Theme that will be used across different UI items

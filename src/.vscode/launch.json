@@ -9,8 +9,7 @@
         ""
       ],
       "stopAtEntry": false,
-      // "cwd": "c:/Users/matin/Desktop/Main/8 - projects/C Sketch Engine/new environment/src",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/../build/",
       "environment": [],
       "program": "${workspaceFolder}/../build/SketchEngine",
       "internalConsoleOptions": "openOnSessionStart",

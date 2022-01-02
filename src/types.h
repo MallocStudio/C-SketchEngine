@@ -9,7 +9,7 @@ typedef float     f32;
 typedef int       i32;
 typedef uint32_t  u32;
 typedef Uint8     u8;
-typedef enum {
+typedef enum bool {
     false = 0,
     true  = 1,
 } bool;
