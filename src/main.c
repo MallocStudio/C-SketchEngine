@@ -39,16 +39,13 @@ int main (int argc, char *argv[]) {
         printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
         print_ttf_error();
     }
-    text = TTF_RenderText_Solid(font, "yo shit it worked!", (SDL_Color){255, 255, 255, 255});
+    text = TTF_RenderText_Solid(font, "yo shit it worked!", (SDL_Color){255, 0, 0, 255});
     if (text == NULL) {
         printf("Error: text surface was null\n");
     }
     SDL_Texture *text_texture = SDL_CreateTextureFromSurface(global_app->renderer, text);
     if (text_texture == NULL) {
         printf("Error: text texture is null\n");
-    }
-    if (SDL_RenderCopy(global_app->renderer, text_texture, NULL, NULL) != 0) {
-        print_sdl_error();
     }
 
     UI_Button button_1;
@@ -89,9 +86,12 @@ int main (int argc, char *argv[]) {
 
         SDL_RenderClear(app.renderer);
         // -- draw
-        if (ui_draw_button(&button_1, global_ui_theme)) {
-            printf("haleloya: %f\n", i);
-            ++i;
+        // if (ui_draw_button(&button_1, global_ui_theme)) {
+        //     printf("haleloya: %f\n", i);
+        //     ++i;
+        // }
+        if (SDL_RenderCopy(global_app->renderer, text_texture, NULL, NULL) != 0) {
+            print_sdl_error();
         }
         // -- swap buffers
         SDL_RenderPresent(app.renderer);
@@ -100,7 +100,7 @@ int main (int argc, char *argv[]) {
     // -- uninit SDL
     uninit_sdl(&app);
     TTF_Quit();
-    uninit_globals();    
+    uninit_globals();
     return 0;
 }
 /// init SDL stuff
