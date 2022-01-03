@@ -17,6 +17,10 @@
 ...
 
 == LOG ==
+3 Jan 2022:
++ ttf linking and compiling
++ can load fonts successfully
++ can render basic text
 
 1 Jan 2022:
 + button color animation
