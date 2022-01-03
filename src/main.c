@@ -91,7 +91,8 @@ int main (int argc, char *argv[]) {
         //     printf("haleloya: %f\n", i);
         //     ++i;
         // }
-        if (SDL_RenderCopy(global_app->renderer, text->texture, NULL, NULL) != 0) {
+        Rect text_rect = get_text_rect(text, 200, 200);
+        if (SDL_RenderCopy(global_app->renderer, text->texture, NULL, &text_rect) != 0) {
             print_sdl_error();
         }
         // -- swap buffers
