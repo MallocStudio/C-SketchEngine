@@ -6,11 +6,14 @@
 #include "types.h"
 #include "math.h"
 #include <stdio.h>
+#include <memory.h>
+
+#define new(x) ( x *) malloc (sizeof( x ))
 
 ///
 typedef struct {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
+    SDL_Window   *window;   // not owned
+    SDL_Renderer *renderer; // not owned
     i32 window_width;
     i32 window_height;
     i32 keyboard[];

@@ -3,6 +3,8 @@
         "sdl.h": "c",
         "core.h": "c",
         "types.h": "c",
-        "sdl_test_font.h": "c"
+        "sdl_test_font.h": "c",
+        "sdl_types.h": "c",
+        "sdl_stdinc.h": "c"
     }
 }
