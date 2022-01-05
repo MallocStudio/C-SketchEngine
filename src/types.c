@@ -1,6 +1,7 @@
 #include "types.h"
 #include "assert.h"
 #include <memory.h>
+#include "core.h"
 
 ///
 SDL_Color rgba_to_sdl_color(const RGBA *rgba) {
@@ -39,13 +40,16 @@ void uninit_text(Text *text) {
     free(text);
 }
 
-///
+/// @slow this is an extremely slow operation
 void set_text_color(Text *text, RGBA color) {
     assert(text != NULL && "init_text: text was null");
     text->color = color;
-    // @incomplete @leak check if we get errors if we free surface and destroy texture before doing the following calls
+    SDL_FreeSurface(text->surface);
+    SDL_DestroyTexture(text->texture);
     text->surface = TTF_RenderText_Solid(text->font, text->buffer, rgba_to_sdl_color(&color));
+    ERROR_ON_NULL_SDL(text->surface);
     text->texture = SDL_CreateTextureFromSurface(text->renderer, text->surface);
+    ERROR_ON_NULL_SDL(text->texture);
 }
 
 /// returns the rect of the texture based on font.
@@ -55,4 +59,12 @@ Rect get_text_rect(Text *text, int pos_x, int pos_y) {
     result.x = pos_x;
     result.y = pos_y;
     return result;
+}
+
+///
+void render_text(SDL_Renderer *renderer, Text *text, int x, int y) {
+    Rect text_rect = get_text_rect(text, x, y);
+    if (SDL_RenderCopy(renderer, text->texture, NULL, &text_rect) != 0) {
+        print_sdl_error();
+    }
 }

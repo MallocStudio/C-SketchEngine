@@ -8,7 +8,7 @@
 
 void   init_sdl(App *app);
 void uninit_sdl(App *app);
-void init_globals(App *app);
+void init_globals();
 void uninit_globals();
 
 // -- for delta time calculation
@@ -38,19 +38,12 @@ int main (int argc, char *argv[]) {
         printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
         print_ttf_error();
     }
-    Text* text = new(Text); // @temp @nocheckin
-    init_text(text, global_app->renderer, "yo shit it worked again!", font, (RGBA){0, 1, 0, 1});
-    // text = TTF_RenderText_Solid(font, "yo shit it worked!", (SDL_Color){255, 0, 0, 255});
-    // if (text == NULL) {
-    //     printf("Error: text surface was null\n");
-    // }
-    // SDL_Texture *text_texture = SDL_CreateTextureFromSurface(global_app->renderer, text);
-    // if (text_texture == NULL) {
-    //     printf("Error: text texture is null\n");
-    // }
+    Text* text = new(Text); // @temp
+    init_text(text, app->renderer, "yo shit it worked again!", font, (RGBA){0, 1, 0, 1});
+    set_text_color(text, (RGBA){1, 0, 0, 1});
 
     UI_Button button_1;
-    ui_init_button(&button_1, global_ui_theme);
+    ui_init_button(&button_1, text, global_ui_theme);
     button_1.rect = (Rect) {100, 100, 128, 48};
     f32 i = 0;
 
@@ -70,8 +63,8 @@ int main (int argc, char *argv[]) {
             } else
             if (event.type == SDL_WINDOWEVENT_SIZE_CHANGED) { // -- resized window
                 printf("LOL\n");
-                SDL_GetWindowSize(global_app->window, &global_app->window_width, &global_app->window_height);
-                SDL_RenderSetLogicalSize(global_app->renderer, global_app->window_width, global_app->window_height);
+                SDL_GetWindowSize(app->window, &app->window_width, &app->window_height);
+                SDL_RenderSetLogicalSize(app->renderer, app->window_width, app->window_height);
             }
         }
 
@@ -87,14 +80,11 @@ int main (int argc, char *argv[]) {
 
         SDL_RenderClear(app->renderer);
         // -- draw
-        // if (ui_draw_button(&button_1, global_ui_theme)) {
-        //     printf("haleloya: %f\n", i);
-        //     ++i;
-        // }
-        Rect text_rect = get_text_rect(text, 200, 200);
-        if (SDL_RenderCopy(global_app->renderer, text->texture, NULL, &text_rect) != 0) {
-            print_sdl_error();
+        if (ui_render_button(&button_1, global_ui_theme)) {
+            printf("haleloya: %f\n", i);
+            ++i;
         }
+
         // -- swap buffers
         SDL_RenderPresent(app->renderer);
     }
@@ -138,8 +128,8 @@ void uninit_sdl(App *app) {
 }
 
 /// init globals defined in core.h
-void init_globals(App *app) {
-    global_app = app;
+void init_globals() {
+    // global_app = app;
     delta_time = 0.f;
     global_ui_theme = (UI_Theme*) malloc (sizeof(UI_Theme));
     ui_init_theme(global_ui_theme);

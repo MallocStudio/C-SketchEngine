@@ -9,6 +9,8 @@
 #include <memory.h>
 
 #define new(x) ( x *) malloc (sizeof( x ))
+#define ERROR_ON_NOTZERO_SDL(x) if( x != 0) print_sdl_error();
+#define ERROR_ON_NULL_SDL(x) if( x == NULL) print_sdl_error();
 
 ///
 typedef struct {
@@ -19,7 +21,7 @@ typedef struct {
     i32 keyboard[];
 } App;
 
-App *global_app;
+// App *global_app;
 f32  delta_time;
 
 /// debugging for SDL2

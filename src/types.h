@@ -37,7 +37,9 @@ typedef struct Text { // ! MUST use the setters to generate the text again
 void init_text(Text *text, SDL_Renderer *renderer, const char *data, TTF_Font *font, const RGBA color);
 /// frees text. text becomes and invalid pointer after
 void uninit_text(Text *text);
-///
+/// render text
+void render_text(SDL_Renderer *renderer, Text *text, int x, int y);
+/// set the color of the text // ! heavy operation as it creates a new surface and texture
 void set_text_color(Text *text, RGBA color);
 /// returns the rect of the texture based on font. note that the pos will be the ones passed in
 Rect get_text_rect(Text *text, int pos_x, int pos_y);

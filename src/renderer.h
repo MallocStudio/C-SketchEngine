@@ -10,10 +10,10 @@ void set_render_draw_color_rgba(SDL_Renderer *renderer, RGBA *rgba);
 /// reset renderer draw color to the default
 void reset_render_draw_color(SDL_Renderer *renderer);
 /// renders a filled rectangle using global_app->renderer and using the current render color
-void render_rect_filled(Rect *rect);
+void render_rect_filled(SDL_Renderer *renderer, Rect *rect);
 /// renders a filled rectangle using global_app->renderer using the given color.
 /// the render color is set back to whatever it was before this procedure
-void render_rect_filled_color(Rect *rect, RGBA *color);
+void render_rect_filled_color(SDL_Renderer *renderer, Rect *rect, RGBA *color);
 
 
 #endif // RENDERER_H

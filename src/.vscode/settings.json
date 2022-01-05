@@ -7,5 +7,6 @@
         "sdl_types.h": "c",
         "sdl_stdinc.h": "c",
         "limits": "c"
-    }
+    },
+    "todo-tree.tree.scanMode": "workspace only"
 }

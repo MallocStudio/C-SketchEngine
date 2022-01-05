@@ -2,14 +2,15 @@
 #include "renderer.h"
 
 ///
-void ui_init_button (UI_Button *button, UI_Theme *theme) {
+void ui_init_button (UI_Button *button, Text *text, UI_Theme *theme) {
     button->color_current = theme->color_base;
     button->color_target  = button->color_current;
     button->rect          = (Rect){0, 0, 128, 48};
+    button->text = text; // @incomplete regenerate text's color based on theme
 }
 
 ///
-bool ui_draw_button(UI_Button *button, UI_Theme *theme) {
+bool ui_render_button(UI_Button *button, UI_Theme *theme) {
     bool result = false;
     // -- get the state of button
     UI_STATES state = ui_get_button_state(button);

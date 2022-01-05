@@ -20,24 +20,24 @@ void reset_render_draw_color(SDL_Renderer *renderer) {
 }
 
 /// renders a filled rectangle using global_app->renderer and using the current render color
-void render_rect_filled(Rect *rect) {
-    if (SDL_RenderFillRect(global_app->renderer, rect) != 0) {
+void render_rect_filled(SDL_Renderer *renderer, Rect *rect) {
+    if (SDL_RenderFillRect(renderer, rect) != 0) {
         print_sdl_error();
     }
 }
 
 /// renders a filled rectangle using global_app->renderer using the given color.
 /// the render color is set back to whatever it was before this procedure
-void render_rect_filled_color(Rect *rect, RGBA *color) {
+void render_rect_filled_color(SDL_Renderer *renderer, Rect *rect, RGBA *color) {
     u8 prev_color[4];
-    if (SDL_GetRenderDrawColor(global_app->renderer, &prev_color[0], &prev_color[1], &prev_color[2], &prev_color[3]) != 0) {
+    if (SDL_GetRenderDrawColor(renderer, &prev_color[0], &prev_color[1], &prev_color[2], &prev_color[3]) != 0) {
         print_sdl_error();
     }
 
-    set_render_draw_color_rgba(global_app->renderer, color);
-    render_rect_filled(rect);
+    set_render_draw_color_rgba(renderer, color);
+    render_rect_filled(renderer, rect);
 
-    if (SDL_SetRenderDrawColor(global_app->renderer, prev_color[0], prev_color[1], prev_color[2], prev_color[3]) != 0) {
+    if (SDL_SetRenderDrawColor(renderer, prev_color[0], prev_color[1], prev_color[2], prev_color[3]) != 0) {
         print_sdl_error();
     }
 }

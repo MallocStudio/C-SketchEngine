@@ -17,14 +17,15 @@ typedef struct UI_Button {
     RGBA color_current; // current color of the ui item to be rendered
     RGBA color_target;  // for animation transition from current_color to target_color
     Rect rect;          // the position of the button
-} UI_Button; void ui_init_button (UI_Button *button, UI_Theme *theme);
+    Text *text;         // the generated text to be rendererd with the button
+} UI_Button; void ui_init_button (UI_Button *button, Text *text, UI_Theme *theme); // -- note that the text color is regenrated based on the theme
 
 typedef enum UI_STATES {
     UI_STATES_NORMAL, UI_STATES_SELECTED, UI_STATES_PRESSED, UI_STATES_DISABLED,
 } UI_STATES;
 
 /// draw the given button. Returns true if pressed
-bool ui_draw_button(UI_Button *button, UI_Theme *theme);
+bool ui_render_button(UI_Button *button, UI_Theme *theme);
 /// return the state of a ui button
 UI_STATES ui_get_button_state(UI_Button *button);
 
