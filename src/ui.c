@@ -10,7 +10,7 @@ void ui_init_button (UI_Button *button, Text *text, UI_Theme *theme) {
 }
 
 ///
-bool ui_render_button(UI_Button *button, UI_Theme *theme) {
+bool ui_render_button(SDL_Renderer *renderer, UI_Button *button, UI_Theme *theme) {
     bool result = false;
     // -- get the state of button
     UI_STATES state = ui_get_button_state(button);
@@ -33,9 +33,13 @@ bool ui_render_button(UI_Button *button, UI_Theme *theme) {
 
     // -- lerp button color towards target color
     lerp_rgba(&button->color_current, button->color_target, delta_time * theme->color_transition_amount);
+    
     // -- draw the base based on state
     RGBA color = button->color_current;
-    render_rect_filled_color(&button->rect, &color);
+    render_rect_filled_color(renderer, &button->rect, &color);
+
+    // -- draw text
+    render_text_rect(renderer, button->text, button->rect);
     return result;
 }
 

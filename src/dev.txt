@@ -16,7 +16,13 @@
 - [ ] Research importing 3D Models
 ...
 
+== CURRENT ==
+- [ ] implement dynamic glyphs and text within a rect generator
+
 == LOG ==
+6 Jan 2022:
++ able to generate a text based on glyphs -> allows us to arrange the glyphs ourselves
+
 3 Jan 2022:
 + ttf linking and compiling
 + can load fonts successfully

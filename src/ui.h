@@ -25,7 +25,7 @@ typedef enum UI_STATES {
 } UI_STATES;
 
 /// draw the given button. Returns true if pressed
-bool ui_render_button(UI_Button *button, UI_Theme *theme);
+bool ui_render_button(SDL_Renderer *renderer, UI_Button *button, UI_Theme *theme);
 /// return the state of a ui button
 UI_STATES ui_get_button_state(UI_Button *button);
 

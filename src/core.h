@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <memory.h>
 
-#define new(x) ( x *) malloc (sizeof( x ))
+#define new(type) ( type *) malloc (sizeof( type ))
 #define ERROR_ON_NOTZERO_SDL(x) if( x != 0) print_sdl_error();
 #define ERROR_ON_NULL_SDL(x) if( x == NULL) print_sdl_error();
 

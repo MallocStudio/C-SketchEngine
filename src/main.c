@@ -38,9 +38,16 @@ int main (int argc, char *argv[]) {
         printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
         print_ttf_error();
     }
+
+    // -- glyphs test
+    Glyphs *glyphs = new(Glyphs);
+    init_glyphs(app->renderer, glyphs, font, (RGBA){1, 1, 1, 1});
+    // glyphs_generate_text(app->renderer, glyphs, "matin"); // @nochekin
+
+    // -- text test with button
     Text* text = new(Text); // @temp
-    init_text(text, app->renderer, "yo shit it worked again!", font, (RGBA){0, 1, 0, 1});
-    set_text_color(text, (RGBA){1, 0, 0, 1});
+    // init_text(text, app->renderer, "yo shit it worked again!", font, (RGBA){1, 1, 1, 1});
+    glyphs_generate_text(text, app->renderer, glyphs, "yo shit it wooorked!");
 
     UI_Button button_1;
     ui_init_button(&button_1, text, global_ui_theme);
@@ -80,7 +87,7 @@ int main (int argc, char *argv[]) {
 
         SDL_RenderClear(app->renderer);
         // -- draw
-        if (ui_render_button(&button_1, global_ui_theme)) {
+        if (ui_render_button(app->renderer, &button_1, global_ui_theme)) {
             printf("haleloya: %f\n", i);
             ++i;
         }
@@ -89,7 +96,8 @@ int main (int argc, char *argv[]) {
         SDL_RenderPresent(app->renderer);
     }
 
-    uninit_text(text);
+    uninit_text(text);     // @temp with text with button test
+    uninit_glyphs(glyphs); // @temp with glyphs test
 
     // -- uninit SDL
     uninit_sdl(app);
