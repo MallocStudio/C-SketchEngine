@@ -1,3 +1,4 @@
 temp/*
 *.exe
 build/SketchEngine.exe
+build\SketchEngine.exe
