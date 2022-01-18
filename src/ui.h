@@ -11,7 +11,7 @@ typedef struct UI_Theme {
     RGBA color_disabled;
     f32  color_transition_amount;
 } UI_Theme; void ui_init_theme (UI_Theme *theme);
-UI_Theme *global_ui_theme;
+static UI_Theme *global_ui_theme;
 
 typedef struct UI_Button {
     RGBA color_current; // current color of the ui item to be rendered
