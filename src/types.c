@@ -76,28 +76,6 @@ Rect get_text_rect(Text *text, int pos_x, int pos_y) {
     return result;
 }
 
-///
-void render_text(SDL_Renderer *renderer, Text *text, int x, int y) {
-    Rect text_rect = get_text_rect(text, x, y);
-    if (SDL_RenderCopy(renderer, text->texture, NULL, &text_rect) != 0) {
-        print_sdl_error();
-    }
-}
-
-///
-void render_text_rect(SDL_Renderer *renderer, Text *text, Rect rect) {
-    Rect text_rect = get_text_rect(text, rect.x, rect.y);
-    // // -- scale down text rect to fit the text inside of the given rect with proper aspect ratio
-    if (text_rect.w > rect.w) {
-        int diff = text_rect.w - rect.w;
-        text_rect.w -= diff;
-    }
-
-    if (SDL_RenderCopy(renderer, text->texture, NULL, &text_rect) != 0) {
-        print_sdl_error();
-    }
-}
-
 /// generate all the glyph textures based on the font
 void init_glyphs (SDL_Renderer *renderer, Glyphs *glyphs, TTF_Font* font, RGBA rgba) {
     for (int i = 0; i < GLYPHS_AMOUNT; ++i) {
@@ -163,3 +141,23 @@ void glyphs_generate_text (Text *result, SDL_Renderer *renderer, Glyphs *glyphs,
 //     Text text;
 //     glyphs_generate_text(&text, renderer, 
 // }
+
+///
+void init_renderer (Renderer *renderer) {
+    renderer->glyphs = new(Glyphs);
+
+    // -- @temp
+    TTF_Font *font = TTF_OpenFont(DEFAULT_FONT_PATH, 16);
+    if (font == NULL) {
+        printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
+        print_ttf_error();
+    }
+
+    // -- glyphs test
+    init_glyphs(renderer->sdl_renderer, renderer->glyphs, font, (RGBA){1, 1, 1, 1});
+}
+
+void deinit_renderer (Renderer *renderer) {
+    uninit_glyphs(renderer->glyphs);
+    free(renderer->glyphs);
+}

@@ -40,10 +40,6 @@ void init_text(Text *text, SDL_Renderer *renderer, const char *data, TTF_Font *f
 void init_text_dynamic(Text *text, SDL_Renderer *renderer, const char *data, TTF_Font *font, RGBA color, SDL_Surface *surface);
 /// frees text. text becomes and invalid pointer after
 void uninit_text(Text *text);
-/// render text
-void render_text(SDL_Renderer *renderer, Text *text, int x, int y);
-/// render text within the given rect
-void render_text_rect(SDL_Renderer *renderer, Text *text, Rect rect);
 /// set the color of the text // ! heavy operation as it creates a new surface and texture
 void set_text_color(Text *text, RGBA color);
 /// returns the rect of the texture based on font. note that the pos will be the ones passed in
@@ -68,4 +64,23 @@ void uninit_glyphs (Glyphs *glyphs);
 void glyphs_generate_text (Text *result, SDL_Renderer *renderer, Glyphs *glyphs, const char *string);
 // /// simply render the given string using the given font at the given pos
 // void render_string(SDL_Renderer *renderer, TTF_Font *font, const char *string, Vec2i pos);
+
+/// current rendering context
+typedef struct Renderer {
+    SDL_Renderer *sdl_renderer; // this is set in main during sdl_init
+    // ! owned
+    Glyphs *glyphs; // the generated glyphs (read only)
+    // ! owned
+    TTF_Font *font; // the font used to generate the glyphs (read only) // * changing this will not affect anything until the glyphs are regenerated
+} Renderer;
+void init_renderer (Renderer *renderer);
+void deinit_renderer (Renderer *renderer);
+
+typedef struct UI_Theme {
+    RGBA color_base;
+    RGBA color_pressed;
+    RGBA color_selected;
+    RGBA color_disabled;
+    f32  color_transition_amount;
+} UI_Theme; void ui_init_theme (UI_Theme *theme);
 #endif // TYPES_H

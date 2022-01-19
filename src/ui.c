@@ -10,7 +10,7 @@ void ui_init_button (UI_Button *button, Text *text, UI_Theme *theme) {
 }
 
 ///
-bool ui_render_button(SDL_Renderer *renderer, UI_Button *button, UI_Theme *theme) {
+bool ui_render_button(SDL_Renderer *sdl_renderer, UI_Button *button, UI_Theme *theme) {
     bool result = false;
     // -- get the state of button
     UI_STATES state = ui_get_button_state(button);
@@ -36,10 +36,10 @@ bool ui_render_button(SDL_Renderer *renderer, UI_Button *button, UI_Theme *theme
     
     // -- draw the base based on state
     RGBA color = button->color_current;
-    render_rect_filled_color(renderer, &button->rect, &color);
+    render_rect_filled_color(sdl_renderer, button->rect, color);
 
     // -- draw text
-    render_text_rect(renderer, button->text, button->rect);
+    render_text_rect(sdl_renderer, button->text, button->rect);
     return result;
 }
 

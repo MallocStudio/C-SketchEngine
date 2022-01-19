@@ -2,16 +2,6 @@
 #define UI_H
 
 #include "core.h"
-#define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
-
-typedef struct UI_Theme {
-    RGBA color_base;
-    RGBA color_pressed;
-    RGBA color_selected;
-    RGBA color_disabled;
-    f32  color_transition_amount;
-} UI_Theme; void ui_init_theme (UI_Theme *theme);
-static UI_Theme *global_ui_theme;
 
 typedef struct UI_Button {
     RGBA color_current; // current color of the ui item to be rendered
@@ -25,7 +15,7 @@ typedef enum UI_STATES {
 } UI_STATES;
 
 /// draw the given button. Returns true if pressed
-bool ui_render_button(SDL_Renderer *renderer, UI_Button *button, UI_Theme *theme);
+bool ui_render_button(SDL_Renderer *sdl_renderer, UI_Button *button, UI_Theme *theme);
 /// return the state of a ui button
 UI_STATES ui_get_button_state(UI_Button *button);
 

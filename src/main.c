@@ -1,56 +1,24 @@
 /// SDL Inlcudes
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 #include "core.h"
-#include "test.h"
-#include "renderer.h"
 #include "ui.h"
-#include "SDL_ttf.h"
-
-void   init_sdl(App *app);
-void uninit_sdl(App *app);
-void init_globals();
-void uninit_globals();
 
 // -- for delta time calculation
 Uint64 NOW = 0;
 Uint64 LAST = 0;
 
 int main (int argc, char *argv[]) {
+    // -- initialise app
     App *app = new(App);
-    app->window_width  = 1000;
-    app->window_height = 800;
-
-    // -- Init SDL
-    init_sdl(app);
-    reset_render_draw_color(app->renderer);
-
-    // -- init globals declared in core.h
-    init_globals(app);
-
-    if (TTF_Init() != 0) {
-        printf("TTF_Init failed:\n");
-        print_ttf_error();
-    }
-
-    // -- @temp
-    TTF_Font *font = TTF_OpenFont(DEFAULT_FONT_PATH, 16);
-    if (font == NULL) {
-        printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
-        print_ttf_error();
-    }
-
-    // -- glyphs test
-    Glyphs *glyphs = new(Glyphs);
-    init_glyphs(app->renderer, glyphs, font, (RGBA){1, 1, 1, 1});
-    // glyphs_generate_text(app->renderer, glyphs, "matin"); // @nochekin
+    init_app(app);    
 
     // -- text test with button
     Text* text = new(Text); // @temp
-    // init_text(text, app->renderer, "yo shit it worked again!", font, (RGBA){1, 1, 1, 1});
-    glyphs_generate_text(text, app->renderer, glyphs, "yo shit it wooorked!");
+    // init_text(text, app->sdl_renderer, "yo shit it worked again!", font, (RGBA){1, 1, 1, 1});
+    glyphs_generate_text(text, app->renderer->sdl_renderer, app->renderer->glyphs, "yo shit it wooorked!");
 
     UI_Button button_1;
-    ui_init_button(&button_1, text, global_ui_theme);
+    ui_init_button(&button_1, text, app->ui_theme);
     button_1.rect = (Rect) {100, 100, 128, 48};
     f32 i = 0;
 
@@ -71,7 +39,7 @@ int main (int argc, char *argv[]) {
             if (event.type == SDL_WINDOWEVENT_SIZE_CHANGED) { // -- resized window
                 printf("LOL\n");
                 SDL_GetWindowSize(app->window, &app->window_width, &app->window_height);
-                SDL_RenderSetLogicalSize(app->renderer, app->window_width, app->window_height);
+                SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
             }
         }
 
@@ -80,70 +48,28 @@ int main (int argc, char *argv[]) {
         // SDL_GetKeyboardState(app.keyboard);
         // if (app.keyboard[SDL_SCANCODE_ESCAPE] == 1) should_close = true;
 
-        // -- update window surface // ! (matink dec 2021) we cannot use window surface if we're using the renderer according to https://dev.to/noah11012/using-sdl2-2d-accelerated-renderering-1kcb
+        // -- update window surface // ! (matink dec 2021) we cannot use window surface if we're using the sdl_renderer according to https://dev.to/noah11012/using-sdl2-2d-accelerated-renderering-1kcb
         // app.surface = sdl.GetWindowSurface(app.window)
         // if app.surface == nil do sdl_print_error("GetWindowSurface:", sdl.GetError())
         // if sdl.UpdateWindowSurface(app.window) < 0 do sdl_print_error("UpdateWindowSurface:", sdl.GetError())
 
-        SDL_RenderClear(app->renderer);
+        SDL_RenderClear(app->renderer->sdl_renderer);
         // -- draw
-        if (ui_render_button(app->renderer, &button_1, global_ui_theme)) {
+        if (ui_render_button(app->renderer->sdl_renderer, &button_1, app->ui_theme)) {
             printf("haleloya: %f\n", i);
             ++i;
         }
 
         // -- swap buffers
-        SDL_RenderPresent(app->renderer);
+        SDL_RenderPresent(app->renderer->sdl_renderer);
     }
 
     uninit_text(text);     // @temp with text with button test
-    uninit_glyphs(glyphs); // @temp with glyphs test
 
-    // -- uninit SDL
-    uninit_sdl(app);
-    TTF_Quit();
-    uninit_globals();
-
+    // -- uninit app
+    deinit_app(app);    
+    free(app);
+    
     printf("prgram closed successfully!\n");
     return 0;
-}
-/// init SDL stuff
-void init_sdl(App *app) {
-    // -- SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        print_sdl_error();
-    }
-
-    // -- Init window
-    app->window = SDL_CreateWindow("My C Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->window_width, app->window_height, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
-    if (app->window == NULL) {
-        print_sdl_error();
-    }
-
-    // -- renderer
-    app->renderer = SDL_CreateRenderer(app->window, 0, SDL_RENDERER_ACCELERATED);
-    if (app->renderer == NULL) {
-        print_sdl_error();
-    }
-    SDL_RenderSetLogicalSize(app->renderer, app->window_width, app->window_height);
-}
-
-/// uninit SDL
-void uninit_sdl(App *app) {
-    SDL_DestroyWindow(app->window);
-    SDL_DestroyRenderer(app->renderer);
-    SDL_Quit();
-}
-
-/// init globals defined in core.h
-void init_globals() {
-    // global_app = app;
-    delta_time = 0.f;
-    global_ui_theme = (UI_Theme*) malloc (sizeof(UI_Theme));
-    ui_init_theme(global_ui_theme);
-}
-
-/// init globals defined in core.h
-void uninit_globals() {
-    free(global_ui_theme);
 }

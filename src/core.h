@@ -11,15 +11,19 @@
 #define new(type) ( type *) malloc (sizeof( type ))
 #define ERROR_ON_NOTZERO_SDL(x) if( x != 0) print_sdl_error();
 #define ERROR_ON_NULL_SDL(x) if( x == NULL) print_sdl_error();
-
+#define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
 ///
 typedef struct {
     SDL_Window   *window;   // not owned
-    SDL_Renderer *renderer; // not owned
+    // SDL_Renderer *sdl_renderer; // not owned
+    Renderer *renderer; // ! owned
+    UI_Theme *ui_theme; // ! owned
     i32 window_width;
     i32 window_height;
     i32 keyboard[];
 } App;
+void init_app   (App *app);
+void deinit_app (App *app);
 
 // App *global_app;
 static f32 delta_time;
