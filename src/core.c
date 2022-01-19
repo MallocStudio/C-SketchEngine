@@ -25,7 +25,7 @@ void init_sdl(App *app) {
 }
 
 /// uninit SDL
-void uninit_sdl(App *app) {
+void deinit_sdl(App *app) {
     SDL_DestroyWindow(app->window);
     SDL_DestroyRenderer(app->renderer->sdl_renderer);
     SDL_Quit();
@@ -38,7 +38,7 @@ void init_globals() {
 }
 
 /// init globals defined in core.h
-void uninit_globals() {
+void deinit_globals() {
 }
 
 void init_app   (App *app) {
@@ -70,9 +70,9 @@ void init_app   (App *app) {
 void deinit_app (App *app) {
     // -- deinit
     deinit_renderer(app->renderer);
-    uninit_sdl(app);
+    deinit_sdl(app);
     TTF_Quit();
-    uninit_globals();
+    deinit_globals();
 
     // -- free
     free(app->ui_theme);

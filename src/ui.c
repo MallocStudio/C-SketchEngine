@@ -39,7 +39,7 @@ bool ui_render_button(SDL_Renderer *sdl_renderer, UI_Button *button, UI_Theme *t
     render_rect_filled_color(sdl_renderer, button->rect, color);
 
     // -- draw text
-    render_text_rect(sdl_renderer, button->text, button->rect);
+    render_text_at_rect_clipped(sdl_renderer, button->text, button->rect);
     return result;
 }
 

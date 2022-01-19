@@ -21,7 +21,7 @@ void render_rect_filled_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color)
 /// render text
 void render_text(SDL_Renderer *sdl_renderer, Text *text, int x, int y);
 /// render text within the given rect
-void render_text_rect(SDL_Renderer *sdl_renderer, Text *text, Rect rect);
+void render_text_at_rect_clipped(SDL_Renderer *sdl_renderer, Text *text, Rect rect);
 /// render string within the given rect. if rect's width and height are zero, this function will not confine the text within the rect
-void render_string(SDL_Renderer *sdl_renderer, const char *string, Rect rect);
+void render_string(Renderer *renderer, const char *string, Rect rect, bool wrapped);
 #endif // RENDERER_H

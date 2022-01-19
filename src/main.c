@@ -1,6 +1,7 @@
 /// SDL Inlcudes
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 #include "core.h"
+#include "renderer.h"
 #include "ui.h"
 
 // -- for delta time calculation
@@ -12,15 +13,15 @@ int main (int argc, char *argv[]) {
     App *app = new(App);
     init_app(app);    
 
-    // -- text test with button
-    Text* text = new(Text); // @temp
-    // init_text(text, app->sdl_renderer, "yo shit it worked again!", font, (RGBA){1, 1, 1, 1});
-    glyphs_generate_text(text, app->renderer->sdl_renderer, app->renderer->glyphs, "yo shit it wooorked!");
+    // // -- text test with button
+    // Text* text = new(Text); // @temp
+    // // init_text(text, app->sdl_renderer, "yo shit it worked again!", font, (RGBA){1, 1, 1, 1});
+    // generate_text_from_glyphs(text, app->renderer->sdl_renderer, app->renderer->glyphs, "yo shit it wooorked!");
 
-    UI_Button button_1;
-    ui_init_button(&button_1, text, app->ui_theme);
-    button_1.rect = (Rect) {100, 100, 128, 48};
-    f32 i = 0;
+    // UI_Button button_1;
+    // ui_init_button(&button_1, text, app->ui_theme);
+    // button_1.rect = (Rect) {100, 100, 128, 48};
+    // f32 i = 0;
 
     // -- loop
     bool should_close = false;
@@ -42,7 +43,7 @@ int main (int argc, char *argv[]) {
                 SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
             }
         }
-
+#pragma region // notes 
         // -- keyboard state
         // SDL_PumpEvents();
         // SDL_GetKeyboardState(app.keyboard);
@@ -52,19 +53,21 @@ int main (int argc, char *argv[]) {
         // app.surface = sdl.GetWindowSurface(app.window)
         // if app.surface == nil do sdl_print_error("GetWindowSurface:", sdl.GetError())
         // if sdl.UpdateWindowSurface(app.window) < 0 do sdl_print_error("UpdateWindowSurface:", sdl.GetError())
-
+#pragma endregion
         SDL_RenderClear(app->renderer->sdl_renderer);
         // -- draw
-        if (ui_render_button(app->renderer->sdl_renderer, &button_1, app->ui_theme)) {
-            printf("haleloya: %f\n", i);
-            ++i;
-        }
+        // if (ui_render_button(app->renderer->sdl_renderer, &button_1, app->ui_theme)) {
+        //     printf("haleloya: %f\n", i);
+        //     ++i;
+        // }
+
+        render_string(app->renderer, "render_string test", (Rect) {100, 100, 32, 0}, false);
 
         // -- swap buffers
         SDL_RenderPresent(app->renderer->sdl_renderer);
     }
 
-    uninit_text(text);     // @temp with text with button test
+    // deinit_text(text);     // @temp with text with button test
 
     // -- uninit app
     deinit_app(app);    
