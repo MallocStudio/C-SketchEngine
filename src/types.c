@@ -157,3 +157,9 @@ void glyphs_generate_text (Text *result, SDL_Renderer *renderer, Glyphs *glyphs,
     init_text_dynamic(result, renderer, string, glyphs->font, glyphs->rgba, result_surface);
     // return result;
 }
+
+// /// simply render the given string using the given font at the given pos
+// void render_string(SDL_Renderer *renderer, TTF_Font *font, const char *string, Vec2i pos) {
+//     Text text;
+//     glyphs_generate_text(&text, renderer, 
+// }

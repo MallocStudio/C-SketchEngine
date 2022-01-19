@@ -66,4 +66,6 @@ void init_glyphs (SDL_Renderer *renderer, Glyphs *glyphs, TTF_Font* font, RGBA r
 void uninit_glyphs (Glyphs *glyphs);
 /// inits the given text based on the given glyphs
 void glyphs_generate_text (Text *result, SDL_Renderer *renderer, Glyphs *glyphs, const char *string);
+// /// simply render the given string using the given font at the given pos
+// void render_string(SDL_Renderer *renderer, TTF_Font *font, const char *string, Vec2i pos);
 #endif // TYPES_H
