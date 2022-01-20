@@ -47,20 +47,25 @@ int main (int argc, char *argv[]) {
         ui_update_context(&context);
 
         // -- ctx ui test
-        if (ui_begin(&context, (Rect) {20, 20, 300, 400}, 3, UI_LAYOUT_VERTICAL)) {
-            ui_label(&context, "test_label");
-            if (ui_button(&context, 1, "button 1")) {
-                printf("button 1 pressed\n");
-            }
-            if (ui_button(&context, 2, "button 2")) {
-                printf("button 2 pressed\n");
-            }
+        // if (ui_begin(&context, (Rect) {20, 20, 300, 400}, 3, UI_LAYOUT_VERTICAL)) {
+        //     ui_label(&context, "test_label");
+        //     if (ui_button(&context, 1, "button 1")) {
+        //         printf("button 1 pressed\n");
+        //     }
+        //     if (ui_button(&context, 2, "button 2")) {
+        //         printf("button 2 pressed\n");
+        //     }
+        // }
+        if (ui_begin(&context, (Rect) {20, 20, 300, 300})) {
+            ui_row(&context, 3, 48);
+            if (ui_button(&context, 1, "button 1")) printf("button 1 pressed\n");
+            if (ui_button(&context, 2, "button 2")) printf("button 2 pressed\n");
+            if (ui_button(&context, 3, "button 3")) printf("button 3 pressed\n");
+            ui_row(&context, 1, 32);
+            if (ui_button(&context, 4, "button 4")) printf("button 4 pressed\n");
+            ui_row(&context, 1, 64);
+            if (ui_button(&context, 5, "button 5")) printf("button 5 pressed\n");
         }
-
-        // ui_draw_quick_button(&context, (Rect) {20, 20, 96, 32}, "test", app->ui_theme);
-        // ui_render_floating_rect(&context, &rect);
-        // render_string(app->renderer, "render_string test", rect, true);
-
         // -- swap buffers
         SDL_RenderPresent(app->renderer->sdl_renderer);
     }
