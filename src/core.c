@@ -50,10 +50,6 @@ void init_app   (App *app) {
         print_ttf_error();
     }
 
-    // -- UI THEME
-    app->ui_theme = new(UI_Theme);
-    ui_init_theme(app->ui_theme);
-
     // -- init globals declared in core.h
     init_globals(app);
 
@@ -69,7 +65,6 @@ void deinit_app (App *app) {
     deinit_globals();
 
     // -- free
-    free(app->ui_theme);
     free(app->renderer);
 }
 

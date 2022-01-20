@@ -19,6 +19,7 @@ void ui_init_theme (UI_Theme *theme) {
     theme->color_disabled = (RGBA){0.4f, 0.4f, 0.4f, 1.f};
     theme->color_panel_base = (RGBA){0.4f, 0.4f, 0.4f, 1.f};
     theme->color_transition_amount = 0.025f;
+    theme->padding = (Rect) {2, 2, 2, 2};
 }
 
 // /// render a rearrangable rect
@@ -57,27 +58,37 @@ void ui_init_theme (UI_Theme *theme) {
 // }
 
 /// render a panel for other widgets
-bool ui_begin(UI_Context *ctx, Rect rect) {
-    bool result = true; // return true by default
-    ctx->window_rect = rect;
+void ui_begin(UI_Context *ctx, Rect *rect) {
+    ctx->current_max_id = 0;
+    ctx->window_rect = *rect;
     ctx->view_rect = ctx->window_rect;
-    ctx->used_area = (Vec2i) {0};
-    ctx->at_x = 0;
-    ctx->at_y = 0;
+    ctx->used_rect = (Rect) {rect->x, rect->y, 0, 0};
+    ctx->at_x = rect->x;
+    ctx->at_y = rect->y;
     ctx->at_w = 0;
     ctx->at_h = 0;
 
     // -- render background
-    render_rect_filled_color(ctx->renderer->sdl_renderer, rect, ctx->theme->color_panel_base);
-    return result;
+    render_rect_filled_color(ctx->renderer->sdl_renderer, *rect, ctx->theme->color_panel_base);
+    // -- move grab button
+    ui_row(ctx, 1, 16);
+    if (ui_button_grab(ctx, (Rect) {0})) {
+        rect->x = ctx->mouse_pos.x - ctx->mouse_pos_grabbed_offset.x;
+        rect->y = ctx->mouse_pos.y - ctx->mouse_pos_grabbed_offset.y;
+    }
+    // -- resize grab button
+    if (ui_button_grab(ctx, (Rect) {ctx->window_rect.x + ctx->window_rect.w - 8, ctx->window_rect.y + ctx->window_rect.h - 8, 16, 16})) {
+        rect->w = ctx->mouse_pos.x - ctx->mouse_pos_grabbed_offset.x - rect->x;
+        rect->h = ctx->mouse_pos.y - ctx->mouse_pos_grabbed_offset.y - rect->y;
+    }
 }
 
 void ui_row(UI_Context *ctx, i32 number_of_items, i32 height) {
     ctx->at_x = ctx->window_rect.x; // reset x
-    ctx->at_y = ctx->used_area.y; // advance down
+    ctx->at_y = ctx->window_rect.y + ctx->used_rect.h; // advance down
     ctx->at_w = ctx->window_rect.w / number_of_items;
     ctx->at_h = height;
-    ctx->used_area.y += height;
+    ctx->used_rect.h += height;
 }
 
 // /// render a panel
@@ -87,12 +98,15 @@ void ui_row(UI_Context *ctx, i32 number_of_items, i32 height) {
 // }
 
 /// render a button using context
-bool ui_button(UI_Context *ctx, UI_ID id, const char *string) {
+bool ui_button(UI_Context *ctx, const char *string) {
     bool result = false;
-    
+    UI_ID id = ctx->current_max_id;
+    ctx->current_max_id++;
+    Rect padding = ctx->theme->padding;
     Rect rect = {
-        ctx->at_x, ctx->at_y, ctx->at_w, ctx->at_h
+        ctx->at_x + padding.x, ctx->at_y + padding.y, ctx->at_w - padding.w, ctx->at_h - padding.h
     };
+
     ctx->at_x += ctx->at_w;
     // ui_context_increase_advance_by(ctx);
     
@@ -124,6 +138,51 @@ bool ui_button(UI_Context *ctx, UI_ID id, const char *string) {
     if (string != NULL) {
         render_string(ctx->renderer, string, rect, true);
     }
+
+    return result;
+}
+
+/// render a button using context
+bool ui_button_grab(UI_Context *ctx, Rect rect) {
+    bool result = false;
+    UI_ID id = ctx->current_max_id;
+    ctx->current_max_id++;
+    if (rect.x == 0 && rect.y == 0 && rect.w == 0 && rect.h == 0) {
+        Rect padding = ctx->theme->padding;
+        rect = (Rect) {
+            ctx->at_x + padding.x, ctx->at_y + padding.y, ctx->at_w - padding.w, ctx->at_h - padding.h
+        };
+    }
+
+    ctx->at_x += ctx->at_w;
+    // ui_context_increase_advance_by(ctx);
+    
+    bool mouse_up        = !ctx->is_mouse_left_pressed;
+    bool mouse_down      = !mouse_up;
+    bool mouse_is_inside = SDL_PointInRect(&ctx->mouse_pos, &rect);
+    RGBA color = ctx->theme->color_base;
+
+    if (ctx->active == id) {
+        result = true; // mouse up while hovering over button
+        if (mouse_up) ctx->active = -1; // we're no longer active
+    } else if (ctx->hot == id) {
+        if (mouse_down) {
+            ctx->mouse_pos_grabbed_offset.x = ctx->mouse_pos.x - rect.x;
+            ctx->mouse_pos_grabbed_offset.y = ctx->mouse_pos.y - rect.y;
+            ctx->active = id; // we're now active
+        }
+    }
+    if (mouse_is_inside) {
+        // if no other item is active, make us hot
+        if (ctx->active == -1) ctx->hot = id;
+    }
+    else if (ctx->hot == id) ctx->hot = -1;
+
+    if (ctx->hot    == id) color = ctx->theme->color_selected;
+    if (ctx->active == id) color = ctx->theme->color_pressed;
+
+    // -- base
+    render_rect_filled_color(ctx->renderer->sdl_renderer, rect, color);
 
     return result;
 }

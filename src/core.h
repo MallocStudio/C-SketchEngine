@@ -17,7 +17,6 @@ typedef struct {
     SDL_Window   *window;   // not owned
     // SDL_Renderer *sdl_renderer; // not owned
     Renderer *renderer; // ! owned
-    UI_Theme *ui_theme; // ! owned
     i32 window_width;
     i32 window_height;
     i32 keyboard[];
