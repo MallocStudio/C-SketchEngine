@@ -11,7 +11,14 @@ typedef enum UI_LAYOUTS {
     UI_LAYOUT_HORIZONTAL, UI_LAYOUT_VERTICAL,
 } UI_LAYOUTS;
 
+// typedef struct UI_ID {
+//     i32 id;
+// } UI_ID;
+typedef i32 UI_ID;
+
 typedef struct UI_Context {
+    UI_ID hot;    // the item is about to be interacted with (eg mouse over)
+    UI_ID active; // the currently active item
     Renderer *renderer;     // the renderer to use for rendering
     Vec2i mouse_pos;        // the mouse position
     bool  is_mouse_busy;    // is the user interacting with another ui?
@@ -22,22 +29,27 @@ typedef struct UI_Context {
 
     // -- related to rendering other widgets (positioning)
     Rect current_rect; // use to figure out where to position a widget. must manually advance these parameters after drawing the widget
+    i32 advance_by;
 } UI_Context;
 void ui_update_context(UI_Context *context);
 /// Advance the UI_Context.current_rect attributes based on the latest widget rect
-void ui_advance_context(UI_Context *ctx, Rect current_widget_rect);
+void ui_context_increase_advance_by(UI_Context *ctx);
 
-/// render a panel for other widgets. returns true if it's been successfully drawn 
-bool ui_begin_horizontal(UI_Context *ctx, const char *title, Rect rect); 
-bool ui_begin_vertical(UI_Context *ctx, const char *title, Rect rect);
+/// render a panel for other widgets. returns true if it's been successfully drawn. if the number_of_items is greater than zero, the items will be expanded
+bool ui_begin(UI_Context *ctx, Rect rect, i32 number_of_items, UI_LAYOUTS layout);
+// bool ui_begin_horizontal(UI_Context *ctx, const char *title, Rect rect); 
+// bool ui_begin_vertical(UI_Context *ctx, const char *title, Rect rect);
 // bool ui_begin_horizontal_expanded(UI_Context *ctx, const char *title, Rect rect, i32 number_of_items); 
 // bool ui_begin_vertical_expanded(UI_Context *ctx, const char *title,   Rect rect, i32 number_of_items);
+
+/// render a panel
+void ui_panel(UI_Context *ctx, i32 number_of_items, UI_LAYOUTS layout);
 
 /// render a label using context.
 void ui_label(UI_Context *ctx, const char *title);
 
 /// render a button using context. returns true if the button is pressed
-bool ui_button(UI_Context *ctx, const char *string);
+bool ui_button(UI_Context *ctx, UI_ID id, const char *string);
 
 /// draw a simple button. returns true if the button is pressed
 bool ui_draw_quick_button(UI_Context *ui_context, Rect rect, const char *text, UI_Theme *theme);

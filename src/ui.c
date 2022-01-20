@@ -99,67 +99,69 @@ bool ui_draw_quick_button(UI_Context *ui_context, Rect rect, const char *text, U
 }
 
 /// render a panel for other widgets
-bool ui_begin_horizontal(UI_Context *ctx, const char *title, Rect rect) {
+bool ui_begin(UI_Context *ctx, Rect rect, i32 number_of_items, UI_LAYOUTS layout) {
     bool result = true; // return true by default
     ctx->current_rect = rect;
-    ctx->layout = UI_LAYOUT_HORIZONTAL;
-    ctx->current_rect.w = 32;
+    ctx->layout = layout;
+
+    switch (ctx->layout) {
+        case UI_LAYOUT_HORIZONTAL: {
+            if (number_of_items > 0) {
+                ctx->advance_by = rect.w / number_of_items;
+            } else {
+                ctx->advance_by = 32;
+            }
+            ctx->current_rect.w = ctx->advance_by;
+        } break;
+
+        case UI_LAYOUT_VERTICAL: {
+            if (number_of_items > 0) {
+                ctx->advance_by = rect.h / number_of_items;
+            } else {
+                ctx->advance_by = 32;
+            }
+            ctx->current_rect.h = ctx->advance_by;
+        } break;
+    }
 
     // -- render background
     render_rect_filled_color(ctx->renderer->sdl_renderer, rect, ctx->theme->color_panel_base);
-    // -- render title
-    ui_label(ctx, title);
     return result;
 }
-bool ui_begin_vertical(UI_Context *ctx, const char *title, Rect rect) {
-    bool result = true; // return true by default
-    ctx->current_rect = rect;
-    ctx->layout = UI_LAYOUT_VERTICAL;
-    ctx->current_rect.h = 32;
 
-    // -- render background
-    render_rect_filled_color(ctx->renderer->sdl_renderer, rect, ctx->theme->color_panel_base);
-    // -- render title
-    ui_label(ctx, title);
-    return result;
+/// render a panel
+void ui_panel(UI_Context *ctx, i32 number_of_items, UI_LAYOUTS layout) {
+    Rect rect = ctx->current_rect;
+    ui_context_increase_advance_by(ctx);
 }
 
 /// render a button using context
-bool ui_button(UI_Context *ctx, const char *string) {
+bool ui_button(UI_Context *ctx, UI_ID id, const char *string) {
     bool result = false;
     Rect rect = ctx->current_rect;
-    ui_advance_context(ctx, rect);
-
-    RGBA color = ctx->theme->color_base;
+    ui_context_increase_advance_by(ctx);
     
-    UI_STATES button_state = UI_STATES_NORMAL;
-    { // -- get button state
-        if (ctx->is_mouse_busy == false) {
-            Vec2i mouse_pos = ctx->mouse_pos;
-            if (SDL_PointInRect(&mouse_pos, &rect) == true) {
-                button_state = UI_STATES_SELECTED;
-                if (ctx->is_mouse_left_pressed) {
-                    button_state = UI_STATES_PRESSED;
-                }
-            }
-        }
-    }
+    bool mouse_up        = !ctx->is_mouse_left_pressed;
+    bool mouse_down      = !mouse_up;
+    bool mouse_is_inside = SDL_PointInRect(&ctx->mouse_pos, &rect);
+    RGBA color = ctx->theme->color_base;
 
-    switch (button_state) {
-        case UI_STATES_NORMAL: {
-            color = ctx->theme->color_base;
-        } break;
-        case UI_STATES_SELECTED: {
-            color = ctx->theme->color_selected;
-        } break;
-        case UI_STATES_PRESSED: {
-            color = ctx->theme->color_pressed;
-            result = true;
-        } break;
-        case UI_STATES_DISABLED: {
-            color = ctx->theme->color_disabled;
-        } break;
+    if (ctx->active == id) {
+        if (mouse_up) {
+            if (ctx->hot == id) result = true; // mouse up while hovering over button
+            ctx->active = -1; // we're no longer active
+        }
+    } else if (ctx->hot == id) {
+        if (mouse_down) ctx->active = id; // we're now active
     }
+    if (mouse_is_inside) {
+        // if no other item is active, make us hot
+        if (ctx->active == -1) ctx->hot = id;
+    }
+    else if (ctx->hot == id) ctx->hot = -1;
+
+    if (ctx->hot    == id) color = ctx->theme->color_selected;
+    if (ctx->active == id) color = ctx->theme->color_pressed;
 
     // -- base
     render_rect_filled_color(ctx->renderer->sdl_renderer, rect, color);
@@ -174,17 +176,17 @@ bool ui_button(UI_Context *ctx, const char *string) {
 /// render a label using context.
 void ui_label(UI_Context *ctx, const char *title) {
     Rect rect = ctx->current_rect;
-    ui_advance_context(ctx, rect);
+    ui_context_increase_advance_by(ctx);
 
     render_string(ctx->renderer, title, rect, true);
 }
 
 /// Advance the UI_Context.current_rect attributes based on the latest widget rect
-void ui_advance_context(UI_Context *ctx, Rect rect) {
+void ui_context_increase_advance_by(UI_Context *ctx) {
     if (ctx->layout == UI_LAYOUT_VERTICAL) {
-        ctx->current_rect.y += rect.h;
+        ctx->current_rect.y += ctx->advance_by;
     } else
     if (ctx->layout == UI_LAYOUT_HORIZONTAL) {
-        ctx->current_rect.x += rect.w;
+        ctx->current_rect.x += ctx->advance_by;
     }
 }

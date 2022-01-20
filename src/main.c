@@ -15,6 +15,8 @@ int main (int argc, char *argv[]) {
     init_app(app);    
 
     UI_Context context = {0};
+    context.active = -1;
+    context.hot    = -1;
     context.renderer = app->renderer;
     context.theme = app->ui_theme; // @incomplete move ui_theme to ctx struct
 
@@ -45,10 +47,13 @@ int main (int argc, char *argv[]) {
         ui_update_context(&context);
 
         // -- ctx ui test
-        if (ui_begin(&context, "test panel", (Rect) {20, 20, 300, 400}, UI_LAYOUT_VERTICAL)) {
+        if (ui_begin(&context, (Rect) {20, 20, 300, 400}, 3, UI_LAYOUT_VERTICAL)) {
             ui_label(&context, "test_label");
-            if (ui_button(&context, "test button")) {
-                printf("pressed\n");
+            if (ui_button(&context, 1, "button 1")) {
+                printf("button 1 pressed\n");
+            }
+            if (ui_button(&context, 2, "button 2")) {
+                printf("button 2 pressed\n");
             }
         }
 
