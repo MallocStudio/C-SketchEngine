@@ -18,6 +18,12 @@ void render_rect_filled(SDL_Renderer *sdl_renderer, Rect rect);
 /// renders a filled rectangle using global_app->sdl_renderer using the given color.
 /// the render color is set back to whatever it was before this procedure
 void render_rect_filled_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color);
+/// render a rectangle border
+void render_rect(SDL_Renderer *sdl_renderer, Rect rect);
+/// render a rectangle border based on the given color.
+void render_rect_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color);
+/// render a filled circle
+void render_circle_filled(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 radius); 
 /// render text
 void render_text(SDL_Renderer *sdl_renderer, Text *text, int x, int y);
 /// render text within the given rect

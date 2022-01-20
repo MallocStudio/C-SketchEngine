@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "renderer.h"
+#include "input.h"
 
 ///
 void ui_init_button (UI_Button *button, Text *text, UI_Theme *theme) {
@@ -64,4 +65,39 @@ void ui_init_theme (UI_Theme *theme) {
     theme->color_selected = (RGBA){1.f, 0.4f, 0.4f, 1.f};
     theme->color_disabled = (RGBA){0.4f, 0.4f, 0.4f, 1.f};
     theme->color_transition_amount = 0.025f;
+}
+
+/// render a rearrangable rect
+void ui_render_floating_rect(Renderer *renderer, Rect *rect) {
+    bool is_pressed;
+    Vec2i mouse_pos = get_mouse_pos(&is_pressed, NULL);
+    f32 button_radius = 16.f;
+    Vec2i move_button = {rect->x, rect->y};
+    Vec2i resize_button = {rect->x + rect->w, rect->y + rect->h};
+    bool is_move = false, is_resize = false;
+    
+    if (is_pressed) {
+        if (point_in_circle(mouse_pos, move_button, button_radius)) {
+            is_move = true;
+        }
+        if (point_in_circle(mouse_pos, resize_button, button_radius)) {
+            is_resize = true;
+        }
+    }
+
+    if (is_move) {
+        rect->x = mouse_pos.x;
+        rect->y = mouse_pos.y;
+    }
+    if (is_resize) {
+        rect->w = mouse_pos.x - rect->x;
+        rect->h = mouse_pos.y - rect->y;
+        rect->w = SDL_clamp(rect->w, button_radius, 9999999);
+        rect->h = SDL_clamp(rect->h, button_radius, 9999999);
+    }
+    render_rect_color(renderer->sdl_renderer, *rect, (RGBA) {1, 0, 0, 1});
+    set_render_draw_color_rgba(renderer->sdl_renderer, (RGBA) {1, 0, 0, 1});
+    render_circle_filled(renderer->sdl_renderer, move_button.x, move_button.y, button_radius);
+    render_circle_filled(renderer->sdl_renderer, resize_button.x, resize_button.y, button_radius);
+    reset_render_draw_color(renderer->sdl_renderer);
 }

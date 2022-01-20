@@ -39,6 +39,7 @@ void init_text_dynamic(Text *text, SDL_Renderer *renderer, const char *data, TTF
     text->renderer = renderer;
     text->surface = surface;
     text->texture = SDL_CreateTextureFromSurface(renderer, text->surface);
+    ERROR_ON_NULL_SDL(text->texture, "init_text_dynamic");
 }
 
 /// frees text itself
@@ -58,9 +59,9 @@ void set_text_color(Text *text, RGBA color) {
     SDL_FreeSurface(text->surface);
     SDL_DestroyTexture(text->texture);
     text->surface = TTF_RenderText_Solid(text->font, text->buffer, rgba_to_sdl_color(&color));
-    ERROR_ON_NULL_SDL(text->surface);
+    ERROR_ON_NULL_SDL(text->surface, "set_text_color");
     text->texture = SDL_CreateTextureFromSurface(text->renderer, text->surface);
-    ERROR_ON_NULL_SDL(text->texture);
+    ERROR_ON_NULL_SDL(text->texture, "set_text_color");
 }
 
 /// returns the rect of the texture based on font.
@@ -94,10 +95,12 @@ void deinit_glyphs (Glyphs *glyphs) {
 
 /// inits the given text based on the given glyphs
 void generate_text_from_glyphs (Text *result, SDL_Renderer *renderer, Glyphs *glyphs, const char *string) {
-    int width;
-    int height;
-    Uint32 rmask, gmask, bmask, amask;
+    int string_width;
+    int string_height;
+    TTF_SizeText(glyphs->font, string, &string_width, &string_height);
+
     // SDL interprets each pixel as a 32-bit number, so our masks must depend on the endianness (byte order) of the machine
+    Uint32 rmask, gmask, bmask, amask;
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN
         rmask = 0xff000000;
         gmask = 0x00ff0000;
@@ -109,22 +112,24 @@ void generate_text_from_glyphs (Text *result, SDL_Renderer *renderer, Glyphs *gl
         bmask = 0x00ff0000;
         amask = 0xff000000;
     #endif
-    TTF_SizeText(glyphs->font, string, &width, &height);
-    SDL_Surface *result_surface = SDL_CreateRGBSurface(0, width, height, 32, rmask, gmask, bmask, amask);
+    
+    SDL_Surface *result_surface = SDL_CreateRGBSurface(0, string_width, string_height, 32, rmask, gmask, bmask, amask);
+    
     int offset_from_prev_glyph = 0;
     for (int i = 0; i < strlen(string); ++i) {
-        int glyph_index = UNICODE_TO_GLYPH_INDEX((int)string[i]);
-        
         // -- calculate where to put this glyph on the destination surface (result_surface)
         Rect dest_rect = {0};
         int minx, maxx, miny, maxy, advance;
         TTF_GlyphMetrics(glyphs->font, string[i], &minx, &maxx, &miny, &maxy, &advance);
-        // advance -= 16;
+
+        dest_rect.x = offset_from_prev_glyph;
+        dest_rect.y = 0;
         dest_rect.w = advance;
         dest_rect.h = maxy - miny;
-        dest_rect.x = offset_from_prev_glyph;
+        
         offset_from_prev_glyph += dest_rect.w; // advance offset
-        dest_rect.y = 0;
+
+        int glyph_index = UNICODE_TO_GLYPH_INDEX((int)string[i]);
         SDL_BlitSurface(glyphs->glyph[glyph_index], NULL, result_surface, &dest_rect);
     }
     // -- init the text

@@ -9,8 +9,8 @@
 #include <memory.h>
 
 #define new(type) ( type *) malloc (sizeof( type ))
-#define ERROR_ON_NOTZERO_SDL(x) if( x != 0) print_sdl_error();
-#define ERROR_ON_NULL_SDL(x) if( x == NULL) print_sdl_error();
+#define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
+#define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
 ///
 typedef struct {
@@ -31,5 +31,7 @@ static f32 delta_time;
 /// debugging for SDL2
 void print_sdl_error();
 void print_ttf_error();
+
+bool point_in_circle(Vec2i point, Vec2i circle_pos, f32 radius);
 
 #endif //CORE_H

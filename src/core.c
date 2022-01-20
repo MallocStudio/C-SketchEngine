@@ -6,21 +6,15 @@
 void init_sdl(App *app) {
     app->renderer = new(Renderer);
     // -- SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        print_sdl_error();
-    }
+    ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");
 
     // -- Init window
     app->window = SDL_CreateWindow("My C Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->window_width, app->window_height, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
-    if (app->window == NULL) {
-        print_sdl_error();
-    }
+    ERROR_ON_NULL_SDL(app->window, "init_sdl");
 
     // -- sdl_renderer
     app->renderer->sdl_renderer = SDL_CreateRenderer(app->window, 0, SDL_RENDERER_ACCELERATED);
-    if (app->renderer->sdl_renderer == NULL) {
-        print_sdl_error();
-    }
+    ERROR_ON_NULL_SDL(app->renderer->sdl_renderer, "init_sdl");
     SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
 }
 
@@ -81,9 +75,27 @@ void deinit_app (App *app) {
 
 /// debugging for SDL2
 void print_sdl_error() {
-    printf("ERROR: %s\n", SDL_GetError());
+    const char *error = SDL_GetError();
+    if (strlen(error) <= 0) {
+        int x = 0; // dummy assignment for breakpoints
+    }
+    printf("ERROR: %s\n", error);
 }
 /// debugging for ttf SDL2
 void print_ttf_error() {
-    printf("ERROR: %s\n", TTF_GetError());
+    const char *error = TTF_GetError();
+    if (strlen(error) <= 0) {
+        int x = 0; // dummy assignment for breakpoints
+    }
+    printf("ERROR: %s\n", error);
+}
+
+f32 point_distance(Vec2i p1, Vec2i p2) {
+    int x = p2.x - p1.x;
+    int y = p2.y - p1.y;
+    return (f32)SDL_sqrt(x * x + y * y);
+}
+
+bool point_in_circle(Vec2i point, Vec2i circle_pos, f32 radius) {
+    return point_distance(point, circle_pos) <= radius;
 }

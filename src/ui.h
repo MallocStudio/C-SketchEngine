@@ -18,5 +18,7 @@ typedef enum UI_STATES {
 bool ui_render_button(SDL_Renderer *sdl_renderer, UI_Button *button, UI_Theme *theme);
 /// return the state of a ui button
 UI_STATES ui_get_button_state(UI_Button *button);
+/// render a rearrangable rect
+void ui_render_floating_rect(Renderer *renderer, Rect *rect);
 
 #endif // UI_H

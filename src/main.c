@@ -3,6 +3,7 @@
 #include "core.h"
 #include "renderer.h"
 #include "ui.h"
+#include "input.h"
 
 // -- for delta time calculation
 Uint64 NOW = 0;
@@ -22,7 +23,7 @@ int main (int argc, char *argv[]) {
     // ui_init_button(&button_1, text, app->ui_theme);
     // button_1.rect = (Rect) {100, 100, 128, 48};
     // f32 i = 0;
-
+    Rect rect = (Rect) {100, 100, 60, 48};
     // -- loop
     bool should_close = false;
     while (should_close == false) {
@@ -60,8 +61,9 @@ int main (int argc, char *argv[]) {
         //     printf("haleloya: %f\n", i);
         //     ++i;
         // }
-
-        render_string(app->renderer, "render_string test", (Rect) {100, 100, 32, 0}, false);
+        
+        ui_render_floating_rect(app->renderer, &rect);
+        render_string(app->renderer, "render_string test", rect, true);
 
         // -- swap buffers
         SDL_RenderPresent(app->renderer->sdl_renderer);
