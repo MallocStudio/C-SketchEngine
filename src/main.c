@@ -14,15 +14,10 @@ int main (int argc, char *argv[]) {
     App *app = new(App);
     init_app(app);    
 
-    // // -- text test with button
-    // Text* text = new(Text); // @temp
-    // // init_text(text, app->sdl_renderer, "yo shit it worked again!", font, (RGBA){1, 1, 1, 1});
-    // generate_text_from_glyphs(text, app->renderer->sdl_renderer, app->renderer->glyphs, "yo shit it wooorked!");
+    UI_Context context = {0};
+    context.renderer = app->renderer;
+    context.theme = app->ui_theme; // @incomplete move ui_theme to ctx struct
 
-    // UI_Button button_1;
-    // ui_init_button(&button_1, text, app->ui_theme);
-    // button_1.rect = (Rect) {100, 100, 128, 48};
-    // f32 i = 0;
     Rect rect = (Rect) {100, 100, 60, 48};
     // -- loop
     bool should_close = false;
@@ -44,7 +39,36 @@ int main (int argc, char *argv[]) {
                 SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
             }
         }
-#pragma region // notes 
+
+        SDL_RenderClear(app->renderer->sdl_renderer);
+        // -- draw
+        ui_update_context(&context);
+
+        // -- ctx ui test
+        if (ui_begin(&context, "test panel", (Rect) {20, 20, 300, 400}, UI_LAYOUT_VERTICAL)) {
+            ui_label(&context, "test_label");
+            if (ui_button(&context, "test button")) {
+                printf("pressed\n");
+            }
+        }
+
+        // ui_draw_quick_button(&context, (Rect) {20, 20, 96, 32}, "test", app->ui_theme);
+        // ui_render_floating_rect(&context, &rect);
+        // render_string(app->renderer, "render_string test", rect, true);
+
+        // -- swap buffers
+        SDL_RenderPresent(app->renderer->sdl_renderer);
+    }
+
+    // -- uninit app
+    deinit_app(app);    
+    free(app);
+    
+    printf("prgram closed successfully!\n");
+    return 0;
+}
+
+#pragma region // after -- events in main loop 
         // -- keyboard state
         // SDL_PumpEvents();
         // SDL_GetKeyboardState(app.keyboard);
@@ -55,26 +79,3 @@ int main (int argc, char *argv[]) {
         // if app.surface == nil do sdl_print_error("GetWindowSurface:", sdl.GetError())
         // if sdl.UpdateWindowSurface(app.window) < 0 do sdl_print_error("UpdateWindowSurface:", sdl.GetError())
 #pragma endregion
-        SDL_RenderClear(app->renderer->sdl_renderer);
-        // -- draw
-        // if (ui_render_button(app->renderer->sdl_renderer, &button_1, app->ui_theme)) {
-        //     printf("haleloya: %f\n", i);
-        //     ++i;
-        // }
-        
-        ui_render_floating_rect(app->renderer, &rect);
-        render_string(app->renderer, "render_string test", rect, true);
-
-        // -- swap buffers
-        SDL_RenderPresent(app->renderer->sdl_renderer);
-    }
-
-    // deinit_text(text);     // @temp with text with button test
-
-    // -- uninit app
-    deinit_app(app);    
-    free(app);
-    
-    printf("prgram closed successfully!\n");
-    return 0;
-}

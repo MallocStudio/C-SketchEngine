@@ -17,9 +17,14 @@
 ...
 
 == CURRENT ==
-- [ ] implement dynamic glyphs and text within a rect generator
+- [x] implement dynamic glyphs and text within a rect generator
+- [ ] primitive render functions
 
 == LOG ==
+20 Jan 2022:
++ implemented dynamic glyphs and text within a rect
++ render a floating rectangle that can be moved and resized
+
 6 Jan 2022:
 + able to generate a text based on glyphs -> allows us to arrange the glyphs ourselves
 

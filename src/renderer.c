@@ -34,7 +34,7 @@ void render_rect_filled_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color)
 
 /// render a filled circle
 /// https://stackoverflow.com/questions/38334081/howto-draw-circles-arcs-and-vector-graphics-in-sdl
-void render_circle_filled(SDL_Renderer *sdl_renderer, i32 centreX, i32 centreY, i32 radius) {
+void render_circle(SDL_Renderer *sdl_renderer, i32 centreX, i32 centreY, i32 radius) {
     const i32 diameter = (radius * 2);
 
     int32_t x = (radius - 1);

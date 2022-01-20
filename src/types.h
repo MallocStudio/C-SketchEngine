@@ -81,6 +81,7 @@ typedef struct UI_Theme {
     RGBA color_pressed;
     RGBA color_selected;
     RGBA color_disabled;
+    RGBA color_panel_base;
     f32  color_transition_amount;
 } UI_Theme; void ui_init_theme (UI_Theme *theme);
 #endif // TYPES_H

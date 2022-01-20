@@ -136,18 +136,12 @@ void generate_text_from_glyphs (Text *result, SDL_Renderer *renderer, Glyphs *gl
     init_text_dynamic(result, renderer, string, glyphs->font, glyphs->rgba, result_surface);
 }
 
-// /// simply render the given string using the given font at the given pos
-// void render_string(SDL_Renderer *renderer, TTF_Font *font, const char *string, Vec2i pos) {
-//     Text text;
-//     generate_text_from_glyphs(&text, renderer, 
-// }
-
 ///
 void init_renderer (Renderer *renderer) {
     renderer->glyphs = new(Glyphs);
 
     // -- @temp
-    TTF_Font *font = TTF_OpenFont(DEFAULT_FONT_PATH, 16);
+    TTF_Font *font = TTF_OpenFont(DEFAULT_FONT_PATH, 24);
     if (font == NULL) {
         printf("Error: could not load font at %s\n", DEFAULT_FONT_PATH);
         print_ttf_error();
