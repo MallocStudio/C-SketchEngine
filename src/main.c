@@ -15,12 +15,8 @@ int main (int argc, char *argv[]) {
     init_app(app);    
 
     
-    UI_Context context = {0};
-    context.theme = new(UI_Theme); // ! don't forget to remove the free at the end of this function when deleting these temp stuff
-    ui_init_theme(context.theme);
-    context.active = -1;
-    context.hot    = -1;
-    context.renderer = app->renderer;
+    UI_Context *ctx = new(UI_Context);
+    ui_init_context(ctx, app->renderer);
 
     Rect rect = (Rect) {100, 100, 400, 600};
     // -- loop
@@ -46,27 +42,20 @@ int main (int argc, char *argv[]) {
 
         SDL_RenderClear(app->renderer->sdl_renderer);
         // -- draw
-        ui_update_context(&context);
+        ui_update_context(ctx);
 
         // -- ctx ui test
-        // if (ui_begin(&context, (Rect) {20, 20, 300, 400}, 3, UI_LAYOUT_VERTICAL)) {
-        //     ui_label(&context, "test_label");
-        //     if (ui_button(&context, 1, "button 1")) {
-        //         printf("button 1 pressed\n");
-        //     }
-        //     if (ui_button(&context, 2, "button 2")) {
-        //         printf("button 2 pressed\n");
-        //     }
-        // }
-        ui_begin(&context, &rect);
-        ui_row(&context, 3, 48);
-        if (ui_button(&context, "button 1")) printf("button 1 pressed\n");
-        if (ui_button(&context, "button 2")) printf("button 2 pressed\n");
-        if (ui_button(&context, "button 3")) printf("button 3 pressed\n");
-        ui_row(&context, 1, 32);
-        if (ui_button(&context, "button 4")) printf("button 4 pressed\n");
-        ui_row(&context, 1, 64);
-        if (ui_button(&context, "button 5")) printf("button 5 pressed\n");
+        ui_begin(ctx, &rect);
+        ui_row(ctx, 3, 48);
+        if (ui_button(ctx, "button 1")) printf("button 1 pressed\n");
+        if (ui_button(ctx, "button 2")) printf("button 2 pressed\n");
+        if (ui_button(ctx, "button 3")) printf("button 3 pressed\n");
+        ui_row(ctx, 1, 32);
+        if (ui_button(ctx, "button 4")) printf("button 4 pressed\n");
+        ui_row(ctx, 1, 64);
+        if (ui_button(ctx, "button 5")) printf("button 5 pressed\n");
+        ui_row(ctx, 1, 48);
+        ui_label(ctx, "my labal");
         
         // -- swap buffers
         SDL_RenderPresent(app->renderer->sdl_renderer);
@@ -74,8 +63,9 @@ int main (int argc, char *argv[]) {
 
     // -- uninit app
     deinit_app(app);    
+    ui_deinit_context(ctx);
     free(app);
-    free(context.theme); // @temp move this to deinit_context later
+    free(ctx);
     
     printf("prgram closed successfully!\n");
     return 0;
