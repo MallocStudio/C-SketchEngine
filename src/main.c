@@ -46,15 +46,15 @@ int main (int argc, char *argv[]) {
 
         // -- ctx ui test
         ui_begin(ctx, &rect);
-        ui_row(ctx, 3, 48);
+        ui_row(ctx, 3, 48, 100);
         if (ui_button(ctx, "button 1")) printf("button 1 pressed\n");
         if (ui_button(ctx, "button 2")) printf("button 2 pressed\n");
         if (ui_button(ctx, "button 3")) printf("button 3 pressed\n");
-        ui_row(ctx, 1, 32);
+        ui_row(ctx, 1, 32, 0);
         if (ui_button(ctx, "button 4")) printf("button 4 pressed\n");
-        ui_row(ctx, 1, 64);
+        ui_row(ctx, 1, 64, 0);
         if (ui_button(ctx, "button 5")) printf("button 5 pressed\n");
-        ui_row(ctx, 1, 48);
+        ui_row(ctx, 1, 48, 0);
         ui_label(ctx, "my labal");
         
         // -- swap buffers

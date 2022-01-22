@@ -6,6 +6,25 @@
 /// INTERNAL
 /// --------
 
+/// reset the context values such as rects, at_*, etc
+/// this way we can do it in ui_init_context and ui_begin
+/// also allows us to delay the reset in ui_begin so we can have access
+/// to the infromation from the previous frame
+void ui_context_reset(UI_Context *ctx, Rect *rect) {
+    ctx->current_max_id = UI_ID_NULL;
+    ctx->window_rect = *rect;
+    ctx->view_rect = ctx->window_rect;
+    // @incomplete we have an issue with min_rect. since we reset this here,
+    // we will not be able to remember what the min_rect was from the prev frame.
+    // so for example, we can't use min_rect to limit the resizing of this panel 
+    ctx->min_rect = (Rect) {0, 0, 0, 0};
+    ctx->prev_item_rect = (Rect) {0};
+    ctx->at_x = rect->x;
+    ctx->at_y = rect->y;
+    ctx->at_w = 0;
+    ctx->at_h = 0;
+}
+
 /// call this after rendering a grabable item becomes active
 void ui_update_mouse_grab_pos(UI_Context *ctx) {
     i32 x_offset = ctx->prev_item_rect.x - ctx->mouse_pressed_pos.x;
@@ -50,6 +69,7 @@ void ui_init_context(UI_Context *ctx, Renderer *renderer) {
     ctx->active = UI_ID_NULL;
     ctx->hot    = UI_ID_NULL;
     ctx->renderer = renderer;
+    ui_context_reset(ctx, &((Rect) {0}));
 }
 
 void ui_deinit_context(UI_Context *ctx) {
@@ -76,20 +96,13 @@ void ui_update_context(UI_Context *ctx) {
 }
 
 void ui_begin(UI_Context *ctx, Rect *rect) {
-    ctx->current_max_id = UI_ID_NULL;
-    ctx->window_rect = *rect;
-    ctx->view_rect = ctx->window_rect;
-    ctx->used_rect = (Rect) {rect->x, rect->y, 0, 0};
-    ctx->prev_item_rect = (Rect) {0};
-    ctx->at_x = rect->x;
-    ctx->at_y = rect->y;
-    ctx->at_w = 0;
-    ctx->at_h = 0;
+    Rect prev_min_rect = ctx->min_rect;
+    ui_context_reset(ctx, rect); // @temp we do this here at the end of the function to test if we can have access to prev frame's data
 
     // -- render background
     render_rect_filled_color(ctx->renderer->sdl_renderer, *rect, ctx->theme->color_panel_base);
     // -- move grab button
-    ui_row(ctx, 1, 16);
+    ui_row(ctx, 1, 16, 0);
     // ui_put(ctx);
     // ui_put(ctx);
     // ui_put(ctx);
@@ -103,16 +116,21 @@ void ui_begin(UI_Context *ctx, Rect *rect) {
         ctx->window_rect.y + ctx->window_rect.h - 16, 16, 16})) {
             rect->w = ctx->mouse_pos.x - rect->x + 8;
             rect->h = ctx->mouse_pos.y - rect->y + 8;
-            if (rect->w < 100) rect->w = 100;
-            if (rect->h < 100) rect->h = 100;
+            if (rect->w < prev_min_rect.w) rect->w = prev_min_rect.w;
+            if (rect->h < prev_min_rect.h) rect->h = prev_min_rect.h;
     }
+
 }
 
-void ui_row(UI_Context *ctx, i32 number_of_items, i32 height) {
-    // setup the layout based on the given parameters
+void ui_row(UI_Context *ctx, i32 number_of_items, i32 height, i32 min_width) {
+    // -- setup the layout based on the given parameters
     ctx->at_x = ctx->window_rect.x;                    // reset x
-    ctx->at_y = ctx->window_rect.y + ctx->used_rect.h; // advance down
-    ctx->used_rect.h += height;
+    ctx->at_y = ctx->window_rect.y + ctx->min_rect.h; // advance down
+    // ctx->at_y = ctx->y_advance_by; // advance down
+    
+    // -- update the min rect
+    ctx->min_rect.h += height;
+    if (ctx->min_rect.w < min_width) ctx->min_rect.w = min_width; // @incomplete what happens if we are arranging horizontally? shouldn't min_rect.w be increased like ctx->min_rect.h += height; is?
 
     // -- describe the size of each item within this row
     ctx->at_w = ctx->window_rect.w / number_of_items;

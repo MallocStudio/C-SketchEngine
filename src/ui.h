@@ -48,7 +48,12 @@ typedef struct UI_Context {
     // -- related to rendering other widgets (positioning)
     Rect window_rect;
     Rect view_rect;
-    Rect used_rect;
+
+    // defines the minimum rect used
+    // also the x-y coord define the width and height but going to the left
+    // so by default they are set to zero
+    Rect min_rect;
+    
     Rect prev_item_rect; // the rect of the previously 'put' item
     i32 at_y;
     i32 at_x;
@@ -74,7 +79,7 @@ void ui_put(UI_Context *ctx);
 void ui_begin(UI_Context *ctx, Rect *rect);
 
 /// start a new row
-void ui_row(UI_Context *ctx, i32 number_of_items, i32 height);
+void ui_row(UI_Context *ctx, i32 number_of_items, i32 height, i32 min_width);
 
 /// puts a margin between the previous element and the next, based on
 /// the direction of the layout (might put a margin within a row, or between rows)
