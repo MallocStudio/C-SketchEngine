@@ -53,6 +53,8 @@ typedef struct UI_Context {
     // also the x-y coord define the width and height but going to the left
     // so by default they are set to zero
     Rect min_rect;
+    // the previous frame's min_rect.
+    Rect min_rect_prev_frame;
     
     Rect prev_item_rect; // the rect of the previously 'put' item
     i32 at_y;

@@ -96,13 +96,15 @@ void ui_update_context(UI_Context *ctx) {
 }
 
 void ui_begin(UI_Context *ctx, Rect *rect) {
-    Rect prev_min_rect = ctx->min_rect;
-    ui_context_reset(ctx, rect); // @temp we do this here at the end of the function to test if we can have access to prev frame's data
+    // save what happened the previous frame
+    ctx->min_rect_prev_frame = ctx->min_rect;
+    // reset for this frame
+    ui_context_reset(ctx, rect);
 
     // -- render background
     render_rect_filled_color(ctx->renderer->sdl_renderer, *rect, ctx->theme->color_panel_base);
     // -- move grab button
-    ui_row(ctx, 1, 16, 0);
+    ui_row(ctx, 1, 16, 200);
     // ui_put(ctx);
     // ui_put(ctx);
     // ui_put(ctx);
@@ -116,8 +118,8 @@ void ui_begin(UI_Context *ctx, Rect *rect) {
         ctx->window_rect.y + ctx->window_rect.h - 16, 16, 16})) {
             rect->w = ctx->mouse_pos.x - rect->x + 8;
             rect->h = ctx->mouse_pos.y - rect->y + 8;
-            if (rect->w < prev_min_rect.w) rect->w = prev_min_rect.w;
-            if (rect->h < prev_min_rect.h) rect->h = prev_min_rect.h;
+            if (rect->w < ctx->min_rect_prev_frame.w) rect->w = ctx->min_rect_prev_frame.w;
+            if (rect->h < ctx->min_rect_prev_frame.h) rect->h = ctx->min_rect_prev_frame.h;
     }
 
 }

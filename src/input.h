@@ -3,7 +3,7 @@
 
 #include "core.h"
 
-/// get the mouse position. Optionally pass bools to get mouse state
+/// get the mouse position (relative to the window). Optionally pass bools to get mouse state
 Vec2i get_mouse_pos(bool *lpressed, bool *rpressed);
 
 #endif // INPUT_H
