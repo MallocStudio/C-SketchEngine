@@ -13,7 +13,6 @@ int main (int argc, char *argv[]) {
     // -- initialise app
     App *app = new(App);
     init_app(app);    
-
     
     UI_Context *ctx = new(UI_Context);
     ui_init_context(ctx, app->renderer);
@@ -54,8 +53,8 @@ int main (int argc, char *argv[]) {
         if (ui_button(ctx, "button 4")) printf("button 4 pressed\n");
         ui_row(ctx, 1, 64, 0);
         if (ui_button(ctx, "button 5")) printf("button 5 pressed\n");
-        ui_row(ctx, 1, 48, 0);
-        ui_label(ctx, "my labal");
+        ui_row(ctx, 1, 200, 0);
+        ui_label(ctx, "ma danny long text lalbal blbll balaha labal increasing text to take even more space to test the wrapping functionality");
         
         // -- swap buffers
         SDL_RenderPresent(app->renderer->sdl_renderer);

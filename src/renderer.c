@@ -1,4 +1,14 @@
 #include "renderer.h"
+#include <assert.h>
+
+/// -------- ///
+/// INTERNAL ///
+/// -------- ///
+
+
+/// ------ ///
+/// PUBLIC ///
+/// ------ ///
 
 /// set sdl_renderer draw color and print out any errors
 void set_render_draw_color_raw(SDL_Renderer *sdl_renderer, u8 r, u8 g, u8 b, u8 a) {
@@ -88,75 +98,20 @@ void render_text_at_rect_clipped(SDL_Renderer *sdl_renderer, Text *text, Rect re
 
     ERROR_ON_NOTZERO_SDL(SDL_RenderCopy(sdl_renderer, text->texture, &srcrect, &destrect), "render_text_at_rect_clipped");
 }
-
-/// generates the text based on the renderer's glyphs. It wraps the text within the given rect
-void generate_text_from_glyphs_rect (Text *result, SDL_Renderer *renderer, Glyphs *glyphs, const char *string, Rect rect) {
-    // SDL interprets each pixel as a 32-bit number, so our masks must depend on the endianness (byte order) of the machine
-    Uint32 rmask, gmask, bmask, amask;
-    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        rmask = 0xff000000;
-        gmask = 0x00ff0000;
-        bmask = 0x0000ff00;
-        amask = 0x000000ff;
-    #else
-        rmask = 0x000000ff;
-        gmask = 0x0000ff00;
-        bmask = 0x00ff0000;
-        amask = 0xff000000;
-    #endif
-    int string_width;
-    int string_height;
-    TTF_SizeText(glyphs->font, string, &string_width, &string_height);
-    // -- create the surface we will generate the text on
-    SDL_Surface *result_surface = SDL_CreateRGBSurface(0, rect.w, rect.h, 32, rmask, gmask, bmask, amask);
-    ERROR_ON_NULL_SDL(result_surface, "generate_text_from_glyphs_rect");
     
-    int offset_from_prev_glyph_h = 0; // horizontal
-    int offset_from_prev_glyph_v = 0; // vertical
-
-    for (int i = 0; i < strlen(string); ++i) { // loop through each letter
-        // -- calculate where to put this glyph on the destination surface (result_surface)
-        Rect dest_rect = {0};
-        int minx, maxx, miny, maxy, advance;
-        TTF_GlyphMetrics(glyphs->font, string[i], &minx, &maxx, &miny, &maxy, &advance);
-
-        dest_rect.x = offset_from_prev_glyph_h;
-        dest_rect.y = offset_from_prev_glyph_v;
-        dest_rect.w = advance;
-        dest_rect.h = maxy - miny;
-
-        offset_from_prev_glyph_h += dest_rect.w; // advance offset
-        if (offset_from_prev_glyph_h + dest_rect.w  >= rect.w) {
-            offset_from_prev_glyph_h = 0; // wrap around
-            offset_from_prev_glyph_v += string_height; 
-        }
-        if (dest_rect.y + dest_rect.h > rect.h) break; // don't render past rect.h
-
-        int glyph_index = UNICODE_TO_GLYPH_INDEX((int)string[i]); // get the surface's index
-        ERROR_ON_NOTZERO_SDL(SDL_BlitSurface(
-            glyphs->glyph[glyph_index], 
-            NULL, // NULL so that the whole surface of the glyph is copied
-            result_surface, 
-            &dest_rect), "generate_text_from_glyphs_rect");
-    }
-    // -- init the text
-    init_text_dynamic(result, renderer, string, glyphs->font, glyphs->rgba, result_surface);
-}
-
-/// render string within the given rect. if rect's width and height are zero, this function will not confine the text within the rect
-void render_string(Renderer *renderer, const char *string, Rect rect, bool wrapped) {
-    // @incomplete if rect dimension's zero, sdl will fail. Come up with something to deal with that universally
+void render_string(Renderer *renderer, const char *string, Rect rect, u32 style_flags) {
     if (rect.h <= 0) return;
     if (rect.w <= 0) return;
     Text text;
-    if (wrapped) {
-        // generate_text_from_glyphs(&text, renderer->sdl_renderer, renderer->glyphs, string);
-        generate_text_from_glyphs_rect(&text, renderer->sdl_renderer, renderer->glyphs, string, rect);
-        ERROR_ON_NOTZERO_SDL(SDL_RenderCopy(renderer->sdl_renderer, text.texture, NULL, &rect), "render_text");
-    } else {
-        generate_text_from_glyphs(&text, renderer->sdl_renderer, renderer->glyphs, string);
-        render_text_at_rect_clipped(renderer->sdl_renderer, &text, rect);
-    }
+
+    generate_text_from_glyphs(&text, renderer->sdl_renderer, renderer->glyphs, string, rect, style_flags);
+    ERROR_ON_NOTZERO_SDL(SDL_RenderCopy(renderer->sdl_renderer, text.texture, NULL, &rect), "render_text");
+    // if (style_flags & STRING_STYLE_ALIGN_CENTER) {
+    //     // generate_text_from_glyphs(&text, renderer->sdl_renderer, renderer->glyphs, string);
+    // } else {
+    //     // generate_text_from_glyphs(&text, renderer->sdl_renderer, renderer->glyphs, string);
+    //     // render_text_at_rect_clipped(renderer->sdl_renderer, &text, rect);
+    // }
     deinit_text(&text);
 }
 
@@ -176,4 +131,58 @@ void render_rect_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color) {
     render_rect(sdl_renderer, rect);
 
     ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, prev_color[0], prev_color[1], prev_color[2], prev_color[3]), "render_rect_filled_color");
+}
+
+void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, const char *string, u32 string_len, Rect rect) {
+    /// ---------------- ///
+    ///        y         ///
+    ///   -----------    ///
+    ///   |our cente|    ///
+    /// x |red text | x  ///  rect.h
+    ///   |padding  |    /// 
+    ///   -----------    ///
+    ///        y         ///
+    /// ---------------- ///
+    ///     rect.w
+    i32 string_height;
+    i32 string_width;
+    TTF_SizeText(glyphs->font, string, &string_width, &string_height);
+    f32 pad_amount = 0.125f; // to center
+    Rect text_box_padded = {
+        rect.w * pad_amount,
+        0,
+        rect.w - rect.w * pad_amount,
+        rect.h
+    };
+    i32 x_offset = text_box_padded.x;
+    i32 y_offset = text_box_padded.y;
+
+    // -- arrange the letters within the text box
+    // ! we use string_len, because this could be a sub string without the null termination
+    for (int i = 0; i < string_len; ++i) { // loop through each letter
+        // calculate where to put this glyph on the destination surface (result_surface)
+        Rect dest_rect = {0};
+        int minx, maxx, miny, maxy, advance;
+        TTF_GlyphMetrics(glyphs->font, string[i], &minx, &maxx, &miny, &maxy, &advance);
+
+        dest_rect.x = x_offset;
+        dest_rect.y = y_offset;
+        dest_rect.w = advance;
+        dest_rect.h = maxy - miny;
+
+        x_offset += dest_rect.w; // advance offset
+
+        if (x_offset + dest_rect.w  >= text_box_padded.w) {
+            x_offset = text_box_padded.x; // wrap around
+            y_offset += string_height;
+        }
+        if (dest_rect.y + dest_rect.h > text_box_padded.h) break; // break out early for efficiency
+
+        int glyph_index = UNICODE_TO_GLYPH_INDEX((int)string[i]); // get the surface's index
+        ERROR_ON_NOTZERO_SDL(SDL_BlitSurface(
+            glyphs->glyph[glyph_index], 
+            NULL, // NULL so that the whole surface of the glyph is copied
+            result_surface, 
+            &dest_rect), "render_glyphs_onto_surface");
+    }
 }

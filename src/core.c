@@ -1,6 +1,7 @@
 #include "core.h"
 #include "renderer.h"
 #include "ui.h"
+#include <assert.h>
 
 /// init SDL stuff
 void init_sdl(App *app) {
@@ -94,3 +95,47 @@ f32 point_distance(Vec2i p1, Vec2i p2) {
 bool point_in_circle(Vec2i point, Vec2i circle_pos, f32 radius) {
     return point_distance(point, circle_pos) <= radius;
 }
+
+// /// ------------- ///
+// /// Dynamic Array ///
+// /// ------------- ///
+
+// // -------------- //
+// // -- INTERNAL -- //
+// // -------------- //
+
+// /// return the sizeof(array->type)
+// u32 dynamic_array_get_data_type_size(Dynamic_Array *array) {
+//     u32 data_size = 0;
+//     switch (array->type) {
+//         case TYPE_VOID: data_size = sizeof(void*); break;
+//         case TYPE_I32 : data_size = sizeof  (i32); break;
+//         case TYPE_F32 : data_size = sizeof  (f32); break;
+//     }
+//     return data_size;
+// }
+
+// void dynamic_array_resize(u32 size) {
+
+// }
+
+// // -------------- //
+// // --- PUBLIC --- //
+// // -------------- //
+// void dynamic_array_init(Dynamic_Array *array, i32 capacity, TYPES type) {
+//     assert (type != TYPE_UNDEFINED && "dynamic_array_init: we currently don't support TYPE_UNDEFINED");
+//     array->num_of_entries = 0;
+//     array->type = type;
+//     u32 data_size = dynamic_array_get_data_type_size(array);
+//     array->capacity = capacity;
+//     array->data = malloc(data_size * capacity);
+// }
+
+// void dynamic_array_add_int(Dynamic_Array *array, i32 data) {
+//     assert(array->type == TYPE_I32 && "dynamic_array_add_int: type mismatch");
+//     // -- see if we need to resize the buffer
+//     // -- add the entry
+//     u32 data_size = dynamic_array_get_data_type_size(array);
+//     array->data[array->num_of_entries * data_size] = data;
+//     array->num_of_entries++;
+// }

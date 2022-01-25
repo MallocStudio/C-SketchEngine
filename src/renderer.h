@@ -13,8 +13,15 @@ void render_text(SDL_Renderer *sdl_renderer, Text *text, int x, int y);
 /// render text within the given rect
 void render_text_at_rect_clipped(SDL_Renderer *sdl_renderer, Text *text, Rect rect);
 
-/// render string within the given rect. if rect's width and height are zero, this function will not confine the text within the rect
-void render_string(Renderer *renderer, const char *string, Rect rect, bool wrapped);
+/// render string within the given rect.
+/// this procedure will return if the width or height of the rect is <= zero
+/// Use the flags to style and position the text within the rect.
+#define STRING_STYLE_NONE          (0)
+#define STRING_STYLE_ALIGN_LEFT    (1 << 0)
+#define STRING_STYLE_ALIGN_RIGHT   (1 << 1)
+#define STRING_STYLE_ALIGN_CENTER  (1 << 2)
+#define STRING_STYLE_VALIGN_CENTER (1 << 3)
+void render_string(Renderer *renderer, const char *string, Rect rect, u32 style_flags);
 
 /// set sdl_renderer draw color and print out any errors. NOTE that the VALUES must be from 0 - 255
 void set_render_draw_color_raw(SDL_Renderer *sdl_renderer, u8 r, u8 g, u8 b, u8 a);
@@ -40,4 +47,10 @@ void render_rect_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color);
 
 /// render a filled circle
 void render_circle(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 radius);
+
+/// generates the text based on the renderer's glyphs. It wraps the text within the given rect
+/// wraps the text if string_width is greater than rect.
+/// but the text will only be visible within the boundaries of rect
+/// "rect" refers to an area in the result_surface
+void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, const char *string, u32 string_len, Rect rect);
 #endif // RENDERER_H

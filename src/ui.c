@@ -179,7 +179,7 @@ bool ui_button(UI_Context *ctx, const char *string) {
     render_rect_filled_color(ctx->renderer->sdl_renderer, rect, color);
     // -- text
     if (string != NULL) {
-        render_string(ctx->renderer, string, rect, true);
+        render_string(ctx->renderer, string, rect, STRING_STYLE_ALIGN_CENTER);
     }
 
     return result;
@@ -234,7 +234,7 @@ void ui_label(UI_Context *ctx, const char *title) { // todo add back
         ctx->at_x, ctx->at_y, ctx->at_w, ctx->at_h
     };
     ui_put(ctx);
-    render_string(ctx->renderer, title, rect, true);
+    render_string(ctx->renderer, title, rect, STRING_STYLE_ALIGN_CENTER);
 }
 
 void ui_put (UI_Context *ctx) {
