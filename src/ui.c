@@ -235,6 +235,7 @@ void ui_label(UI_Context *ctx, const char *title) { // todo add back
     };
     ui_put(ctx);
     render_string(ctx->renderer, title, rect, STRING_STYLE_ALIGN_CENTER);
+    render_rect_color(ctx->renderer->sdl_renderer, rect, (RGBA) {1, 0, 0, 1});
 }
 
 void ui_put (UI_Context *ctx) {

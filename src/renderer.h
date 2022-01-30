@@ -52,5 +52,5 @@ void render_circle(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 radius);
 /// wraps the text if string_width is greater than rect.
 /// but the text will only be visible within the boundaries of rect
 /// "rect" refers to an area in the result_surface
-void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, const char *string, u32 string_len, Rect rect);
+void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, const char *string, Rect rect);
 #endif // RENDERER_H

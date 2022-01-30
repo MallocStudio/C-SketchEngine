@@ -133,32 +133,22 @@ void render_rect_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color) {
     ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, prev_color[0], prev_color[1], prev_color[2], prev_color[3]), "render_rect_filled_color");
 }
 
-void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, const char *string, u32 string_len, Rect rect) {
-    /// ---------------- ///
-    ///        y         ///
-    ///   -----------    ///
-    ///   |our cente|    ///
-    /// x |red text | x  ///  rect.h
-    ///   |padding  |    /// 
-    ///   -----------    ///
-    ///        y         ///
-    /// ---------------- ///
-    ///     rect.w
+void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, const char *string, Rect rect) {
     i32 string_height;
     i32 string_width;
     TTF_SizeText(glyphs->font, string, &string_width, &string_height);
     f32 pad_amount = 0.125f; // to center
-    Rect text_box_padded = {
-        rect.w * pad_amount,
-        0,
-        rect.w - rect.w * pad_amount,
+    Rect text_box_padded = {                        // rect but padded
+        rect.x,// rect.x + rect.w * pad_amount,
+        rect.y,
+        rect.w,//rect.w - rect.w * pad_amount,
         rect.h
     };
     i32 x_offset = text_box_padded.x;
     i32 y_offset = text_box_padded.y;
 
     // -- arrange the letters within the text box
-    // ! we use string_len, because this could be a sub string without the null termination
+    i32 string_len = SDL_strlen(string);
     for (int i = 0; i < string_len; ++i) { // loop through each letter
         // calculate where to put this glyph on the destination surface (result_surface)
         Rect dest_rect = {0};
@@ -176,7 +166,7 @@ void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, co
             x_offset = text_box_padded.x; // wrap around
             y_offset += string_height;
         }
-        if (dest_rect.y + dest_rect.h > text_box_padded.h) break; // break out early for efficiency
+        // if (dest_rect.y + dest_rect.h > text_box_padded.h) break; // break out early for efficiency
 
         int glyph_index = UNICODE_TO_GLYPH_INDEX((int)string[i]); // get the surface's index
         ERROR_ON_NOTZERO_SDL(SDL_BlitSurface(

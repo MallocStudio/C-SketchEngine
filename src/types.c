@@ -114,50 +114,63 @@ void generate_text_from_glyphs (Text *result, SDL_Renderer *renderer, Glyphs *gl
     ERROR_ON_NULL_SDL(result_surface, "generate_text_from_glyphs");
 
     if (style_flags & STRING_STYLE_ALIGN_CENTER) {
-        i32 string_height;
-        i32 string_width;
-        TTF_SizeText(glyphs->font, string, &string_width, &string_height);
+        // i32 string_height;
+        // i32 string_width;
+        // TTF_SizeText(glyphs->font, string, &string_width, &string_height);
 
-        // -- find the number of lines
-        i32 number_of_lines = 0;
-        i32 x_offset = 0;
-        i32 y_offset = 0;
-        i32 string_index_begin = 0;
-        i32 string_index_end   = 0;
-        for (i32 i = 0; i < strlen(string); ++i) {
-            Rect text_size = {0};
-            i32 minx, maxx, miny, maxy, advance;
-            TTF_GlyphMetrics(glyphs->font, string[i], &minx, &maxx, &miny, &maxy, &advance);
+        // // -- find the number of lines
+        // i32 number_of_lines = 0;
+        // i32 x_offset = 0;
+        // i32 y_offset = 0;
+        // i32 string_index_begin = 0;
+        // i32 string_index_end   = 0;
+        // for (i32 i = 0; i < strlen(string); ++i) {
+        //     Rect letter_size = {0}; // used to determine the size of each letter
+        //     i32 minx, maxx, miny, maxy, advance;
+        //     TTF_GlyphMetrics(glyphs->font, string[i], &minx, &maxx, &miny, &maxy, &advance);
 
-            text_size.x = x_offset;
-            text_size.y = y_offset;
-            text_size.w = advance;
-            text_size.h = maxy - miny;
+        //     letter_size.x = x_offset;
+        //     letter_size.y = y_offset;
+        //     letter_size.w = advance;
+        //     letter_size.h = maxy - miny;
             
-            x_offset += text_size.w; // advance offset
-            if (x_offset + text_size.w  >= rect.w) { // we've reached the end of this line
-                number_of_lines++;
-                // create a sub text and copy from string to line_text
-                u32 line_text_len = string_index_end - string_index_begin;
-                char line_text[line_text_len];
-                for (i32 letter_index = 0; letter_index < string_index_end; ++letter_index) {
-                    line_text[letter_index] = string[string_index_begin + letter_index];
-                }
-                // generate the glyphs for this line
-                render_glyphs_onto_surface(result_surface, glyphs, line_text, line_text_len, (Rect) {
-                    rect.x, rect.y, string_width, string_height
-                });
-                // reset offsets and go to the next line
-                string_index_begin = string_index_end;
-                x_offset = 0;
-                y_offset += string_height;
-            }
-            if (text_size.y + text_size.h > rect.h) break; // break out early for efficiency
-            string_index_end++; // increase index end
-        }
+        //     x_offset += letter_size.w; // advance offset
+        //     if (x_offset + letter_size.w  >= rect.w) { // we've reached the end of this line
+        //         // create a sub text and copy from string to line_text
+        //         u32 line_text_len = string_index_end - string_index_begin;
+        //         char line_text[line_text_len + 1];
+        //         for (i32 letter_index = 0; letter_index < line_text_len; ++letter_index) {
+        //             line_text[letter_index] = string[string_index_begin + letter_index];
+        //         }
+        //         line_text[line_text_len] = '\0'; // end the sub text with a null terminator
 
+        //         // get the size of the line
+        //         i32 line_text_width, line_text_height;
+        //         TTF_SizeText(glyphs->font, line_text, &line_text_width, &line_text_height);
+        //         if (x_offset < rect.w) {
+        //             x_offset = (rect.w - line_text_width) * 0.5f; // center the line if line_width is less than rect.w
+        //         }
+        //         // generate the glyphs for this line
+        //         render_glyphs_onto_surface(result_surface, glyphs, line_text, (Rect) {
+        //             x_offset, y_offset, rect.w, rect.h
+        //         });
+
+        //         // reset offsets and go to the next line
+        //         string_index_begin = string_index_end;
+        //         x_offset = 0;
+        //         y_offset += string_height;
+
+        //         // after rendering the line, go to the next line
+        //         number_of_lines++;
+        //     }
+        //     // if (letter_size.y + letter_size.h > rect.h) break; // break out early for efficiency
+        //     string_index_end++; // increase index end
+        // }
+
+        render_glyphs_onto_surface(result_surface, glyphs, string, (Rect) {0, 0, result_surface->w, result_surface->h});
     } else {
-        render_glyphs_onto_surface(result_surface, glyphs, string, SDL_strlen(string), rect);
+        // render_glyphs_onto_surface(result_surface, glyphs, string, rect);
+        render_glyphs_onto_surface(result_surface, glyphs, string, (Rect) {0, 0, result_surface->w, result_surface->h});
     }
     // int offset_from_prev_glyph = 0;
     // for (int i = 0; i < strlen(string); ++i) {
