@@ -22,8 +22,9 @@ void init_text(Text *text, SDL_Renderer *renderer, const char *data, TTF_Font *f
     assert(text != NULL && "init_text: text was null");
     text->font = font;
     text->dynamic = false;
-    text->buffer = (char*) malloc (sizeof(char) * (strlen(data) + 1));
-    text->buffer = strcpy(text->buffer, data);
+    text->buffer = (char*) malloc (sizeof(char) * (SDL_strlen(data) + 1));
+    // text->buffer = 
+    SDL_strlcpy(text->buffer, data, SDL_strlen(data));//strcpy(text->buffer, data);
     text->color = color;
     text->renderer = renderer;
     text->surface = TTF_RenderText_Blended(font, data, rgba_to_sdl_color(&color));
@@ -35,7 +36,7 @@ void init_text_dynamic(Text *text, SDL_Renderer *renderer, const char *data, TTF
     text->font = font;
     text->dynamic = true;
     text->buffer = (char*) malloc (sizeof(char) * (strlen(data) + 1));
-    text->buffer = strcpy(text->buffer, data);
+    SDL_strlcpy(text->buffer, data, SDL_strlen(data));
     text->color = color;
     text->renderer = renderer;
     text->surface = surface;

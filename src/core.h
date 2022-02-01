@@ -12,6 +12,7 @@
 #define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
 // #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
+// #define DEFAULT_FONT_PATH "./assets/fonts/Ya'ahowu/Yaahowu.ttf"
 #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
 ///
 typedef struct {

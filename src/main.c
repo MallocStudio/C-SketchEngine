@@ -10,9 +10,33 @@ Uint64 NOW = 0;
 Uint64 LAST = 0;
 
 int main (int argc, char *argv[]) {
+    i32 *lolz;
+    *lolz = 3;
     // -- initialise app
     App *app = new(App);
     init_app(app);    
+    
+    SDL_version compiled;
+    SDL_version linked;
+    SDL_VERSION(&compiled);
+    SDL_GetVersion(&linked);
+    SDL_Log("We compiled against SDL version %u.%u.%u ...\n", compiled.major, compiled.minor, compiled.patch);
+    SDL_Log("But we are linking against SDL version %u.%u.%u.\n", linked.major, linked.minor, linked.patch);
+
+    	
+
+    SDL_version compile_version, *link_version;
+    TTF_VERSION(&compile_version);
+    printf("compiled with SDL_ttf version: %d.%d.%d\n", 
+            compile_version.major,
+            compile_version.minor,
+            compile_version.patch);
+    link_version=TTF_Linked_Version();
+    printf("running with SDL_ttf version: %d.%d.%d\n", 
+            link_version->major,
+            link_version->minor,
+            link_version->patch);
+
     
     UI_Context *ctx = new(UI_Context);
     ui_init_context(ctx, app->renderer);
