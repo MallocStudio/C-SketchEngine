@@ -21,7 +21,9 @@ typedef struct {
     Renderer *renderer; // ! owned
     i32 window_width;
     i32 window_height;
-    i32 keyboard[];
+    u8 *keyboard;
+    bool keyboard_down; // if the user is consistantly holding the some key down
+    bool keyboard_pressed;
 } App;
 void init_app   (App *app);
 void deinit_app (App *app);

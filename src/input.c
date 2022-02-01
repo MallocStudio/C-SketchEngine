@@ -13,3 +13,8 @@ Vec2i get_mouse_pos(bool *lpressed, bool *rpressed) {
     }
     return (Vec2i){x, y};
 }
+
+bool input_is_key_pressed(App *app, i32 sdl_scancode) {
+    if (app->keyboard_pressed && app->keyboard[sdl_scancode]) return true;
+    return false;
+}

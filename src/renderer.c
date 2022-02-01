@@ -11,18 +11,18 @@
 /// ------ ///
 
 /// set sdl_renderer draw color and print out any errors
-void set_render_draw_color_raw(SDL_Renderer *sdl_renderer, u8 r, u8 g, u8 b, u8 a) {
-    ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, r, g, b, a), "set_render_draw_color_raw");
+void render_set_draw_color_raw(SDL_Renderer *sdl_renderer, u8 r, u8 g, u8 b, u8 a) {
+    ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, r, g, b, a), "render_set_draw_color_raw");
 }
 
 ///
-void set_render_draw_color_rgba(SDL_Renderer *sdl_renderer, RGBA rgba) {
-    set_render_draw_color_raw(sdl_renderer, rgba.r * 255, rgba.g * 255, rgba.b * 255, rgba.a * 255);
+void render_set_draw_color_rgba(SDL_Renderer *sdl_renderer, RGBA rgba) {
+    render_set_draw_color_raw(sdl_renderer, rgba.r * 255, rgba.g * 255, rgba.b * 255, rgba.a * 255);
 }
 
 /// reset sdl_renderer draw color to the default
-void reset_render_draw_color(SDL_Renderer *sdl_renderer) {
-    ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 255), "reset_render_draw_color");
+void render_reset_draw_color(SDL_Renderer *sdl_renderer) {
+    ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 255), "render_reset_draw_color");
 }
 
 /// renders a filled rectangle using global_app->sdl_renderer and using the current render color
@@ -36,7 +36,7 @@ void render_rect_filled_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color)
     u8 prev_color[4];
     ERROR_ON_NOTZERO_SDL(SDL_GetRenderDrawColor(sdl_renderer, &prev_color[0], &prev_color[1], &prev_color[2], &prev_color[3]), "render_rect_filled_color");
 
-    set_render_draw_color_rgba(sdl_renderer, color);
+    render_set_draw_color_rgba(sdl_renderer, color);
     render_rect_filled(sdl_renderer, rect);
 
     ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, prev_color[0], prev_color[1], prev_color[2], prev_color[3]), "render_rect_filled_color");
@@ -127,7 +127,7 @@ void render_rect_color(SDL_Renderer *sdl_renderer, Rect rect, RGBA color) {
     u8 prev_color[4];
     ERROR_ON_NOTZERO_SDL(SDL_GetRenderDrawColor(sdl_renderer, &prev_color[0], &prev_color[1], &prev_color[2], &prev_color[3]), "render_rect_filled_color");
 
-    set_render_draw_color_rgba(sdl_renderer, color);
+    render_set_draw_color_rgba(sdl_renderer, color);
     render_rect(sdl_renderer, rect);
 
     ERROR_ON_NOTZERO_SDL(SDL_SetRenderDrawColor(sdl_renderer, prev_color[0], prev_color[1], prev_color[2], prev_color[3]), "render_rect_filled_color");
@@ -174,5 +174,48 @@ void render_glyphs_onto_surface (SDL_Surface *result_surface, Glyphs *glyphs, co
             NULL, // NULL so that the whole surface of the glyph is copied
             result_surface, 
             &dest_rect), "render_glyphs_onto_surface");
+    }
+}
+
+void render_line(SDL_Renderer *sdl_renderer, i32 x1, i32 y1, i32 x2, i32 y2) {
+    SDL_RenderDrawLine(sdl_renderer, x1, y1, x2, y2);
+}
+
+void render_cross(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 size) {
+    size *= 0.5f;
+    i32 x1, y1, x2, y2;
+    x1 = x - size;
+    y1 = y - size;
+    x2 = x + size;
+    y2 = y + size;
+    render_line(sdl_renderer, x1, y1, x2, y2);
+    x1 = x - size;
+    y1 = y + size;
+    x2 = x + size;
+    y2 = y - size;
+    render_line(sdl_renderer, x1, y1, x2, y2);
+}
+
+void render_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 cols, i32 rows) {
+    i32 size_of_grid = 96;
+    i32 x1, y1, x2, y2;
+    i32 row_size = cols * size_of_grid;
+    i32 col_size = rows * size_of_grid;
+    x -= row_size * 0.5f;
+    y -= row_size * 0.5f;
+    
+    for (i32 i = 0; i < rows; i++) {
+        x1 = row_size * 0.5f;
+        x2 = row_size * 0.5f;
+        y1 = size_of_grid * i * 0.5f;
+        y2 = y1;
+        render_line(sdl_renderer, x + x1, y + y1, x + x2, y + y2);
+    }
+    for (i32 i = 0; i < cols; i++) {
+        y1 = col_size * 0.5f;
+        y2 = col_size * 0.5f;
+        x1 = size_of_grid * i * 0.5f;
+        x2 = x1;
+        render_line(sdl_renderer, x + x1, y + y1, x + x2, y + y2);
     }
 }

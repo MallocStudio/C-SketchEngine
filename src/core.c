@@ -40,10 +40,12 @@ void init_app   (App *app) {
     // -- window size
     app->window_width  = 1000;
     app->window_height = 800;
+    app->keyboard_down = false;
+    app->keyboard_pressed = false;
 
     // -- Init SDL
     init_sdl(app);
-    reset_render_draw_color(app->renderer->sdl_renderer);
+    render_reset_draw_color(app->renderer->sdl_renderer);
     
     // -- Init TTF
     if (TTF_Init() != 0) {

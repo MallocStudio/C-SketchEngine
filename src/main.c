@@ -1,4 +1,6 @@
 /// SDL Inlcudes
+// copy and paste the following into a normal cmd on windows to setup the dev environment:
+// %comspec% /k "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 #include "core.h"
 #include "renderer.h"
@@ -10,8 +12,6 @@ Uint64 NOW = 0;
 Uint64 LAST = 0;
 
 int main (int argc, char *argv[]) {
-    i32 *lolz;
-    *lolz = 3;
     // -- initialise app
     App *app = new(App);
     init_app(app);    
@@ -36,7 +36,6 @@ int main (int argc, char *argv[]) {
             link_version->major,
             link_version->minor,
             link_version->patch);
-
     
     UI_Context *ctx = new(UI_Context);
     ui_init_context(ctx, app->renderer);
@@ -52,19 +51,51 @@ int main (int argc, char *argv[]) {
 
         // -- events
         SDL_Event event;
+        app->keyboard_down = false;
+        app->keyboard_pressed = false;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) { // -- wanting to quit
-                should_close = true;
-            } else
-            if (event.type == SDL_WINDOWEVENT_SIZE_CHANGED) { // -- resized window
-                printf("LOL\n");
-                SDL_GetWindowSize(app->window, &app->window_width, &app->window_height);
-                SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
+            switch (event.type) {
+                case SDL_QUIT: { // -- wanting to quit
+                    should_close = true;
+                } break;
+                case SDL_WINDOWEVENT: { // -- resized window
+                    // if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    //     printf("LOL\n");
+                    //     SDL_GetWindowSize(app->window, &app->window_width, &app->window_height);
+                    //     SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
+                    // }
+                    if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+                        printf("LOL\n");
+                        SDL_GetWindowSize(app->window, &app->window_width, &app->window_height);
+                        SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
+                    }
+                } break;
+                case SDL_KEYDOWN: {
+                    app->keyboard_pressed = true;
+                    app->keyboard_down = true;
+                } break;
             }
+        }
+        
+        // -- update input
+        // SDL_PumpEvents();
+        app->keyboard = SDL_GetKeyboardState(NULL);
+        if (app->keyboard[SDL_SCANCODE_ESCAPE]) {
+            printf("escape\n");
+            should_close = true;
+        }
+        if (input_is_key_pressed(app, SDL_SCANCODE_R)) {
+            printf("resize render logic\n");
+            SDL_GetWindowSize(app->window, &app->window_width, &app->window_height);
+            SDL_RenderSetLogicalSize(app->renderer->sdl_renderer, app->window_width, app->window_height);
         }
 
         SDL_RenderClear(app->renderer->sdl_renderer);
         // -- draw
+        render_set_draw_color_raw(app->renderer->sdl_renderer, 255, 0, 0, 1);
+        render_grid(app->renderer->sdl_renderer, app->window_width * 0.5f, app->window_height * 0.5f, 10, 10);
+        render_reset_draw_color(app->renderer->sdl_renderer);
+        
         ui_update_context(ctx);
 
         // -- ctx ui test
@@ -79,6 +110,12 @@ int main (int argc, char *argv[]) {
         if (ui_button(ctx, "button 5")) printf("button 5 pressed\n");
         ui_row(ctx, 1, 200, 0);
         ui_label(ctx, "ma danny long text lalbal blbll balaha labal increasing text to take even more space to test the wrapping functionality");
+
+        render_set_draw_color_raw(app->renderer->sdl_renderer, 255, 0, 0, 1);
+        render_circle(app->renderer->sdl_renderer, 300, 300, 64);
+        Vec2i mouse_pos = get_mouse_pos(NULL, NULL);
+        render_cross(app->renderer->sdl_renderer, mouse_pos.x, mouse_pos.y, 16);
+        render_reset_draw_color(app->renderer->sdl_renderer);
         
         // -- swap buffers
         SDL_RenderPresent(app->renderer->sdl_renderer);
