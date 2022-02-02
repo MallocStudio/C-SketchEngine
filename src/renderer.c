@@ -196,26 +196,29 @@ void render_cross(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 size) {
     render_line(sdl_renderer, x1, y1, x2, y2);
 }
 
-void render_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 cols, i32 rows) {
-    i32 size_of_grid = 96;
-    i32 x1, y1, x2, y2;
-    i32 row_size = cols * size_of_grid;
-    i32 col_size = rows * size_of_grid;
-    x -= row_size * 0.5f;
-    y -= row_size * 0.5f;
-    
-    for (i32 i = 0; i < rows; i++) {
-        x1 = row_size * 0.5f;
-        x2 = row_size * 0.5f;
-        y1 = size_of_grid * i * 0.5f;
-        y2 = y1;
-        render_line(sdl_renderer, x + x1, y + y1, x + x2, y + y2);
-    }
-    for (i32 i = 0; i < cols; i++) {
-        y1 = col_size * 0.5f;
-        y2 = col_size * 0.5f;
-        x1 = size_of_grid * i * 0.5f;
+void render_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 w, i32 h, i32 size_of_cell) {
+    i32 num_of_cols = w / size_of_cell + 1;
+    i32 num_of_rows = h / size_of_cell + 1;
+    // -- columns
+    for (i32 i = 0; i < num_of_cols; ++i) {
+        i32 x1, y1, x2, y2;
+        x1 = x + i * size_of_cell;
         x2 = x1;
-        render_line(sdl_renderer, x + x1, y + y1, x + x2, y + y2);
+        y1 = y;
+        y2 = y + num_of_cols * size_of_cell;
+        render_line(sdl_renderer, x1, y1, x2, y2);
     }
+    // -- rows
+    for (i32 i = 0; i < num_of_rows; ++i) {
+        i32 x1, y1, x2, y2;
+        x1 = x;
+        x2 = x + num_of_rows * size_of_cell;
+        y1 = y + i * size_of_cell;
+        y2 = y1;
+        render_line(sdl_renderer, x1, y1, x2, y2);
+    }
+}
+
+void render_infinite_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 w, i32 h) {
+    // @incomplete
 }

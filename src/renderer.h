@@ -61,5 +61,8 @@ void render_line(SDL_Renderer *sdl_renderer, i32 x1, i32 y1, i32 x2, i32 y2);
 void render_cross(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 size);
 
 /// render a grid at {x, y} with {cols, rows}
-void render_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 cols, i32 rows);
+void render_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 w, i32 h, i32 size_of_cell);
+
+/// render a grid that can be zoomed into
+void render_infinite_grid(SDL_Renderer *sdl_renderer, i32 x, i32 y, i32 w, i32 h);
 #endif // RENDERER_H

@@ -14,16 +14,15 @@ Uint64 LAST = 0;
 int main (int argc, char *argv[]) {
     // -- initialise app
     App *app = new(App);
-    init_app(app);    
-    
+    init_app(app);
+
+    // -- double check versions of the dependencies
     SDL_version compiled;
     SDL_version linked;
     SDL_VERSION(&compiled);
     SDL_GetVersion(&linked);
     SDL_Log("We compiled against SDL version %u.%u.%u ...\n", compiled.major, compiled.minor, compiled.patch);
     SDL_Log("But we are linking against SDL version %u.%u.%u.\n", linked.major, linked.minor, linked.patch);
-
-    	
 
     SDL_version compile_version, *link_version;
     TTF_VERSION(&compile_version);
@@ -93,7 +92,7 @@ int main (int argc, char *argv[]) {
         SDL_RenderClear(app->renderer->sdl_renderer);
         // -- draw
         render_set_draw_color_raw(app->renderer->sdl_renderer, 255, 0, 0, 1);
-        render_grid(app->renderer->sdl_renderer, app->window_width * 0.5f, app->window_height * 0.5f, 10, 10);
+        render_grid(app->renderer->sdl_renderer, 64, 64, 300, 300, 32);
         render_reset_draw_color(app->renderer->sdl_renderer);
         
         ui_update_context(ctx);

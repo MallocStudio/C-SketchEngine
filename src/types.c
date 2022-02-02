@@ -96,7 +96,7 @@ void deinit_glyphs (Glyphs *glyphs) {
 }
 
 /// inits the given text based on the given glyphs
-void generate_text_from_glyphs (Text *result, SDL_Renderer *renderer, Glyphs *glyphs, const char *string, Rect rect, u32 style_flags) {
+void generate_text_from_glyphs (Text *result, SDL_Renderer *renderer, Glyphs *glyphs, const char *string, Rect rect, u32 style_flags) { // @incomplete we need to optimise text regenration in general. It may not apply to this procedure directly, but we should only regenrate a given text's texture if it needs regenerating. Otherwise we should use the old texture
     // SDL interprets each pixel as a 32-bit number, so our masks must depend on the endianness (byte order) of the machine
     Uint32 rmask, gmask, bmask, amask;
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN

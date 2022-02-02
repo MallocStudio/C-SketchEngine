@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "gl.h": "c",
+        "glew.h": "c",
+        "sdl.h": "c",
+        "sketchengine_opengl.h": "c"
+    }
+}
