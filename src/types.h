@@ -2,8 +2,8 @@
 #define TYPES_H
 
 /// sdl2 types
-#include "SDL.h"
-#include "SDL_ttf.h"
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_ttf.h"
 
 /// primitive types
 typedef float     f32;

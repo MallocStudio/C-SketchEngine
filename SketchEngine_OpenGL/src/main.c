@@ -1,31 +1,24 @@
+// %comspec% /k "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 #include "SDL2/SDL.h"
 #include "SketchEngine_OpenGL.h"
 #include <stdio.h>
 
-/// debugging for SDL2
-void print_sdl_error() {
-    const char *error = SDL_GetError();
-    if (strlen(error) <= 0) {
-        int x = 0; // dummy assignment for breakpoints
-    }
-    printf("ERROR: %s\n", error);
-}
-
-#define new(type) ( type *) malloc (sizeof( type ))
-#define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
-#define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
+#define RAYMATH_IMPLEMENTATION
+#include "raymath.h"
 
 int main () {
     SDL_Window *window;
     i32 window_w = 800;
     i32 window_h = 400;
     
-    SE_GL_Context se_gl_context;
-    se_gl_context.gProgramID = 0;
-    se_gl_context.gVertexPos2DLocation = -1;
-    se_gl_context.gIBO = 0;
-    se_gl_context.gVBO = 0;
+    SEGL_Context segl_context;
+    segl_context.gProgramID = 0;
+    segl_context.gVertexPos2DLocation = -1;
+    segl_context.gIBO = 0;
+    segl_context.gVBO = 0;
+    SEGL_Camera cam;
+    segl_camera_init(&cam);
 
     // -- init SDL
     ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");
@@ -38,6 +31,7 @@ int main () {
     // -- Create window
     window = SDL_CreateWindow("SketchEngine_OpenGL window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
     ERROR_ON_NULL_SDL(window, "window was null");
+    segl_context.window = window;
 
     // -- Create context
     SDL_GLContext g_context = SDL_GL_CreateContext(window);
@@ -54,7 +48,7 @@ int main () {
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
     // -- Init OpenGL
-    if (!initGL(&se_gl_context)) {
+    if (!initGL(&segl_context)) { // the lazy foo tutorial
         printf("Unable to init OpenGL!\n");
     }
 
@@ -90,12 +84,16 @@ int main () {
             quit = true;
         }
 
+        // -- update
+        update(&segl_context, &cam);
+
         // -- render
-        render(&se_gl_context);
+        render(&segl_context);
         SDL_GL_SwapWindow(window);
     }
 
     // -- exit
+    SDL_GL_DeleteContext(g_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
 

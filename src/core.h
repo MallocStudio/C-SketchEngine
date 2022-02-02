@@ -1,8 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include "SDL.h"
-#include "SDL_ttf.h"
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_ttf.h"
 #include "types.h"
 #include "math.h"
 #include <stdio.h>
