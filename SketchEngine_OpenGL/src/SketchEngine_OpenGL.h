@@ -3,8 +3,8 @@
 #include "GL/glew.h"
 #include <stdlib.h>
 #include "SDL2/SDL.h"
-#include "raymath.h"
-
+#include "SEGL_Math.h"
+#include "defines.h"
 
 /// debugging for SDL2
 void print_sdl_error();
@@ -12,21 +12,6 @@ void print_sdl_error();
 #define new(type) ( type *) malloc (sizeof( type ))
 #define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
-
-typedef int i32;
-typedef Uint32 u32;
-// typedef Uint16 u16;
-typedef float f32;
-typedef Matrix  mat4;
-typedef Vector2 vec2;
-typedef Vector3 vec3;
-typedef Vector4 vec4;
-
-vec4 mat4_mul_vec4 (const mat4 *m, const vec4 *v);
-
-typedef enum bool {
-    false, true
-} bool;
 
 typedef struct SEGL_Camera {
     f32 height;
@@ -36,6 +21,7 @@ typedef struct SEGL_Camera {
 } SEGL_Camera;
 void segl_camera_init(SEGL_Camera *cam);
 mat4 segl_get_camera_transform(SEGL_Camera *cam);
+void segl_camera_zoom(SEGL_Camera *cam, f32 zoom_factor);
 
 /// A copy of what Finn did
 typedef struct Shader_Program {
@@ -60,32 +46,49 @@ void   segl_shader_program_set_uniform_mat4 (Shader_Program *sp, const char *var
 //! Needs to be freed by the called
 const char* load_file_as_string(const char *file_name);
 
-/// --------------------
-/// the lazy foo example
-/// --------------------
-typedef struct SEGL_Context {
-    // -- Graphics program
-    GLuint gProgramID;
-    GLint gVertexPos2DLocation;
-    GLuint gVBO;
-    GLuint gIBO;
-    SDL_Window *window;
-} SEGL_Context; // Sketch Engine GL Context
-/// some example functions
-bool initGL(SEGL_Context *ctx);
-void render(SEGL_Context *ctx);
-
 /// -----------
 /// custom test
 /// -----------
+#define LINE_RENDERER_POSITIONS_MAX 1024
+#define LINE_RENDERER_COLOURS_MAX 1024
+typedef struct Line_Renderer {
+    u32 positions_current_index;
+    u32 colours_current_index;
+    vec2 positions[LINE_RENDERER_POSITIONS_MAX];
+    vec3 colours[LINE_RENDERER_COLOURS_MAX];
+
+    bool initialised;
+    vec3 current_colour;     // can be set directly
+    vec2 first_pos;
+    vec2 last_pos;
+    vec3 first_colour;
+    vec3 last_colour;
+    bool line_active;
+    GLuint position_buffer_id;
+    GLuint colour_buffer_id;
+} Line_Renderer;
+void segl_lines_init(Line_Renderer *lines);
+void segl_lines_deinit(Line_Renderer *lines);
+void segl_lines_draw_line_segment(Line_Renderer *lines, vec2 start, vec2 end);
+// void segl_lines_draw_circle(Line_Renderer *lines, vec2 center, f32 size, u32 segment_count);
+void segl_lines_update_frame(Line_Renderer *lines);
+void segl_lines_clear(Line_Renderer *lines);
+void segl_lines_compile(Line_Renderer *lines);
+void segl_lines_draw(Line_Renderer *lines);
+void segl_lines_draw_cross(Line_Renderer *lines, vec2 center, f32 size);
+
 typedef struct Finn_Game {
     Shader_Program *shader_program;
     SEGL_Camera *camera;
     SDL_Window *window;
+    vec2 mouse_pos;
+    Uint8 *keyboard;
+    Line_Renderer grid;
+    Line_Renderer lines;
 } Finn_Game;
-void finn_game_init(Finn_Game *game);
+void finn_game_init(Finn_Game *game, SDL_Window *window);
 void finn_game_deinit(Finn_Game *game);
-void finn_game_update(Finn_Game *game);
+void finn_game_update(Finn_Game *game, f32 delta_time);
 void finn_game_render(Finn_Game *game);
 
 

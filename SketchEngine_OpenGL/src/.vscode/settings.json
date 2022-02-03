@@ -5,6 +5,7 @@
         "sdl.h": "c",
         "sketchengine_opengl.h": "c",
         "stdlib.h": "c",
-        "raymath.h": "c"
+        "raymath.h": "c",
+        "defines.h": "c"
     }
 }
