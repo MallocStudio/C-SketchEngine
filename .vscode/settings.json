@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "sdl.h": "c",
+        "finn_game.h": "c"
+    }
+}

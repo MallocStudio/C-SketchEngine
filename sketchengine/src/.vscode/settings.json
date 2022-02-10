@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "gl.h": "c",
+        "glew.h": "c",
+        "sdl.h": "c",
+        "sketchengine_opengl.h": "c",
+        "stdlib.h": "c",
+        "raymath.h": "c",
+        "defines.h": "c",
+        "semath_defines.h": "c",
+        "sephysics_defines.h": "c",
+        "sephysics_render.h": "c",
+        "math.h": "c",
+        "corecrt_math.h": "c",
+        "semath.h": "c",
+        "finn_game.h": "c",
+        "sketchengine.h": "c"
+    }
+}
