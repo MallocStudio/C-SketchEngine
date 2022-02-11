@@ -1,0 +1,7 @@
+11 / 2 / 2022:
+[/] working physics collision check between circle and aabb (with debug rendering)
+[/] working physics collision check between circle and circle (with debug rendering)
+
+12 / 2 / 2022:
+[~in progress] working physics collision check between circle and plane (with debug rendering)
+[ ] render a quad with color and blend modes

@@ -10,15 +10,15 @@
 // An approximate representation of PI.
 #define SEMATH_PI 3.14159265358979323846f
 // An approximate representation of PI multiplied by 2.
-#define SEMATH_PI_2 2.0f * K_PI
+#define SEMATH_PI_2 2.0f * SEMATH_PI
 // An approximate representation of PI divided by 2.
-#define SEMATH_HALF_PI 0.5f * K_PI
+#define SEMATH_HALF_PI 0.5f * SEMATH_PI
 // An approximate representation of PI divided by 4.
-#define SEMATH_QUARTER_PI 0.25f * K_PI
+#define SEMATH_QUARTER_PI 0.25f * SEMATH_PI
 // One divided by an approximate representation of PI.
-#define SEMATH_ONE_OVER_PI 1.0f / K_PI
+#define SEMATH_ONE_OVER_PI 1.0f / SEMATH_PI
 // One divided by half of an approximate representation of PI.
-#define SEMATH_ONE_OVER_TWO_PI 1.0f / K_PI_2
+#define SEMATH_ONE_OVER_TWO_PI 1.0f / SEMATH_PI_2
 // An approximation of the square root of 2.
 #define SEMATH_SQRT_TWO 1.41421356237309504880f
 // An approximation of the square root of 3.
@@ -28,9 +28,9 @@
 // One divided by an approximation of the square root of 3.
 #define SEMATH_SQRT_ONE_OVER_THREE 0.57735026918962576450f
 // A multiplier used to convert degrees to radians.
-#define SEMATH_DEG2RAD_MULTIPLIER K_PI / 180.0f
+#define SEMATH_DEG2RAD_MULTIPLIER SEMATH_PI / 180.0f
 // A multiplier used to convert radians to degrees.
-#define SEMATH_RAD2DEG_MULTIPLIER 180.0f / K_PI
+#define SEMATH_RAD2DEG_MULTIPLIER 180.0f / SEMATH_PI
 // The multiplier to convert seconds to milliseconds.
 #define SEMATH_SEC_TO_MS_MULTIPLIER 1000.0f
 // The multiplier to convert milliseconds to seconds.
@@ -137,6 +137,21 @@ SEINLINE vec2 vec2_div(vec2 v1, vec2 v2) {
     return (vec2) {
         v1.x / v2.x,
         v1.y / v2.y};
+}
+
+SEINLINE f32 vec2_dot(vec2 v1, vec2 v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+}
+
+SEINLINE vec2 vec2_rotated(vec2 v, f32 angle_radians) { // @check
+    f32 cos = semath_cos(angle_radians);
+    f32 sin = semath_sin(angle_radians);
+    f32 tx = v.x;
+    f32 ty = v.y;
+    return (vec2) {
+        (cos * tx) - (sin * ty),
+        (sin * tx) + (cos * ty),
+    };
 }
 
 /// returns the squared magnitude / length of the provided vector

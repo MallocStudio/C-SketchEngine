@@ -46,9 +46,9 @@ void   segl_shader_program_set_uniform_mat4 (Shader_Program *sp, const char *var
 //! Needs to be freed by the called
 const char* load_file_as_string(const char *file_name);
 
-/// -----------
-/// custom test
-/// -----------
+/// -------------
+/// LINE RENDERER
+/// -------------
 #define LINE_RENDERER_POSITIONS_MAX 1024
 #define LINE_RENDERER_COLOURS_MAX 1024
 typedef struct Line_Renderer {
@@ -70,13 +70,18 @@ typedef struct Line_Renderer {
 void segl_lines_init(Line_Renderer *lines);
 void segl_lines_deinit(Line_Renderer *lines);
 void segl_lines_draw_line_segment(Line_Renderer *lines, vec2 start, vec2 end);
+void segl_lines_draw_arrow(Line_Renderer *lines, vec2 start, vec2 end);
 void segl_lines_draw_circle(Line_Renderer *lines, vec2 center, f32 size, u32 segment_count);
 void segl_lines_update_frame(Line_Renderer *lines);
 void segl_lines_clear(Line_Renderer *lines);
 void segl_lines_compile(Line_Renderer *lines);
 void segl_lines_draw(Line_Renderer *lines);
 void segl_lines_draw_cross(Line_Renderer *lines, vec2 center, f32 size);
-
-
+/// -----------
+/// 2D RENDERER
+/// -----------
+void segl_2D_render_rect();
+// void segl_2D_render_rect_outline();
+// void segl_2D_render_circle();
 
 #endif // SKETCHENGINE_OPENGL

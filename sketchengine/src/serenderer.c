@@ -214,6 +214,33 @@ void segl_lines_draw_line_segment(Line_Renderer *lines, vec2 start, vec2 end) {
     lines_add_col(lines, lines->current_colour);
 }
 
+void segl_lines_draw_arrow(Line_Renderer *lines, vec2 start, vec2 end) {
+    // line
+    lines_add_pos(lines, start);
+    lines_add_pos(lines, end);
+    lines_add_col(lines, lines->current_colour);
+    lines_add_col(lines, lines->current_colour);
+    /// arrow // @check wtf is even happening
+    f32 angle = SEMATH_DEG2RAD_MULTIPLIER * 45;
+    f32 tip_size = 0.1f;
+    vec2 line = vec2_sub(start, end);
+    vec2 tip_1 = vec2_mul_scalar(line, tip_size);
+    vec2 tip_2 = tip_1;
+    tip_1 = vec2_rotated(tip_1, angle);
+    tip_2 = vec2_rotated(tip_2, -angle);
+    tip_1 = vec2_add(tip_1, end);
+    tip_2 = vec2_add(tip_2, end);
+
+    lines_add_pos(lines, tip_1);
+    lines_add_pos(lines, end);
+    lines_add_pos(lines, tip_2);
+    lines_add_pos(lines, end);
+    lines_add_col(lines, lines->current_colour);
+    lines_add_col(lines, lines->current_colour);
+    lines_add_col(lines, lines->current_colour);
+    lines_add_col(lines, lines->current_colour);
+}
+
 void segl_lines_draw_cross(Line_Renderer *lines, vec2 center, f32 size) {
     lines_add_pos(lines, (vec2) {center.x - size, center.y - size});
     lines_add_pos(lines, (vec2) {center.x + size, center.y + size});
@@ -268,7 +295,7 @@ void segl_lines_compile(Line_Renderer *lines) {
 }
 
 void segl_lines_draw(Line_Renderer *lines) {
-    glBindBuffer(GL_ARRAY_BUFFER, lines->position_buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, lines->position_buffer_id); // @question why do we do this twice? here and in compile
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), 0);
 

@@ -100,25 +100,61 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
 void finn_game_render(Finn_Game *game) {
     // -- draw mouse cursor
     game->lines.current_colour = (vec3) {0.8f, 0.2f, 0.2f};
-    segl_lines_draw_cross(&game->lines, game->mouse_pos, 0.2f);
+    segl_lines_draw_cross(&game->lines, game->mouse_pos, 0.05f);
+    game->lines.current_colour = (vec3) {1, 1, 1};
     
-    // -- draw collision test bed
-    game->lines.current_colour = (vec3) {1.0f, 1.0f, 1.0f};
-    SE_Circle circle;
-    init_circle(&circle);
-    circle.pos = game->mouse_pos;
-    circle.radius = 1.2f;
-    se_render_circle(&game->lines, &circle);
+    /*{ // -- draw collision test bed : aabb circle
+        game->lines.current_colour = (vec3) {1.0f, 1.0f, 1.0f};
+        SE_Circle circle;
+        init_circle(&circle);
+        circle.pos = game->mouse_pos;
+        circle.radius = 1.2f;
+        se_render_circle(&game->lines, &circle);
 
-    SE_AABB aabb;
-    init_aabb(&aabb);
-    aabb.xmin = 1;
-    aabb.xmax = 2;
-    aabb.ymin = 1;
-    aabb.ymax = 2;
-    se_render_aabb(&game->lines, &aabb);
+        SE_AABB aabb;
+        init_aabb(&aabb);
+        aabb.xmin = 1;
+        aabb.xmax = 2;
+        aabb.ymin = 1;
+        aabb.ymax = 2;
+        se_render_aabb(&game->lines, &aabb);
+        se_phys_check_aabb_circle(&aabb, &circle);
+    }
+    { // -- draw collision test bed circle circle
+        game->lines.current_colour = (vec3) {1.0f, 1.0f, 1.0f};
+        SE_Circle c1;
+        init_circle(&c1);
+        c1.pos = game->mouse_pos;
+        c1.radius = 1.2f;
+        se_render_circle(&game->lines, &c1);
 
-    se_phys_check_aabb_circle(&aabb, &circle);
+        SE_Circle c2;
+        init_circle(&c2);
+        c2.pos = (vec2) {0, 0};
+        c2.radius = 3.2f;
+        se_render_circle(&game->lines, &c2);
+
+        se_phys_check_circle_circle(&c1, &c2);
+        // se_phys_check_circle_circle(&c2, &c1);
+    }*/
+    { // -- draw collision test bed circle plane
+        SE_Circle c;
+        init_circle(&c);
+        c.pos = game->mouse_pos;
+        c.radius = 1.2f;
+        se_render_circle(&game->lines, &c);
+
+        SE_Plane p;
+        init_plane(&p);
+        p.pos = vec2_one();
+        p.normal = vec2_normalised(vec2_create(1, -1));
+        vec2 plane_vec = vec2_create(p.normal.y, -p.normal.x);
+        segl_lines_draw_line_segment(&game->lines, 
+            vec2_mul_scalar(plane_vec, -3.0f), 
+            vec2_mul_scalar(plane_vec, +3.0f));
+
+        se_phys_check_circle_plane(&c, &p);
+    }
 
     // -- render
     glClear(GL_COLOR_BUFFER_BIT);

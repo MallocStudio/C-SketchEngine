@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "sdl.h": "c",
-        "finn_game.h": "c"
+        "finn_game.h": "c",
+        "sephysics_defines.h": "c"
     }
 }

@@ -41,8 +41,9 @@ int main () {
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
     // -- Init phsycis renderer
-    physics_global = new(SE_Physics_Global);
-    se_physics_global_init(physics_global);
+    global_physics_debug = new(SE_Physics_Global);
+    se_physics_global_init();
+    global_physics_debug->active = true;
 
     // -- Init Finn's example
     Finn_Game *game = new(Finn_Game);
@@ -87,7 +88,7 @@ int main () {
 
         // -- render
         finn_game_render(game);
-        se_physics_global_render(physics_global);
+        se_physics_global_render();
         SDL_GL_SwapWindow(window);
 
         if (game->keyboard[SDL_SCANCODE_ESCAPE]) {
@@ -98,7 +99,7 @@ int main () {
 
     // -- exit
     finn_game_deinit(game);
-    se_physics_global_deinit(physics_global);
+    se_physics_global_deinit();
     SDL_GL_DeleteContext(g_context);
     SDL_DestroyWindow(window);
     SDL_Quit();

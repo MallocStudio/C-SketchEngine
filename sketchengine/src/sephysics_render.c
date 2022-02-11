@@ -12,5 +12,5 @@ void se_render_aabb(Line_Renderer *lines, const SE_AABB *aabb) {
 }
 
 void se_render_circle(Line_Renderer *lines, const SE_Circle *circle) {
-    segl_lines_draw_circle(lines, circle->pos, circle->radius, 64);
+    segl_lines_draw_circle(lines, circle->pos, circle->radius, 32);
 }

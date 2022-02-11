@@ -67,10 +67,10 @@ SEINLINE void init_plane(SE_Plane *plane) {
 /// COLLISION DATA
 /// --------------
 typedef struct SE_Collision_Data {
-    vec2 normal;
-    vec2 world_pos;
-    f32 depth;
     bool is_collided;
+    f32 depth;   // HOW DEEP IS THE COLLISION (HOW FAR SHOULD WE MOVE THE PHYSICS OBJECTS)
+    vec2 normal; // THE DIRECTION OF DEPTH
+    vec2 world_pos; // POINT OF CONTACT
     
     SE_Shape *shape_a;
     SE_Shape *shape_b;
