@@ -4,13 +4,14 @@
 #include "sketchengine.h"
 
 typedef struct Finn_Game {
-    Shader_Program *shader_program;
+    SEGL_Shader_Program *shader_program;
     SEGL_Camera *camera;
     SDL_Window *window;
-    vec2 mouse_pos;
+    Vec2 mouse_pos;
     Uint8 *keyboard;
-    Line_Renderer grid;
-    Line_Renderer lines;
+    SEGL_Line_Renderer grid;
+    SEGL_Line_Renderer lines;
+    SEGL_Renderer2D renderer2D;
 } Finn_Game;
 void finn_game_init(Finn_Game *game, SDL_Window *window);
 void finn_game_deinit(Finn_Game *game);

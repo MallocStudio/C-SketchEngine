@@ -42,12 +42,12 @@ SEINLINE void init_aabb(SE_AABB *aabb) {
 /// ------
 typedef struct SE_Circle {
     SE_Shape shape;
-    vec2 pos;
+    Vec2 pos;
     f32 radius;
 } SE_Circle;
 SEINLINE void init_circle(SE_Circle *circle) {
     circle->shape.type = CIRCLE;
-    circle->pos = (vec2) {0, 0};
+    circle->pos = (Vec2) {0, 0};
     circle->radius = 0.0f;
 }
 
@@ -55,8 +55,8 @@ SEINLINE void init_circle(SE_Circle *circle) {
 /// PLANE
 /// -----
 typedef struct SE_Plane {
-    vec2 normal;
-    vec2 pos;
+    Vec2 normal;
+    Vec2 pos;
 } SE_Plane;
 SEINLINE void init_plane(SE_Plane *plane) {
     plane->normal = vec2_create(0, 0);
@@ -69,13 +69,13 @@ SEINLINE void init_plane(SE_Plane *plane) {
 typedef struct SE_Collision_Data {
     bool is_collided;
     f32 depth;   // HOW DEEP IS THE COLLISION (HOW FAR SHOULD WE MOVE THE PHYSICS OBJECTS)
-    vec2 normal; // THE DIRECTION OF DEPTH
-    vec2 world_pos; // POINT OF CONTACT
+    Vec2 normal; // THE DIRECTION OF DEPTH
+    Vec2 world_pos; // POINT OF CONTACT
     
     SE_Shape *shape_a;
     SE_Shape *shape_b;
 } SE_Collision_Data;
-SEINLINE init_collision_data(SE_Collision_Data *cd, bool is_collided, vec2 normal, vec2 world_pos, f32 depth, SE_Shape *shape_a, SE_Shape* shape_b) {
+SEINLINE init_collision_data(SE_Collision_Data *cd, bool is_collided, Vec2 normal, Vec2 world_pos, f32 depth, SE_Shape *shape_a, SE_Shape* shape_b) {
     cd->is_collided = is_collided;
     cd->normal = normal;
     cd->world_pos = world_pos;

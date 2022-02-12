@@ -1,7 +1,7 @@
 #include "finn_game.h"
 
 /// get the mouse position (relative to the window). Optionally pass bools to get mouse state
-vec2 get_mouse_pos(bool *lpressed, bool *rpressed) {
+Vec2 get_mouse_pos(bool *lpressed, bool *rpressed) {
     i32 x, y;
     u32 state = SDL_GetMouseState(&x, &y);
     if (lpressed != NULL) {
@@ -12,7 +12,7 @@ vec2 get_mouse_pos(bool *lpressed, bool *rpressed) {
         *rpressed = false;
         if (state & SDL_BUTTON_RIGHT) *rpressed = true;
     }
-    return (vec2){x, y};
+    return (Vec2){x, y};
 }
 
 /// -----------------
@@ -28,25 +28,28 @@ void finn_game_init(Finn_Game *game, SDL_Window *window) {
     segl_camera_init(game->camera);
     game->camera->aspect_ratio = window_w / window_h;
 
-    game->shader_program = new(Shader_Program);
+    game->shader_program = new(SEGL_Shader_Program);
     segl_shader_program_init_from(game->shader_program, "Simple.vsd", "Simple.fsd");
     segl_shader_program_use_shader(game->shader_program);
 
     segl_lines_init(&game->lines);
+
+    // -- custom 2d renderer
+    segl_render_2d_init(&game->renderer2D);
 
     glClearColor(0, 0, 0, 1);
 
     segl_lines_init(&game->grid);
     f32 grid_limits = 10.0f;
     for (f32 i = -grid_limits; i <= grid_limits; i++) {
-        game->grid.current_colour = (i == 0) ? (vec3) {0.8f, 0.8f, 0.8f} : (vec3) {0.3f, 0.3f, 0.3f};
-        segl_lines_draw_line_segment(&game->grid, (vec2) {i, -grid_limits}, (vec2) {i, grid_limits});
-        segl_lines_draw_line_segment(&game->grid, (vec2) {-grid_limits, i}, (vec2) {grid_limits, i});
+        game->grid.current_colour = (i == 0) ? (Vec3) {0.8f, 0.8f, 0.8f} : (Vec3) {0.3f, 0.3f, 0.3f};
+        segl_lines_draw_line_segment(&game->grid, (Vec2) {i, -grid_limits}, (Vec2) {i, grid_limits});
+        segl_lines_draw_line_segment(&game->grid, (Vec2) {-grid_limits, i}, (Vec2) {grid_limits, i});
     }
-    game->grid.current_colour = (vec3) {1, 0, 0};
-    segl_lines_draw_line_segment(&game->grid, (vec2) {0,0}, (vec2) {1, 0});
-    game->grid.current_colour = (vec3) {0, 1, 0};
-    segl_lines_draw_line_segment(&game->grid, (vec2) {0,0}, (vec2) {0, 1});
+    game->grid.current_colour = (Vec3) {1, 0, 0};
+    segl_lines_draw_line_segment(&game->grid, (Vec2) {0,0}, (Vec2) {1, 0});
+    game->grid.current_colour = (Vec3) {0, 1, 0};
+    segl_lines_draw_line_segment(&game->grid, (Vec2) {0,0}, (Vec2) {0, 1});
     segl_lines_compile(&game->grid);
 }
 
@@ -68,15 +71,15 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
     game->camera->aspect_ratio = width / (float)height;
     glViewport(0, 0, width, height);
 
-    mat4 deprojection = mat4_transposed(mat4_inverse(segl_get_camera_transform(game->camera)));
-    vec2 cursor_pos;
+    Mat4 deprojection = mat4_transposed(mat4_inverse(segl_get_camera_transform(game->camera)));
+    Vec2 cursor_pos;
     cursor_pos = get_mouse_pos(NULL, NULL);
     cursor_pos.x = (cursor_pos.x / width ) * 2.0f - 1.0f;
     cursor_pos.y = (cursor_pos.y / height) * 2.0f - 1.0f;
 
-    vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
-    // vec4 mouse_pos_world = {cursor_pos.x, cursor_pos.y, 0, 0};
-    vec4 mouse_pos_world = mat4_mul_vec4(&deprojection, &mouse_pos_ndc);
+    Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
+    // Vec4 mouse_pos_world = {cursor_pos.x, cursor_pos.y, 0, 0};
+    Vec4 mouse_pos_world = mat4_mul_vec4(&deprojection, &mouse_pos_ndc);
 
     cursor_pos.x = mouse_pos_world.x;
     cursor_pos.y = mouse_pos_world.y;
@@ -99,12 +102,12 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
 
 void finn_game_render(Finn_Game *game) {
     // -- draw mouse cursor
-    game->lines.current_colour = (vec3) {0.8f, 0.2f, 0.2f};
+    game->lines.current_colour = (Vec3) {0.8f, 0.2f, 0.2f};
     segl_lines_draw_cross(&game->lines, game->mouse_pos, 0.05f);
-    game->lines.current_colour = (vec3) {1, 1, 1};
+    game->lines.current_colour = (Vec3) {1, 1, 1};
     
     /*{ // -- draw collision test bed : aabb circle
-        game->lines.current_colour = (vec3) {1.0f, 1.0f, 1.0f};
+        game->lines.current_colour = (Vec3) {1.0f, 1.0f, 1.0f};
         SE_Circle circle;
         init_circle(&circle);
         circle.pos = game->mouse_pos;
@@ -121,7 +124,7 @@ void finn_game_render(Finn_Game *game) {
         se_phys_check_aabb_circle(&aabb, &circle);
     }
     { // -- draw collision test bed circle circle
-        game->lines.current_colour = (vec3) {1.0f, 1.0f, 1.0f};
+        game->lines.current_colour = (Vec3) {1.0f, 1.0f, 1.0f};
         SE_Circle c1;
         init_circle(&c1);
         c1.pos = game->mouse_pos;
@@ -130,7 +133,7 @@ void finn_game_render(Finn_Game *game) {
 
         SE_Circle c2;
         init_circle(&c2);
-        c2.pos = (vec2) {0, 0};
+        c2.pos = (Vec2) {0, 0};
         c2.radius = 3.2f;
         se_render_circle(&game->lines, &c2);
 
@@ -148,20 +151,28 @@ void finn_game_render(Finn_Game *game) {
         init_plane(&p);
         p.pos = vec2_one();
         p.normal = vec2_normalised(vec2_create(1, -1));
-        vec2 plane_vec = vec2_create(p.normal.y, -p.normal.x);
+        Vec2 plane_vec = vec2_create(p.normal.y, -p.normal.x);
         segl_lines_draw_line_segment(&game->lines, 
             vec2_mul_scalar(plane_vec, -3.0f), 
             vec2_mul_scalar(plane_vec, +3.0f));
 
         se_phys_check_circle_plane(&c, &p);
     }
+    
+    // -- custom 2d renderer
+    segl_render_2d_rect(&game->renderer2D, (Rect) {1, 1, 3, 2});
+    
+    segl_render_2d_rect(&game->renderer2D, (Rect) {-3, -4, 3, 2});
 
     // -- render
     glClear(GL_COLOR_BUFFER_BIT);
-    mat4 ortho_mat = segl_get_camera_transform(game->camera);
+    Mat4 ortho_mat = segl_get_camera_transform(game->camera);
     segl_shader_program_set_uniform_mat4(game->shader_program, "vpMatrix", ortho_mat);
     // sense grid lines don't change, we just draw them
     segl_lines_draw(&game->grid);
     // other lines potentially change every frame, so we have to compile/draw/clear them
     segl_lines_update_frame(&game->lines);
+
+    // -- custom 2d renderer
+    segl_render_2d_update_frame(&game->renderer2D);
 }

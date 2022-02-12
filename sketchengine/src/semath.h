@@ -63,92 +63,92 @@ f32 frandom();
 f32 frandom_in_range(f32 min, f32 max);
 
 /// ----
-/// vec2
+/// Vec2
 /// ----
 
-/// returns a vec2
-SEINLINE vec2 vec2_create(f32 x, f32 y) {
-    vec2 result;
+/// returns a Vec2
+SEINLINE Vec2 vec2_create(f32 x, f32 y) {
+    Vec2 result;
     result.x = x;
     result.y = y;
     return result;
 }
 
-/// returns a vec2 with x, y being zero
-SEINLINE vec2 vec2_zero() {
-    return (vec2) {0.0f,0.0f};
+/// returns a Vec2 with x, y being zero
+SEINLINE Vec2 vec2_zero() {
+    return (Vec2) {0.0f,0.0f};
 }
 
-/// returns a vec2 with x, y being one
-SEINLINE vec2 vec2_one() {
-    return (vec2) {1.0f, 1.0f};
+/// returns a Vec2 with x, y being one
+SEINLINE Vec2 vec2_one() {
+    return (Vec2) {1.0f, 1.0f};
 }
 
-/// returns a vec2 pointing up
-SEINLINE vec2 vec2_up() {
-    return (vec2) {0.0f, 1.0f};
+/// returns a Vec2 pointing up
+SEINLINE Vec2 vec2_up() {
+    return (Vec2) {0.0f, 1.0f};
 }
 
-/// returns a vec2 pointing down
-SEINLINE vec2 vec2_down() {
-    return (vec2) {0.0f, -1.0f};
+/// returns a Vec2 pointing down
+SEINLINE Vec2 vec2_down() {
+    return (Vec2) {0.0f, -1.0f};
 }
 
-/// returns a vec2 pointing left
-SEINLINE vec2 vec2_left() {
-    return (vec2) {-1.0f, 0.0f};
+/// returns a Vec2 pointing left
+SEINLINE Vec2 vec2_left() {
+    return (Vec2) {-1.0f, 0.0f};
 }
 
-/// returns a vec2 pointing right
-SEINLINE vec2 vec2_right() {
-    return (vec2) {1.0f, 0.0f};
+/// returns a Vec2 pointing right
+SEINLINE Vec2 vec2_right() {
+    return (Vec2) {1.0f, 0.0f};
 }
 
 /// (v1 + v2)
-SEINLINE vec2 vec2_add(vec2 v1, vec2 v2) {
-    return (vec2) {
+SEINLINE Vec2 vec2_add(Vec2 v1, Vec2 v2) {
+    return (Vec2) {
         v1.x + v2.x,
         v1.y + v2.y};
 }
 
 /// (v1 - v2)
-SEINLINE vec2 vec2_sub(vec2 v1, vec2 v2) {
-    return (vec2) {
+SEINLINE Vec2 vec2_sub(Vec2 v1, Vec2 v2) {
+    return (Vec2) {
         v1.x - v2.x,
         v1.y - v2.y};
 }
 
 /// (v1 * v2)
-SEINLINE vec2 vec2_mul(vec2 v1, vec2 v2) {
-    return (vec2) {
+SEINLINE Vec2 vec2_mul(Vec2 v1, Vec2 v2) {
+    return (Vec2) {
         v1.x * v2.x,
         v1.y * v2.y};
 }
 
 /// (v1 * scalar)
-SEINLINE vec2 vec2_mul_scalar(vec2 v1, f32 scalar) {
-    return (vec2) {
+SEINLINE Vec2 vec2_mul_scalar(Vec2 v1, f32 scalar) {
+    return (Vec2) {
         v1.x * scalar,
         v1.y * scalar};
 }
 
 /// (v1 / v2)
-SEINLINE vec2 vec2_div(vec2 v1, vec2 v2) {
-    return (vec2) {
+SEINLINE Vec2 vec2_div(Vec2 v1, Vec2 v2) {
+    return (Vec2) {
         v1.x / v2.x,
         v1.y / v2.y};
 }
 
-SEINLINE f32 vec2_dot(vec2 v1, vec2 v2) {
+SEINLINE f32 vec2_dot(Vec2 v1, Vec2 v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
-SEINLINE vec2 vec2_rotated(vec2 v, f32 angle_radians) { // @check
+SEINLINE Vec2 vec2_rotated(Vec2 v, f32 angle_radians) { // @check
     f32 cos = semath_cos(angle_radians);
     f32 sin = semath_sin(angle_radians);
     f32 tx = v.x;
     f32 ty = v.y;
-    return (vec2) {
+    return (Vec2) {
         (cos * tx) - (sin * ty),
         (sin * tx) + (cos * ty),
     };
@@ -157,24 +157,24 @@ SEINLINE vec2 vec2_rotated(vec2 v, f32 angle_radians) { // @check
 /// returns the squared magnitude / length of the provided vector
 /// use this one when comparing lengths of multiple vectors, because you don't
 /// really need the sqrt version
-SEINLINE f32 vec2_magnitude_squared(vec2 vec) {
+SEINLINE f32 vec2_magnitude_squared(Vec2 vec) {
     return vec.x * vec.x + vec.y * vec.y;
 }
 
 /// returns magnitude / length of the provided vector
-SEINLINE f32 vec2_magnitude(vec2 vec) {
+SEINLINE f32 vec2_magnitude(Vec2 vec) {
     return semath_sqrt(vec2_magnitude_squared(vec));
 }
 
 /// normalises the provided vector in place to a unit vector
-SEINLINE void vec2_normalise(vec2 *vec) {
+SEINLINE void vec2_normalise(Vec2 *vec) {
     const f32 mag = vec2_magnitude(*vec);
     vec->x /= mag;
     vec->y /= mag;
 }
 
 /// returns the normalised version of the provided vector
-SEINLINE vec2 vec2_normalised(vec2 vec) {
+SEINLINE Vec2 vec2_normalised(Vec2 vec) {
     vec2_normalise(&vec);
     return vec;
 }
@@ -182,7 +182,7 @@ SEINLINE vec2 vec2_normalised(vec2 vec) {
 /// compares all elements of v1 and v2 and unsures the difference is less than tolerance
 /// tolerance is typically SEMATH_FLOAT_EPSILON or similiar
 /// returns true if within tolerance
-SEINLINE bool vec2_compare(vec2 v1, vec2 v2, f32 tolerance) {
+SEINLINE bool vec2_compare(Vec2 v1, Vec2 v2, f32 tolerance) {
     if (semath_abs(v1.x - v2.x) > tolerance) {
         return false;
     }
@@ -193,118 +193,118 @@ SEINLINE bool vec2_compare(vec2 v1, vec2 v2, f32 tolerance) {
 }
 
 /// returns the distance between v1 and v2
-SEINLINE f32 vec2_distance(vec2 v1, vec2 v2) {
-    vec2 d = (vec2) {
+SEINLINE f32 vec2_distance(Vec2 v1, Vec2 v2) {
+    Vec2 d = (Vec2) {
         v1.x - v2.x,
         v1.y - v2.y};
     return vec2_magnitude(d);
 }
 
 /// ----
-/// vec3
+/// Vec3
 /// ----
 
-/// returns a vec3
-SEINLINE vec3 vec3_create(f32 x, f32 y, f32 z) {
-    vec3 result;
+/// returns a Vec3
+SEINLINE Vec3 vec3_create(f32 x, f32 y, f32 z) {
+    Vec3 result;
     result.x = x;
     result.y = y;
     result.z = z;
     return result;
 }
 
-/// returns a vec3 with x, y, z being zero
-SEINLINE vec3 vec3_zero() {
-    return (vec3) {0.0f,0.0f,0.0f};
+/// returns a Vec3 with x, y, z being zero
+SEINLINE Vec3 vec3_zero() {
+    return (Vec3) {0.0f,0.0f,0.0f};
 }
 
-/// returns a vec3 with x, y, z being one
-SEINLINE vec3 vec3_one() {
-    return (vec3) {1.0f, 1.0f, 1.0f};
+/// returns a Vec3 with x, y, z being one
+SEINLINE Vec3 vec3_one() {
+    return (Vec3) {1.0f, 1.0f, 1.0f};
 }
 
-/// returns a vec3 pointing up
-SEINLINE vec3 vec3_up() {
-    return (vec3) {0.0f, 1.0f, 0.0f};
+/// returns a Vec3 pointing up
+SEINLINE Vec3 vec3_up() {
+    return (Vec3) {0.0f, 1.0f, 0.0f};
 }
 
-/// returns a vec3 pointing down
-SEINLINE vec3 vec3_down() {
-    return (vec3) {0.0f, -1.0f, 0.0f};
+/// returns a Vec3 pointing down
+SEINLINE Vec3 vec3_down() {
+    return (Vec3) {0.0f, -1.0f, 0.0f};
 }
 
-/// returns a vec3 pointing left
-SEINLINE vec3 vec3_left() {
-    return (vec3) {-1.0f, 0.0f, 0.0f};
+/// returns a Vec3 pointing left
+SEINLINE Vec3 vec3_left() {
+    return (Vec3) {-1.0f, 0.0f, 0.0f};
 }
 
-/// returns a vec3 pointing right
-SEINLINE vec3 vec3_right() {
-    return (vec3) {1.0f, 0.0f, 0.0f};
+/// returns a Vec3 pointing right
+SEINLINE Vec3 vec3_right() {
+    return (Vec3) {1.0f, 0.0f, 0.0f};
 }
 
-/// returns a vec3 pointing forward (right handed coord system) (0, 0, -1)
-SEINLINE vec3 vec3_forward() {
-    return (vec3) {0.0f, 0.0f, -1.0f};
+/// returns a Vec3 pointing forward (right handed coord system) (0, 0, -1)
+SEINLINE Vec3 vec3_forward() {
+    return (Vec3) {0.0f, 0.0f, -1.0f};
 }
 
-/// returns a vec3 pointing back (right handed coord system) (0, 0, +1)
-SEINLINE vec3 vec3_back() {
-    return (vec3) {0.0f, 0.0f, 1.0f};
+/// returns a Vec3 pointing back (right handed coord system) (0, 0, +1)
+SEINLINE Vec3 vec3_back() {
+    return (Vec3) {0.0f, 0.0f, 1.0f};
 }
 
 /// v1 + v2 and returns a copy
-SEINLINE vec3 vec3_add(vec3 v1, vec3 v2) {
-    return (vec3) {
+SEINLINE Vec3 vec3_add(Vec3 v1, Vec3 v2) {
+    return (Vec3) {
         v1.x + v2.x,
         v1.y + v2.y,
         v1.z + v2.z};
 }
 
 /// v1 - v2 and returns a copy
-SEINLINE vec3 vec3_sub(vec3 v1, vec3 v2) {
-    return (vec3) {
+SEINLINE Vec3 vec3_sub(Vec3 v1, Vec3 v2) {
+    return (Vec3) {
         v1.x - v2.x,
         v1.y - v2.y,
         v1.z - v2.z};
 }
 
 /// v1 * v2 and returns a copy
-SEINLINE vec3 vec3_mul(vec3 v1, vec3 v2) {
-    return (vec3) {
+SEINLINE Vec3 vec3_mul(Vec3 v1, Vec3 v2) {
+    return (Vec3) {
         v1.x * v2.x,
         v1.y * v2.y,
         v1.z * v2.z};
 }
 
 /// v1 * scalar and returns a copy
-SEINLINE vec3 vec3_mul_scalar(vec3 v1, f32 scalar) {
-    return (vec3) {
+SEINLINE Vec3 vec3_mul_scalar(Vec3 v1, f32 scalar) {
+    return (Vec3) {
         v1.x * scalar,
         v1.y * scalar,
         v1.z * scalar};
 }
 
 /// v1 / v2 and returns a copy
-SEINLINE vec3 vec3_div(vec3 v1, vec3 v2) {
-    return (vec3) {
+SEINLINE Vec3 vec3_div(Vec3 v1, Vec3 v2) {
+    return (Vec3) {
         v1.x / v2.x,
         v1.y / v2.y,
         v1.z / v2.z};
 }
 
 /// Returns the squared magnitude / length of the provided vector
-SEINLINE f32 vec3_magnitude_squared(vec3 v) {
+SEINLINE f32 vec3_magnitude_squared(Vec3 v) {
     return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 
 /// Returns the magnitude / length of the provided vector
-SEINLINE f32 vec3_magnitude(vec3 v) {
+SEINLINE f32 vec3_magnitude(Vec3 v) {
     return semath_sqrt(vec3_magnitude_squared(v));
 }
 
 /// Normalises the provided vector in place to a unit vector
-SEINLINE f32 vec3_normalise(vec3 *v) {
+SEINLINE f32 vec3_normalise(Vec3 *v) {
     const f32 mag = vec3_magnitude(*v);
     v->x /= mag;
     v->y /= mag;
@@ -312,21 +312,21 @@ SEINLINE f32 vec3_normalise(vec3 *v) {
 }
 
 /// Returns a normalised copy of the supplied vector
-SEINLINE vec3 vec3_normalised(vec3 v) {
+SEINLINE Vec3 vec3_normalised(Vec3 v) {
     vec3_normalise(&v);
     return v;
 }
 
 /// Returns the dot product of v1 and v2
 /// Typically used to calculat ethe difference in direction
-SEINLINE f32 vec3_dot(vec3 v1, vec3 v2) {
+SEINLINE f32 vec3_dot(Vec3 v1, Vec3 v2) {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
 /// Calculates and returns the cross product of the supplied vectors
 /// The cross product is a new vector which is orthoganal to both provided vectors
-SEINLINE vec3 vec3_cross(vec3 v1, vec3 v2) {
-    return (vec3) {
+SEINLINE Vec3 vec3_cross(Vec3 v1, Vec3 v2) {
+    return (Vec3) {
         v1.y * v2.z - v1.z * v2.y,
         v1.z * v2.x - v1.x * v2.z,
         v1.x * v2.y - v1.y * v2.x};
@@ -335,7 +335,7 @@ SEINLINE vec3 vec3_cross(vec3 v1, vec3 v2) {
 /// Compares all elements of v1 and v2 and ensures the difference is less than tolerance
 /// tolerance is typically SEMATH_FLOAT_EPSILON or similar
 /// returns true if within tolerance
-SEINLINE bool vec3_compare(vec3 v1, vec3 v2, f32 tolerance) {
+SEINLINE bool vec3_compare(Vec3 v1, Vec3 v2, f32 tolerance) {
     if (semath_abs(v1.x - v2.x) > tolerance) {
         return false;
     }
@@ -349,8 +349,8 @@ SEINLINE bool vec3_compare(vec3 v1, vec3 v2, f32 tolerance) {
 }
 
 /// Returns the distance between v1 and v2
-SEINLINE f32 vec3_distance(vec3 v1, vec3 v2) {
-    vec3 d = (vec3) {
+SEINLINE f32 vec3_distance(Vec3 v1, Vec3 v2) {
+    Vec3 d = (Vec3) {
         v1.x - v2.x,
         v1.x - v2.y,
         v1.z - v2.z};
@@ -358,49 +358,49 @@ SEINLINE f32 vec3_distance(vec3 v1, vec3 v2) {
 }
 
 /// ----
-/// mat2
+/// Mat2
 /// ----
 
-/// init mat2
-SEINLINE mat2 mat2_create(f32 m0, f32 m1, f32 m2, f32 m3) {
-    // mat2 r;
+/// init Mat2
+SEINLINE Mat2 mat2_create(f32 m0, f32 m1, f32 m2, f32 m3) {
+    // Mat2 r;
     // r.m0 = m0; r.m2 = m2;
     // r.m1 = m1; r.m3 = m3;
     // return r;
-    return (mat2) {
+    return (Mat2) {
         m0, m2,
         m1, m3,
     };
 }
 
-/// get a mat2 identity
-SEINLINE mat2 mat2_identity() {
-    // mat2 r;
+/// get a Mat2 identity
+SEINLINE Mat2 mat2_identity() {
+    // Mat2 r;
     // r.m0 = 1; r.m2 = 0;
     // r.m1 = 0; r.m3 = 1;
     // return r;
-    return (mat2) {
+    return (Mat2) {
         1, 0,
         0, 1
     };
 }
 
-/// get a mat2 from 2 vec2
+/// get a Mat2 from 2 Vec2
 /// @param 'col1' column 1
 /// @param 'col2' column 2
-SEINLINE mat2 mat2_create_vec2(vec2 col1, vec2 col2) {
-    // mat2 r;
+SEINLINE Mat2 mat2_create_vec2(Vec2 col1, Vec2 col2) {
+    // Mat2 r;
     // r.m0 = col1.x; r.m2 = col2.x;
     // r.m1 = col1.y; r.m3 = col2.y;
     // return r;
-    return (mat2) {
+    return (Mat2) {
         col1.x, col2.x,
         col1.y, col2.y
     };
 }
 
 /// returns true if the two provided mat2s are identitcal
-SEINLINE bool mat2_compare(mat2 m1, mat2 m2, f32 tolerance) {
+SEINLINE bool mat2_compare(Mat2 m1, Mat2 m2, f32 tolerance) {
     if (semath_abs(m1.m0 - m2.m0) > tolerance) return false;
     if (semath_abs(m1.m1 - m2.m1) > tolerance) return false;
     if (semath_abs(m1.m2 - m2.m2) > tolerance) return false;
@@ -411,8 +411,8 @@ SEINLINE bool mat2_compare(mat2 m1, mat2 m2, f32 tolerance) {
 // a b   e f   ae + bg, af + bh 
 // c d x g h = ce + dg, cf + dh
 /// multiply m1 x m2 (column major)
-SEINLINE mat2 mat2_mul(mat2 m1, mat2 m2) {
-    mat2 result;
+SEINLINE Mat2 mat2_mul(Mat2 m1, Mat2 m2) {
+    Mat2 result;
     result.m0 = m1.m0 * m2.m0 + m1.m2 * m2.m1;
     result.m1 = m1.m1 * m2.m0 + m1.m3 * m2.m1;
     result.m2 = m1.m0 * m2.m2 + m1.m2 * m2.m3;
@@ -421,8 +421,8 @@ SEINLINE mat2 mat2_mul(mat2 m1, mat2 m2) {
 }
 
 /// multiply m by a v
-SEINLINE vec2 mat2_mul_vec2(mat2 m, vec2 v) {
-    vec2 result;
+SEINLINE Vec2 mat2_mul_vec2(Mat2 m, Vec2 v) {
+    Vec2 result;
     result.x = m.m0 * v.x + m.m2 * v.y;
     result.y = m.m1 * v.x + m.m3 * v.y;
     return result;
@@ -434,9 +434,9 @@ SEINLINE vec2 mat2_mul_vec2(mat2 m, vec2 v) {
 /// ported from:
 /// https://github.com/travisvroman/kohi/blob/main/engine/src/math/kmath.h
 
-// /// returns a mat4 set to zero (NOT IDENTITY)
-// SEINLINE mat4 mat4_create() { // ! commented out because I don't think this will be useful
-//     return (mat4) {
+// /// returns a Mat4 set to zero (NOT IDENTITY)
+// SEINLINE Mat4 mat4_create() { // ! commented out because I don't think this will be useful
+//     return (Mat4) {
 //         0, 0, 0, 0,
 //         0, 0, 0, 0,
 //         0, 0, 0, 0,
@@ -444,11 +444,11 @@ SEINLINE vec2 mat2_mul_vec2(mat2 m, vec2 v) {
 //     };
 // }
 
-/// @brief creates a mat4 based on the array passed in
+/// @brief creates a Mat4 based on the array passed in
 /// @brief [0 - 3] is column 1, [4 - 7] is column 2 etc
 /// @param 'v' is an array of 16 elements [0 - 15]
-SEINLINE mat4 mat4_create(f32 v[16]) {
-    return (mat4) {
+SEINLINE Mat4 mat4_create(f32 v[16]) {
+    return (Mat4) {
         v[0], v[4],  v[8], v[12],
         v[1], v[5],  v[9], v[13],
         v[2], v[6], v[10], v[14],
@@ -456,9 +456,9 @@ SEINLINE mat4 mat4_create(f32 v[16]) {
     };
 }
 
-/// returns an identity mat4
-SEINLINE mat4 mat4_identity() {
-    return (mat4) {
+/// returns an identity Mat4
+SEINLINE Mat4 mat4_identity() {
+    return (Mat4) {
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
@@ -467,8 +467,8 @@ SEINLINE mat4 mat4_identity() {
 }
 
 /// returns the result of multiplying m1 and m2
-SEINLINE mat4 mat4_mul(mat4 m1, mat4 m2) {
-    mat4 result = mat4_identity();
+SEINLINE Mat4 mat4_mul(Mat4 m1, Mat4 m2) {
+    Mat4 result = mat4_identity();
 
     const f32 *m1_ptr = m1.data;
     const f32 *m2_ptr = m2.data;
@@ -488,7 +488,7 @@ SEINLINE mat4 mat4_mul(mat4 m1, mat4 m2) {
     return result;
 }
 
-/// creates and returns an orthographic projection mat4.
+/// creates and returns an orthographic projection Mat4.
 /// Typically used to render flat or 2D scenes
 /// @param left The left side of the view frustum.
 /// @param right The right side of the view frustum.
@@ -496,8 +496,8 @@ SEINLINE mat4 mat4_mul(mat4 m1, mat4 m2) {
 /// @param top The top side of the view frustum.
 /// @param near_clip The near clipping plane distance.
 /// @param far_clip The far clipping plane distance.
-SEINLINE mat4 mat4_ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near_clip, f32 far_clip) {
-    mat4 result = mat4_identity();
+SEINLINE Mat4 mat4_ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near_clip, f32 far_clip) {
+    Mat4 result = mat4_identity();
 
     f32 lr = 1.0f / (left - right);
     f32 bt = 1.0f / (bottom - top);
@@ -513,14 +513,14 @@ SEINLINE mat4 mat4_ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near_clip
     return result;
 }
 
-/// creates and returns a perspective mat4. Typically used to render 3D scenes
+/// creates and returns a perspective Mat4. Typically used to render 3D scenes
 /// @param fov_radians The field of view in radians.
 /// @param aspect_ratio The aspect ratio.
 /// @param near_clip The near clipping plane distance.
 /// @param far_clip The far clipping plane distance.
-SEINLINE mat4 mat4_perspective(f32 fov_radians, f32 aspect_ratio, f32 near_clip, f32 far_clip) {
+SEINLINE Mat4 mat4_perspective(f32 fov_radians, f32 aspect_ratio, f32 near_clip, f32 far_clip) {
     f32 half_tan_fov = semath_tan(fov_radians * 0.5f);
-    mat4 result;
+    Mat4 result;
     memset(result.data, 0, sizeof(f32) * 16);
     result.data[0] = 1.0f / (aspect_ratio * half_tan_fov);
     result.data[5] = 1.0f / half_tan_fov;
@@ -530,17 +530,17 @@ SEINLINE mat4 mat4_perspective(f32 fov_radians, f32 aspect_ratio, f32 near_clip,
     return result;
 }
 
-/// creates and returns a look-at mat4, or a mat4 looking at a target from the perspective of pos
-SEINLINE mat4 mat4_lookat(vec3 position, vec3 target, vec3 up) {
-    mat4 result;
-    vec3 z_axis;
+/// creates and returns a look-at Mat4, or a Mat4 looking at a target from the perspective of pos
+SEINLINE Mat4 mat4_lookat(Vec3 position, Vec3 target, Vec3 up) {
+    Mat4 result;
+    Vec3 z_axis;
     z_axis.x = target.x - position.x;
     z_axis.y = target.y - position.y;
     z_axis.z = target.z - position.z;
 
     z_axis = vec3_normalised(z_axis);
-    vec3 x_axis = vec3_normalised(vec3_cross(z_axis, up));
-    vec3 y_axis = vec3_cross(x_axis, z_axis);
+    Vec3 x_axis = vec3_normalised(vec3_cross(z_axis, up));
+    Vec3 y_axis = vec3_cross(x_axis, z_axis);
 
     result.data[0] = x_axis.x;
     result.data[1] = y_axis.x;
@@ -562,9 +562,9 @@ SEINLINE mat4 mat4_lookat(vec3 position, vec3 target, vec3 up) {
     return result;
 }
 
-/// (rows -> columns) returns a transposed copy of the provided mat4
-SEINLINE mat4 mat4_transposed(mat4 m) {
-    mat4 result = mat4_identity();
+/// (rows -> columns) returns a transposed copy of the provided Mat4
+SEINLINE Mat4 mat4_transposed(Mat4 m) {
+    Mat4 result = mat4_identity();
     result.data[0] = m.data[0];
     result.data[1] = m.data[4];
     result.data[2] = m.data[8];
@@ -584,8 +584,8 @@ SEINLINE mat4 mat4_transposed(mat4 m) {
     return result;
 }
 
-/// creates and returns an inverse of the provided mat4
-SEINLINE mat4 mat4_inverse(mat4 matrix) {
+/// creates and returns an inverse of the provided Mat4
+SEINLINE Mat4 mat4_inverse(Mat4 matrix) {
     const f32* m = matrix.data;
 
     f32 t0 = m[10] * m[15];
@@ -613,7 +613,7 @@ SEINLINE mat4 mat4_inverse(mat4 matrix) {
     f32 t22 = m[0] * m[5];
     f32 t23 = m[4] * m[1];
 
-    mat4 result;
+    Mat4 result;
     f32* o = result.data;
 
     o[0] = (t0 * m[5] + t3 * m[9] + t4 * m[13]) - (t1 * m[5] + t2 * m[9] + t5 * m[13]);
@@ -643,27 +643,27 @@ SEINLINE mat4 mat4_inverse(mat4 matrix) {
     return result;
 }
 
-/// creates and returns a translation mat4 from the given pos
-SEINLINE mat4 mat4_translation(vec3 pos) {
-    mat4 result = mat4_identity();
+/// creates and returns a translation Mat4 from the given pos
+SEINLINE Mat4 mat4_translation(Vec3 pos) {
+    Mat4 result = mat4_identity();
     result.data[12] = pos.x;
     result.data[13] = pos.y;
     result.data[14] = pos.z;
     return result;
 }
 
-/// creates and returns a scale mat4
-SEINLINE mat4 mat4_scale(vec3 scale) {
-    mat4 result = mat4_identity();
+/// creates and returns a scale Mat4
+SEINLINE Mat4 mat4_scale(Vec3 scale) {
+    Mat4 result = mat4_identity();
     result.data[0] = scale.x;
     result.data[5] = scale.y;
     result.data[10] = scale.z;
     return result;
 }
 
-/// creates and returns a rotation mat4 from the provided x angle
-SEINLINE mat4 mat4_euler_x(f32 angle_radians) {
-    mat4 result = mat4_identity();
+/// creates and returns a rotation Mat4 from the provided x angle
+SEINLINE Mat4 mat4_euler_x(f32 angle_radians) {
+    Mat4 result = mat4_identity();
     f32 c = semath_cos(angle_radians);
     f32 s = semath_sin(angle_radians);
     result.data[5] = c;
@@ -673,9 +673,9 @@ SEINLINE mat4 mat4_euler_x(f32 angle_radians) {
     return result;
 }
 
-/// creates and returns a rotation mat4 from the provided y angle
-SEINLINE mat4 mat4_euler_y(f32 angle_radians) {
-    mat4 result = mat4_identity();
+/// creates and returns a rotation Mat4 from the provided y angle
+SEINLINE Mat4 mat4_euler_y(f32 angle_radians) {
+    Mat4 result = mat4_identity();
     f32 c = semath_cos(angle_radians);
     f32 s = semath_sin(angle_radians);
     result.data[0] = c;
@@ -685,9 +685,9 @@ SEINLINE mat4 mat4_euler_y(f32 angle_radians) {
     return result;
 }
 
-/// creates and returns a rotation mat4 from the provided z angle
-SEINLINE mat4 mat4_euler_z(f32 angle_radians) {
-    mat4 result = mat4_identity();
+/// creates and returns a rotation Mat4 from the provided z angle
+SEINLINE Mat4 mat4_euler_z(f32 angle_radians) {
+    Mat4 result = mat4_identity();
     f32 c = semath_cos(angle_radians);
     f32 s = semath_sin(angle_radians);
     result.data[0] = c;
@@ -697,19 +697,19 @@ SEINLINE mat4 mat4_euler_z(f32 angle_radians) {
     return result;
 }
 
-/// creates a rot mat4 from the provided x, y, z, axis rotation
-SEINLINE mat4 mat4_euler_xyz(f32 x_radians, f32 y_radians, f32 z_radians) {
-    mat4 rx = mat4_euler_x(x_radians); // x rotation
-    mat4 ry = mat4_euler_y(y_radians); // y rotation
-    mat4 rz = mat4_euler_z(z_radians); // z rotation
-    mat4 result = mat4_mul(rx, ry);
+/// creates a rot Mat4 from the provided x, y, z, axis rotation
+SEINLINE Mat4 mat4_euler_xyz(f32 x_radians, f32 y_radians, f32 z_radians) {
+    Mat4 rx = mat4_euler_x(x_radians); // x rotation
+    Mat4 ry = mat4_euler_y(y_radians); // y rotation
+    Mat4 rz = mat4_euler_z(z_radians); // z rotation
+    Mat4 result = mat4_mul(rx, ry);
     result = mat4_mul(result, rz);
     return result;
 }
 
-/// returns a forward vec3 relative to the provided mat4
-SEINLINE vec3 mat4_forward(mat4 m) {
-    vec3 result;
+/// returns a forward Vec3 relative to the provided Mat4
+SEINLINE Vec3 mat4_forward(Mat4 m) {
+    Vec3 result;
     result.x = -m.data[2];
     result.y = -m.data[6];
     result.z = -m.data[10];
@@ -717,9 +717,9 @@ SEINLINE vec3 mat4_forward(mat4 m) {
     return result;
 }
 
-/// returns a backward vec3 relative to the provided mat4
-SEINLINE vec3 mat4_backward(mat4 m) {
-    vec3 result;
+/// returns a backward Vec3 relative to the provided Mat4
+SEINLINE Vec3 mat4_backward(Mat4 m) {
+    Vec3 result;
     result.x = m.data[2];
     result.y = m.data[6];
     result.z = m.data[10];
@@ -727,9 +727,9 @@ SEINLINE vec3 mat4_backward(mat4 m) {
     return result;
 }
 
-/// returns a up vec3 relative to the provided mat4
-SEINLINE vec3 mat4_up(mat4 m) {
-    vec3 result;
+/// returns a up Vec3 relative to the provided Mat4
+SEINLINE Vec3 mat4_up(Mat4 m) {
+    Vec3 result;
     result.x = m.data[1];
     result.y = m.data[5];
     result.z = m.data[9];
@@ -737,9 +737,9 @@ SEINLINE vec3 mat4_up(mat4 m) {
     return result;
 }
 
-/// returns a down vec3 relative to the provided mat4
-SEINLINE vec3 mat4_down(mat4 m) {
-    vec3 result;
+/// returns a down Vec3 relative to the provided Mat4
+SEINLINE Vec3 mat4_down(Mat4 m) {
+    Vec3 result;
     result.x = -m.data[1];
     result.y = -m.data[5];
     result.z = -m.data[9];
@@ -747,9 +747,9 @@ SEINLINE vec3 mat4_down(mat4 m) {
     return result;
 }
 
-/// returns a left vec3 relative to the provided mat4
-SEINLINE vec3 mat4_left(mat4 m) {
-    vec3 result;
+/// returns a left Vec3 relative to the provided Mat4
+SEINLINE Vec3 mat4_left(Mat4 m) {
+    Vec3 result;
     result.x = -m.data[0];
     result.y = -m.data[4];
     result.z = -m.data[8];
@@ -757,9 +757,9 @@ SEINLINE vec3 mat4_left(mat4 m) {
     return result;
 }
 
-/// returns a right vec3 relative to the provided mat4
-SEINLINE vec3 mat4_right(mat4 m) {
-    vec3 result;
+/// returns a right Vec3 relative to the provided Mat4
+SEINLINE Vec3 mat4_right(Mat4 m) {
+    Vec3 result;
     result.x = m.data[0];
     result.y = m.data[4];
     result.z = m.data[8];
@@ -768,8 +768,8 @@ SEINLINE vec3 mat4_right(mat4 m) {
 }
 
 /// creates and returns the result of the multiplication of m and v
-SEINLINE vec4 mat4_mul_vec4 (const mat4 *m, const vec4 *v) {
-    vec4 result;
+SEINLINE Vec4 mat4_mul_vec4 (const Mat4 *m, const Vec4 *v) {
+    Vec4 result;
     result.x = m->data[0 ] * v->x + m->data[1 ] * v->y + m->data[2 ] * v->z + m->data[3 ] * v->w;
     result.y = m->data[4 ] * v->x + m->data[5 ] * v->y + m->data[6 ] * v->z + m->data[7 ] * v->w;
     result.z = m->data[8 ] * v->x + m->data[9 ] * v->y + m->data[10] * v->z + m->data[11] * v->w;
@@ -781,7 +781,7 @@ SEINLINE vec4 mat4_mul_vec4 (const mat4 *m, const vec4 *v) {
 /// TESTS
 /// -----
 
-/// tests all mat2 functions and returns true if all succeed
+/// tests all Mat2 functions and returns true if all succeed
 SEINLINE bool mat2_test() {
     bool result = true;
     { // -- mat2_create
@@ -791,8 +791,8 @@ SEINLINE bool mat2_test() {
 
     }
     { // -- mat2_mul 1
-        mat2 m1 = mat2_identity();
-        mat2 m2 = mat2_identity();
+        Mat2 m1 = mat2_identity();
+        Mat2 m2 = mat2_identity();
         if (mat2_compare(mat2_mul(m1, m2), mat2_identity(), SEMATH_FLOAT_EPSILON)) {
             printf("mat2_test : mat2_mul 1: ok\n");
         } else {
@@ -801,8 +801,8 @@ SEINLINE bool mat2_test() {
         }
     }
     { // -- mat2_mul 2
-        mat2 m1 = mat2_create(2, 1, 0, 2);
-        mat2 m2 = mat2_create(1, 3, 2, 4);
+        Mat2 m1 = mat2_create(2, 1, 0, 2);
+        Mat2 m2 = mat2_create(1, 3, 2, 4);
         if (mat2_compare(mat2_mul(m1, m2), mat2_create(2, 7, 4, 10), SEMATH_FLOAT_EPSILON)) {
             printf("mat2_test : mat2_mul 2: ok\n");
         } else {
@@ -811,10 +811,10 @@ SEINLINE bool mat2_test() {
         }
     }
     { // -- mat2_mul_vec2
-        mat2 m1 = mat2_create(3, 8, 4, 2);
-        vec2 v1 = vec2_create(12, 15);
-        vec2 v = mat2_mul_vec2(m1, v1);
-        vec2 test_against = vec2_create(96, 126);
+        Mat2 m1 = mat2_create(3, 8, 4, 2);
+        Vec2 v1 = vec2_create(12, 15);
+        Vec2 v = mat2_mul_vec2(m1, v1);
+        Vec2 test_against = vec2_create(96, 126);
         if (vec2_compare(v, test_against, SEMATH_FLOAT_EPSILON)) {
             printf("mat2_test : mat2_mul_vec2: ok\n");
         } else {

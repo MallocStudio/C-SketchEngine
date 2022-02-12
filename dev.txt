@@ -3,5 +3,9 @@
 [/] working physics collision check between circle and circle (with debug rendering)
 
 12 / 2 / 2022:
-[~in progress] working physics collision check between circle and plane (with debug rendering)
-[ ] render a quad with color and blend modes
+[/] render a quad with color
+
+LATER:
+[~in progress] working physics collision check between circle and plane (with debug rendering) // @question ask for Finn's help with this problem
+[ ] aabb and plane // do during class time where Finn is around
+[ ] get a physics simulation of objects going. (to be able to add physics shapes to entities, or have shapes be the entities or etc. TBD)
