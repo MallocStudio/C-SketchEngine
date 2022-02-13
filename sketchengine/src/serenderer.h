@@ -4,8 +4,6 @@
 #include "semath.h"
 #include "defines.h"
 
-#define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
-
 /// ---------
 /// 2D camera
 /// ---------

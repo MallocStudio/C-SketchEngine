@@ -8,6 +8,9 @@
         "sketchengine.h": "c",
         "*.rh": "c",
         "core.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "freetype.h": "c",
+        "hashmap.h": "c",
+        "stdbool.h": "c"
     }
 }

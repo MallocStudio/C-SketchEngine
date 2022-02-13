@@ -5,7 +5,15 @@
 12 / 2 / 2022:
 [/] render a quad with color
 
-LATER:
+13 / 2 / 2022:
+[/] include freetype library and link and build correctly
+[~in progress: following https://learnopengl.com/In-Practice/Text-Rendering] render text (ttf)
+
+14 / 2 / 2022:
 [~in progress] working physics collision check between circle and plane (with debug rendering) // @question ask for Finn's help with this problem
 [ ] aabb and plane // do during class time where Finn is around
+
+15 / 2 / 2022:
 [ ] get a physics simulation of objects going. (to be able to add physics shapes to entities, or have shapes be the entities or etc. TBD)
+
+LATER:

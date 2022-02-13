@@ -8,7 +8,7 @@ POPD
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
 ECHO "---------------building testbed---------------"
-cl /EHsc src\*.c /I "../dep/include/" /I "../sketchengine/src/" sketchengine.lib OpenGL32.lib SDL2.lib SDL2main.lib SDL2_ttf.lib glew32.lib /MT /Zi /link /OUT:bin\testbed.exe /LIBPATH:"../dep/lib"
+cl /EHsc src\*.c /I "../dep/include/" /I "../sketchengine/src/" sketchengine.lib OpenGL32.lib SDL2.lib SDL2main.lib SDL2_ttf.lib freetype_debug.lib glew32.lib /MT /Zi /link /OUT:bin\testbed.exe /LIBPATH:"../dep/lib"
 del *.obj
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 ECHO "testbed built successfully"

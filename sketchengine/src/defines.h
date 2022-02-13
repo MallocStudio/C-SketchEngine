@@ -24,7 +24,7 @@ void print_sdl_error();
 
 typedef int i32;
 typedef unsigned int u32;
-// typedef uint_64 u64;
+typedef uint64_t u64;
 typedef short i16;
 typedef char u8;
 typedef float f32;
