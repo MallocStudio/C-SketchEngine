@@ -35,7 +35,7 @@ void finn_game_init(Finn_Game *game, SDL_Window *window) {
     segl_lines_init(&game->lines);
 
     // -- custom 2d renderer
-    segl_render_2d_init(&game->renderer2D);
+    // segl_render_2d_init(&game->renderer2D);
 
     glClearColor(0, 0, 0, 1);
 
@@ -149,20 +149,26 @@ void finn_game_render(Finn_Game *game) {
 
         SE_Plane p;
         init_plane(&p);
-        p.pos = vec2_one();
-        p.normal = vec2_normalised(vec2_create(1, -1));
+        p.depth = 2;
+        p.normal = vec2_normalised(vec2_create(1, 1));
+        Vec2 plane_pos = vec2_mul_scalar(p.normal, p.depth);//vec2_create(p.depth, p.depth);
         Vec2 plane_vec = vec2_create(p.normal.y, -p.normal.x);
+        // -- the line segment
         segl_lines_draw_line_segment(&game->lines, 
-            vec2_mul_scalar(plane_vec, -3.0f), 
-            vec2_mul_scalar(plane_vec, +3.0f));
-
+            vec2_add(plane_pos, vec2_mul_scalar(plane_vec, -3.0f)), 
+            vec2_add(plane_pos, vec2_mul_scalar(plane_vec, +3.0f)));
+        // -- the normal arrow
+        segl_lines_draw_line_segment(&game->lines,
+            plane_pos,
+            vec2_add(plane_pos, p.normal)
+            );
         se_phys_check_circle_plane(&c, &p);
     }
     
-    // -- custom 2d renderer
-    segl_render_2d_rect(&game->renderer2D, (Rect) {1, 1, 3, 2});
+    // // -- custom 2d renderer
+    // segl_render_2d_rect(&game->renderer2D, (Rect) {1, 1, 3, 2});
     
-    segl_render_2d_rect(&game->renderer2D, (Rect) {-3, -4, 3, 2});
+    // segl_render_2d_rect(&game->renderer2D, (Rect) {-3, -4, 3, 2});
 
     // -- render
     glClear(GL_COLOR_BUFFER_BIT);
@@ -174,5 +180,5 @@ void finn_game_render(Finn_Game *game) {
     segl_lines_update_frame(&game->lines);
 
     // -- custom 2d renderer
-    segl_render_2d_update_frame(&game->renderer2D);
+    // segl_render_2d_update_frame(&game->renderer2D);
 }

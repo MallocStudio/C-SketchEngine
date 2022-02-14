@@ -74,22 +74,35 @@ SE_Collision_Data se_phys_check_circle_plane(SE_Circle* c, SE_Plane *p) { // @in
     Vec2 normal = {0};
     f32 depth = 0;
 
-    // -- if the distance between the circle and the plane is less than the circle's radius, we're colliding
+    Vec2 plane_pos = vec2_mul_scalar(p->normal, p->depth);
+    // project c->pos onto plane's normal vector
     f32 normal_projection = vec2_dot(c->pos, p->normal);
     Vec2 c_pos_on_plane_normal = vec2_mul_scalar(p->normal, normal_projection);
-    if (normal_projection < c->radius) { // c->pos is behind the plane (considering the radius)
+    f32 _depth = c->radius + p->depth - normal_projection;
+    // 
+    if (_depth > 0) {
         collided = true;
-        depth = normal_projection;
         normal = p->normal;
-        world_pos = vec2_add(c_pos_on_plane_normal, c->pos);
+        depth = _depth;
 
-        if (global_physics_debug->active) { // -- debug rendering
-            // world pos
+        Vec2 plane_vec = vec2_create(p->normal.y, -p->normal.x);
+        f32 np = vec2_dot(c->pos, plane_vec);
+        Vec2 c_pos_on_plane_vec = vec2_mul_scalar(plane_vec, np);
+        world_pos = vec2_add(plane_pos, c_pos_on_plane_vec);
+
+        // -- debug rendering
+        if (global_physics_debug->active) {
+            // -- normal
+            global_physics_debug->lines.current_colour = vec3_create(1, 1, 0);
+            segl_lines_draw_line_segment(&global_physics_debug->lines, world_pos, vec2_add(world_pos, normal));
+            // -- depth
+            global_physics_debug->lines.current_colour = vec3_create(0, 1, 1);
+            segl_lines_draw_line_segment(&global_physics_debug->lines, c->pos, vec2_add(c->pos, vec2_mul_scalar(normal, depth)));
+            // -- world pos
+            global_physics_debug->lines.current_colour = vec3_create(1, 0, 0);
             segl_lines_draw_cross(&global_physics_debug->lines, world_pos, 0.1f);
-            // penetration
-            segl_lines_draw_arrow(&global_physics_debug->lines, 
-                p->pos, 
-                vec2_add(p->pos, vec2_mul_scalar(normal, depth)));
+            
+            global_physics_debug->lines.current_colour = vec3_create(1, 1, 1);
         }
     }
 

@@ -40,7 +40,7 @@ void   segl_shader_program_set_uniform_vec3 (SEGL_Shader_Program *sp, const char
 void   segl_shader_program_set_uniform_mat4 (SEGL_Shader_Program *sp, const char *var_name, Mat4 value);
 /// returns a pointer to a string on the heap.
 //! Needs to be freed by the called
-const char* segl_load_file_as_string(const char *file_name);
+char* segl_load_file_as_string(const char *file_name);
 
 /// -------------
 /// LINE RENDERER

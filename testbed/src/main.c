@@ -3,7 +3,7 @@
 #define DEFINES_IMPL
 #include "defines.h"
 #include "finn_game.h"
-#include "setext.h"
+// #include "setext.h" // @incomplete
 
 int main () {
     { // -- unit tests
@@ -44,7 +44,7 @@ int main () {
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
     // -- init FreeType
-    SE_Text *txt = setext_init();
+    // SE_Text *txt = setext_init();
 
     // -- Init phsycis renderer
     global_physics_debug = new(SE_Physics_Global);
@@ -104,7 +104,7 @@ int main () {
     }
 
     // -- exit
-    setext_deinit(txt);
+    // setext_deinit(txt);
     finn_game_deinit(game);
     se_physics_global_deinit();
     SDL_GL_DeleteContext(g_context);

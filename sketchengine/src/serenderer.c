@@ -38,8 +38,8 @@ void segl_shader_program_init_from (SEGL_Shader_Program *sp, const char *vertex_
 
     sp->shader_program = glCreateProgram();
 
-    const char *vertex_src = segl_load_file_as_string(vertex_filename);
-    const char *frag_src   = segl_load_file_as_string(fragment_filename);
+    char *vertex_src = segl_load_file_as_string(vertex_filename);
+    char *frag_src   = segl_load_file_as_string(fragment_filename);
 
     glShaderSource(sp->vertex_shader, 1, &vertex_src, NULL);
     glCompileShader(sp->vertex_shader);
@@ -129,7 +129,7 @@ void segl_shader_program_use_shader(SEGL_Shader_Program *sp) {
     glUseProgram(sp->shader_program);
 }
 
-const char* segl_load_file_as_string(const char *file_name) {
+char* segl_load_file_as_string(const char *file_name) {
     // https://stackoverflow.com/questions/2029103/correct-way-to-read-a-text-file-into-a-buffer-in-c
     char *source = NULL;
     FILE *fp = fopen(file_name, "r");

@@ -56,11 +56,11 @@ SEINLINE void init_circle(SE_Circle *circle) {
 /// -----
 typedef struct SE_Plane {
     Vec2 normal;
-    Vec2 pos;
+    f32 depth; // how far along the normal is this plane
 } SE_Plane;
 SEINLINE void init_plane(SE_Plane *plane) {
     plane->normal = vec2_create(0, 0);
-    plane->pos = vec2_create(0, 0);
+    plane->depth = 0;
 }
 
 /// --------------
