@@ -11,6 +11,9 @@
         "types.h": "c",
         "freetype.h": "c",
         "hashmap.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "setext.h": "c",
+        "hash_map": "c",
+        "serenderer.h": "c"
     }
 }

@@ -1,11 +1,13 @@
+// checkout wikipedia list of moments on inertia
 #ifndef SEPHYSICS_H
 #define SEPHYSICS_H
 
 /// This is not a complete physics solution yet
 /// It is just a testbed and an attempt at an assignment
 #include "sephysics_defines.h"
-#include "serenderer.h" // @nocheckin
-typedef struct SE_Physics_Global { // @nocheckin
+#include "serenderer.h"
+
+typedef struct SE_Physics_Global {
     bool active;
     SEGL_Line_Renderer lines; // meant for debugging and rendering debug shapes
 } SE_Physics_Global;
@@ -26,5 +28,5 @@ SE_Collision_Data se_phys_check_aabb_circle(SE_AABB *aabb, SE_Circle *circle);
 /// check for collision between a circle and a circle
 SE_Collision_Data se_phys_check_circle_circle(SE_Circle *c1, SE_Circle *c2);
 /// check for collision between a circle and a plane
-SE_Collision_Data se_phys_check_circle_plane(SE_Circle* c, SE_Plane *p); // @incomplete
+SE_Collision_Data se_phys_check_circle_plane(SE_Circle* c, SE_Plane *p);
 #endif // SEPHYSICS_H

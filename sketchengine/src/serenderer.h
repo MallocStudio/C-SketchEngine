@@ -39,7 +39,7 @@ void   segl_shader_program_set_uniform_f32  (SEGL_Shader_Program *sp, const char
 void   segl_shader_program_set_uniform_vec3 (SEGL_Shader_Program *sp, const char *var_name, Vec3 value);
 void   segl_shader_program_set_uniform_mat4 (SEGL_Shader_Program *sp, const char *var_name, Mat4 value);
 /// returns a pointer to a string on the heap.
-//! Needs to be freed by the called
+//! Needs to be freed by the caller
 char* segl_load_file_as_string(const char *file_name);
 
 /// -------------
@@ -85,8 +85,8 @@ typedef struct SEGL_Renderer2D_Shape {
 #define SEGL_RENDERER_2D_SHAPES_MAX 300
 typedef struct SEGL_Renderer2D {
     bool initialised;    // whether the renderer has been initialised and ready to roll
-    Vec3 current_colour; // can be set directly
-    Vec3 default_colour; // set during init, but when changed this will become the default
+    RGB current_colour; // can be set directly
+    RGB default_colour; // set during init, but when changed this will become the default
     
     GLuint vertices_buffer_id;
     GLuint colours_buffer_id;
@@ -96,13 +96,16 @@ typedef struct SEGL_Renderer2D {
     // same with the color of each vertex. we also have an array of shapes which tells us
     // how many of those vertices belong to one shape, so we can render them separately.
     Vec2 vertices[SEGL_RENDERER_2D_VERTICES_MAX]; // verticies to be rendered
-    Vec3 colours[SEGL_RENDERER_2D_VERTICES_MAX];  // colour of each of those verticies
+    RGB colours[SEGL_RENDERER_2D_VERTICES_MAX];  // colour of each of those verticies
     i32 shapes_count; // number of shapes that we need to draw
     SEGL_Renderer2D_Shape shapes[SEGL_RENDERER_2D_SHAPES_MAX]; // each shape this renderer needs to draw
+    SEGL_Shader_Program shader_program; // the shader used to render this
 } SEGL_Renderer2D;
-void segl_render_2d_init(SEGL_Renderer2D *renderer);
+void segl_render_2d_init(SEGL_Renderer2D *renderer, const char *vertex_shader_filepath, const char *fragment_shader_filepath);
 void segl_render_2d_deinit(SEGL_Renderer2D *renderer);
 void segl_render_2d_rect(SEGL_Renderer2D *renderer, Rect rect);
+void segl_render_2d_set_color(SEGL_Renderer2D *renderer, RGB color);
+void segl_render_2d_reset_color(SEGL_Renderer2D *renderer);
 // void segl_2D_render_rect_outline();
 // void segl_2D_render_circle();
 

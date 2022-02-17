@@ -8,7 +8,7 @@ POPD
 if %ERRORLEVEL% NEQ 0 goto some_error_happened_sketchengine
 
 ECHO "---------------building testbed---------------"
-cl /EHsc src\*.c /I "../dep/include/" /I "../sketchengine/src/" sketchengine.lib OpenGL32.lib SDL2.lib SDL2main.lib SDL2_ttf.lib freetype_debug.lib glew32.lib /MT /Zi /WL /link /OUT:bin\testbed.exe /LIBPATH:"../dep/lib"
+cl /EHsc src\*.c /I "../dep/include/" /I "../sketchengine/src/" sketchengine.lib OpenGL32.lib SDL2.lib SDL2main.lib SDL2_ttf.lib freetype_debug.lib glew32.lib /MT /Zi /WL /link /OUT:bin\testbed.exe /LIBPATH:"../dep/lib" /NODEFAULTLIB:library
 del *.obj
 if %ERRORLEVEL% NEQ 0 goto some_error_happened_testbed
 goto success
@@ -24,4 +24,5 @@ goto end
 :success
 echo testbed built successfully
 goto end
+
 :end

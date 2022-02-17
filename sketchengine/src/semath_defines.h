@@ -18,6 +18,10 @@ typedef struct Vec2 {
     f32 x, y;
 } Vec2;
 
+typedef struct Vec2i {
+    i32 x, y;
+} Vec2i;
+
 typedef struct Vec3 {
     f32 x, y, z;
 } Vec3;

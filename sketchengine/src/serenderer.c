@@ -1,9 +1,10 @@
 #include "serenderer.h"
 #include "sephysics.h"
 #include "sephysics_render.h"
+#include <stdio.h>
 
 void segl_camera_init(SEGL_Camera *cam) {
-    // cam->aspect_ratio = 16.0f / 9.0f; // ! this is now determined in main, where we declare window size
+    cam->aspect_ratio = 16.0f / 9.0f; // default
     cam->height = 10.0f;
     cam->speed = 0.8f;
 }
@@ -15,8 +16,7 @@ Mat4 segl_get_camera_transform(SEGL_Camera *cam) {
         -cam->height * 0.5f + cam->center.y,
         +cam->height * 0.5f + cam->center.y,
         -1.0f, 1.0f);
-    return result; // ! for some reason, MatrixOrtho here needs to get transposed?
-    // ! this fixes the rendering and mapping mouse pos
+    return result;
 }
 
 void segl_camera_zoom(SEGL_Camera *cam, f32 zoom_factor) {
@@ -305,10 +305,15 @@ void segl_lines_draw(SEGL_Line_Renderer *lines) {
 /// ----------------
 /// SEGL_Renderer2D
 /// ----------------
-void segl_render_2d_init(SEGL_Renderer2D *renderer) {
+void segl_render_2d_init(SEGL_Renderer2D *renderer, const char *vertex_shader_filepath, const char *fragment_shader_filepath) {
     renderer->shapes_count = 0;
-    renderer->default_colour = vec3_create(1, 1, 1);
+    renderer->default_colour = (RGB) {1, 1, 1};
     renderer->current_colour = renderer->default_colour;
+
+    renderer->colours_current_index = 0;
+    renderer->vertices_current_index = 0;
+
+    segl_shader_program_init_from(&renderer->shader_program, vertex_shader_filepath, fragment_shader_filepath);
 
     glGenBuffers(1, &renderer->vertices_buffer_id);
     glGenBuffers(1, &renderer->colours_buffer_id);
@@ -320,6 +325,7 @@ void segl_render_2d_deinit(SEGL_Renderer2D *renderer) {
         renderer->shapes_count = 0;
         glGenBuffers(1, &renderer->vertices_buffer_id);
         glGenBuffers(1, &renderer->colours_buffer_id);
+        segl_shader_program_deinit(&renderer->shader_program);
         renderer->initialised = false;
     }
 }
@@ -346,9 +352,11 @@ void segl_render_2d_update_frame(SEGL_Renderer2D *renderer) {
 void segl_render_2d_clear(SEGL_Renderer2D *renderer) {
     renderer->vertices_current_index = 0;
     renderer->colours_current_index  = 0;
+    renderer->shapes_count = 0;
 }
 
 void segl_render_2d_render(SEGL_Renderer2D *renderer) {
+    segl_shader_program_use_shader(&renderer->shader_program);
     // Render OpenGL here
     glBindBuffer(GL_ARRAY_BUFFER, renderer->vertices_buffer_id); // select the vertices buffer
     glEnableVertexAttribArray(0);
@@ -382,10 +390,10 @@ void segl_render_2d_add_pos(SEGL_Renderer2D *renderer, Vec2 pos) {
     SDL_assert(renderer->vertices_current_index < SEGL_RENDERER_2D_VERTICES_MAX && "2D renderer vertices current index is over SEGL_RENDERER_2D_VERTICES_MAX");
 }
 
-void segl_render_2d_add_col(SEGL_Renderer2D *renderer, Vec3 col) {
+void segl_render_2d_add_col(SEGL_Renderer2D *renderer, RGB col) {
     renderer->colours[renderer->colours_current_index] = col;
     renderer->colours_current_index++;
-    SDL_assert(renderer->colours_current_index < SEGL_RENDERER_2D_COLOURS_MAX && "2D renderer vertices current index is over SEGL_RENDERER_2D_VERTICES_MAX");
+    SDL_assert(renderer->colours_current_index < SEGL_RENDERER_2D_COLOURS_MAX && "2D renderer colour current index is over SEGL_RENDERER_2D_VERTICES_MAX");
 }
 
 /// End of File Scope ///
@@ -403,4 +411,12 @@ void segl_render_2d_rect(SEGL_Renderer2D *renderer, Rect rect) {
 
     renderer->shapes[renderer->shapes_count].num_of_vertices = 4; // this shape has 4 vertices
     renderer->shapes_count++;
+}
+
+void segl_render_2d_set_color(SEGL_Renderer2D *renderer, RGB color) {
+    renderer->current_colour = color;
+}
+
+void segl_render_2d_reset_color(SEGL_Renderer2D *renderer) {
+    renderer->current_colour = renderer->default_colour;
 }

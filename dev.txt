@@ -17,3 +17,16 @@
 [ ] get a physics simulation of objects going. (to be able to add physics shapes to entities, or have shapes be the entities or etc. TBD)
 
 LATER:
+- [ ] render a quad tree on a flocking algorithm with boids
+
+ARTICLES and RESOURCES:
+https://erikonarheim.com/posts/understanding-collision-constraint-solvers/
+https://box2d.org/files/ErinCatto_DynamicBVH_Full.pdf
+https://freetype.org/freetype2/docs/tutorial/step2.html
+https://learnopengl.com/In-Practice/Text-Rendering
+https://www.google.com/search?client=firefox-b-d&q=stb+true+type
+https://github.com/nothings/stb/blob/master/stb_truetype.h
+https://github.com/madler/zlib/blob/master/test/example.c
+https://www.google.com/search?client=firefox-b-d&q=3d+math+primer+for+graphics+and+game+development
+
+checkout the tool Valgrind (has a tool which tells you if you write memory that you can't.)
