@@ -4,18 +4,27 @@
 /// SE_Text_Renderer
 /// -------
 
-SE_Text_Renderer* setext_init() {
-    SE_Text_Renderer *txt = new(SE_Text_Renderer);
+i32 setext_init (SE_Text_Renderer *txt, Rect viewport) {
+    return setext_init_from(txt, viewport, DEFAULT_FONT_PATH, 0, 16);
+}
+
+i32 setext_init_from (SE_Text_Renderer *txt, Rect viewport, const char *font_path, i32 width, i32 height) {
     if (FT_Init_FreeType(&txt->library)) {
         printf("ERROR:FREETYPE: Could not init freetype library\n");
-        return NULL;
+        return SETEXT_ERROR;
     }
+
+    // strings initialisation
+    txt->strings_count = 0;
 
     // -- shader program
     txt->shader_program = new(SEGL_Shader_Program);
     segl_shader_program_init_from(txt->shader_program, "Text.vsd", "Text.fsd");
 
-    setext_load_font(txt, DEFAULT_FONT_PATH, 0, 16);
+    setext_load_font(txt, font_path, width, height);
+
+    // -- projection matrix
+    setext_set_viewport(txt, viewport);
 
     // -- setup openGL part of the rendering
     glGenVertexArrays(1, &txt->VAO);
@@ -33,11 +42,13 @@ SE_Text_Renderer* setext_init() {
     glBindVertexArray(0);
 
     txt->initialised = true;
-    return txt;
+    return SETEXT_SUCCESS;
 }
 
 void setext_deinit(SE_Text_Renderer *txt) {
-    if (txt->initialised) {
+    if (txt->initialised) { // @debug when we try to exit, we throw a "access violation reading location exception" we probabily set txt->initialised to true when we shouldn't in someplace.
+        txt->strings_count = 0;
+
         glDeleteBuffers(1, txt->VBO);
         glDeleteVertexArrays(1, txt->VAO);
         
@@ -49,6 +60,10 @@ void setext_deinit(SE_Text_Renderer *txt) {
         segl_shader_program_deinit(txt->shader_program);
         free(txt->shader_program);
     }
+}
+
+void setext_set_viewport(SE_Text_Renderer *txt, Rect viewport) {
+    txt->shader_projection_matrix = mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
 }
 
 i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i32 height) {
@@ -100,18 +115,8 @@ i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i3
     return SETEXT_SUCCESS;
 }
 
-i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color, Mat4 shader_projection) {
-    glEnable(GL_BLEND); // @check // @question // @incomplete maybe move this out to the main loop? ask finn if it's a good idea to have this here or not
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    segl_shader_program_use_shader(txt->shader_program);
-    segl_shader_program_set_uniform_vec3(txt->shader_program, "textColor", color);
-    
-    segl_shader_program_set_uniform_mat4(txt->shader_program, "projection", shader_projection);
-    glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(txt->VAO);
-
-    // -- loop through all the characters
+i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color) {
+    // -- loop through all the characters and generate the glyphs
     for (i32 i = 0; i < strlen(string); ++i) {
         SE_Text_Character character = txt->characters[(i32)string[i]];
         f32 xpos = x + character.bearing_x * scale;
@@ -119,33 +124,127 @@ i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, 
         f32 w = character.width * scale;
         f32 h = character.height * scale;
 
-        // update VBO for each character
-        f32 vertices[6][4] = {
-            { xpos,     ypos + h,   0.0f, 0.0f },            
-            { xpos,     ypos,       0.0f, 1.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
+        // -- generate the vertices and
+        // -- store the data
+        // txt->strings[txt->strings_count].vertices = {
+        //     { xpos,     ypos + h,   0.0f, 0.0f },    // 0
+        //     { xpos,     ypos,       0.0f, 1.0f },    // 1
+        //     { xpos + w, ypos,       1.0f, 1.0f },    // 2
 
-            { xpos,     ypos + h,   0.0f, 0.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
-            { xpos + w, ypos + h,   1.0f, 0.0f }
-        };
+        //     { xpos,     ypos + h,   0.0f, 0.0f },    // 3
+        //     { xpos + w, ypos,       1.0f, 1.0f },    // 4
+        //     { xpos + w, ypos + h,   1.0f, 0.0f }     // 5
+        // };
+        SE_Text_Stored_Letter *txt_string = &txt->generated_letters[txt->strings_count];
+        txt_string->vertices[0][0] = xpos;
+        txt_string->vertices[0][1] = ypos + h;
+        txt_string->vertices[0][2] = 0.0f;
+        txt_string->vertices[0][3] = 0.0f;
 
+        txt_string->vertices[1][0] = xpos;
+        txt_string->vertices[1][1] = ypos;
+        txt_string->vertices[1][2] = 0.0f;
+        txt_string->vertices[1][3] = 1.0f;
+
+        txt_string->vertices[2][0] = xpos + w;
+        txt_string->vertices[2][1] = ypos;
+        txt_string->vertices[2][2] = 1.0f;
+        txt_string->vertices[2][3] = 1.0f;
+
+        txt_string->vertices[3][0] = xpos;
+        txt_string->vertices[3][1] = ypos + h;
+        txt_string->vertices[3][2] = 0.0f;
+        txt_string->vertices[3][3] = 0.0f;
+
+        txt_string->vertices[4][0] = xpos + w;
+        txt_string->vertices[4][1] = ypos;
+        txt_string->vertices[4][2] = 1.0f;
+        txt_string->vertices[4][3] = 1.0f;
+
+        txt_string->vertices[5][0] = xpos + w;
+        txt_string->vertices[5][1] = ypos + h;
+        txt_string->vertices[5][2] = 1.0f;
+        txt_string->vertices[5][3] = 0.0f;
+
+        txt_string->x = x;
+        txt_string->y = y;
+        txt_string->scale = scale;
+        txt_string->color = color;
+
+        txt_string->texture_ids = character.texture_id;
+
+        // advance cursor for next glyph
+        x += character.advance;
+
+        // -- advance letter
+        txt->strings_count++;
+    }
+    return SETEXT_SUCCESS;
+}
+
+i32 setext_render(SE_Text_Renderer *txt) {
+    glEnable(GL_BLEND); // @check // @question // @incomplete maybe move this out to the main loop? ask finn if it's a good idea to have this here or not
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    segl_shader_program_set_uniform_mat4(txt->shader_program, "projection", txt->shader_projection_matrix);
+
+    // -- loop through all the strings
+    for (i32 i = 0; i < txt->strings_count; ++i) {
+        f32 vertices[6][4];
+        vertices[0][0] = txt->generated_letters[i].vertices[0][0];
+        vertices[0][1] = txt->generated_letters[i].vertices[0][1];
+        vertices[0][2] = txt->generated_letters[i].vertices[0][2];
+        vertices[0][3] = txt->generated_letters[i].vertices[0][3];
+
+        vertices[1][0] = txt->generated_letters[i].vertices[1][0];
+        vertices[1][1] = txt->generated_letters[i].vertices[1][1];
+        vertices[1][2] = txt->generated_letters[i].vertices[1][2];
+        vertices[1][3] = txt->generated_letters[i].vertices[1][3];
+        
+        vertices[2][0] = txt->generated_letters[i].vertices[2][0];
+        vertices[2][1] = txt->generated_letters[i].vertices[2][1];
+        vertices[2][2] = txt->generated_letters[i].vertices[2][2];
+        vertices[2][3] = txt->generated_letters[i].vertices[2][3];
+        
+        vertices[3][0] = txt->generated_letters[i].vertices[3][0];
+        vertices[3][1] = txt->generated_letters[i].vertices[3][1];
+        vertices[3][2] = txt->generated_letters[i].vertices[3][2];
+        vertices[3][3] = txt->generated_letters[i].vertices[3][3];
+        
+        vertices[4][0] = txt->generated_letters[i].vertices[4][0];
+        vertices[4][1] = txt->generated_letters[i].vertices[4][1];
+        vertices[4][2] = txt->generated_letters[i].vertices[4][2];
+        vertices[4][3] = txt->generated_letters[i].vertices[4][3];
+        
+        vertices[5][0] = txt->generated_letters[i].vertices[5][0];
+        vertices[5][1] = txt->generated_letters[i].vertices[5][1];
+        vertices[5][2] = txt->generated_letters[i].vertices[5][2];
+        vertices[5][3] = txt->generated_letters[i].vertices[5][3];
+
+        Vec3 color = txt->generated_letters[i].color;
+
+        segl_shader_program_use_shader(txt->shader_program);
+        segl_shader_program_set_uniform_vec3(txt->shader_program, "textColor", color);
+
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(txt->VAO);
         // render glyph texture over quad
-        glBindTexture(GL_TEXTURE_2D, character.texture_id);
+        glBindTexture(GL_TEXTURE_2D, txt->generated_letters[i].texture_ids);
         // update content of VBO mem
         glBindBuffer(GL_ARRAY_BUFFER, txt->VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         // render quad
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        // advance cursor for next glyph
-        // x += (character.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
-        x += character.advance;
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
     glDisable(GL_BLEND);
+
+    // -- "clear" the strings array
+    txt->strings_count = 0;
+
     return SETEXT_SUCCESS;
 }
 

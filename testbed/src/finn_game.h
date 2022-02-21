@@ -12,7 +12,7 @@ typedef struct Finn_Game {
     Uint8 *keyboard;
     SEGL_Line_Renderer grid;
     SEGL_Line_Renderer lines;
-    SE_Text_Renderer *txt_library;
+    SE_Text_Renderer txt_library;
     UI_Context ui_context;
     Rect test_ui_init_rect;
 } Finn_Game;

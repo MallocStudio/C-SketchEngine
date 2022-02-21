@@ -32,6 +32,8 @@ typedef struct UI_Context {
 
     // the renderer to use for rendering
     SEGL_Renderer2D renderer;
+    // the text renderer
+    SE_Text_Renderer txt_renderer;
     // the mouse position
     Vec2i mouse_pos;
     // the position the mouse was initially pressed. updated in ui_update_context
@@ -76,7 +78,7 @@ void ui_deinit_context(UI_Context *ctx);
 /// frees current theme and replaces it with the provided one
 void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme);
 /// @TODO // @document
-void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool right_down);
+void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool right_down, Rect viewport);
 /// render everything and clear frame
 void ui_render(UI_Context *ctx);
 

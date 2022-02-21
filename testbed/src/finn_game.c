@@ -35,11 +35,11 @@ void finn_game_init(Finn_Game *game, SDL_Window *window) {
     segl_lines_init(&game->lines);
 
     // -- txt library
-    game->txt_library = setext_init();
+    setext_init(&game->txt_library, (Rect) {0, 0, window_w, window_h});
 
     // -- init ui
     ui_init_context(&game->ui_context);
-    game->test_ui_init_rect = (Rect) {100, 100, 400, 600};
+    game->test_ui_init_rect = (Rect) {0, 0, 400, 600};
 
     // -- render grid once
     glClearColor(0, 0, 0, 1);
@@ -71,7 +71,7 @@ void finn_game_deinit(Finn_Game *game) {
     free(game->shader_program);
 
     // -- text library
-    setext_deinit(game->txt_library);
+    setext_deinit(&game->txt_library);
 
     // -- camera
     free(game->camera);
@@ -117,10 +117,29 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
         game->mouse_pos_screen = cursor_pos;
     }
 
-    // -- ui context
-    bool left_pressed, right_pressed;
-    get_mouse_pos(&left_pressed, &right_pressed);
-    ui_update_context(&game->ui_context, (Vec2i) {game->mouse_pos_screen.x, game->mouse_pos_screen.y}, left_pressed, right_pressed);
+    { // -- ui context
+        // -- projection matrix
+        i32 window_w, window_h;
+        SDL_GetWindowSize(game->window, &window_w, &window_h);
+        Rect viewport = {0, 0, window_w, window_h};
+        // * the mat4_ortho parameters are the same as how setext_set_viewport uses mat4_ortho and viewport
+        // * checkout setext_set_viewport() to see what this means
+        Mat4 ui_viewport_deprojection = mat4_transposed(mat4_inverse(mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, 1, -1)));
+
+        // -- input
+        bool left_pressed, right_pressed;
+        Vec2 cursor_pos = get_mouse_pos(&left_pressed, &right_pressed);
+        cursor_pos.x = (cursor_pos.x / viewport.w) * 2.0f - 1.0f;
+        cursor_pos.y = (cursor_pos.y / viewport.h) * 2.0f - 1.0f;
+        Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
+        Vec4 mouse_pos_screen = mat4_mul_vec4(&ui_viewport_deprojection, &mouse_pos_ndc);
+
+        cursor_pos.x = mouse_pos_screen.x;
+        cursor_pos.y = mouse_pos_screen.y;
+        
+        // -- call update
+        ui_update_context(&game->ui_context, (Vec2i) {cursor_pos.x, cursor_pos.y}, left_pressed, right_pressed, viewport);
+    }
 
     // -- move the camera around
     if (game->keyboard[SDL_SCANCODE_LEFT]) {
@@ -182,13 +201,6 @@ void finn_game_render(Finn_Game *game) {
     }
 
     { // -- game->ui_context ui test
-        // -- setup renderer matrix
-        i32 window_w, window_h;
-        SDL_GetWindowSize(game->window, &window_w, &window_h);
-        Mat4 ortho_mat = mat4_ortho(0, window_w, window_h, 0, 1, -1);
-        segl_shader_program_use_shader(&game->ui_context.renderer.shader_program);
-        segl_shader_program_set_uniform_mat4(&game->ui_context.renderer.shader_program, "vpMatrix", ortho_mat);
-        // -- update renderer vertices
         ui_begin(&game->ui_context, &game->test_ui_init_rect);
         ui_row(&game->ui_context, 3, 48, 100);
         if (ui_button(&game->ui_context, "button 1")) printf("button 1 pressed\n");
@@ -209,11 +221,10 @@ void finn_game_render(Finn_Game *game) {
     }
 
     // -- text
-    Mat4 projection = mat4_ortho(0, 800, 0, 400, 1, -1);
     char *text = malloc(sizeof(char) * 100);
     sprintf(text, "mouse pos screen: {%f, %f}", game->mouse_pos_screen.x, game->mouse_pos_screen.y);
-    // printf("mouse pos screen: {%f, %f}\n", game->mouse_pos_screen.x, game->mouse_pos_screen.y);
-    setext_render_text(game->txt_library, text, 0, 0, 1.0f, (Vec3) {0.5f, 0.8f, 0.2f}, projection);
+    setext_render_text(&game->txt_library, text, 0, 0, 1.0f, (Vec3) {0.5f, 0.8f, 0.2f});
+    setext_render(&game->txt_library);
     free(text);
 }
 

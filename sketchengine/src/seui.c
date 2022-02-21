@@ -69,19 +69,26 @@ void ui_init_theme (UI_Theme *theme) {
 
 
 void ui_init_context(UI_Context *ctx) {
+    // -- theme
     ctx->theme = new(UI_Theme);
     ui_init_theme(ctx->theme);
     ctx->active = UI_ID_NULL;
     ctx->hot    = UI_ID_NULL;
 
+    // -- renderer
     segl_render_2d_init(&ctx->renderer, "Simple.vsd", "Simple.fsd");
 
+    // -- text renderer
+    setext_init(&ctx->txt_renderer, (Rect){0, 0, 0, 0}); // ! we set the projection matrix of txt_renderer in update()
+
+    // -- set the rest of context's values to their default
     ui_context_reset(ctx, &((Rect) {0}));
 }
 
 void ui_deinit_context(UI_Context *ctx) {
     free(ctx->theme);
     segl_render_2d_deinit(&ctx->renderer);
+    setext_deinit(&ctx->txt_renderer);
 }
 
 void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme) {
@@ -89,7 +96,7 @@ void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme) {
     ctx->theme = theme;
 }
 
-void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool right_down) {
+void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool right_down, Rect viewport) {
     // -- remember what happened the previous frame
     ctx->was_mouse_left_pressed = ctx->is_mouse_left_pressed;
     ctx->was_mouse_right_pressed = ctx->is_mouse_right_pressed;
@@ -105,14 +112,28 @@ void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool ri
         ctx->mouse_pressed_pos = ctx->mouse_pos;
         printf("pressing\n");
     }
+
+    // -- update ortho for txt_renderer
+    // ctx->txt_renderer.shader_projection_matrix = ctx->projection_matrix; // directly set this
+    setext_set_viewport(&ctx->txt_renderer, viewport);
+
+    // -- update ortho for renderer
+    Mat4 projection_matrix = mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, 1, -1);
+    segl_shader_program_use_shader(&ctx->renderer.shader_program);
+    segl_shader_program_set_uniform_mat4(&ctx->renderer.shader_program, "vpMatrix", projection_matrix);
 }
 
 void ui_render(UI_Context *ctx) {
+    // * note that the projection matrices are updated in update()    
     segl_render_2d_update_frame(&ctx->renderer);
+    // segl_render_2d_clear(&ctx->renderer);
+    
     segl_render_2d_rect(&ctx->renderer, (Rect) {
         ctx->mouse_pos.x - 16, ctx->mouse_pos.y - 16,
         32, 32
     });
+    
+    setext_render(&ctx->txt_renderer);
 }
 
 void ui_begin(UI_Context *ctx, Rect *rect) {
@@ -147,7 +168,6 @@ void ui_begin(UI_Context *ctx, Rect *rect) {
             if (rect->w < ctx->min_rect_prev_frame.w) rect->w = ctx->min_rect_prev_frame.w;
             if (rect->h < ctx->min_rect_prev_frame.h) rect->h = ctx->min_rect_prev_frame.h;
     }
-
 }
 
 void ui_row(UI_Context *ctx, i32 number_of_items, i32 height, i32 min_width) {
@@ -206,17 +226,14 @@ bool ui_button(UI_Context *ctx, const char *string) {
     if (ctx->hot    == id) color = ctx->theme->color_interactive_hot;
     if (ctx->active == id) color = ctx->theme->color_interactive_active;
 
-    // // -- base // @TODO remove this part, it's part of the old game ui code
-    // render_rect_filled_color(ctx->renderer->sdl_renderer, rect, color);
-    // // -- text
-    // if (string != NULL) {
-    //     render_string(ctx->renderer, string, rect, STRING_STYLE_ALIGN_CENTER);
-    // }
+    // -- base 
     ctx->renderer.current_colour = (RGB) {color.r, color.g, color.b};
     segl_render_2d_rect(&ctx->renderer, rect);
     ctx->renderer.current_colour = ctx->renderer.default_colour;
-
-    // @TODO render text
+    // -- text
+    if (string != NULL) {
+        setext_render_text(&ctx->txt_renderer, string, rect.x, rect.y, 1, (Vec3) {1, 1, 1});
+    }
 
     return result;
 }

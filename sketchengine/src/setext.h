@@ -22,6 +22,15 @@ typedef struct SE_Text_Character {
     u32 advance;    // offset to advance to next glyph
 } SE_Text_Character;
 
+typedef struct SE_Text_Stored_Letter {
+    f32 vertices[6][4];
+    f32 x, y, scale;
+    Vec3 color;
+
+    GLuint texture_ids;
+} SE_Text_Stored_Letter;
+
+#define SE_TEXT_RENDERER_MAX_STRINGS 1024
 typedef struct SE_Text_Renderer {
     FT_Library library;
     FT_Face face; // the font
@@ -31,15 +40,28 @@ typedef struct SE_Text_Renderer {
     bool initialised;
     
     SE_Text_Character characters[SE_TEXT_NUM_OF_GLYPHS];
+
+    Mat4 shader_projection_matrix;
+
+    i32 strings_count;
+    SE_Text_Stored_Letter generated_letters[SE_TEXT_RENDERER_MAX_STRINGS]; // the generated glyphs along with their data
 } SE_Text_Renderer;
 
-/// Initialises freetype and returns a pointer to a SE_Text_Renderer.
+/// Initialises freetype.
 /// SE_Text_Renderer will be used by the rest of the procedures.
-/// The returned pointer is handled by setext and should not be
-/// changed or freed by the user manually. Instead call setext_deinit
-/// to free all the memory used by setext and freetype
-/// Returns NULL when an error has occured
-SE_Text_Renderer* setext_init();
+/// To deinitialise the text renderer call setext_deinit to free all the 
+/// memory used by setext and freetype.
+/// Returns SETEXT_ERROR if something went wrong.
+i32 setext_init (SE_Text_Renderer *txt, Rect viewport);
+
+/// Initialises freetype.
+/// SE_Text_Renderer will be used by the rest of the procedures.
+/// To deinitialise the text renderer call setext_deinit to free all the 
+/// memory used by setext and freetype.
+/// ALSO Loads the given font. Note that setting either width or height to 
+/// zero, dynamically calculates the proper aspect ratio based on the other parameter.
+/// Returns SETEXT_ERROR if something went wrong.
+i32 setext_init_from (SE_Text_Renderer *txt, Rect viewport, const char *font_path, i32 width, i32 height);
 
 /// Deinitialises setext and frees the memory used by freetype and setext
 void setext_deinit(SE_Text_Renderer *txt);
@@ -53,5 +75,17 @@ i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i3
 /// prints the characters hashmap into the console
 i32 setext_print_loaded_characters(SE_Text_Renderer *txt);
 
-i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color, Mat4 shader_projection);
+/// add the given string at the given position with colour and scale to txt. use setext_render() to render the texts
+i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color);
+
+/// render all the stored glyphs at once and "clear" the stored array of glyphs. 
+/// Note that it does not actually draw an array of vertices at once yet. We go through each "String"
+/// and set the shader color to that.
+/// @TODO change this behaviour : store an array of colours that are synced with txt->strings.
+i32 setext_render(SE_Text_Renderer *txt);
+
+/// updates the viewport properties
+/// viewport rect: mat4_ortho: {viewport.x, viewport.w, viewport.h, viewport.y}
+void setext_set_viewport(SE_Text_Renderer *txt, Rect viewport);
+
 #endif // SETEXT_H

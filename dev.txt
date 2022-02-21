@@ -11,13 +11,17 @@
 
 14 / 2 / 2022:
 [~in progress] working physics collision check between circle and plane (with debug rendering) // @question ask for Finn's help with this problem
-[ ] aabb and plane // do during class time where Finn is around
 
-15 / 2 / 2022:
-[ ] get a physics simulation of objects going. (to be able to add physics shapes to entities, or have shapes be the entities or etc. TBD)
+17 / 2 / 2022:
+[/] port part of the ui library from the game to sketchengine
+
+18 / 2 / 2022:
+[ ] add text rendering to the ui library
 
 LATER:
-- [ ] render a quad tree on a flocking algorithm with boids
+[ ] render a quad tree on a flocking algorithm with boids
+[ ] aabb and plane // do during class time where Finn is around
+[ ] get a physics simulation of objects going. (to be able to add physics shapes to entities, or have shapes be the entities or etc. TBD)
 
 ARTICLES and RESOURCES:
 https://erikonarheim.com/posts/understanding-collision-constraint-solvers/
