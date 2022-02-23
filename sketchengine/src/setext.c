@@ -63,7 +63,7 @@ void setext_deinit(SE_Text_Renderer *txt) {
 }
 
 void setext_set_viewport(SE_Text_Renderer *txt, Rect viewport) {
-    txt->shader_projection_matrix = mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+    txt->shader_projection_matrix = viewport_to_ortho_projection_matrix(viewport);
 }
 
 i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i32 height) {
@@ -254,4 +254,16 @@ i32 setext_print_loaded_characters(SE_Text_Renderer *txt) {
         printf("character %c : texture id %i : width %i : height %i : advance %i\n", character.character, character.texture_id, character.width, character.height, character.advance);
     }
     return SETEXT_SUCCESS;
+}
+
+Vec2 setext_size_string(SE_Text_Renderer *txt, const char *string) {
+    Vec2 size = {0};
+    for (i32 i = 0; i < strlen(string); ++i) {
+        SE_Text_Character character = txt->characters[(i32)string[i]];
+        // increase x
+        size.x += character.advance;
+        // increase y IF a letter has a larger height
+        if (character.height > size.y) size.y = character.height;
+    }
+    return size;
 }

@@ -24,8 +24,13 @@ void ui_context_reset(UI_Context *ctx, Rect *rect) {
 
 /// call this after rendering a grabable item becomes active
 void ui_update_mouse_grab_pos(UI_Context *ctx) {
-    i32 x_offset = ctx->prev_item_rect.x - ctx->mouse_pressed_pos.x;
-    i32 y_offset = ctx->prev_item_rect.y - ctx->mouse_pressed_pos.y;
+    // i32 x_offset = ctx->prev_item_rect.x - ctx->input->mouse_pressed_pos.x;
+    // i32 y_offset = ctx->prev_item_rect.y - ctx->input->mouse_pressed_pos.y;
+    // ctx->input->mouse_grab_offset.x = x_offset;
+    // ctx->input->mouse_grab_offset.y = y_offset;
+
+    i32 x_offset = ctx->prev_item_rect.x - ctx->input->mouse_screen_pressed_pos.x;
+    i32 y_offset = ctx->prev_item_rect.y - ctx->input->mouse_screen_pressed_pos.y;
     ctx->mouse_grab_offset.x = x_offset;
     ctx->mouse_grab_offset.y = y_offset;
 }
@@ -68,7 +73,7 @@ void ui_init_theme (UI_Theme *theme) {
 }
 
 
-void ui_init_context(UI_Context *ctx) {
+void ui_init_context(UI_Context *ctx, SE_Input *input) {
     // -- theme
     ctx->theme = new(UI_Theme);
     ui_init_theme(ctx->theme);
@@ -83,6 +88,9 @@ void ui_init_context(UI_Context *ctx) {
 
     // -- set the rest of context's values to their default
     ui_context_reset(ctx, &((Rect) {0}));
+
+    // -- input
+    ctx->input = input;
 }
 
 void ui_deinit_context(UI_Context *ctx) {
@@ -96,23 +104,7 @@ void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme) {
     ctx->theme = theme;
 }
 
-void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool right_down, Rect viewport) {
-    // -- remember what happened the previous frame
-    ctx->was_mouse_left_pressed = ctx->is_mouse_left_pressed;
-    ctx->was_mouse_right_pressed = ctx->is_mouse_right_pressed;
-
-    // -- update the info of this frame
-    // ctx->mouse_pos = get_mouse_pos(&ctx->is_mouse_left_pressed, &ctx->is_mouse_right_pressed);
-    ctx->mouse_pos = mouse_pos;
-    ctx->is_mouse_left_pressed  = left_down;
-    ctx->is_mouse_right_pressed = right_down;
-
-    // this is the frame we started to press the button
-    if (!ctx->was_mouse_left_pressed && ctx->is_mouse_left_pressed) {
-        ctx->mouse_pressed_pos = ctx->mouse_pos;
-        printf("pressing\n");
-    }
-
+void ui_update_context(UI_Context *ctx, Rect viewport) {
     // -- update ortho for txt_renderer
     // ctx->txt_renderer.shader_projection_matrix = ctx->projection_matrix; // directly set this
     setext_set_viewport(&ctx->txt_renderer, viewport);
@@ -125,13 +117,14 @@ void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool ri
 
 void ui_render(UI_Context *ctx) {
     // * note that the projection matrices are updated in update()    
+    // -- render ui cursor
+    segl_render_2d_rect(&ctx->renderer, (Rect) {
+        ctx->input->mouse_screen_pos.x - 8, ctx->input->mouse_screen_pos.y - 8,
+        16, 16
+    });
+
     segl_render_2d_update_frame(&ctx->renderer);
     // segl_render_2d_clear(&ctx->renderer);
-    
-    segl_render_2d_rect(&ctx->renderer, (Rect) {
-        ctx->mouse_pos.x - 16, ctx->mouse_pos.y - 16,
-        32, 32
-    });
     
     setext_render(&ctx->txt_renderer);
 }
@@ -139,8 +132,14 @@ void ui_render(UI_Context *ctx) {
 void ui_begin(UI_Context *ctx, Rect *rect) {
     // save what happened the previous frame
     ctx->min_rect_prev_frame = ctx->min_rect;
+
+    // -- make sure rect is at least the minimum amount it should be
+    if (rect->w < ctx->min_rect.w) rect->w = ctx->min_rect.w;
+    if (rect->h < ctx->min_rect.h) rect->h = ctx->min_rect.h;
+    
     // reset for this frame
     ui_context_reset(ctx, rect);
+
 
     // -- render background
     // render_rect_filled_color(ctx->renderer->sdl_renderer, *rect, ctx->theme->color_panel_base);
@@ -156,18 +155,19 @@ void ui_begin(UI_Context *ctx, Rect *rect) {
     // ui_put(ctx);
     // ui_put(ctx);
     if (ui_button_grab(ctx, (Rect) {0})) {
-        rect->x = ctx->mouse_pos.x + ctx->mouse_grab_offset.x;
-        rect->y = ctx->mouse_pos.y + ctx->mouse_grab_offset.y;
+        rect->x = ctx->input->mouse_screen_pos.x + ctx->mouse_grab_offset.x;
+        rect->y = ctx->input->mouse_screen_pos.y + ctx->mouse_grab_offset.y;
     }
     // -- resize grab button
     if (ui_button_grab(ctx,
         (Rect) {ctx->window_rect.x + ctx->window_rect.w - 16, 
         ctx->window_rect.y + ctx->window_rect.h - 16, 16, 16})) {
-            rect->w = ctx->mouse_pos.x - rect->x + 8;
-            rect->h = ctx->mouse_pos.y - rect->y + 8;
+            rect->w = ctx->input->mouse_screen_pos.x - rect->x + 8;
+            rect->h = ctx->input->mouse_screen_pos.y - rect->y + 8;
             if (rect->w < ctx->min_rect_prev_frame.w) rect->w = ctx->min_rect_prev_frame.w;
             if (rect->h < ctx->min_rect_prev_frame.h) rect->h = ctx->min_rect_prev_frame.h;
     }
+
 }
 
 void ui_row(UI_Context *ctx, i32 number_of_items, i32 height, i32 min_width) {
@@ -189,7 +189,7 @@ void ui_row(UI_Context *ctx, i32 number_of_items, i32 height, i32 min_width) {
     ctx->y_advance_by = 0;
 }
 
-SEINLINE bool point_in_rect(Vec2i p, Rect r) {
+SEINLINE bool point_in_rect(Vec2 p, Rect r) {
     return ( (p.x >= r.x) && (p.x < (r.x + r.w)) &&
              (p.y >= r.y) && (p.y < (r.y + r.h)) ) ? true : false;
 }
@@ -204,35 +204,46 @@ bool ui_button(UI_Context *ctx, const char *string) {
 
     ui_put(ctx);
 
-    bool mouse_up        = !ctx->is_mouse_left_pressed;
+    bool mouse_up        = !ctx->input->is_mouse_left_down;
     bool mouse_down      = !mouse_up;
-    bool mouse_is_inside = point_in_rect(ctx->mouse_pos, rect);
+    bool mouse_is_inside = point_in_rect(ctx->input->mouse_screen_pos, rect);
     RGB color = ctx->theme->color_interactive_normal;
 
-    if (ctx->active == id) {
-        if (mouse_up) {
-            if (ctx->hot == id) result = true; // mouse up while hovering over button
-            ctx->active = UI_ID_NULL; // we're no longer active
+    { // -- input
+        if (ctx->active == id) {
+            if (mouse_up) {
+                if (ctx->hot == id) result = true; // mouse up while hovering over button
+                ctx->active = UI_ID_NULL; // we're no longer active
+            }
+        } else if (ctx->hot == id) {
+            if (mouse_down) {
+                ctx->input->is_mouse_left_handled = true; // tell the input system that we've handled this mouse event
+                ctx->active = id; // we're now active
+            }
         }
-    } else if (ctx->hot == id) {
-        if (mouse_down) ctx->active = id; // we're now active
-    }
-    if (mouse_is_inside) {
-        // if no other item is active, make us hot
-        if (ctx->active == UI_ID_NULL) ctx->hot = id;
-    }
-    else if (ctx->hot == id) ctx->hot = UI_ID_NULL;
+        if (mouse_is_inside) {
+            // if no other item is active, make us hot
+            if (ctx->active == UI_ID_NULL) ctx->hot = id;
+        }
+        else if (ctx->hot == id) ctx->hot = UI_ID_NULL;
 
-    if (ctx->hot    == id) color = ctx->theme->color_interactive_hot;
-    if (ctx->active == id) color = ctx->theme->color_interactive_active;
+        if (ctx->hot    == id) color = ctx->theme->color_interactive_hot;
+        if (ctx->active == id) color = ctx->theme->color_interactive_active;
+    }
 
-    // -- base 
-    ctx->renderer.current_colour = (RGB) {color.r, color.g, color.b};
-    segl_render_2d_rect(&ctx->renderer, rect);
-    ctx->renderer.current_colour = ctx->renderer.default_colour;
-    // -- text
-    if (string != NULL) {
-        setext_render_text(&ctx->txt_renderer, string, rect.x, rect.y, 1, (Vec3) {1, 1, 1});
+    { // -- rendering
+        // -- base
+        ctx->renderer.current_colour = (RGB) {color.r, color.g, color.b};
+        segl_render_2d_rect(&ctx->renderer, rect);
+        ctx->renderer.current_colour = ctx->renderer.default_colour;
+        // -- text
+        if (string != NULL) {
+            Vec2 string_size = setext_size_string(&ctx->txt_renderer, string);
+            Vec2 centered_pos;
+            centered_pos.x = (rect.w - string_size.x) * 0.5f;
+            centered_pos.y = (rect.h - string_size.y) * 0.5f;
+            setext_render_text(&ctx->txt_renderer, string, rect.x + centered_pos.x, rect.y + centered_pos.y, 1, (Vec3) {1, 1, 1});
+        }
     }
 
     return result;
@@ -250,34 +261,39 @@ bool ui_button_grab(UI_Context *ctx, Rect rect) {
 
     ui_put(ctx);
     
-    bool mouse_up        = !ctx->is_mouse_left_pressed;
+    bool mouse_up        = !ctx->input->is_mouse_left_down;
     bool mouse_down      = !mouse_up;
-    bool mouse_is_inside = point_in_rect(ctx->mouse_pos, rect);
+    bool mouse_is_inside = point_in_rect(ctx->input->mouse_screen_pos, rect);
     RGB color = ctx->theme->color_interactive_normal;
 
-    if (ctx->active == id) {
-        result = true; // mouse up while hovering over button
-        if (mouse_up) ctx->active = UI_ID_NULL; // we're no longer active
-    } else if (ctx->hot == id) {
-        if (mouse_down) {
-            ctx->active = id; // we're now active
-            // -- update the current mouse grab offset
-            ui_update_mouse_grab_pos(ctx);
+    { // -- input
+        if (ctx->active == id) {
+            result = true; // mouse up while hovering over button
+            if (mouse_up) ctx->active = UI_ID_NULL; // we're no longer active
+        } else if (ctx->hot == id) {
+            if (mouse_down) {
+                ctx->input->is_mouse_left_handled = true; // tell the input system that we've handled this mouse event
+                ctx->active = id; // we're now active
+                // -- update the current mouse grab offset
+                ui_update_mouse_grab_pos(ctx);
+            }
         }
-    }
-    if (mouse_is_inside) {
-        // if no other item is active, make us hot
-        if (ctx->active == UI_ID_NULL) ctx->hot = id;
-    }
-    else if (ctx->hot == id) ctx->hot = UI_ID_NULL;
+        if (mouse_is_inside) {
+            // if no other item is active, make us hot
+            if (ctx->active == UI_ID_NULL) ctx->hot = id;
+        }
+        else if (ctx->hot == id) ctx->hot = UI_ID_NULL;
 
-    if (ctx->hot    == id) color = ctx->theme->color_interactive_hot;
-    if (ctx->active == id) color = ctx->theme->color_interactive_active;
+        if (ctx->hot    == id) color = ctx->theme->color_interactive_hot;
+        if (ctx->active == id) color = ctx->theme->color_interactive_active;
+    }
 
-    // -- base
-    ctx->renderer.current_colour = (RGB) {color.r, color.g, color.b};
-    segl_render_2d_rect(&ctx->renderer, rect);
-    ctx->renderer.current_colour = ctx->renderer.default_colour;
+    { // -- rendering
+        // base
+        ctx->renderer.current_colour = (RGB) {color.r, color.g, color.b};
+        segl_render_2d_rect(&ctx->renderer, rect);
+        ctx->renderer.current_colour = ctx->renderer.default_colour;
+    }
 
     return result;
 }

@@ -643,6 +643,16 @@ SEINLINE Mat4 mat4_inverse(Mat4 matrix) {
     return result;
 }
 
+/// get the standard ortho projection matrix from a viewport. near clip is set to -1, far clip is set to 1
+SEINLINE Mat4 viewport_to_ortho_projection_matrix (Rect viewport) {
+    return mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+}
+
+/// get the standard ortho projection matrix from a viewport with near clip and far clip adjustable
+SEINLINE Mat4 viewport_to_ortho_projection_matrix_extra (Rect viewport, f32 near_clip, f32 far_clip) {
+    return mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, near_clip, far_clip);
+}
+
 /// creates and returns a translation Mat4 from the given pos
 SEINLINE Mat4 mat4_translation(Vec3 pos) {
     Mat4 result = mat4_identity();
@@ -824,5 +834,14 @@ SEINLINE bool mat2_test() {
     }
     return result;
 };
+
+/// -----------
+/// CONVERSIONS
+/// -----------
+
+/// Vec2i -> Vec2
+SEINLINE Vec2 vec2i_to_vec2(Vec2i v) {
+    return (Vec2) {(f32)v.x, (f32)v.y};
+}
 
 #endif // SEMATH_H

@@ -75,7 +75,8 @@ i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i3
 /// prints the characters hashmap into the console
 i32 setext_print_loaded_characters(SE_Text_Renderer *txt);
 
-/// add the given string at the given position with colour and scale to txt. use setext_render() to render the texts
+/// add the given string at the given position with colour and scale to txt. use setext_render() to render the texts. 
+/// REMEMBER TO CALL SETEXT_RENDER() at the end, otherwise, we will corrupt memory because we increment txt->strings_count each time we call this procedure
 i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color);
 
 /// render all the stored glyphs at once and "clear" the stored array of glyphs. 
@@ -88,4 +89,6 @@ i32 setext_render(SE_Text_Renderer *txt);
 /// viewport rect: mat4_ortho: {viewport.x, viewport.w, viewport.h, viewport.y}
 void setext_set_viewport(SE_Text_Renderer *txt, Rect viewport);
 
+/// return the area of the given string in the given text renderer's font (characters)
+Vec2 setext_size_string(SE_Text_Renderer *txt, const char *string);
 #endif // SETEXT_H

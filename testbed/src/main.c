@@ -93,7 +93,7 @@ int main () {
         se_physics_global_render();
 
         SDL_GL_SwapWindow(window);
-        if (game->keyboard[SDL_SCANCODE_ESCAPE]) {
+        if (game->input.keyboard[SDL_SCANCODE_ESCAPE]) {
             printf("quit\n");
             quit = true;
         }

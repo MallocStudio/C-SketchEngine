@@ -73,6 +73,9 @@ void segl_lines_clear(SEGL_Line_Renderer *lines);
 void segl_lines_compile(SEGL_Line_Renderer *lines);
 void segl_lines_draw(SEGL_Line_Renderer *lines);
 void segl_lines_draw_cross(SEGL_Line_Renderer *lines, Vec2 center, f32 size);
+void se_render_rect(SEGL_Line_Renderer *lines, const Rect *rect);
+void se_render_rect_min_max(SEGL_Line_Renderer *lines, f32 xmin, f32 ymin, f32 xmax, f32 ymax);
+
 /// -----------
 /// 2D RENDERER
 /// -----------

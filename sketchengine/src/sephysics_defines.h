@@ -9,8 +9,9 @@
 /// Primitives
 /// ----------
 typedef enum SE_SHAPES {
-    SHAPE, AABB, CIRCLE,
-    COUNT
+    SE_SHAPES_NONE,
+    SE_SHAPES_PLANE, SE_SHAPES_AABB, SE_SHAPES_CIRCLE,
+    SE_SHAPES_COUNT
 } SE_SHAPES;
 
 /// this way we can case whatever primitive we're using to (SE_Shape) 
@@ -30,11 +31,15 @@ typedef struct SE_AABB {
 // * we use this approch because it better allows for updating the size of min and max boundaries
 // * as in if xmax < point.x xmax = point.x
 SEINLINE void init_aabb(SE_AABB *aabb) {
-    aabb->shape.type = AABB;
-    aabb->xmin = +FLT_MAX;
-    aabb->xmax = -FLT_MAX;
-    aabb->ymin = +FLT_MAX;
-    aabb->ymax = -FLT_MAX;
+    aabb->shape.type = SE_SHAPES_AABB;
+    // aabb->xmin = +FLT_MAX;
+    // aabb->xmax = -FLT_MAX;
+    // aabb->ymin = +FLT_MAX;
+    // aabb->ymax = -FLT_MAX;
+    aabb->xmin = -0.5f;
+    aabb->xmax = +0.5f;
+    aabb->ymin = -0.5f;
+    aabb->ymax = +0.5f;
 }
 
 /// ------
@@ -46,21 +51,23 @@ typedef struct SE_Circle {
     f32 radius;
 } SE_Circle;
 SEINLINE void init_circle(SE_Circle *circle) {
-    circle->shape.type = CIRCLE;
+    circle->shape.type = SE_SHAPES_CIRCLE;
     circle->pos = (Vec2) {0, 0};
-    circle->radius = 0.0f;
+    circle->radius = 1.0f;
 }
 
 /// -----
 /// PLANE
 /// -----
 typedef struct SE_Plane {
+    SE_Shape shape;
     Vec2 normal;
     f32 depth; // how far along the normal is this plane
 } SE_Plane;
 SEINLINE void init_plane(SE_Plane *plane) {
-    plane->normal = vec2_create(0, 0);
-    plane->depth = 0;
+    plane->shape.type = SE_SHAPES_PLANE;
+    plane->normal = vec2_create(0, 1);
+    plane->depth = 1;
 }
 
 /// --------------

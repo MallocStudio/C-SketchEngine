@@ -5,6 +5,7 @@
 #include "serenderer.h"
 #include "setext.h"
 #include "semath.h"
+#include "seinput.h"
 
 typedef struct UI_Theme {
     RGB color_primary;
@@ -34,18 +35,11 @@ typedef struct UI_Context {
     SEGL_Renderer2D renderer;
     // the text renderer
     SE_Text_Renderer txt_renderer;
-    // the mouse position
-    Vec2i mouse_pos;
-    // the position the mouse was initially pressed. updated in ui_update_context
-    Vec2i mouse_pressed_pos;
-    //
-    Vec2i mouse_grab_offset;
-    // information from the current frame
-    bool  is_mouse_left_pressed;
-    bool  is_mouse_right_pressed;
-    // information from the previous frame
-    bool  was_mouse_left_pressed;
-    bool  was_mouse_right_pressed;
+    
+    // -- input
+    SE_Input *input; // ! not owned
+    Vec2 mouse_grab_offset;
+
     UI_Theme *theme;
     UI_ID current_max_id; // UI_ID_NULL means none. At begin time, this value should be UI_ID_NULL
     UI_CONTEXT_STATES context_state;
@@ -72,13 +66,13 @@ typedef struct UI_Context {
     i32 y_advance_by;
 } UI_Context;
 /// inits context. creates a default theme
-void ui_init_context(UI_Context *ctx);
+void ui_init_context(UI_Context *ctx, SE_Input *input);
 /// deinitialises context and frees relevant memory
 void ui_deinit_context(UI_Context *ctx);
 /// frees current theme and replaces it with the provided one
 void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme);
 /// @TODO // @document
-void ui_update_context(UI_Context *ctx, Vec2i mouse_pos, bool left_down, bool right_down, Rect viewport);
+void ui_update_context(UI_Context *ctx, Rect viewport);
 /// render everything and clear frame
 void ui_render(UI_Context *ctx);
 

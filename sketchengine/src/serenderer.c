@@ -1,6 +1,5 @@
 #include "serenderer.h"
 #include "sephysics.h"
-#include "sephysics_render.h"
 #include <stdio.h>
 
 void segl_camera_init(SEGL_Camera *cam) {
@@ -419,4 +418,24 @@ void segl_render_2d_set_color(SEGL_Renderer2D *renderer, RGB color) {
 
 void segl_render_2d_reset_color(SEGL_Renderer2D *renderer) {
     renderer->current_colour = renderer->default_colour;
+}
+
+void se_render_rect(SEGL_Line_Renderer *lines, const Rect *rect) {
+    f32 xmin, ymin, xmax, ymax;
+    xmin = rect->x;
+    ymin = rect->y;
+    xmax = rect->x + rect->w;
+    ymax = rect->y + rect->h;
+    se_render_rect_min_max(lines, xmin, ymin, xmax, ymax);
+}
+
+void se_render_rect_min_max(SEGL_Line_Renderer *lines, f32 xmin, f32 ymin, f32 xmax, f32 ymax) {
+    Vec2 p1 = {xmin, ymin};
+    Vec2 p2 = {xmax, ymin};
+    Vec2 p3 = {xmax, ymax};
+    Vec2 p4 = {xmin, ymax};
+    segl_lines_draw_line_segment(lines, p1, p2);
+    segl_lines_draw_line_segment(lines, p2, p3);
+    segl_lines_draw_line_segment(lines, p3, p4);
+    segl_lines_draw_line_segment(lines, p4, p1);
 }
