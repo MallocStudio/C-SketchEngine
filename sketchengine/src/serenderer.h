@@ -45,8 +45,10 @@ char* segl_load_file_as_string(const char *file_name);
 /// -------------
 /// LINE RENDERER
 /// -------------
-#define LINE_RENDERER_POSITIONS_MAX 1024
-#define LINE_RENDERER_COLOURS_MAX 1024
+// #define LINE_RENDERER_POSITIONS_MAX 1024
+// #define LINE_RENDERER_COLOURS_MAX 1024
+#define LINE_RENDERER_POSITIONS_MAX 1024 * 4
+#define LINE_RENDERER_COLOURS_MAX 1024 * 4
 typedef struct SEGL_Line_Renderer {
     u32 positions_current_index;
     u32 colours_current_index;

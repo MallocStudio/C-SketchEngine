@@ -52,7 +52,7 @@ typedef struct SE_Input {
     // eg: keyboard[SDL_SCANCODE_LEFT] returns true if the left arrow
     // key is down
     Uint8 *keyboard;
-
+    
 } SE_Input;
 
 SEINLINE void seinput_reset(SE_Input *input) {
@@ -65,7 +65,10 @@ SEINLINE void seinput_reset(SE_Input *input) {
 
 /// note that mouse pos will be relative to top left position of window
 SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i window_size) {
-    input->keyboard = (Uint8*)SDL_GetKeyboardState(NULL);
+    { // -- keyboard
+        input->keyboard = (Uint8*)SDL_GetKeyboardState(NULL);
+    }
+
     // ! don't try this right now, because we update mouse_grab_offset in seui.c "ui_update_mouse_grab_pos()"
     // { // -- update mouse grab pos
     //     if (input->is_mouse_left_down && !input->was_mouse_left_down) { // we just pressed
@@ -79,8 +82,13 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i 
     get_mouse_pos(&input->is_mouse_left_down, &input->is_mouse_right_down);
 
     { // reset
-        input->is_mouse_left_handled = false;
-        input->is_mouse_right_handled = false;
+        if (!input->is_mouse_left_down) {
+            input->is_mouse_left_handled = false;
+        }
+        
+        if (!input->is_mouse_right_down) {
+            input->is_mouse_right_handled = false;
+        }
     }
 
     { // -- world pos
@@ -120,9 +128,5 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i 
             input->mouse_screen_pressed_pos = input->mouse_screen_pos;
         }
     }
-
-    input->is_mouse_left_handled = false;
-    input->is_mouse_right_handled = false;
 }
-
 #endif // SEINPUT_H

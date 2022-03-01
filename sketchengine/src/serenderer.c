@@ -121,7 +121,7 @@ void segl_shader_program_set_uniform_vec3 (SEGL_Shader_Program *sp, const char *
 void segl_shader_program_set_uniform_mat4 (SEGL_Shader_Program *sp, const char *var_name, Mat4 value) {
     GLuint var_loc = glGetUniformLocation(sp->shader_program, var_name);
     segl_shader_program_use_shader(sp);
-    glUniformMatrix4fv(var_loc, 1, GL_FALSE, &value); // @check (Finn did &value[0][0] with glm::mat4)
+    glUniformMatrix4fv(var_loc, 1, GL_FALSE, (const GLfloat*)&value); // @check (Finn did &value[0][0] with glm::mat4)
 }
 
 void segl_shader_program_use_shader(SEGL_Shader_Program *sp) {

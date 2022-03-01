@@ -3,7 +3,7 @@
 
 #include "sketchengine.h"
 
-#define FINN_GAME_MAX_NUM_OF_OBJECTS 10
+#define FINN_GAME_MAX_NUM_OF_OBJECTS 40
 
 typedef struct Finn_Game {
     // -- renderer related
@@ -23,10 +23,16 @@ typedef struct Finn_Game {
     i32 objects_count;
     SE_Shape *objects[FINN_GAME_MAX_NUM_OF_OBJECTS];
     SE_SHAPES current_selected_shape_mode;
+
+    bool is_paused;
+    bool is_physics_update_queued;
+
+    f32 elasticity;
+
 } Finn_Game;
 void finn_game_init(Finn_Game *game, SDL_Window *window);
 void finn_game_deinit(Finn_Game *game);
 void finn_game_update(Finn_Game *game, f32 delta_time);
 void finn_game_render(Finn_Game *game);
-
+void finn_game_physics_update(Finn_Game *game, f32 delta_time);
 #endif // FINN_GAME_H

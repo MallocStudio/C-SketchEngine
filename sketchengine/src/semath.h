@@ -787,6 +787,11 @@ SEINLINE Vec4 mat4_mul_vec4 (const Mat4 *m, const Vec4 *v) {
     return result;
 }
 
+/// returns a Vec3 that represents translation
+SEINLINE Vec3 mat4_get_translation(Mat4 m) {
+    return (Vec3) {m.data[12], m.data[13], m.data[14]};
+}
+
 /// -----
 /// TESTS
 /// -----

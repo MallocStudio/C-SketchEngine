@@ -49,8 +49,8 @@ void setext_deinit(SE_Text_Renderer *txt) {
     if (txt->initialised) { // @debug when we try to exit, we throw a "access violation reading location exception" we probabily set txt->initialised to true when we shouldn't in someplace.
         txt->strings_count = 0;
 
-        glDeleteBuffers(1, txt->VBO);
-        glDeleteVertexArrays(1, txt->VAO);
+        glDeleteBuffers(1, &txt->VBO);
+        glDeleteVertexArrays(1, &txt->VAO);
         
         FT_Done_Face(txt->face); // use this to free faces after using them
         FT_Done_FreeType(txt->library);

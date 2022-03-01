@@ -13,8 +13,8 @@ int main () {
         printf("--------END OF MATH TESTS---------\n");
     }
     SDL_Window *window;
-    i32 window_w = 800;
-    i32 window_h = 400;
+    i32 window_w = 1024;
+    i32 window_h = 640;
     
     // -- init SDL
     ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");
@@ -88,9 +88,18 @@ int main () {
         // -- update
         finn_game_update(game, 0.0166667f);
 
+        // -- physics update
+        // ! if paused, update one frame when space is pressed
+        if (!game->is_paused) {
+            finn_game_physics_update(game, 0.0166667f);
+        }
+        else if (game->is_physics_update_queued) {
+            finn_game_physics_update(game, 0.0166667f);
+            game->is_physics_update_queued = false;
+        }
+
         // -- render
         finn_game_render(game);
-        se_physics_global_render();
 
         SDL_GL_SwapWindow(window);
         if (game->input.keyboard[SDL_SCANCODE_ESCAPE]) {
