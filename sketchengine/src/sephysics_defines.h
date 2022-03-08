@@ -27,13 +27,9 @@ typedef struct SE_Shape {
     Vec2 acceleration;
     f32 inverse_mass;
     SE_SHAPES type;
+    // struct SE_Collision_Data *collision_data;
 } SE_Shape;
-SEINLINE void init_shape(SE_Shape *shape, SE_SHAPES type) {
-    shape->type = type;
-    shape->velocity = vec2_zero();
-    shape->acceleration = vec2_zero();
-    shape->inverse_mass = 1; // ! plane's inverse mass is set to 0 in its own constructor
-}
+
 
 // /// ----
 // /// AABB
@@ -64,6 +60,54 @@ typedef struct SE_Box {
     SE_Shape shape;
     f32 x, y, w, h;
 } SE_Box;
+
+/// ------
+/// CIRCLE
+/// ------
+typedef struct SE_Circle {
+    SE_Shape shape;
+    f32 radius;
+    Vec2 pos;
+} SE_Circle;
+
+
+/// -----
+/// PLANE
+/// -----
+typedef struct SE_Plane {
+    SE_Shape shape;
+    Vec2 normal;
+    f32 depth; // how far along the normal is this plane
+} SE_Plane;
+
+/// --------------
+/// COLLISION DATA
+/// --------------
+typedef struct SE_Collision_Data {
+    bool is_collided;
+    f32 depth;   // HOW DEEP IS THE COLLISION (HOW FAR SHOULD WE MOVE THE PHYSICS OBJECTS)
+    Vec2 normal; // THE DIRECTION OF DEPTH (from shape_a towards shape_b)
+    Vec2 world_pos; // POINT OF CONTACT
+
+    SE_Shape *shape_a;
+    SE_Shape *shape_b;
+} SE_Collision_Data;
+
+/// -------------------------
+/// INITIALIZATION PROCEDURES
+/// -------------------------
+
+SEINLINE void init_shape(SE_Shape *shape, SE_SHAPES type) {
+    shape->type = type;
+    shape->velocity = vec2_zero();
+    shape->acceleration = vec2_zero();
+    shape->inverse_mass = 1; // ! plane's inverse mass is set to 0 in its own constructor
+    // shape->collision_data = new(struct SE_Collision_Data);
+}
+SEINLINE void deinit_shape(SE_Shape *shape) {
+    // free(shape->collision_data);
+}
+
 SEINLINE void init_box(SE_Box *box) {
     init_shape(&box->shape, SE_SHAPES_BOX);
     box->x = -0.5f;
@@ -84,28 +128,12 @@ SEINLINE void box_get_x_y_w_h(SE_Box *box, f32 *x, f32 *y, f32 *w, f32 *h) {
     if (h != NULL) *h = box->h;
 }
 
-/// ------
-/// CIRCLE
-/// ------
-typedef struct SE_Circle {
-    SE_Shape shape;
-    f32 radius;
-    Vec2 pos;
-} SE_Circle;
 SEINLINE void init_circle(SE_Circle *circle) {
     init_shape(&circle->shape, SE_SHAPES_CIRCLE);
     circle->pos = vec2_zero();
     circle->radius = 1.0f;
 }
 
-/// -----
-/// PLANE
-/// -----
-typedef struct SE_Plane {
-    SE_Shape shape;
-    Vec2 normal;
-    f32 depth; // how far along the normal is this plane
-} SE_Plane;
 SEINLINE void init_plane(SE_Plane *plane) {
     init_shape(&plane->shape, SE_SHAPES_PLANE);
     plane->shape.inverse_mass = 0;
@@ -113,18 +141,6 @@ SEINLINE void init_plane(SE_Plane *plane) {
     plane->depth = 1;
 }
 
-/// --------------
-/// COLLISION DATA
-/// --------------
-typedef struct SE_Collision_Data {
-    bool is_collided;
-    f32 depth;   // HOW DEEP IS THE COLLISION (HOW FAR SHOULD WE MOVE THE PHYSICS OBJECTS)
-    Vec2 normal; // THE DIRECTION OF DEPTH
-    Vec2 world_pos; // POINT OF CONTACT
-
-    SE_Shape *shape_a;
-    SE_Shape *shape_b;
-} SE_Collision_Data;
 SEINLINE init_collision_data(SE_Collision_Data *cd, bool is_collided, Vec2 normal, Vec2 world_pos, f32 depth, SE_Shape *shape_a, SE_Shape* shape_b) {
     cd->is_collided = is_collided;
     cd->normal = normal;
@@ -132,6 +148,14 @@ SEINLINE init_collision_data(SE_Collision_Data *cd, bool is_collided, Vec2 norma
     cd->depth = depth;
     cd->shape_a = shape_a;
     cd->shape_b = shape_b;
+}
+SEINLINE void collision_data_deep_copy(const SE_Collision_Data *src, SE_Collision_Data *destination) {
+    destination->is_collided = src->is_collided;
+    destination->depth = src->depth;
+    destination->normal = src->normal;
+    destination->world_pos = src->world_pos;
+    destination->shape_a = src->shape_a;
+    destination->shape_b = src->shape_b;
 }
 
 #endif // SEPHYSICS_DEFINES_H

@@ -1,5 +1,21 @@
 #include "sephysics.h"
 
+void render_collision_data(const SE_Collision_Data *collision_data) {
+    if (!global_physics_debug->active) return;
+    // world pos
+    segl_lines_draw_cross(&global_physics_debug->lines, 
+        collision_data->world_pos, 0.1f);
+    // normal
+    segl_lines_draw_arrow(&global_physics_debug->lines, 
+        collision_data->world_pos, 
+        vec2_add(collision_data->world_pos, collision_data->normal));
+    // normal depth
+    segl_lines_draw_arrow(&global_physics_debug->lines, 
+        collision_data->world_pos, 
+        vec2_add(collision_data->world_pos, 
+            vec2_mul_scalar(collision_data->normal, collision_data->depth)));
+}
+
 SE_Collision_Data se_phys_check_plane_plane(SE_Shape *a, SE_Shape *b) {
     SDL_assert(a->type == SE_SHAPES_PLANE && b->type == SE_SHAPES_PLANE);
     SE_Collision_Data result;
@@ -16,12 +32,22 @@ SE_Collision_Data se_phys_check_plane_plane(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_plane_circle(SE_Shape *a, SE_Shape *b) {
     SDL_assert(a->type == SE_SHAPES_PLANE && b->type == SE_SHAPES_CIRCLE);
-    return se_phys_check_circle_plane(b, a);
+    SE_Collision_Data result = se_phys_check_circle_plane(b, a);
+    result.normal = vec2_mul_scalar(result.normal, -1);
+    // @question the thing that's happening is that, in collision depentration we're also flipping the normal, so we actually depenetrate correctly, but the issue is having the above code results in us rendering the collision normal in the wrong direction. And perhaps the collision normal is wrong and should be the other way around. Talk to Finn about this and ask for his opinion.
+    
+    // result.shape_a = b;
+    // result.shape_b = a;
+    return result;
 }
 
 SE_Collision_Data se_phys_check_plane_box(SE_Shape *a, SE_Shape *b) {
     SDL_assert(a->type == SE_SHAPES_PLANE && b->type == SE_SHAPES_BOX);
-    return se_phys_check_box_plane(b, a);
+    SE_Collision_Data result = se_phys_check_box_plane(b, a);
+    result.normal = vec2_mul_scalar(result.normal, -1);
+    // result.shape_a = b;
+    // result.shape_b = a;
+    return result;
 }
 
 SE_Collision_Data se_phys_check_circle_plane(SE_Shape *a, SE_Shape *b) {
@@ -48,26 +74,10 @@ SE_Collision_Data se_phys_check_circle_plane(SE_Shape *a, SE_Shape *b) {
         normal = p->normal;
         depth = _depth;
 
-
         Vec2 plane_vec = vec2_create(p->normal.y, -p->normal.x);
         f32 np = vec2_dot(circle_pos, plane_vec);
         Vec2 c_pos_on_plane_vec = vec2_mul_scalar(plane_vec, np);
         world_pos = vec2_add(plane_pos, c_pos_on_plane_vec);
-
-        // -- debug rendering
-        if (global_physics_debug->active) {
-            // -- normal
-            global_physics_debug->lines.current_colour = vec3_create(1, 1, 0);
-            segl_lines_draw_line_segment(&global_physics_debug->lines, world_pos, vec2_add(world_pos, normal));
-            // -- depth
-            global_physics_debug->lines.current_colour = vec3_create(0, 1, 1);
-            segl_lines_draw_line_segment(&global_physics_debug->lines, circle_pos, vec2_add(circle_pos, vec2_mul_scalar(normal, depth)));
-            // -- world pos
-            global_physics_debug->lines.current_colour = vec3_create(1, 0, 0);
-            segl_lines_draw_cross(&global_physics_debug->lines, world_pos, 0.1f);
-            
-            global_physics_debug->lines.current_colour = vec3_create(1, 1, 1);
-        }
     }
 
     // -- fill out the collision data and return it
@@ -98,15 +108,6 @@ SE_Collision_Data se_phys_check_circle_circle(SE_Shape *a, SE_Shape *b) {
         vec2_normalise(&normal);
         depth = combined_radius - distance;
         world_pos = vec2_add(c1_pos, vec2_mul_scalar(normal, c1->radius - depth));
-
-        if (global_physics_debug->active) { // -- debug rendering
-            // world pos
-            segl_lines_draw_cross(&global_physics_debug->lines, world_pos, 0.1f);
-            // penetration
-            segl_lines_draw_arrow(&global_physics_debug->lines, 
-                world_pos, 
-                vec2_add(world_pos, vec2_mul_scalar(normal, depth)));
-        }
     }
 
     // -- fill out the collision data and return it
@@ -115,7 +116,11 @@ SE_Collision_Data se_phys_check_circle_circle(SE_Shape *a, SE_Shape *b) {
 }
 
 SE_Collision_Data se_phys_check_circle_box(SE_Shape *a, SE_Shape *b) {
-    return se_phys_check_box_circle(b, a);
+    SE_Collision_Data result = se_phys_check_box_circle(b, a);
+    // result.normal = vec2_mul_scalar(result.normal, -1);
+    // result.shape_a = b;
+    // result.shape_b = a;
+    return result;
 }
 
 SE_Collision_Data se_phys_check_box_plane(SE_Shape *a, SE_Shape *b) {
@@ -150,10 +155,11 @@ SE_Collision_Data se_phys_check_box_plane(SE_Shape *a, SE_Shape *b) {
                 depth = _depth;
                 normal = plane->normal;
 
-                Vec2 plane_vec = vec2_create(plane->normal.y, -plane->normal.x);
-                f32 np = vec2_dot(point, plane_vec);
-                Vec2 point_on_plane_vec = vec2_mul_scalar(plane->normal, np);
-                world_pos = vec2_add(plane_pos, point_on_plane_vec);
+                // Vec2 plane_vec = vec2_create(plane->normal.y, -plane->normal.x);
+                // f32 np = vec2_dot(point, plane_vec);
+                // Vec2 point_on_plane_vec = vec2_mul_scalar(plane->normal, np);
+                // world_pos = vec2_add(point, point_on_plane_vec);
+                world_pos = point;
             }
         }
     }
@@ -192,20 +198,20 @@ SE_Collision_Data se_phys_check_box_circle(SE_Shape *a, SE_Shape *b) {
         if (vec2_magnitude_squared(normal) == 0) normal = vec2_up();
         vec2_normalise(&normal);
         depth = circle->radius - vec2_distance(clamped_pos, circle_pos);
-
-        { // -- debug rendering
-            if (global_physics_debug->active) {
-                Vec2 normal_p1 = clamped_pos;
-                Vec2 normal_p2 = vec2_mul_scalar(normal, depth);
-                segl_lines_draw_arrow(&global_physics_debug->lines, normal_p1, vec2_add(clamped_pos, normal_p2));
-                segl_lines_draw_cross(&global_physics_debug->lines, clamped_pos, 0.1f);
-            }
-        }
     }
 
     // -- fill out the collision data and return it
     init_collision_data(&result, collided, normal, world_pos, depth, a, b);
     return result;
+}
+
+bool rect_overlaps_rect(Rect a, Rect b) {
+    // following Ericson, C, 2004. Real-Time Collision Detection. 1.  CRC Press.
+    // page 79, AABB vs AABB
+    f32 t;
+    if ((t = a.x - b.x) > b.w || -t > a.w) return false;
+    if ((t = a.y - b.y) > b.h || -t > a.h) return false;
+    return true;
 }
 
 SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b) {
@@ -223,29 +229,43 @@ SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b) {
     box_get_xmin_ymin_xmax_ymax(box1, &xmin1, &ymin1, &xmax1, &ymax1);
     box_get_xmin_ymin_xmax_ymax(box2, &xmin2, &ymin2, &xmax2, &ymax2);
 
-    Vec2 box1_points[4] = {
-        {xmin1, ymin1},
-        {xmin1, ymax1},
-        {xmax1, ymin1},
-        {xmax1, ymax1}
-    };
+    {
+        f32 right_penetration = xmax2 - xmin1;
+        f32 down_penetration  = ymax2 - ymin1;
+        f32 left_penetration  = xmax1 - xmin2;
+        f32 up_penetration    = ymax1 - ymin2;
 
-    Vec2 box2_points[4] = {
-        {xmin2, ymin2},
-        {xmin2, ymax2},
-        {xmax2, ymin2},
-        {xmax2, ymax2}
-    };
-
-    Vec2 deepest_point1 = vec2_zero();
-    Vec2 deepest_point2 = vec2_zero();
-
-    for (i32 i = 0; i < 4; ++i) {
-        for (i32 j = 0; j < 4; ++j) {
-            Vec2 point1 = box1_points[i];
-            Vec2 point2 = box2_points[i];
-            if (depth < vec2_distance(point1, point2)) {
-                // @incomplete
+        if (right_penetration < down_penetration && right_penetration < left_penetration && right_penetration < up_penetration) {
+            // the smallest is 'right'
+            if (right_penetration > 0) {
+                collided = true;
+                // normal = vec2_right();
+                normal = vec2_left();
+                depth = right_penetration;
+                world_pos = vec2_create(xmax1, (ymin1 + ymax2) * 0.5f);
+            }
+        } else if (down_penetration < left_penetration && down_penetration < up_penetration) {
+            // the smallest is 'down'
+            if (down_penetration > 0) {
+                collided = true;
+                normal = vec2_down();
+                depth = down_penetration;
+            }
+        } else if (left_penetration < up_penetration) {
+            // the smallest is 'left'
+            if (left_penetration > 0) {
+                collided = true;
+                // normal = vec2_left();
+                normal = vec2_right();
+                depth = left_penetration;
+                world_pos = vec2_create(xmin1, (ymin1 + ymax2) * 0.5f);
+            }
+        } else {
+            // the smallest is 'up'
+            if (up_penetration > 0) {
+                collided = true;
+                normal = vec2_up();
+                depth = up_penetration;
             }
         }
     }
@@ -285,7 +305,7 @@ void se_phys_render_shape(SEGL_Line_Renderer *renderer, SE_Shape *shape) {
                 vec2_add(plane_pos, vec2_mul_scalar(plane_vec, +10.0f)));
             // -- the normal arrow
             renderer->current_colour = (Vec3) {0.5f, 0, 0.5f};
-            segl_lines_draw_line_segment(renderer,
+            segl_lines_draw_arrow(renderer,
                 plane_pos,
                 vec2_add(plane_pos, p->normal)
                 );

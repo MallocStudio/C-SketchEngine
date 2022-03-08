@@ -129,4 +129,16 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i 
         }
     }
 }
+
+SEINLINE bool seinput_is_mouse_left_pressed (SE_Input *input) {
+    return (input->is_mouse_left_handled == false
+            && input->is_mouse_left_down
+            && !input->was_mouse_left_down);
+}
+
+SEINLINE bool seinput_is_mouse_right_pressed (SE_Input *input) {
+    return (input->is_mouse_right_handled == false
+            && input->is_mouse_right_down
+            && !input->was_mouse_right_down);
+}
 #endif // SEINPUT_H

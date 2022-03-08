@@ -49,10 +49,11 @@ SEINLINE void se_physics_global_deinit() {
     segl_lines_deinit(&global_physics_debug->lines);
 }
 SEINLINE void se_physics_global_render() {
-    segl_lines_update_frame(&global_physics_debug->lines);
+    if (global_physics_debug->active) segl_lines_update_frame(&global_physics_debug->lines);
+    else segl_lines_clear(&global_physics_debug->lines);
 }
 void se_phys_render_shape(SEGL_Line_Renderer *renderer, SE_Shape *shape);
-
+void render_collision_data(const SE_Collision_Data *collision_data);
 /// ---------------
 /// HANDLING SHAPES
 /// ---------------

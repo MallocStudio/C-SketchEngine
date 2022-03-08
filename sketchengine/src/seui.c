@@ -104,7 +104,7 @@ void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme) {
     ctx->theme = theme;
 }
 
-void ui_update_context(UI_Context *ctx, Rect viewport) {
+void ui_update_context_viewport(UI_Context *ctx, Rect viewport) {
     // -- update ortho for txt_renderer
     // ctx->txt_renderer.shader_projection_matrix = ctx->projection_matrix; // directly set this
     setext_set_viewport(&ctx->txt_renderer, viewport);
@@ -118,10 +118,10 @@ void ui_update_context(UI_Context *ctx, Rect viewport) {
 void ui_render(UI_Context *ctx) {
     // * note that the projection matrices are updated in update()    
     // -- render ui cursor
-    segl_render_2d_rect(&ctx->renderer, (Rect) {
-        ctx->input->mouse_screen_pos.x - 8, ctx->input->mouse_screen_pos.y - 8,
-        16, 16
-    });
+    // segl_render_2d_rect(&ctx->renderer, (Rect) {
+    //     ctx->input->mouse_screen_pos.x - 8, ctx->input->mouse_screen_pos.y - 8,
+    //     16, 16
+    // });
 
     segl_render_2d_update_frame(&ctx->renderer);
     // segl_render_2d_clear(&ctx->renderer);
@@ -306,10 +306,19 @@ void ui_label(UI_Context *ctx, const char *title) { // todo add back
     };
     ui_put(ctx);
     // render_string(ctx->renderer, title, rect, STRING_STYLE_ALIGN_CENTER);
-    // @TODO render text
-    ctx->renderer.current_colour = (RGB) {1, 0, 0};
-    segl_render_2d_rect(&ctx->renderer, rect);
-    ctx->renderer.current_colour = ctx->renderer.default_colour;
+
+    // -- border (// @TODO)
+    // ctx->renderer.current_colour = (RGB) {1, 0, 0};
+    // segl_render_2d_rect(&ctx->renderer, rect);
+    // ctx->renderer.current_colour = ctx->renderer.default_colour;
+    // -- Text
+    if (title != NULL) {
+        Vec2 string_size = setext_size_string(&ctx->txt_renderer, title);
+        Vec2 centered_pos;
+        centered_pos.x = (rect.w - string_size.x) * 0.5f;
+        centered_pos.y = (rect.h - string_size.y) * 0.5f;
+        setext_render_text(&ctx->txt_renderer, title, rect.x + centered_pos.x, rect.y + centered_pos.y, 1, (Vec3) {1, 1, 1});
+    }
 }
 
 void ui_put (UI_Context *ctx) {

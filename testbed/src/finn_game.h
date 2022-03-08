@@ -3,7 +3,7 @@
 
 #include "sketchengine.h"
 
-#define FINN_GAME_MAX_NUM_OF_OBJECTS 40
+#define FINN_GAME_MAX_NUM_OF_OBJECTS 14
 
 typedef struct Finn_Game {
     // -- renderer related
@@ -21,13 +21,19 @@ typedef struct Finn_Game {
 
     // -- physcis testbed related
     i32 objects_count;
-    SE_Shape *objects[FINN_GAME_MAX_NUM_OF_OBJECTS];
+    i32 collision_datas_count;
+    SE_Shape          *objects[FINN_GAME_MAX_NUM_OF_OBJECTS];
+    SE_Collision_Data collision_datas[FINN_GAME_MAX_NUM_OF_OBJECTS * FINN_GAME_MAX_NUM_OF_OBJECTS];
     SE_SHAPES current_selected_shape_mode;
 
     bool is_paused;
     bool is_physics_update_queued;
 
     f32 elasticity;
+
+    SE_Shape *selected_shape; // used for rendering debug info on the selected shape
+    UI_Context ui_context_physics_debug;
+    Rect ui_context_physics_debug_init_rect;
 
 } Finn_Game;
 void finn_game_init(Finn_Game *game, SDL_Window *window);

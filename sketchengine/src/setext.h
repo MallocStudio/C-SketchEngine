@@ -6,8 +6,8 @@
 #include "FreeType/freetype.h"
 #include "serenderer.h"
 
-#define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
-// #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
+// #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
+#define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
 #define SETEXT_SUCCESS 0 // must be zero
 #define SETEXT_ERROR 1
 

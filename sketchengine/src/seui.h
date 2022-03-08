@@ -72,7 +72,7 @@ void ui_deinit_context(UI_Context *ctx);
 /// frees current theme and replaces it with the provided one
 void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme);
 /// @TODO // @document
-void ui_update_context(UI_Context *ctx, Rect viewport);
+void ui_update_context_viewport(UI_Context *ctx, Rect viewport);
 /// render everything and clear frame
 void ui_render(UI_Context *ctx);
 
