@@ -12,10 +12,10 @@
 
 /// The types of collision shapes
 typedef enum SE_SHAPES {
-    SE_SHAPES_NONE  = -2,
-    SE_SHAPES_JOINT = -1,
+    SE_SHAPES_NONE  = -2, // future proof
+    SE_SHAPES_JOINT = -1, // future proof 
     SE_SHAPES_PLANE = 0,
-    SE_SHAPES_CIRCLE, SE_SHAPES_BOX,
+    SE_SHAPES_CIRCLE, SE_SHAPES_BOX, SE_SHAPES_POLYGON,
     // SE_SHAPES_AABB,
     SE_SHAPES_COUNT
 } SE_SHAPES;
@@ -27,9 +27,8 @@ typedef struct SE_Shape {
     Vec2 acceleration;
     f32 inverse_mass;
     SE_SHAPES type;
-    // struct SE_Collision_Data *collision_data;
+    // f32 rotation;
 } SE_Shape;
-
 
 // /// ----
 // /// AABB
@@ -61,6 +60,15 @@ typedef struct SE_Box {
     f32 x, y, w, h;
 } SE_Box;
 
+/// -----------
+/// SAT Polygon
+/// -----------
+#define SE_POLYGON_POINTS_COUNT_MAX 10
+typedef struct SE_Polygon {
+    Vec2 points[SE_POLYGON_POINTS_COUNT_MAX];
+    u32 points_count;
+} SE_Polygon;
+
 /// ------
 /// CIRCLE
 /// ------
@@ -69,7 +77,6 @@ typedef struct SE_Circle {
     f32 radius;
     Vec2 pos;
 } SE_Circle;
-
 
 /// -----
 /// PLANE
@@ -139,6 +146,14 @@ SEINLINE void init_plane(SE_Plane *plane) {
     plane->shape.inverse_mass = 0;
     plane->normal = vec2_create(0, 1);
     plane->depth = 1;
+}
+
+SEINLINE void init_polygon(SE_Polygon *polygon) {
+    polygon->points_count = 0;
+}
+SEINLINE void se_polygon_add_point(SE_Polygon *polygon, Vec2 point) {
+    polygon->points[polygon->points_count] = point;
+    polygon->points_count++;
 }
 
 SEINLINE init_collision_data(SE_Collision_Data *cd, bool is_collided, Vec2 normal, Vec2 world_pos, f32 depth, SE_Shape *shape_a, SE_Shape* shape_b) {

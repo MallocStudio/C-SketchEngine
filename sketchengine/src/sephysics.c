@@ -275,6 +275,142 @@ SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b) {
     return result;
 }
 
+/// ---
+/// SAT
+/// ---
+
+SE_Collision_Data se_phys_check_polygon_box(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result;
+    bool collided = false;
+    Vec2 world_pos = {0};
+    Vec2 normal = {0};
+    f32 depth = 0;
+    // @incomplete
+
+    init_collision_data(&result, collided, normal, world_pos, depth, a, b);
+    return result;
+}
+
+SE_Collision_Data se_phys_check_polygon_circle(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result;
+    bool collided = false;
+    Vec2 world_pos = {0};
+    Vec2 normal = {0};
+    f32 depth = 0;
+    // @incomplete
+
+    init_collision_data(&result, collided, normal, world_pos, depth, a, b);
+    return result;
+}
+
+SE_Collision_Data se_phys_check_polygon_plane(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result;
+    bool collided = false;
+    Vec2 world_pos = {0};
+    Vec2 normal = {0};
+    f32 depth = 0;
+    // @incomplete
+
+    init_collision_data(&result, collided, normal, world_pos, depth, a, b);
+    return result;
+}
+
+SE_Collision_Data se_phys_check_polygon_polygon(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result;
+    bool collided = false;
+    Vec2 world_pos = {0};
+    Vec2 normal = {0};
+    f32 depth = 0;
+
+    SE_Polygon *polygon1 = (SE_Polygon*)a;
+    SE_Polygon *polygon2 = (SE_Polygon*)b;
+    
+    // -- figure out the axis of each edge
+
+    Vec2 axis[SE_POLYGON_POINTS_COUNT_MAX - 1];
+    u32 axis_count = 0;
+
+    for (i32 i = 0; i < polygon1->points_count - 1; --i) {
+        Vec2 p1 = polygon1->points[i];
+        Vec2 p2 = polygon1->points[i+1];
+        axis[axis_count] = vec2_sub(p1, p2);
+        axis_count++;
+    }
+
+    for (i32 i = 0; i < polygon2->points_count - 1; --i) {
+        Vec2 p1 = polygon2->points[i];
+        Vec2 p2 = polygon2->points[i+1];
+        axis[axis_count] = vec2_sub(p1, p2);
+        axis_count++;
+    }
+
+    // -- go through each axis and calculate if the shapes are not overlapping
+    collided = true; // assume we're colliding unless proven otherwise
+    f32 min_peneteration = 0;
+    for (i32 i = 0; i < axis_count; ++i) {
+        Vec2 current_axis = axis[i];
+        f32 min1 = 0;
+        f32 max1 = 0;
+        f32 min2 = 0;
+        f32 max2 = 0;
+
+        // f32 projected_points_1[SE_POLYGON_POINTS_COUNT_MAX];
+        // u32 projected_points_1_count = 0;
+        for (i32 p_index = 0; p_index < polygon1->points_count; ++p_index) {
+            f32 projected_point = vec2_dot(polygon1->points[p_index], current_axis);
+            // projected_points_1[projected_points_1_count] = projected_point;
+            // projected_points_1_count++;
+
+            if (projected_point < min1) min1 = projected_point;
+            if (projected_point > max1) max1 = projected_point;
+        }
+
+        // f32 projected_points_2[SE_POLYGON_POINTS_COUNT_MAX];
+        // u32 projected_points_2_count = 0;
+        for (i32 p_index = 0; p_index < polygon2->points_count; ++p_index) {
+            f32 projected_point = vec2_dot(polygon2->points[p_index], current_axis);
+            // projected_points_2[projected_points_2_count] = projected_point;
+            // projected_points_2_count++;
+
+            if (projected_point < min2) min2 = projected_point;
+            if (projected_point > max2) max2 = projected_point;
+        }
+
+        if (!(min2 <= max1 && max2 >= min1)) {
+            collided = false;
+            break;
+        }
+
+        if (semath_abs(min2 - max1) < min_peneteration) { // update min penetration
+            collided = true;
+            normal = vec2_create(current_axis.y, -current_axis.x);
+            depth = semath_abs(min2 - max1);
+            // world_pos = 
+        }
+    }
+
+    init_collision_data(&result, collided, normal, world_pos, depth, a, b);
+    return result;
+}
+
+SE_Collision_Data se_phys_check_plane_polygon(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result = se_phys_check_polygon_plane(b, a);
+    result.normal = vec2_mul_scalar(result.normal, -1);
+    return result;
+}
+
+SE_Collision_Data se_phys_check_circle_polygon(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result = se_phys_check_polygon_circle(b, a);
+    result.normal = vec2_mul_scalar(result.normal, -1);
+    return result;
+}
+
+SE_Collision_Data se_phys_check_box_polygon(SE_Shape *a, SE_Shape *b) {
+    SE_Collision_Data result = se_phys_check_polygon_box(b, a);
+    result.normal = vec2_mul_scalar(result.normal, -1);
+    return result;
+}
+
 void se_phys_render_shape(SEGL_Line_Renderer *renderer, SE_Shape *shape) {
     switch (shape->type) {
         case SE_SHAPES_CIRCLE: {

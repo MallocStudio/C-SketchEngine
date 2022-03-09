@@ -18,6 +18,14 @@ SE_Collision_Data se_phys_check_box_plane(SE_Shape *a, SE_Shape *b);
 SE_Collision_Data se_phys_check_box_circle(SE_Shape *a, SE_Shape *b);
 SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b);
 
+SE_Collision_Data se_phys_check_polygon_box(SE_Shape *a, SE_Shape *b);
+SE_Collision_Data se_phys_check_box_polygon(SE_Shape *a, SE_Shape *b);
+SE_Collision_Data se_phys_check_polygon_circle(SE_Shape *a, SE_Shape *b);
+SE_Collision_Data se_phys_check_circle_polygon(SE_Shape *a, SE_Shape *b);
+SE_Collision_Data se_phys_check_polygon_plane(SE_Shape *a, SE_Shape *b);
+SE_Collision_Data se_phys_check_plane_polygon(SE_Shape *a, SE_Shape *b);
+SE_Collision_Data se_phys_check_polygon_polygon(SE_Shape *a, SE_Shape *b);
+
 /// ------------------------
 /// COLLISION FUNCTION TABLE
 /// ------------------------
@@ -26,9 +34,10 @@ SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b);
 typedef SE_Collision_Data (*se_phys_check)(SE_Shape*, SE_Shape*);
 
 static se_phys_check collision_function_array[] = {
-    se_phys_check_plane_plane,  se_phys_check_plane_circle,  se_phys_check_plane_box,
-    se_phys_check_circle_plane, se_phys_check_circle_circle, se_phys_check_circle_box,
-    se_phys_check_box_plane,    se_phys_check_box_circle,    se_phys_check_box_box,
+    se_phys_check_plane_plane,   se_phys_check_plane_circle,   se_phys_check_plane_box,   se_phys_check_plane_polygon,
+    se_phys_check_circle_plane,  se_phys_check_circle_circle,  se_phys_check_circle_box,  se_phys_check_circle_polygon,
+    se_phys_check_box_plane,     se_phys_check_box_circle,     se_phys_check_box_box,     se_phys_check_box_polygon,
+    se_phys_check_polygon_plane, se_phys_check_polygon_circle, se_phys_check_polygon_box, se_phys_check_polygon_polygon,
 };
 
 /// ---------------------------
