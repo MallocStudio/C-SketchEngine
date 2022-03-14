@@ -1,4 +1,3 @@
-// #define DEFINES_IMPL to implement some of the functionalitites (required to do this once)
 #ifndef DEFINES_H
 #define DEFINES_H
 

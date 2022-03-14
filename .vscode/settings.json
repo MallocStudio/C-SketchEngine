@@ -14,6 +14,7 @@
         "stdbool.h": "c",
         "setext.h": "c",
         "hash_map": "c",
-        "serenderer.h": "c"
+        "serenderer.h": "c",
+        "sephysics.h": "c"
     }
 }

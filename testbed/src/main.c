@@ -17,7 +17,7 @@ int main () {
     SDL_Window *window;
     i32 window_w = 1600;
     i32 window_h = 1024;
-    
+
     // -- init SDL
     ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");
 
@@ -81,7 +81,7 @@ int main () {
                     if(event.wheel.y > 0) { // scroll up
                         segl_camera_zoom(game->camera, zoom_factor);
                     }
-                    else if(event.wheel.y < 0) { // scroll down 
+                    else if(event.wheel.y < 0) { // scroll down
                         segl_camera_zoom(game->camera, 1 / zoom_factor);
                     }
                 } break;

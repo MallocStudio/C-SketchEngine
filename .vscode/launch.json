@@ -25,6 +25,17 @@
             "cwd": "${workspaceFolder}/testbed/bin/",
             "environment": [],
             "console": "externalTerminal"
+        },
+        {
+            "name": "(renderer testbed) Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/renderer_testbed/bin/renderer_testbed.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/renderer_testbed/bin/",
+            "environment": [],
+            "console": "externalTerminal"
         }
     ]
 }
