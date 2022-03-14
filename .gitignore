@@ -1,7 +1,6 @@
 temp/*
-*.exe
+**.exe
 build/SketchEngine.exe
 build\SketchEngine.exe
-*.pdb
-*.ilk
-*.exe
+**.pdb
+**.ilk
