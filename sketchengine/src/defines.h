@@ -1,6 +1,15 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
+/// inlining
+#ifdef _MSC_VER
+#define SEINLINE __forceinline
+#define SENOINLINE __declspec(noinline)
+#else
+#define SEINLINE static inline
+#define SENOINLINE
+#endif // inline
+
 #include "SDL2/SDL.h"
 
 /// debugging for SDL2
@@ -29,13 +38,45 @@ typedef struct RGB {
     f32 r, g, b;
 } RGB;
 
-/// inlining
-#ifdef _MSC_VER
-#define SEINLINE __forceinline
-#define SENOINLINE __declspec(noinline)
-#else
-#define SEINLINE static inline
-#define SENOINLINE
-#endif // inline
+// ///
+// /// "dynamic" array type
+// ///
+// typedef enum ARRAY_TYPES {
+//     I32, F32, U32,
+//     VEC2, VEC3, VEC4, MAT3, MAT4, QUATERNION,
+//     COUNT
+// } ARRAY_TYPES;
+
+// typedef struct Array {
+//     u32 count;
+//     u32 capacity;
+//     ARRAY_TYPES type;
+//     void *data;
+// } Array;
+
+// SEINLINE void array_init(Array *array, ARRAY_TYPES type, u32 capacity) {
+//     u32 type_size = 0;
+//     switch (type) {
+//         case I32: {
+
+//         } break;
+//         case F32: {
+
+//         } break;
+//         case U32: {
+
+//         } break;
+//         case VEC2: {
+
+//         } break;
+//         case VEC3: {
+
+//         } break;
+//         default : {
+//             SDL_assert("Given a type that's not defines here mate");
+//         }
+//     }
+//     array->data = new(
+// }
 
 #endif // DEFINES_H
