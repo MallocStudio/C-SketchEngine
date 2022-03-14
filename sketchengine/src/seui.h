@@ -35,7 +35,7 @@ typedef struct UI_Context {
     SEGL_Renderer2D renderer;
     // the text renderer
     SE_Text_Renderer txt_renderer;
-    
+
     // -- input
     SE_Input *input; // ! not owned
     Vec2 mouse_grab_offset;
@@ -54,7 +54,7 @@ typedef struct UI_Context {
     Rect min_rect;
     // the previous frame's min_rect.
     Rect min_rect_prev_frame;
-    
+
     Rect prev_item_rect; // the rect of the previously 'put' item
     i32 at_y;
     i32 at_x;
@@ -71,7 +71,7 @@ void ui_init_context(UI_Context *ctx, SE_Input *input);
 void ui_deinit_context(UI_Context *ctx);
 /// frees current theme and replaces it with the provided one
 void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme);
-/// @TODO // @document
+/// update the renderer viewport and projection matrix based on the given "viewport" Rect
 void ui_update_context_viewport(UI_Context *ctx, Rect viewport);
 /// render everything and clear frame
 void ui_render(UI_Context *ctx);

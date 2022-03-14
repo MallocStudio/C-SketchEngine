@@ -59,11 +59,11 @@ void ui_init_theme (UI_Theme *theme) {
     RGB primary   = (RGB) {1, 0.5f, 0.2f};
     RGB secondary = (RGB) {0.3f, 0.3f, 0.3f};
     theme->color_interactive_normal = primary;
-    theme->color_interactive_hot    = (RGB) { primary.r + 0.2f, 
-                                               primary.g + 0.1f, 
+    theme->color_interactive_hot    = (RGB) { primary.r + 0.2f,
+                                               primary.g + 0.1f,
                                                primary.b + 0.1f};
-    theme->color_interactive_active = (RGB) { primary.r - 0.2f, 
-                                               primary.g - 0.1f, 
+    theme->color_interactive_active = (RGB) { primary.r - 0.2f,
+                                               primary.g - 0.1f,
                                                primary.b - 0.1f};
     clamp_rgb(&theme->color_interactive_hot);
     clamp_rgb(&theme->color_interactive_active);
@@ -106,7 +106,6 @@ void ui_context_set_theme(UI_Context *ctx, UI_Theme *theme) {
 
 void ui_update_context_viewport(UI_Context *ctx, Rect viewport) {
     // -- update ortho for txt_renderer
-    // ctx->txt_renderer.shader_projection_matrix = ctx->projection_matrix; // directly set this
     setext_set_viewport(&ctx->txt_renderer, viewport);
 
     // -- update ortho for renderer
@@ -116,7 +115,7 @@ void ui_update_context_viewport(UI_Context *ctx, Rect viewport) {
 }
 
 void ui_render(UI_Context *ctx) {
-    // * note that the projection matrices are updated in update()    
+    // * note that the projection matrices are updated in update()
     // -- render ui cursor
     // segl_render_2d_rect(&ctx->renderer, (Rect) {
     //     ctx->input->mouse_screen_pos.x - 8, ctx->input->mouse_screen_pos.y - 8,
@@ -125,7 +124,7 @@ void ui_render(UI_Context *ctx) {
 
     segl_render_2d_update_frame(&ctx->renderer);
     // segl_render_2d_clear(&ctx->renderer);
-    
+
     setext_render(&ctx->txt_renderer);
 }
 
@@ -136,7 +135,7 @@ void ui_begin(UI_Context *ctx, Rect *rect) {
     // -- make sure rect is at least the minimum amount it should be
     if (rect->w < ctx->min_rect.w) rect->w = ctx->min_rect.w;
     if (rect->h < ctx->min_rect.h) rect->h = ctx->min_rect.h;
-    
+
     // reset for this frame
     ui_context_reset(ctx, rect);
 
@@ -160,7 +159,7 @@ void ui_begin(UI_Context *ctx, Rect *rect) {
     }
     // -- resize grab button
     if (ui_button_grab(ctx,
-        (Rect) {ctx->window_rect.x + ctx->window_rect.w - 16, 
+        (Rect) {ctx->window_rect.x + ctx->window_rect.w - 16,
         ctx->window_rect.y + ctx->window_rect.h - 16, 16, 16})) {
             rect->w = ctx->input->mouse_screen_pos.x - rect->x + 8;
             rect->h = ctx->input->mouse_screen_pos.y - rect->y + 8;
@@ -175,7 +174,7 @@ void ui_row(UI_Context *ctx, i32 number_of_items, i32 height, i32 min_width) {
     ctx->at_x = ctx->window_rect.x;                    // reset x
     ctx->at_y = ctx->window_rect.y + ctx->min_rect.h; // advance down
     // ctx->at_y = ctx->y_advance_by; // advance down
-    
+
     // -- update the min rect
     ctx->min_rect.h += height;
     if (ctx->min_rect.w < min_width) ctx->min_rect.w = min_width; // @incomplete what happens if we are arranging horizontally? shouldn't min_rect.w be increased like ctx->min_rect.h += height; is?
@@ -260,7 +259,7 @@ bool ui_button_grab(UI_Context *ctx, Rect rect) {
     }
 
     ui_put(ctx);
-    
+
     bool mouse_up        = !ctx->input->is_mouse_left_down;
     bool mouse_down      = !mouse_up;
     bool mouse_is_inside = point_in_rect(ctx->input->mouse_screen_pos, rect);

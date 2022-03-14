@@ -47,26 +47,34 @@ typedef struct SE_Input {
     bool is_mouse_right_handled;
 
     // -- keyboard
-    
+
     // use SDL_SCANCODE_... to get the state of a key
     // eg: keyboard[SDL_SCANCODE_LEFT] returns true if the left arrow
     // key is down
     Uint8 *keyboard;
-    
+
+    #define SEINPUT_NUMKEYS_MAX SDL_NUM_SCANCODES
+    Uint8 keyboard_previous_frame[SEINPUT_NUMKEYS_MAX];
+
 } SE_Input;
 
-SEINLINE void seinput_reset(SE_Input *input) {
-    // input->mouse_pos = (Vec2i) {0};
-    // input->mouse_pressed_pos = (Vec2i) {0};
-    // // input->mouse_grab_offset = (Vec2) {0};
-    // input->is_mouse_left_pressed = false;
+/// initialise input once! allocates memory
+SEINLINE void seinput_init(SE_Input *input) {
+    // set all values to zero to begin with
     *input = (SE_Input) {0};
 }
 
 /// note that mouse pos will be relative to top left position of window
 SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i window_size) {
     { // -- keyboard
-        input->keyboard = (Uint8*)SDL_GetKeyboardState(NULL);
+        if (input->keyboard != NULL) {
+            for (i32 i = 0; i < SEINPUT_NUMKEYS_MAX; ++i) {
+                input->keyboard_previous_frame[i] = input->keyboard[i];
+            }
+        }
+        i32 numkeys;
+        input->keyboard = (Uint8*)SDL_GetKeyboardState(&numkeys);
+        SDL_assert(numkeys == SEINPUT_NUMKEYS_MAX); // we assert this, because we need to allocate this much memory for input->keyboard_previous_frame
     }
 
     // ! don't try this right now, because we update mouse_grab_offset in seui.c "ui_update_mouse_grab_pos()"
@@ -85,7 +93,7 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i 
         if (!input->is_mouse_left_down) {
             input->is_mouse_left_handled = false;
         }
-        
+
         if (!input->is_mouse_right_down) {
             input->is_mouse_right_handled = false;
         }
@@ -140,5 +148,13 @@ SEINLINE bool seinput_is_mouse_right_pressed (SE_Input *input) {
     return (input->is_mouse_right_handled == false
             && input->is_mouse_right_down
             && !input->was_mouse_right_down);
+}
+
+SEINLINE bool seinput_is_key_pressed(SE_Input *input, SDL_Scancode sdl_scancode) {
+    return (input->keyboard[sdl_scancode] && !input->keyboard_previous_frame[sdl_scancode]);
+}
+
+SEINLINE bool seinput_is_key_down(SE_Input *input, SDL_Scancode sdl_scancode) {
+    return input->keyboard[sdl_scancode];
 }
 #endif // SEINPUT_H

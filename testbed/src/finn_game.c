@@ -69,7 +69,7 @@ void create_boundaries(Finn_Game *game) {
 /// -----------------
 void finn_game_init(Finn_Game *game, SDL_Window *window) {
     game->window = window;
-    
+
     i32 window_w, window_h;
     SDL_GetWindowSize(window, &window_w, &window_h);
 
@@ -88,7 +88,7 @@ void finn_game_init(Finn_Game *game, SDL_Window *window) {
     setext_init(&game->txt_library, (Rect) {0, 0, window_w, window_h});
 
     // -- input
-    seinput_reset(&game->input);
+    seinput_init(&game->input);
 
     { // -- init ui
         // general UI panel
@@ -169,7 +169,7 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
     { // -- general ui context
         // -- call update
         ui_update_context_viewport(&game->ui_context, screen_viewport);
-        
+
         // -- handle ui
         ui_begin(&game->ui_context, &game->test_ui_init_rect);
 
@@ -180,7 +180,7 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
 
         ui_row(&game->ui_context, 1, 36, 300);
         ui_label(&game->ui_context, "--shapes--");
-        
+
         ui_row(&game->ui_context, 2, 48, 120);
         if (ui_button(&game->ui_context, "elasticity 0")) game->elasticity = 0;
         if (ui_button(&game->ui_context, "elasticity 1")) game->elasticity = 1;
@@ -213,12 +213,12 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
 
             // -- call update
             ui_update_context_viewport(ctx, screen_viewport);
-            
+
             // -- handle ui
             ui_begin(ctx, &game->ui_context_physics_debug_init_rect);
             char debug_text[256];
             i32 min_width = 300;
-            
+
             ui_row(ctx, 1, 48, min_width);
             if (ui_button(ctx, "deselect")) game->selected_shape = NULL;
 
@@ -272,7 +272,7 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
     { // -- object instantiation
         // if we're presseing the left mouse button AND shape mode is not NONE
         // instantiate the selected shape in the simulation
-        if (seinput_is_mouse_left_pressed(&game->input) 
+        if (seinput_is_mouse_left_pressed(&game->input)
         && game->current_selected_shape_mode != SE_SHAPES_NONE) {
             Vec2 normal = vec2_sub(game->input.mouse_world_pos, game->input.mouse_world_pressed_pos);
             vec2_normalise(&normal);
@@ -285,7 +285,7 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
             create_boundaries(game);
         }
     }
-    
+
     { // -- select shapes to render specific shape debug info in UI
         if (seinput_is_mouse_left_pressed(&game->input)
             && game->current_selected_shape_mode == SE_SHAPES_NONE) {
@@ -301,7 +301,8 @@ void finn_game_update(Finn_Game *game, f32 delta_time) {
     }
 
     { // -- pause unpause
-        if (game->input.keyboard[SDL_SCANCODE_SPACE]) {
+        // if (game->input.keyboard[SDL_SCANCODE_SPACE]) {
+        if (seinput_is_key_pressed(&game->input, SDL_SCANCODE_SPACE)) {
             game->is_paused = !game->is_paused;
         }
     }
@@ -333,7 +334,7 @@ void finn_game_physics_update(Finn_Game *game, f32 delta_time) {
     { // -- physics collision check through function pointer table
         game->collision_datas_count = 0; // reset collision datas for this frame
 
-        for (i32 i = 0; i < game->objects_count; ++i) { 
+        for (i32 i = 0; i < game->objects_count; ++i) {
             for (i32 j = i + 1; j < game->objects_count; ++j) {
                 SE_Shape *shape_a = game->objects[i];
                 SE_Shape *shape_b = game->objects[j];
@@ -346,9 +347,9 @@ void finn_game_physics_update(Finn_Game *game, f32 delta_time) {
                     SDL_assert(collision_function_pointer != NULL && "collision_function_pointer resolved to null");
 
                     // SE_Collision_Data collision_data = collision_function_pointer(shape_a, shape_b);
-                    game->collision_datas[game->collision_datas_count] = 
+                    game->collision_datas[game->collision_datas_count] =
                         collision_function_pointer(shape_a, shape_b);
-                    
+
                     // only consider the collision if we're actually colliding
                     if (game->collision_datas[game->collision_datas_count].is_collided) {
                         game->collision_datas_count++;
@@ -386,27 +387,27 @@ void finn_game_physics_update(Finn_Game *game, f32 delta_time) {
                 // ! note that the denominator cannot be zero becasue we should not run this block of code
                 // ! if shape_a->inverse_mass AND shape_b->inverse_mass == 0
                 f32 impulse_magnitude = numerator / denominator;
-                
+
                 // -- depenetrate
                 // figure out how much each shape should move based on their mass
                 f32 depth = collision_data.depth;
                 Vec2 normal = collision_data.normal;
-                
+
                 f32 shape_a_depenetration_amount = 0;
                 f32 shape_b_depenetration_amount = 0;
 
-                if (shape_a->inverse_mass != 0 ) { 
+                if (shape_a->inverse_mass != 0 ) {
                     shape_a_depenetration_amount = shape_a->inverse_mass / (shape_a->inverse_mass + shape_b->inverse_mass);
                 }
 
-                if (shape_b->inverse_mass != 0 ) { 
+                if (shape_b->inverse_mass != 0 ) {
                     shape_b_depenetration_amount = shape_b->inverse_mass / (shape_b->inverse_mass + shape_a->inverse_mass);
                 }
 
                 // move shape a
                 Vec2 shape_pos, shape_normal;
                 Vec2 depenetration = {
-                    normal.x * -depth * shape_a_depenetration_amount, 
+                    normal.x * -depth * shape_a_depenetration_amount,
                     normal.y * -depth * shape_a_depenetration_amount
                 };
                 se_phys_get_shape_transform(shape_a, &shape_pos, &shape_normal);
@@ -415,7 +416,7 @@ void finn_game_physics_update(Finn_Game *game, f32 delta_time) {
 
                 // move shape b
                 depenetration = (Vec2) {
-                    normal.x * +depth * shape_b_depenetration_amount, 
+                    normal.x * +depth * shape_b_depenetration_amount,
                     normal.y * +depth * shape_b_depenetration_amount
                 };
                 se_phys_get_shape_transform(shape_b, &shape_pos, &shape_normal);
@@ -428,7 +429,7 @@ void finn_game_physics_update(Finn_Game *game, f32 delta_time) {
 
                 Vec2 vb = vec2_mul_scalar(normal, -1 * impulse_magnitude * shape_b->inverse_mass);
                 vb = vec2_add(shape_b->velocity, vb);
-                
+
                 shape_a->velocity = va;
                 shape_b->velocity = vb;
             }
@@ -445,7 +446,7 @@ void finn_game_render(Finn_Game *game) {
         game->lines.current_colour = (Vec3) {0.8f, 0.2f, 0.2f};
         segl_lines_draw_cross(&game->lines, game->input.mouse_world_pos, 0.05f);
         game->lines.current_colour = (Vec3) {1, 1, 1};
-        
+
         { // -- world mouse cursor
             switch (game->current_selected_shape_mode) {
                 case SE_SHAPES_CIRCLE: {
@@ -463,7 +464,7 @@ void finn_game_render(Finn_Game *game) {
                     se_render_rect(&game->lines, &(Rect){shape.x, shape.y, shape.w, shape.h});
                 } break;
                 case SE_SHAPES_PLANE: {
-                    
+
                     if (game->input.is_mouse_left_down) {
                         SE_Plane shape;
                         init_plane(&shape);
@@ -477,8 +478,8 @@ void finn_game_render(Finn_Game *game) {
                         Vec2 plane_pos = vec2_mul_scalar(shape.normal, shape.depth);
                         Vec2 plane_vec = vec2_create(shape.normal.y, -shape.normal.x);
                         // -- the line segment
-                        segl_lines_draw_line_segment(&game->lines, 
-                            vec2_add(plane_pos, vec2_mul_scalar(plane_vec, -3.0f)), 
+                        segl_lines_draw_line_segment(&game->lines,
+                            vec2_add(plane_pos, vec2_mul_scalar(plane_vec, -3.0f)),
                             vec2_add(plane_pos, vec2_mul_scalar(plane_vec, +3.0f)));
                         // -- the normal arrow
                         segl_lines_draw_line_segment(&game->lines,
