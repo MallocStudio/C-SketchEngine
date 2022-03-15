@@ -31,7 +31,7 @@ void segl_shader_program_init(SEGL_Shader_Program *shader_program) {
 
 void segl_shader_program_init_from (SEGL_Shader_Program *sp, const char *vertex_filename, const char *fragment_filename) {
     sp->loaded_successfully = true;
-    
+
     sp->vertex_shader   = glCreateShader(GL_VERTEX_SHADER);
     sp->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -296,7 +296,7 @@ void segl_lines_draw(SEGL_Line_Renderer *lines) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glDrawArrays(GL_LINES, 0, (GLsizei)lines->positions_current_index);
-    
+
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1); // @question Finn doesn't do it in lines, why is that?
 }
@@ -323,7 +323,7 @@ void segl_render_2d_deinit(SEGL_Renderer2D *renderer) {
     if (renderer->initialised) {
         renderer->shapes_count = 0;
         glGenBuffers(1, &renderer->vertices_buffer_id);
-        glGenBuffers(1, &renderer->colours_buffer_id);
+        glGenBuffers(1, &renderer->colours_buffer_id); // @question wtf?
         segl_shader_program_deinit(&renderer->shader_program);
         renderer->initialised = false;
     }
@@ -377,7 +377,7 @@ void segl_render_2d_render(SEGL_Renderer2D *renderer) {
     // glDrawArrays(GL_TRIANGLE_FAN, 0, renderer->vertices_current_index);
 
     glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1); // @question Finn doesn't do it in lines, why is that?
+    glDisableVertexAttribArray(1);
 }
 
 /// File Scope ///

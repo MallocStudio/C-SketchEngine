@@ -304,7 +304,7 @@ SEINLINE f32 vec3_magnitude(Vec3 v) {
 }
 
 /// Normalises the provided vector in place to a unit vector
-SEINLINE f32 vec3_normalise(Vec3 *v) {
+SEINLINE void vec3_normalise(Vec3 *v) {
     const f32 mag = vec3_magnitude(*v);
     v->x /= mag;
     v->y /= mag;
@@ -408,7 +408,7 @@ SEINLINE bool mat2_compare(Mat2 m1, Mat2 m2, f32 tolerance) {
     return true;
 }
 
-// a b   e f   ae + bg, af + bh 
+// a b   e f   ae + bg, af + bh
 // c d x g h = ce + dg, cf + dh
 /// multiply m1 x m2 (column major)
 SEINLINE Mat2 mat2_mul(Mat2 m1, Mat2 m2) {
@@ -800,7 +800,7 @@ SEINLINE Vec3 mat4_get_translation(Mat4 m) {
 SEINLINE bool mat2_test() {
     bool result = true;
     { // -- mat2_create
-        
+
     }
     { // -- mat2_create_vec2
 
