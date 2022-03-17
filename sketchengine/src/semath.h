@@ -562,6 +562,36 @@ SEINLINE Mat4 mat4_lookat(Vec3 position, Vec3 target, Vec3 up) {
     return result;
 }
 
+// /// Creates a transform matrix combining the position and the oriantation. Oriantation is a normalised Vector that points to a
+// /// certain direction
+// SEINLINE Mat4 mat4_create_transform(Vec3 position, Vec3 oriantation_direction, Vec3 up) {
+//     Mat4 result;
+//     Vec3 z_axis = oriantation_direction;
+
+//     z_axis = vec3_normalised(z_axis);
+//     Vec3 x_axis = vec3_normalised(vec3_cross(z_axis, up));
+//     Vec3 y_axis = vec3_cross(x_axis, z_axis);
+
+//     result.data[0] = x_axis.x;
+//     result.data[1] = y_axis.x;
+//     result.data[2] = -z_axis.x;
+//     result.data[3] = 0;
+//     result.data[4] = x_axis.y;
+//     result.data[5] = y_axis.y;
+//     result.data[6] = -z_axis.y;
+//     result.data[7] = 0;
+//     result.data[8] = x_axis.z;
+//     result.data[9] = y_axis.z;
+//     result.data[10] = -z_axis.z;
+//     result.data[11] = 0;
+//     result.data[12] = -vec3_dot(x_axis, position);
+//     result.data[13] = -vec3_dot(y_axis, position);
+//     result.data[14] = vec3_dot(z_axis, position);
+//     result.data[15] = 1.0f;
+
+//     return result;
+// }
+
 /// (rows -> columns) returns a transposed copy of the provided Mat4
 SEINLINE Mat4 mat4_transposed(Mat4 m) {
     Mat4 result = mat4_identity();
@@ -791,6 +821,262 @@ SEINLINE Vec4 mat4_mul_vec4 (const Mat4 *m, const Vec4 *v) {
 SEINLINE Vec3 mat4_get_translation(Mat4 m) {
     return (Vec3) {m.data[12], m.data[13], m.data[14]};
 }
+
+/// ----------
+/// Quaternion
+/// ----------
+/// ported from:
+/// https://github.com/travisvroman/kohi/blob/main/engine/src/math/kmath.h
+
+/// Creates an identity quaternion
+SEINLINE Quat quat_identity() {
+    return (Quat){0, 0, 0, 1.0f};
+}
+
+/**
+ * @brief Returns the normal of the provided quaternion.
+ *
+ * @param q The quaternion.
+ * @return The normal of the provided quaternion.
+ */
+SEINLINE f32 quat_normal(Quat q) {
+    return semath_sqrt(
+        q.x * q.x +
+        q.y * q.y +
+        q.z * q.z +
+        q.w * q.w);
+}
+
+/**
+ * @brief Returns a normalized copy of the provided quaternion.
+ *
+ * @param q The quaternion to normalize.
+ * @return A normalized copy of the provided quaternion.
+ */
+SEINLINE Quat quat_normalize(Quat q) {
+    f32 normal = quat_normal(q);
+    return (Quat){
+        q.x / normal,
+        q.y / normal,
+        q.z / normal,
+        q.w / normal};
+}
+
+/**
+ * @brief Returns the conjugate of the provided quaternion. That is,
+ * The x, y and z elements are negated, but the w element is untouched.
+ *
+ * @param q The quaternion to obtain a conjugate of.
+ * @return The conjugate quaternion.
+ */
+SEINLINE Quat quat_conjugate(Quat q) {
+    return (Quat){
+        -q.x,
+        -q.y,
+        -q.z,
+        q.w};
+}
+
+/**
+ * @brief Returns an inverse copy of the provided quaternion.
+ *
+ * @param q The quaternion to invert.
+ * @return An inverse copy of the provided quaternion.
+ */
+SEINLINE Quat quat_inverse(Quat q) {
+    return quat_normalize(quat_conjugate(q));
+}
+
+/**
+ * @brief Multiplies the provided quaternions.
+ *
+ * @param q_0 The first quaternion.
+ * @param q_1 The second quaternion.
+ * @return The multiplied quaternion.
+ */
+SEINLINE Quat quat_mul(Quat q_0, Quat q_1) {
+    Quat out_quaternion;
+
+    out_quaternion.x = q_0.x * q_1.w +
+                       q_0.y * q_1.z -
+                       q_0.z * q_1.y +
+                       q_0.w * q_1.x;
+
+    out_quaternion.y = -q_0.x * q_1.z +
+                       q_0.y * q_1.w +
+                       q_0.z * q_1.x +
+                       q_0.w * q_1.y;
+
+    out_quaternion.z = q_0.x * q_1.y -
+                       q_0.y * q_1.x +
+                       q_0.z * q_1.w +
+                       q_0.w * q_1.z;
+
+    out_quaternion.w = -q_0.x * q_1.x -
+                       q_0.y * q_1.y -
+                       q_0.z * q_1.z +
+                       q_0.w * q_1.w;
+
+    return out_quaternion;
+}
+
+/**
+ * @brief Calculates the dot product of the provided quaternions.
+ *
+ * @param q_0 The first quaternion.
+ * @param q_1 The second quaternion.
+ * @return The dot product of the provided quaternions.
+ */
+SEINLINE f32 quat_dot(Quat q_0, Quat q_1) {
+    return q_0.x * q_1.x +
+           q_0.y * q_1.y +
+           q_0.z * q_1.z +
+           q_0.w * q_1.w;
+}
+
+/**
+ * @brief Creates a rotation matrix from the given quaternion.
+ *
+ * @param q The quaternion to be used.
+ * @return A rotation matrix.
+ */
+SEINLINE Mat4 quat_to_mat4(Quat q) {
+    Mat4 out_matrix = mat4_identity();
+
+    // https://stackoverflow.com/questions/1556260/convert-quaternion-rotation-to-rotation-matrix
+
+    Quat n = quat_normalize(q);
+
+    out_matrix.data[0] = 1.0f - 2.0f * n.y * n.y - 2.0f * n.z * n.z;
+    out_matrix.data[1] = 2.0f * n.x * n.y - 2.0f * n.z * n.w;
+    out_matrix.data[2] = 2.0f * n.x * n.z + 2.0f * n.y * n.w;
+
+    out_matrix.data[4] = 2.0f * n.x * n.y + 2.0f * n.z * n.w;
+    out_matrix.data[5] = 1.0f - 2.0f * n.x * n.x - 2.0f * n.z * n.z;
+    out_matrix.data[6] = 2.0f * n.y * n.z - 2.0f * n.x * n.w;
+
+    out_matrix.data[8] = 2.0f * n.x * n.z - 2.0f * n.y * n.w;
+    out_matrix.data[9] = 2.0f * n.y * n.z + 2.0f * n.x * n.w;
+    out_matrix.data[10] = 1.0f - 2.0f * n.x * n.x - 2.0f * n.y * n.y;
+
+    return out_matrix;
+}
+
+/**
+ * @brief Calculates a rotation matrix based on the quaternion and the passed in center point.
+ *
+ * @param q The quaternion.
+ * @param center The center point.
+ * @return A rotation matrix.
+ */
+SEINLINE Mat4 quat_to_rotation_matrix(Quat q, Vec3 center) {
+    Mat4 out_matrix;
+
+    f32* o = out_matrix.data;
+    o[0] = (q.x * q.x) - (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
+    o[1] = 2.0f * ((q.x * q.y) + (q.z * q.w));
+    o[2] = 2.0f * ((q.x * q.z) - (q.y * q.w));
+    o[3] = center.x - center.x * o[0] - center.y * o[1] - center.z * o[2];
+
+    o[4] = 2.0f * ((q.x * q.y) - (q.z * q.w));
+    o[5] = -(q.x * q.x) + (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
+    o[6] = 2.0f * ((q.y * q.z) + (q.x * q.w));
+    o[7] = center.y - center.x * o[4] - center.y * o[5] - center.z * o[6];
+
+    o[8] = 2.0f * ((q.x * q.z) + (q.y * q.w));
+    o[9] = 2.0f * ((q.y * q.z) - (q.x * q.w));
+    o[10] = -(q.x * q.x) - (q.y * q.y) + (q.z * q.z) + (q.w * q.w);
+    o[11] = center.z - center.x * o[8] - center.y * o[9] - center.z * o[10];
+
+    o[12] = 0.0f;
+    o[13] = 0.0f;
+    o[14] = 0.0f;
+    o[15] = 1.0f;
+    return out_matrix;
+}
+
+/**
+ * @brief Creates a quaternion from the given axis and angle.
+ *
+ * @param axis The axis of rotation.
+ * @param radians The angle of rotation.
+ * @param normalize Indicates if the quaternion should be normalized.
+ * @return A new quaternion.
+ */
+SEINLINE Quat quat_from_axis_angle(Vec3 axis, f32 radians, bool normalize) {
+    const f32 half_angle = 0.5f * radians;
+    f32 s = semath_sin(half_angle);
+    f32 c = semath_cos(half_angle);
+
+    Quat q = (Quat){s * axis.x, s * axis.y, s * axis.z, c};
+    if (normalize) {
+        return quat_normalize(q);
+    }
+    return q;
+}
+
+/**
+ * @brief Calculates spherical linear interpolation of a given percentage
+ * between two quaternions.
+ *
+ * @param q_0 The first quaternion.
+ * @param q_1 The second quaternion.
+ * @param percentage The percentage of interpolation, typically a value from 0.0f-1.0f.
+ * @return An interpolated quaternion.
+ */
+SEINLINE Quat quat_slerp(Quat q_0, Quat q_1, f32 percentage) {
+    Quat out_quaternion;
+    // Source: https://en.wikipedia.org/wiki/Slerp
+    // Only unit quaternions are valid rotations.
+    // Normalize to avoid undefined behavior.
+    Quat v0 = quat_normalize(q_0);
+    Quat v1 = quat_normalize(q_1);
+
+    // Compute the cosine of the angle between the two vectors.
+    f32 dot = quat_dot(v0, v1);
+
+    // If the dot product is negative, slerp won't take
+    // the shorter path. Note that v1 and -v1 are equivalent when
+    // the negation is applied to all four components. Fix by
+    // reversing one quaternion.
+    if (dot < 0.0f) {
+        v1.x = -v1.x;
+        v1.y = -v1.y;
+        v1.z = -v1.z;
+        v1.w = -v1.w;
+        dot = -dot;
+    }
+
+    const f32 DOT_THRESHOLD = 0.9995f;
+    if (dot > DOT_THRESHOLD) {
+        // If the inputs are too close for comfort, linearly interpolate
+        // and normalize the result.
+        out_quaternion = (Quat){
+            v0.x + ((v1.x - v0.x) * percentage),
+            v0.y + ((v1.y - v0.y) * percentage),
+            v0.z + ((v1.z - v0.z) * percentage),
+            v0.w + ((v1.w - v0.w) * percentage)};
+
+        return quat_normalize(out_quaternion);
+    }
+
+    // Since dot is in range [0, DOT_THRESHOLD], acos is safe
+    f32 theta_0 = kacos(dot);          // theta_0 = angle between input vectors
+    f32 theta = theta_0 * percentage;  // theta = angle between v0 and result
+    f32 sin_theta = semath_sin(theta);       // compute this value only once
+    f32 sin_theta_0 = semath_sin(theta_0);   // compute this value only once
+
+    f32 s0 = semath_cos(theta) - dot * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
+    f32 s1 = sin_theta / sin_theta_0;
+
+    return (Quat){
+        (v0.x * s0) + (v1.x * s1),
+        (v0.y * s0) + (v1.y * s1),
+        (v0.z * s0) + (v1.z * s1),
+        (v0.w * s0) + (v1.w * s1)};
+}
+
+
 
 /// -----
 /// TESTS

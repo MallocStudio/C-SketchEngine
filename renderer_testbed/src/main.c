@@ -26,6 +26,9 @@ int main() {
     SDL_GLContext g_context = SDL_GL_CreateContext(window);
     ERROR_ON_NULL_SDL(g_context, "OpenGL context could not be created!");
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
     // -- Init GLEW
     GLenum glew_error = glewInit();
     if (glew_error != GLEW_OK) {
@@ -42,13 +45,47 @@ int main() {
     Mat4 quad_transform;
 
     { // -- application level testing
-        camera.view = mat4_lookat(vec3_create(5, 5, 5), vec3_create(0, 0, 0), vec3_up());
-        camera.projection = mat4_perspective(SEMATH_PI * 0.25f,
-                                            window_w / (f32) window_h,
-                                            0.1f, 1000.0f);
+        // camera.pos = vec3_create(5, 5, 5);
+        camera.pos = vec3_create(10, 10, 10);
+        camera.phi = 0;
+        camera.theta = 0;
+
+        // camera.look_at = vec3_zero();
+        // camera.look_at = vec3_add(camera.pos, vec3_forward());
+
+        // camera.oriantation = quat_identity();
+        // Quat oriantation = quat_from_axis_angle(vec3_create(0, 1, 0), 0, true);
+        // camera.oriantation = quat_mul(oriantation, camera.oriantation);
+
+        // camera.oriantation = quat_from_axis_angle(vec3_create(1, 0, 0), SEMATH_DEG2RAD_MULTIPLIER * -45, false);
+
+        // camera.view = mat4_lookat(camera.pos, vec3_zero(), vec3_up());
+
 
         seshader_init_from(&shader, "Simple.vsd", "Simple.fsd");
-        semesh_generate_quad(&mesh);
+
+        // semesh_generate_quad(&mesh);
+        SE_Vertex3D verts[5];
+        verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
+        verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
+        verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+        verts[3].position = (Vec4) {+0.5f, 0, -0.5f, 1};
+        verts[4].position = (Vec4) {+1.0f, -0.5f, -0.5f, 1};
+
+        verts[0].rgba = RGBA_RED;
+        verts[1].rgba = RGBA_RED;
+        verts[2].rgba = RGBA_RED;
+        verts[3].rgba = RGBA_BLUE;
+        verts[4].rgba = RGBA_GREEN;
+
+        u32 indices[9] = {
+            0, 1, 2,
+            2, 1, 3,
+            3, 1, 4,
+        };
+
+        semesh_generate(&mesh, 5, verts, 9, indices);
+
         quad_transform = (Mat4) {
             10, 0, 0, 0,
             0, 10, 0, 0,
@@ -56,6 +93,10 @@ int main() {
             0, 0, 0,  1,
         };
     }
+
+    Vec2i mouse_pos;
+    SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+    Vec2i mouse_pos_pre = mouse_pos;
 
     // -- main loop
     bool quit = false;
@@ -72,14 +113,14 @@ int main() {
                 case SDL_WINDOWEVENT: { // -- resized window
                     if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                         // printf("window resized\n");
-                        // SDL_GetWindowSize(window, &window_w, &window_h);
-                        // glViewport(0, 0, window_w, window_h);
+                        SDL_GetWindowSize(window, &window_w, &window_h);
+                        glViewport(0, 0, window_w, window_h);
+
                     }
                 } break;
                 case SDL_KEYDOWN: {
                     // keyboard_pressed = true;
                     // keyboard_down = true;
-                    quit = true; // @temp
                 } break;
                 case SDL_MOUSEWHEEL: {
                     // f32 zoom_factor = 1.2f;
@@ -90,36 +131,81 @@ int main() {
                     //     segl_camera_zoom(game->camera, 1 / zoom_factor);
                     // }
 
-                    static f32 angle = 0.0f;
-                    if (event.wheel.y > 0) { // scroll up
-                        angle += 0.01f;
-                    } else if (event.wheel.y < 0) {
-                        angle -= 0.01f;
-                    }
-                    camera.view = mat4_mul(camera.view, mat4_euler_z(angle));
+                    // f32 angle = 0.0f;
+                    // if (event.wheel.y > 0) { // scroll up
+                    //     angle = 0.01f;
+                    // } else if (event.wheel.y < 0) {
+                    //     angle = -0.01f;
+                    // }
+                    // camera.view = mat4_mul(camera.view, mat4_euler_y(angle));
                 } break;
             }
         }
 
         { // -- application level update
+            const u8 *keyboard = SDL_GetKeyboardState(NULL);
+            if (keyboard[SDL_SCANCODE_ESCAPE]) quit = true;
+
+            i32 r = keyboard[SDL_SCANCODE_D] == true ? 1 : 0;
+            i32 l = keyboard[SDL_SCANCODE_A] == true ? 1 : 0;
+            i32 d = keyboard[SDL_SCANCODE_S] == true ? 1 : 0;
+            i32 u = keyboard[SDL_SCANCODE_W] == true ? 1 : 0;
+            i32 elevate = keyboard[SDL_SCANCODE_E] == true ? 1 : 0;
+            i32 dive = keyboard[SDL_SCANCODE_Q] == true ? 1 : 0;
+
+            Vec3 input = vec3_create(r - l, d - u, elevate - dive);
+            camera.pos.x += input.x;
+            camera.pos.z += input.y;
+            camera.pos.y += input.z;
+
+            { // quaternion way
+                // static f32 v_angle = 0.0f;
+                // static f32 h_angle = 0.0f;
+                // v_angle = input.y * 0.01f;
+                // h_angle = input.x * 0.01f;
+                // Quat quat_v = quat_from_axis_angle(vec3_create(1, 0, 0), v_angle, true);
+                // Quat quat_h = quat_from_axis_angle(vec3_create(0, 1, 0), h_angle, true);
+
+                // // Quat quat_v = quat_from_axis_angle(mat4_up(quat_to_mat4(camera.oriantation)), v_angle, true);
+                // // Quat quat_h = quat_from_axis_angle(mat4_right(quat_to_mat4(camera.oriantation)), h_angle, true);
+
+                // Quat quat = quat_mul(quat_v, quat_h);
+
+                // camera.oriantation = quat_mul(quat, camera.oriantation);
+            }
+            { // AIE tutorial way
+                u8 mouse_state = SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+                if (mouse_state & SDL_BUTTON_RMASK) {
+                    f32 turn_speed = 0.1f;
+                    camera.theta -= turn_speed * (f32)(mouse_pos.x - mouse_pos_pre.x);
+                    camera.phi   += turn_speed * (f32)(mouse_pos.y - mouse_pos_pre.y);
+                }
+                mouse_pos_pre = mouse_pos;
+            }
 
         }
 
         { // -- application level render
             glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT);
 
-            // in case of a window resize
+            // secamera3d_update_view(&camera);
+            // camera.view = mat4_lookat(camera.pos, vec3_zero(), vec3_up());
+            camera.view = secamera3d_get_view(&camera);
             camera.projection = mat4_perspective(SEMATH_PI * 0.25f,
                                             window_w / (f32) window_h,
                                             0.1f, 1000.0f);
 
-            // Mat4 projection_view_model = mat4_mul(camera.projection, camera.view);
-            // projection_view_model = mat4_mul(projection_view_model, quad_transform);
-            Mat4 projection_view_model = mat4_mul(camera.view, quad_transform);
-            projection_view_model = mat4_mul(projection_view_model, camera.projection);
+            // quad_transform = mat4_mul(quad_transform, mat4_euler_y(0.01f));
 
             seshader_use(&shader);
-            seshader_set_uniform_mat4(&shader, "projection_view_model", projection_view_model);
+
+            // take the quad (world space) and project it to view space
+            Mat4 pvm = mat4_mul(quad_transform, camera.view);
+            // then take that and project it to the clip space
+            pvm = mat4_mul(pvm, camera.projection);
+            // then pass that final projection matrix and give it to the shader
+            seshader_set_uniform_mat4(&shader, "projection_view_model", pvm);
 
             semesh_draw(&mesh);
         }

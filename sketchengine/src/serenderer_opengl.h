@@ -13,7 +13,7 @@ typedef struct SE_Vertex3D {
     Vec4 position;
     Vec4 normal;
     Vec2 texture_coord;
-    // RGBA rgba;
+    RGBA rgba;
 } SE_Vertex3D;
 
 ///
@@ -55,6 +55,7 @@ typedef struct SE_Mesh {
     // u32 vert_count;
     // SE_Vertex3D verts[SE_MESH_VERTICES_MAX];
     u32 tri_count;
+    // u32 vert_count;
     u32 vao; // vertex array object
     u32 vbo; // vertex buffer object
     u32 ibo; // index buffer object
@@ -64,6 +65,8 @@ void semesh_deinit(SE_Mesh *mesh);
 /// generate a quad. The mesh better be uninitialised because this function assumes there are
 /// no previous data stored on the mesh
 void semesh_generate_quad(SE_Mesh *mesh);
+///
+void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
 /// draw the mesh
 void semesh_draw(SE_Mesh *mesh);
 
@@ -101,8 +104,29 @@ typedef struct SE_Camera3D {
     // Vec3 pos;
     // f32 aspect_ratio;
     // f32 speed;
+
     Mat4 projection; // projection transform
     Mat4 view;       // view transform
+
+    Vec3 pos;
+    f32 theta;
+    f32 phi;
+    // Quat oriantation;
+    // Vec3 look_at;
 } SE_Camera3D;
+
+SEINLINE Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
+    // cam->view = quat_to_rotation_matrix(cam->oriantation, cam->pos);
+    // cam->view = quat_to_mat4(cam->oriantation);
+    // cam->view = mat4_mul(mat4_translation(cam->pos), cam->view);
+    f32 theta_r = cam->theta * SEMATH_DEG2RAD_MULTIPLIER;
+    f32 phi_r   = cam->phi   * SEMATH_DEG2RAD_MULTIPLIER;
+    Vec3 forward = (Vec3) {
+        semath_cos(phi_r) * semath_cos(theta_r),
+        semath_sin(phi_r),
+        semath_cos(phi_r) * semath_sin(theta_r)
+    };
+    return mat4_lookat(cam->pos, vec3_add(cam->pos, forward), vec3_up());
+}
 
 #endif // SERENDERER_OPENGL

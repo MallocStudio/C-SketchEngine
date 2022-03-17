@@ -30,6 +30,9 @@ typedef struct Vec4 {
     f32 x, y, z, w;
 } Vec4;
 
+/// quaternion
+typedef Vec4 Quat;
+
 typedef struct Rect {
     f32 x, y, w, h;
 } Rect;
@@ -50,5 +53,7 @@ typedef struct Mat4 {
     // f32 m3, m7, m11, m15; // row 4
     f32 data[16];
 } Mat4;
+
+
 
 #endif // SEMATH_TYPES

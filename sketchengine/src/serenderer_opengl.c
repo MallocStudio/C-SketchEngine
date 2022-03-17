@@ -149,43 +149,94 @@ void semesh_deinit(SE_Mesh *mesh) {
 }
 
 void semesh_generate_quad(SE_Mesh *mesh) {
-    // -- generate buffers
-    glGenVertexArrays(1, &mesh->vao);
+    { // the non index buffer approach
+        // // -- generate buffers
+        // glGenVertexArrays(1, &mesh->vao);
+        // glGenBuffers(1, &mesh->vbo);
+        // // @note once we bind a VBO or IBO it "sticks" to the currently bound VAO, so we start by
+        // // binding VAO and then VBO.
+        // // This is so that later on, we'll just need to bind the vertex array object and not the buffers
+        // glBindVertexArray(mesh->vao);
+        // glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+
+        // // @temp generate the data here and send them to the GPU
+        // SE_Vertex3D verts[6];
+        // verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
+        // verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
+        // verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+
+        // verts[3].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+        // verts[4].position = (Vec4) {+0.5f, 0, +0.5f, 1};
+        // verts[5].position = (Vec4) {+0.5f, 0, -0.5f, 1};
+        // glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(SE_Vertex3D), verts, GL_STATIC_DRAW);
+
+        // glEnableVertexAttribArray(0);
+        // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), 0);
+
+        // glBindVertexArray(0);
+        // glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // mesh->tri_count = 2;
+
+        // glDisableVertexAttribArray(0);
+    }
+    { // the index buffer approach
+        SE_Vertex3D verts[4];
+        verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
+        verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
+        verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+        verts[3].position = (Vec4) {+0.5f, 0, -0.5f, 1};
+
+        verts[0].rgba = (RGBA) {255, 255, 255, 255};
+        verts[1].rgba = (RGBA) {255, 255, 255, 255};
+        verts[2].rgba = (RGBA) {255, 255, 255, 255};
+        verts[3].rgba = (RGBA) {255, 255, 255, 255};
+
+        u32 indices[6] = {0, 1, 2, 2, 1, 3};
+        semesh_generate(mesh, 4, verts, 6, indices);
+    }
+}
+
+void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
+    // generate buffers
     glGenBuffers(1, &mesh->vbo);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->ibo);
+
     // @note once we bind a VBO or IBO it "sticks" to the currently bound VAO, so we start by
     // binding VAO and then VBO.
     // This is so that later on, we'll just need to bind the vertex array object and not the buffers
-    glBindVertexArray(mesh->vao);
+    glBindVertexArray(mesh->vao); // start the macro
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ibo);
 
-    // @temp generate the data here and send them to the GPU
-    SE_Vertex3D verts[6];
-    verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
-    verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
-    verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+    // fill data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
 
-    verts[3].position = (Vec4) {-0.5f, 0, -0.5f, 1};
-    verts[4].position = (Vec4) {+0.5f, 0, +0.5f, 1};
-    verts[5].position = (Vec4) {+0.5f, 0, -0.5f, 1};
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(SE_Vertex3D), verts, GL_STATIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), 0);
+    // enable first attribute as position
+    glEnableVertexAttribArray(0); // position
+    glEnableVertexAttribArray(1); // color
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+    glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
 
-    glBindVertexArray(0);
+    mesh->tri_count = index_count / 3;
+
+    // unselect
+    glBindVertexArray(0); // stop the macro
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    mesh->tri_count = 2;
-
-    // glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(0);
 }
 
 void semesh_draw(SE_Mesh *mesh) {
     glBindVertexArray(mesh->vao);
-    // the number of vertices is tri_count * 3
-    // @note glDrawElements is used for index buffers
-    // but for now we're not using the index buffer
-    glDrawArrays(GL_TRIANGLES, 0, 3 * mesh->tri_count);
+
+    // -- NON INDEX BUFFER APPROACH
+    // glDrawArrays(GL_TRIANGLES, 0, mesh->tri_count * 3);
+    // -- Index buffer approach
+    glDrawElements(GL_TRIANGLES, 3 * mesh->tri_count, GL_UNSIGNED_INT, 0);
+
 
     glBindVertexArray(0);
 }

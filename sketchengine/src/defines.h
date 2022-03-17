@@ -26,17 +26,23 @@ typedef short i16;
 typedef char u8;
 typedef float f32;
 typedef long long f64;
-
+typedef unsigned char ubyte;
 typedef enum bool {
     false, true
 } bool;
 
 typedef struct RGBA {
-    f32 r, g, b, a;
+    // f32 r, g, b, a;
+    ubyte r, g, b, a;
 } RGBA;
 typedef struct RGB {
-    f32 r, g, b;
+    ubyte r, g, b;
 } RGB;
+
+#define RGBA_RED   (RGBA){255, 0, 0, 255}
+#define RGBA_BLUE  (RGBA){0, 255, 0, 255}
+#define RGBA_GREEN (RGBA){0, 0, 255, 255}
+#define RGBA_WHITE (RGBA){255, 255, 255, 255}
 
 // ///
 // /// "dynamic" array type
