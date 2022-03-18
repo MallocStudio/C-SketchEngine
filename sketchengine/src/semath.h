@@ -920,6 +920,29 @@ SEINLINE Quat quat_mul(Quat q_0, Quat q_1) {
     return out_quaternion;
 }
 
+/// Multiply a Quat by a Vec3
+SEINLINE Vec3 quat_mul_vec3(Quat quat, Vec3 vec) {
+    // (Matin Kamali) implementation not Kohi as of writing this
+    // https://answers.unity.com/questions/372371/multiply-quaternion-by-vector3-how-is-done.html
+    f32 num1 = quat.x * 2;
+    f32 num2 = quat.y * 2;
+    f32 num3 = quat.z * 2;
+    f32 num4 = quat.x * num1;
+    f32 num5 = quat.y * num2;
+    f32 num6 = quat.z * num3;
+    f32 num7 = quat.x * num2;
+    f32 num8 = quat.x * num3;
+    f32 num9 = quat.y * num3;
+    f32 num10 = quat.w * num1;
+    f32 num11 = quat.w * num2;
+    f32 num12 = quat.w * num3;
+    Vec3 result;
+    result.x = (1 - (num5 + num6)) * vec.x + (num7 - num12) * vec.y + (num8 + num11) * vec.z;
+    result.y = (num7 + num12) * vec.x + (1 - (num4 + num6)) * vec.y + (num9 - num10) * vec.z;
+    result.z = (num8 - num11) * vec.x + (num9 + num10) * vec.y + (1 - (num4 + num5)) * vec.z;
+    return result;
+}
+
 /**
  * @brief Calculates the dot product of the provided quaternions.
  *

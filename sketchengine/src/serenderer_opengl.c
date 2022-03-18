@@ -149,52 +149,19 @@ void semesh_deinit(SE_Mesh *mesh) {
 }
 
 void semesh_generate_quad(SE_Mesh *mesh) {
-    { // the non index buffer approach
-        // // -- generate buffers
-        // glGenVertexArrays(1, &mesh->vao);
-        // glGenBuffers(1, &mesh->vbo);
-        // // @note once we bind a VBO or IBO it "sticks" to the currently bound VAO, so we start by
-        // // binding VAO and then VBO.
-        // // This is so that later on, we'll just need to bind the vertex array object and not the buffers
-        // glBindVertexArray(mesh->vao);
-        // glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    SE_Vertex3D verts[4];
+    verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
+    verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
+    verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+    verts[3].position = (Vec4) {+0.5f, 0, -0.5f, 1};
 
-        // // @temp generate the data here and send them to the GPU
-        // SE_Vertex3D verts[6];
-        // verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
-        // verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
-        // verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
+    verts[0].rgba = (RGBA) {255, 255, 255, 255};
+    verts[1].rgba = (RGBA) {255, 255, 255, 255};
+    verts[2].rgba = (RGBA) {255, 255, 255, 255};
+    verts[3].rgba = (RGBA) {255, 255, 255, 255};
 
-        // verts[3].position = (Vec4) {-0.5f, 0, -0.5f, 1};
-        // verts[4].position = (Vec4) {+0.5f, 0, +0.5f, 1};
-        // verts[5].position = (Vec4) {+0.5f, 0, -0.5f, 1};
-        // glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(SE_Vertex3D), verts, GL_STATIC_DRAW);
-
-        // glEnableVertexAttribArray(0);
-        // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), 0);
-
-        // glBindVertexArray(0);
-        // glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        // mesh->tri_count = 2;
-
-        // glDisableVertexAttribArray(0);
-    }
-    { // the index buffer approach
-        SE_Vertex3D verts[4];
-        verts[0].position = (Vec4) {-0.5f, 0, +0.5f, 1};
-        verts[1].position = (Vec4) {+0.5f, 0, +0.5f, 1};
-        verts[2].position = (Vec4) {-0.5f, 0, -0.5f, 1};
-        verts[3].position = (Vec4) {+0.5f, 0, -0.5f, 1};
-
-        verts[0].rgba = (RGBA) {255, 255, 255, 255};
-        verts[1].rgba = (RGBA) {255, 255, 255, 255};
-        verts[2].rgba = (RGBA) {255, 255, 255, 255};
-        verts[3].rgba = (RGBA) {255, 255, 255, 255};
-
-        u32 indices[6] = {0, 1, 2, 2, 1, 3};
-        semesh_generate(mesh, 4, verts, 6, indices);
-    }
+    u32 indices[6] = {0, 1, 2, 2, 1, 3};
+    semesh_generate(mesh, 4, verts, 6, indices);
 }
 
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
@@ -232,73 +199,8 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 void semesh_draw(SE_Mesh *mesh) {
     glBindVertexArray(mesh->vao);
 
-    // -- NON INDEX BUFFER APPROACH
-    // glDrawArrays(GL_TRIANGLES, 0, mesh->tri_count * 3);
     // -- Index buffer approach
     glDrawElements(GL_TRIANGLES, 3 * mesh->tri_count, GL_UNSIGNED_INT, 0);
 
-
     glBindVertexArray(0);
-}
-
-///
-/// RENDERER
-///
-
-void serender3d_init(SE_Renderer3D *renderer, const char *vertex_filepath, const char *fragment_filepath) {
-    seshader_init_from(&renderer->shader_program, vertex_filepath, fragment_filepath);
-
-    glGenBuffers(1, &renderer->vertices_buffer_id);
-    renderer->initialised = true;
-}
-
-void serender3d_deinit(SE_Renderer3D *renderer) {
-    if (renderer->initialised) {
-        // renderer->shapes_count = 0;
-        // glGenBuffers(1, &renderer->vertices_buffer_id);
-        // glGenBuffers(1, &renderer->colours_buffer_id); // @question wtf?
-        glDeleteBuffers(1, &renderer->vertices_buffer_id);
-        seshader_deinit(&renderer->shader_program);
-        renderer->initialised = false;
-    }
-}
-
-void serender2d_compile(SE_Renderer3D *renderer) {
-    // select vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->vertices_buffer_id);
-    // give it the data of vertices
-    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * renderer->vertices_count, renderer->vertices, GL_DYNAMIC_DRAW);
-}
-
-void serender3d_update_frame(SE_Renderer3D *renderer) {
-    if (renderer->vertices_count > 0) {
-        serender2d_compile(renderer);
-        serender3d_render(renderer);
-    }
-    serender3d_clear(renderer);
-}
-
-void serender3d_clear(SE_Renderer3D *renderer) {
-    renderer->vertices_count = 0;
-}
-
-void serender3d_render(SE_Renderer3D *renderer) {
-    seshader_use(&renderer->shader_program);
-    // select the vertices buffer
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->vertices_buffer_id);
-    glEnableVertexAttribArray(0); // location 0
-    glEnableVertexAttribArray(1); // location 1
-    // must take a look at how a SE_Vertex3D is arranged
-    // Vec3 position;
-    // RGBA (Vec4 f32) rgba;
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vec3), 0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(RGBA), (const void*)sizeof(Vec3)); // @check
-    // set the selected buffer back to zero
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // -- render each triangle
-    // @TODO
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
 }

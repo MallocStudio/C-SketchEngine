@@ -47,15 +47,12 @@ void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat
 char* se_load_file_as_string(const char *filename);
 
 ///
-/// MESH // @temp after understanding OpenGL better, remove this struct and just have procedures that populate one giant vertex array and vertex index buffer with the appropriate data
+/// MESH
 ///
 
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
-    // u32 vert_count;
-    // SE_Vertex3D verts[SE_MESH_VERTICES_MAX];
     u32 tri_count;
-    // u32 vert_count;
     u32 vao; // vertex array object
     u32 vbo; // vertex buffer object
     u32 ibo; // index buffer object
@@ -71,62 +68,20 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 void semesh_draw(SE_Mesh *mesh);
 
 ///
-/// RENDERER
-///
-
-#define SE_RENDERER2D_VERTICES_MAX 100000
-typedef struct SE_Renderer3D {
-    u32 vertices_count;
-    SE_Vertex3D vertices[SE_RENDERER2D_VERTICES_MAX];
-    GLuint vertices_buffer_id;
-
-    bool initialised;
-    SE_Shader shader_program;
-} SE_Renderer3D;
-
-/// initialise the 2D renderer
-void serender3d_init(SE_Renderer3D *renderer, const char *vertex_filepath, const char *fragment_filepath);
-/// deinitialise the 2D renderer
-void serender3d_deinit(SE_Renderer3D *renderer);
-///
-void serender3d_update_frame(SE_Renderer3D *renderer);
-///
-void serender3d_clear(SE_Renderer3D *renderer);
-///
-void serender3d_render(SE_Renderer3D *renderer);
-
-///
 /// Camera
 ///
 
 typedef struct SE_Camera3D {
-    // f32 height; // @TODO change to FOV
-    // Vec3 pos;
-    // f32 aspect_ratio;
-    // f32 speed;
-
     Mat4 projection; // projection transform
     Mat4 view;       // view transform
-
-    Vec3 pos;
-    f32 theta;
-    f32 phi;
-    // Quat oriantation;
-    // Vec3 look_at;
+    Vec3 position;
+    Quat rotation;
 } SE_Camera3D;
 
 SEINLINE Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
-    // cam->view = quat_to_rotation_matrix(cam->oriantation, cam->pos);
-    // cam->view = quat_to_mat4(cam->oriantation);
-    // cam->view = mat4_mul(mat4_translation(cam->pos), cam->view);
-    f32 theta_r = cam->theta * SEMATH_DEG2RAD_MULTIPLIER;
-    f32 phi_r   = cam->phi   * SEMATH_DEG2RAD_MULTIPLIER;
-    Vec3 forward = (Vec3) {
-        semath_cos(phi_r) * semath_cos(theta_r),
-        semath_sin(phi_r),
-        semath_cos(phi_r) * semath_sin(theta_r)
-    };
-    return mat4_lookat(cam->pos, vec3_add(cam->pos, forward), vec3_up());
+    Mat4 rotation = quat_to_mat4(cam->rotation);
+    Vec3 forward = mat4_forward(rotation);
+    return mat4_lookat(cam->position, vec3_add(cam->position, forward), vec3_up());
 }
 
 #endif // SERENDERER_OPENGL

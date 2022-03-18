@@ -45,6 +45,8 @@ typedef struct SE_Input {
     // whethered we want to let others know that we've handled the mouse input
     bool is_mouse_left_handled;
     bool is_mouse_right_handled;
+    // warp mouse around window
+    bool should_mouse_warp; // @incomplete
 
     // -- keyboard
 
@@ -65,7 +67,10 @@ SEINLINE void seinput_init(SE_Input *input) {
 }
 
 /// note that mouse pos will be relative to top left position of window
-SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i window_size) {
+SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Window *window) {
+    Vec2i window_size;
+    SDL_GetWindowSize(window, &window_size.x, &window_size.y);
+
     { // -- keyboard
         if (input->keyboard != NULL) {
             for (i32 i = 0; i < SEINPUT_NUMKEYS_MAX; ++i) {
@@ -135,6 +140,21 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, Vec2i 
         if (input->is_mouse_left_down && !input->was_mouse_left_down) {
             input->mouse_screen_pressed_pos = input->mouse_screen_pos;
         }
+    }
+
+    { // -- mouse warping
+        if (input->should_mouse_warp) {
+            // Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
+
+            // if (cursor_pos.x > window_size.x) cursor_pos.x = 0;
+            // else if (cursor_pos.x < 0) cursor_pos.x = window_size.x;
+            // if (cursor_pos.y > window_size.y) cursor_pos.y = 0;
+            // else if (cursor_pos.y < 0) cursor_pos.y = window_size.y;
+
+            // SDL_WarpMouseInWindow(window, cursor_pos.x, cursor_pos.y);
+        }
+
+        // SDL_SetWindowMouseGrab(window, input->should_mouse_warp);
     }
 }
 

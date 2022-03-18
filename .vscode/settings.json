@@ -15,6 +15,7 @@
         "setext.h": "c",
         "hash_map": "c",
         "serenderer.h": "c",
-        "sephysics.h": "c"
+        "sephysics.h": "c",
+        "serenderer_opengl.h": "c"
     }
 }
