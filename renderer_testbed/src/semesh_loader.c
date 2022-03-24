@@ -2,6 +2,75 @@
 #include "fast_obj.h"
 #include <stdio.h>
 
+
+void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
+    fastObjMesh *obj = fast_obj_read(filepath);
+
+    // We're figuring out what's the vertex buffer size. As in how many unique verts
+    // will we have in total.
+    u32 verts_size = semath_max(obj->position_count, obj->normal_count);
+    verts_size = semath_max(verts_size, obj->texcoord_count);
+    u32 indices_size = obj->index_count;
+
+
+    // @temp temporarily set verts_size to indices_size because we're not using the index buffer properly to optimise duplicate vertices
+    verts_size = indices_size;
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * verts_size);
+    u32 *indices = malloc(sizeof(u32) * indices_size);
+
+    // @note Remember that the zero-th index and data is dummy. So we should
+    // not send that to the graphics card.
+
+    // -- generate all unique verts
+    u32 vert_count  = 0; // The count we'll use to generate our mesh.
+    u32 index_count  = 0; // The count we'll use to generate our mesh.
+    for (u32 i = 0; i < obj->index_count; ++i) {
+        SE_Vertex3D vertex = {0};
+
+        // loop through every index, and match the pos, normal, and uv to one vertex at vert_count,
+        // and we'll set the index at indices[index_count] and increase index_count
+        u32 index_pos = obj->indices[i].p;
+        u32 index_normal = obj->indices[i].n;
+        u32 index_uv = obj->indices[i].t;
+
+        // pos
+        vertex.position.x = obj->positions[index_pos * 3 + 0];
+        vertex.position.y = obj->positions[index_pos * 3 + 1];
+        vertex.position.z = obj->positions[index_pos * 3 + 2];
+        vertex.position.w = 1;
+
+        // normal
+        Vec3 normal;
+        normal.x = obj->normals[index_normal * 3 + 0];
+        normal.y = obj->normals[index_normal * 3 + 1];
+        normal.z = obj->normals[index_normal * 3 + 2];
+        vec3_normalise(&normal);
+        vertex.normal.x = normal.x;
+        vertex.normal.y = normal.y;
+        vertex.normal.z = normal.z;
+        vertex.normal.w = 0;
+
+        // uv (todo)
+
+        // todo check if we already have this vertex in our vertex buffer, but we don't do that yet because
+        // we're not optimising and using the index buffer properly
+
+        indices[index_count] = index_count; // @temp for now, let's not use index buffering.
+        index_count++;
+
+        verts[vert_count] = vertex;
+        vert_count++;
+    }
+
+    semesh_generate(mesh, vert_count, verts, index_count, indices);
+
+    free(verts);
+    free(indices);
+
+    fast_obj_destroy(obj);
+}
+
+#if 0
 void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
     fastObjMesh *obj = fast_obj_read(filepath);
 
@@ -31,15 +100,22 @@ void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
     for (u32 i = 0; i < verts_size; ++i) {
         SE_Vertex3D vertex = {0};
 
-        // pos
+        // pos // @incomplete remember how verts_size is not as large as position_count
         vertex.position.x = obj->positions[(i) * 3 + 0];
         vertex.position.y = obj->positions[(i) * 3 + 1];
         vertex.position.z = obj->positions[(i) * 3 + 2];
         vertex.position.w = 1;
+
         // normal
-        vertex.normal.x = obj->normals[(i) * 3 + 0];
-        vertex.normal.y = obj->normals[(i) * 3 + 1];
-        vertex.normal.z = obj->normals[(i) * 3 + 2];
+        Vec3 normal;
+        normal.x = obj->normals[(i) * 3 + 0];
+        normal.y = obj->normals[(i) * 3 + 1];
+        normal.z = obj->normals[(i) * 3 + 2];
+        vec3_normalise(&normal);
+
+        vertex.normal.x = normal.x;
+        vertex.normal.y = normal.y;
+        vertex.normal.z = normal.z;
         vertex.normal.w = 0;
         // uv
 
@@ -54,6 +130,7 @@ void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
 
     fast_obj_destroy(obj);
 }
+#endif
 
 #if 0
 void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {

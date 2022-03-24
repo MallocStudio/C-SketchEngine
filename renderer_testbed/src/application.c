@@ -23,8 +23,9 @@ void app_init(Application *app, SDL_Window *window) {
             // semesh_generate_quad(&app->mesh, (Vec2) {1, 1});
         }
         { // -- skull obj file
+            semesh_load_obj(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
             // semesh_load_obj(&app->mesh, "assets/cube/cube3.obj");
-            semesh_load_obj(&app->mesh, "assets/skull/12140_Skull_v3_L2.obj");
+            // semesh_load_obj(&app->mesh, "assets/skull/12140_Skull_v3_L2.obj");
         }
 
         app->quad_transform = (Mat4) {
