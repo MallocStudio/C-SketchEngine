@@ -34,3 +34,8 @@ https://github.com/madler/zlib/blob/master/test/example.c
 https://www.google.com/search?client=firefox-b-d&q=3d+math+primer+for+graphics+and+game+development
 
 checkout the tool Valgrind (has a tool which tells you if you write memory that you can't.)
+
+
+More resources about loading obj and glTF
+https://github.com/syoyo/tinygltf
+https://github.com/jkuhlmann/cgltf

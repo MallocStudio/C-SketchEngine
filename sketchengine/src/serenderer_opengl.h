@@ -8,14 +8,6 @@
 #include "GL/glew.h"
 #include "semath.h"
 
-/// Vertex info of a mesh
-typedef struct SE_Vertex3D {
-    Vec4 position;
-    Vec4 normal;
-    Vec2 texture_coord;
-    RGBA rgba;
-} SE_Vertex3D;
-
 ///
 /// Shader program info
 ///
@@ -27,6 +19,14 @@ typedef struct SE_Shader {
     GLuint shader_program;
     bool loaded_successfully;
 } SE_Shader;
+
+/// Vertex info of a mesh
+typedef struct SE_Vertex3D {
+    Vec4 position;
+    Vec4 normal;
+    Vec2 texture_coord;
+    RGBA rgba;
+} SE_Vertex3D;
 
 /// Creates GL resources and compiles & links the given shaders
 void seshader_init_from(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename);
@@ -52,20 +52,28 @@ char* se_load_file_as_string(const char *filename);
 
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
-    u32 tri_count;
+    u32 vert_count;
     u32 vao; // vertex array object
     u32 vbo; // vertex buffer object
     u32 ibo; // index buffer object
+    bool indexed; // whether we're using index buffers
 } SE_Mesh;
 /// delete vao, vbo, ibo
 void semesh_deinit(SE_Mesh *mesh);
-/// generate a quad. The mesh better be uninitialised because this function assumes there are
-/// no previous data stored on the mesh
-void semesh_generate_quad(SE_Mesh *mesh);
-///
-void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
 /// draw the mesh
 void semesh_draw(SE_Mesh *mesh);
+
+/// generate a quad. The mesh better be uninitialised because this function assumes there are
+/// no previous data stored on the mesh
+void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale);
+///
+void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale);
+///
+void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
+///
+// void semesh_generate_raw(SE_Mesh *mesh, u32 positions_count, const Vec3 *positions, u32 index_count, const u32 *indices);
+///
+void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices);
 
 ///
 /// Camera
@@ -82,6 +90,11 @@ SEINLINE Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
     Mat4 rotation = quat_to_mat4(cam->rotation);
     Vec3 forward = mat4_forward(rotation);
     return mat4_lookat(cam->position, vec3_add(cam->position, forward), vec3_up());
+
+    // Mat4 rotation = quat_to_mat4(cam->rotation);
+    // Vec3 forward = mat4_forward(rotation);
+    // Mat4 transform = mat4_identity();
+    // mat4
 }
 
 #endif // SERENDERER_OPENGL

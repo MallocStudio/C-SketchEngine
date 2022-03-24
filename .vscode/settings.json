@@ -16,6 +16,7 @@
         "hash_map": "c",
         "serenderer.h": "c",
         "sephysics.h": "c",
-        "serenderer_opengl.h": "c"
+        "serenderer_opengl.h": "c",
+        "cgltf.h": "c"
     }
 }

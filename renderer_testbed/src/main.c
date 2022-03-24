@@ -8,11 +8,9 @@ int main() {
     SDL_Window *window;
     i32 window_w = 1600;
     i32 window_h = 1024;
-
     // -- init SDL
     ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");
 
-    // -- Use OpenGL 4.5 core // @TODO move these to sketchengine_init()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);

@@ -2,16 +2,15 @@
 
 layout ( location = 0 ) in vec4 Position;
 layout ( location = 1 ) in vec4 Colour;
+layout ( location = 2 ) in vec4 Normal;
 
 uniform mat4 projection_view_model;
-//uniform mat4 projection;
-//uniform mat4 view;
-//uniform mat4 model;
+uniform vec3 from_light;
 
 out vec4 _Colour;
 
 void main() {
 	gl_Position = projection_view_model * Position;
-	//gl_Position = projection * view * model * Position;
-	_Colour = Colour;
+	//_Colour = Colour;
+	_Colour = vec4(Normal.xyz, 1.0);
 }
