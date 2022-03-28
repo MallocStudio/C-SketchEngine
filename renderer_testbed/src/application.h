@@ -8,8 +8,6 @@ typedef struct Application {
     SE_Camera3D camera;
 
     SE_Mesh mesh;
-    SE_Shader shader;
-    Mat4 quad_transform;
 
     SDL_Window *window;
     bool should_quit;

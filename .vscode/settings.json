@@ -17,6 +17,7 @@
         "serenderer.h": "c",
         "sephysics.h": "c",
         "serenderer_opengl.h": "c",
-        "cgltf.h": "c"
+        "cgltf.h": "c",
+        "cstddef": "c"
     }
 }

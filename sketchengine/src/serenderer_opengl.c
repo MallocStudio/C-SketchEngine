@@ -1,5 +1,6 @@
 #include "serenderer_opengl.h"
 #include <stdio.h> // for loading file as string
+#include "stb_image.h"
 
 void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
     sp->loaded_successfully = true; // set to false later on if errors occure
@@ -67,7 +68,7 @@ void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *
     free(frag_src);
 }
 
-seshader_deinit(SE_Shader *shader) {
+void seshader_deinit(SE_Shader *shader) {
     if (shader->loaded_successfully) {
         glDeleteShader(shader->vertex_shader);
         glDeleteShader(shader->fragment_shader);
@@ -75,7 +76,7 @@ seshader_deinit(SE_Shader *shader) {
     }
 }
 
-seshader_use(SE_Shader *shader) {
+void seshader_use(SE_Shader *shader) {
     glUseProgram(shader->shader_program);
 }
 
@@ -87,6 +88,12 @@ void seshader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     seshader_use(shader);
     glUniform1f(var_loc, value);
+}
+
+void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value) {
+    GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    seshader_use(shader);
+    glUniform1i(var_loc, value);
 }
 
 void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value) {
@@ -139,6 +146,56 @@ char* se_load_file_as_string(const char *file_name) {
 }
 
 ///
+/// TEXTURE
+///
+
+void setexture_load(SE_Texture *texture, const char *filepath) {
+    texture->loaded = true;
+
+    ubyte *image_data = stbi_load(filepath, &texture->width, &texture->height, &texture->channel_count, 0);
+
+    // @TODO add proper error handling
+
+    glGenTextures(1, &texture->id);
+
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    if (texture->channel_count == 3) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+    } else if (texture->channel_count == 4) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+    } else {
+        printf("ERROR: cannot load %s, because we don't support %i channels\n", filepath, texture->channel_count);
+        texture->loaded = false;
+    }
+
+    // @TODO
+    // glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Instead of generating mipmaps we can set the texture param to not use mipmaps. We have to do one of these or our texture won't appear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    stbi_image_free(image_data);
+}
+
+void setexture_unload(SE_Texture *texture) {
+    if (texture->loaded) {
+        glDeleteTextures(1, &texture->id);
+    }
+}
+
+void setexture_bind(const SE_Texture *texture) {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+}
+
+void setexture_unbind() {
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+///
 /// MESH
 ///
 
@@ -146,6 +203,8 @@ void semesh_deinit(SE_Mesh *mesh) {
     glDeleteVertexArrays(1, &mesh->vao);
     glDeleteBuffers(1, &mesh->vbo);
     glDeleteBuffers(1, &mesh->ibo);
+
+    sematerial_deinit(&mesh->material);
 }
 
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
@@ -247,6 +306,9 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     // -- enable normal
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
+    // -- enable uv
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
@@ -257,36 +319,50 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glDisableVertexAttribArray(0);
 }
 
-void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices) {
-    // generate buffers
-    glGenBuffers(1, &mesh->vbo);
-    glGenVertexArrays(1, &mesh->vao);
+// void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices) {
+//     // generate buffers
+//     glGenBuffers(1, &mesh->vbo);
+//     glGenVertexArrays(1, &mesh->vao);
 
-    glBindVertexArray(mesh->vao); // start the macro
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+//     glBindVertexArray(mesh->vao); // start the macro
+//     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
 
-    // fill data
-    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
+//     // fill data
+//     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
 
-    // enable first attribute as position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-    // enable second attribute as color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
+//     // enable first attribute as position
+//     glEnableVertexAttribArray(0);
+//     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+//     // enable second attribute as color
+//     glEnableVertexAttribArray(1);
+//     glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
+//     // enable uv
+//     glEnableVertexAttribArray(3);
+//     glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
 
-    mesh->vert_count = vert_count;
-    mesh->indexed = false;
+//     mesh->vert_count = vert_count;
+//     mesh->indexed = false;
 
-    // unselect
-    glBindVertexArray(0); // stop the macro
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDisableVertexAttribArray(0);
-}
+//     // unselect
+//     glBindVertexArray(0); // stop the macro
+//     glBindBuffer(GL_ARRAY_BUFFER, 0);
+//     glDisableVertexAttribArray(0);
+// }
 
-void semesh_draw(SE_Mesh *mesh) {
+void semesh_draw(SE_Mesh *mesh, const SE_Camera3D *cam) {
+    seshader_use(&mesh->material.shader);
+
+    // take the quad (world space) and project it to view space
+    Mat4 pvm = mat4_mul(mesh->transform, cam->view);
+    // then take that and project it to the clip space
+    pvm = mat4_mul(pvm, cam->projection);
+    // then pass that final projection matrix and give it to the shader
+    seshader_set_uniform_mat4(&mesh->material.shader, "projection_view_model", pvm);
+
+    seshader_set_uniform_i32(&mesh->material.shader, "texture0", 0);
+    setexture_bind(&mesh->material.map_Kd);
+
     glBindVertexArray(mesh->vao);
-
     if (mesh->indexed) {
         glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
     } else {

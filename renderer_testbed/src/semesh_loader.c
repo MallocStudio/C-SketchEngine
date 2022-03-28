@@ -6,12 +6,15 @@
 void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
     fastObjMesh *obj = fast_obj_read(filepath);
 
+    SDL_assert_always(obj != NULL && "could not load obj");
+    SDL_assert_always(obj->object_count == 1 && "we only support one object per obj file");
+    SDL_assert_always(obj->material_count <= 1 && "we do not support multiple materials per mesh");
+
     // We're figuring out what's the vertex buffer size. As in how many unique verts
     // will we have in total.
     u32 verts_size = semath_max(obj->position_count, obj->normal_count);
     verts_size = semath_max(verts_size, obj->texcoord_count);
     u32 indices_size = obj->index_count;
-
 
     // @temp temporarily set verts_size to indices_size because we're not using the index buffer properly to optimise duplicate vertices
     verts_size = indices_size;
@@ -50,7 +53,9 @@ void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
         vertex.normal.z = normal.z;
         vertex.normal.w = 0;
 
-        // uv (todo)
+        // uv
+        vertex.texture_coord.x = obj->texcoords[index_uv * 3 + 0];
+        vertex.texture_coord.y = obj->texcoords[index_uv * 3 + 1];
 
         // todo check if we already have this vertex in our vertex buffer, but we don't do that yet because
         // we're not optimising and using the index buffer properly
@@ -63,6 +68,44 @@ void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
     }
 
     semesh_generate(mesh, vert_count, verts, index_count, indices);
+
+    // -- load the material
+    SDL_strlcpy(mesh->material.name, obj->materials[0].name, SEMATERIAL_NAME_SIZE);
+    // mesh->materials[i].Ka[0] = obj->materials[i].Ka[0];
+    // mesh->materials[i].Ka[1] = obj->materials[i].Ka[1];
+    // mesh->materials[i].Ka[2] = obj->materials[i].Ka[2];
+
+    // mesh->materials[i].Kd[0] = obj->materials[i].Kd[0];
+    // mesh->materials[i].Kd[1] = obj->materials[i].Kd[1];
+    // mesh->materials[i].Kd[2] = obj->materials[i].Kd[2];
+
+    // mesh->materials[i].Ks[0] = obj->materials[i].Ks[0];
+    // mesh->materials[i].Ks[1] = obj->materials[i].Ks[1];
+    // mesh->materials[i].Ks[2] = obj->materials[i].Ks[2];
+
+    // mesh->materials[i].Ke[0] = obj->materials[i].Ke[0];
+    // mesh->materials[i].Ke[1] = obj->materials[i].Ke[1];
+    // mesh->materials[i].Ke[2] = obj->materials[i].Ke[2];
+
+    // mesh->materials[i].Kt[0] = obj->materials[i].Kt[0];
+    // mesh->materials[i].Kt[1] = obj->materials[i].Kt[1];
+    // mesh->materials[i].Kt[2] = obj->materials[i].Kt[2];
+
+    // mesh->materials[i].Ns = obj->materials[i].Ns;
+    // mesh->materials[i].Ni = obj->materials[i].Ni;
+
+    // mesh->materials[i].Tf[0] = obj->materials[i].Tf[0];
+    // mesh->materials[i].Tf[1] = obj->materials[i].Tf[1];
+    // mesh->materials[i].Tf[2] = obj->materials[i].Tf[2];
+
+    // mesh->materials[i].d  = obj->materials[i].d;
+    // mesh->materials[i].illum = obj->materials[i].illum;
+
+    // -- diffuse
+    if (obj->materials[0].map_Kd.path != NULL) {
+        setexture_load(&mesh->material.map_Kd, obj->materials[0].map_Kd.path);
+        printf("loaded texture %s\n", obj->materials[0].map_Kd.path);
+    }
 
     free(verts);
     free(indices);

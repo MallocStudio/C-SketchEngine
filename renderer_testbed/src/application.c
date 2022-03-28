@@ -13,22 +13,25 @@ void app_init(Application *app, SDL_Window *window) {
         app->camera.rotation = quat_identity();
     }
 
-    { // -- init shader
-        seshader_init_from(&app->shader, "Simple.vsd", "Simple.fsd");
-    }
-
     { // -- init mesh
+        seshader_init_from(&app->mesh.material.shader, "Simple.vsd", "Simple.fsd"); // @TODO move to semesh_load_shader()
+
         { // -- cube
             // semesh_generate_cube(&app->mesh, (Vec3){1, 1, 1});
             // semesh_generate_quad(&app->mesh, (Vec2) {1, 1});
         }
-        { // -- skull obj file
+
+        { // -- obj file
             semesh_load_obj(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
+            // semesh_load_obj(&app->mesh, "assets/soulspear/soulspear/soulspear.obj");
+
+            // semesh_load_obj(&app->mesh, "assets/assassins-creed-altair-obj/assassins-creed-altair.obj");
+
             // semesh_load_obj(&app->mesh, "assets/cube/cube3.obj");
             // semesh_load_obj(&app->mesh, "assets/skull/12140_Skull_v3_L2.obj");
         }
 
-        app->quad_transform = (Mat4) {
+        app->mesh.transform = (Mat4) {
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
@@ -39,7 +42,6 @@ void app_init(Application *app, SDL_Window *window) {
 
 void app_deinit(Application *app) {
     semesh_deinit(&app->mesh);
-    seshader_deinit(&app->shader);
 }
 
 void app_update(Application *app) {
@@ -113,16 +115,7 @@ void app_render(Application *app) {
                                         window_w / (f32) window_h,
                                         0.1f, 1000.0f);
 
-        app->quad_transform = mat4_mul(app->quad_transform, mat4_euler_y(0.01f));
-
-        seshader_use(&app->shader);
-
-        // take the quad (world space) and project it to view space
-        Mat4 pvm = mat4_mul(app->quad_transform, app->camera.view);
-        // then take that and project it to the clip space
-        pvm = mat4_mul(pvm, app->camera.projection);
-        // then pass that final projection matrix and give it to the shader
-        seshader_set_uniform_mat4(&app->shader, "projection_view_model", pvm);
+        // app->quad_transform = mat4_mul(app->quad_transform, mat4_euler_y(0.01f));
 
         { // -- normals
 
@@ -135,6 +128,6 @@ void app_render(Application *app) {
             // seshader_set_uniform_vec3(&app->shader, "fromt_light", from_light);
         }
 
-        semesh_draw(&app->mesh);
+        semesh_draw(&app->mesh, &app->camera);
     }
 }
