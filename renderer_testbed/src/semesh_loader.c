@@ -54,8 +54,8 @@ void semesh_load_obj(SE_Mesh *mesh, const char *filepath) {
         vertex.normal.w = 0;
 
         // uv
-        vertex.texture_coord.x = obj->texcoords[index_uv * 3 + 0];
-        vertex.texture_coord.y = obj->texcoords[index_uv * 3 + 1];
+        vertex.texture_coord.x = obj->texcoords[index_uv * 2 + 0];
+        vertex.texture_coord.y = obj->texcoords[index_uv * 2 + 1];
 
         // todo check if we already have this vertex in our vertex buffer, but we don't do that yet because
         // we're not optimising and using the index buffer properly
