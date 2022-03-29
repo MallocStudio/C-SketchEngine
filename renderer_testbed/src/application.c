@@ -22,7 +22,7 @@ void app_init(Application *app, SDL_Window *window) {
         }
 
         { // -- obj file
-            semesh_load_obj(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
+            semesh_load(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
             // semesh_load_obj(&app->mesh, "assets/soulspear/soulspear/soulspear.obj");
 
             // semesh_load_obj(&app->mesh, "assets/assassins-creed-altair-obj/assassins-creed-altair.obj");
