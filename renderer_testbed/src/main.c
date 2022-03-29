@@ -38,6 +38,9 @@ int main() {
     Application *app = new(Application);
     app_init(app, window);
 
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+
     // -- main loop
     while (!app->should_quit) {
         // -- events

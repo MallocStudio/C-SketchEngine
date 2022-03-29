@@ -13,6 +13,6 @@ out vec2 _TexCoord;
 
 void main() {
 	gl_Position = projection_view_model * Position;
-	_Colour = Colour;
+	_Colour = (Normal + 1) * 0.5;
 	_TexCoord = TexCoord;
 }
