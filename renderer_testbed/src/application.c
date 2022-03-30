@@ -1,5 +1,6 @@
 #include "application.h"
 #include "semesh_loader.h"
+#include "stdio.h" // @remove
 
 void app_init(Application *app, SDL_Window *window) {
     app->window = window;
@@ -13,8 +14,11 @@ void app_init(Application *app, SDL_Window *window) {
         app->camera.rotation = quat_identity();
     }
 
-    { // -- init mesh
-        seshader_init_from(&app->mesh.material.shader, "Simple.vsd", "Simple.fsd"); // @TODO move to semesh_load_shader()
+    { // -- init renderer
+        serender3d_init(&app->renderer, &app->camera, "Simple.vsd", "Simple.fsd");
+    }
+
+    { // -- load mesh
 
         { // -- cube
             // semesh_generate_cube(&app->mesh, (Vec3){1, 1, 1});
@@ -23,8 +27,8 @@ void app_init(Application *app, SDL_Window *window) {
 
         { // -- obj file
             // semesh_load(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
-            semesh_load(&app->mesh, "assets/spaceship2/Intergalactic_Spaceship-(FBX 7.4 binary).fbx");
-            // semesh_load(&app->mesh, "assets/skull/12140_Skull_v3_L2.obj");
+            // semesh_load(&app->mesh, "assets/spaceship2/Intergalactic_Spaceship-(FBX 7.4 binary).fbx");
+            serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
 
             // semesh_load_obj(&app->mesh, "assets/soulspear/soulspear/soulspear.obj");
 
@@ -44,7 +48,7 @@ void app_init(Application *app, SDL_Window *window) {
 }
 
 void app_deinit(Application *app) {
-    semesh_deinit(&app->mesh);
+    serender3d_deinit(&app->renderer);
 }
 
 void app_update(Application *app) {
@@ -67,6 +71,7 @@ void app_update(Application *app) {
             input.x, input.z, input.y
         };
 
+        { // @remove
         movement = quat_mul_vec3(app->camera.rotation, movement);
 
         Mat4 cam_transform = mat4_translation(app->camera.position);
@@ -74,29 +79,47 @@ void app_update(Application *app) {
         Mat4 final_transform = mat4_mul(cam_transform, movement_transform);
 
         app->camera.position = mat4_get_translation(final_transform);
+        }
+        {
 
-        { // AIE tutorial way
-            static Vec2 mouse_pos_pre = {0};
+        }
+
+        { // -- rotate camera
             u8 mouse_state = SDL_GetMouseState(NULL, NULL);
             if (mouse_state & SDL_BUTTON_RMASK) {
-                app->input.should_mouse_warp = true;
                 f32 turn_speed = -0.1f * SEMATH_DEG2RAD_MULTIPLIER;
 
-                Vec3 rot_input = {
-                    .y = (f32)(app->input.mouse_screen_pos.x - mouse_pos_pre.x),
-                    .x = (f32)(app->input.mouse_screen_pos.y - mouse_pos_pre.y) * -1,
-                    .z = 0.0f,
-                };
+                { // method A
+                    // Vec3 rot_input = {0};
+                    // rot_input.x = app->input.mouse_screen_pos_delta.x;
+                    // rot_input.y = app->input.mouse_screen_pos_delta.y - 1;
+                    // printf("delta : {%f, %f}\n", app->input.mouse_screen_pos_delta.x, app->input.mouse_screen_pos_delta.y);
 
-                // app->camera.theta -= turn_speed * (f32)(mouse_pos.x - mouse_pos_pre.x);
-                // app->camera.phi   += turn_speed * (f32)(mouse_pos.y - mouse_pos_pre.y);
-                Quat rot = quat_from_axis_angle(rot_input, turn_speed, true);
-                app->camera.rotation = quat_mul(app->camera.rotation, rot);
-            } else {
-                // SDL_SetRelativeMouseMode(SDL_FALSE);
-                app->input.should_mouse_warp = false;
+                    // Quat rot = quat_from_axis_angle(rot_input, turn_speed, true);
+                    // app->camera.rotation = quat_mul(app->camera.rotation, rot);
+                }
+                { // method B
+                    // Vec3 vertical   = {0};
+                    // Vec3 horizontal = {0};
+                    // vertical.x   += app->input.mouse_screen_pos_delta.y;
+                    // horizontal.y += app->input.mouse_screen_pos_delta.x;
+                    // if (horizontal.y != 0 || vertical.x != 0) {
+                    //     Quat pitch = quat_from_axis_angle(horizontal, turn_speed, true); // rot around x
+                    //     Quat yawn = quat_from_axis_angle(vertical, turn_speed, true);     // rot around y
+                    //     Quat rot_delta = quat_mul(pitch, yawn);
+                    //     app->camera.rotation = quat_mul(app->camera.rotation, rot_delta);
+                    // }
+                }
+                { // Method C
+                    Vec3 rotation = {0};
+                    rotation.x = app->input.mouse_screen_pos_delta.x * turn_speed;
+                    rotation.y = app->input.mouse_screen_pos_delta.y * turn_speed * -1;
+                    Quat x_quat = quat_from_axis_angle(vec3_up(), rotation.x, true);
+                    Quat y_quat = quat_from_axis_angle(vec3_left(), rotation.y, true);
+                    Quat rot_quat = quat_mul(x_quat, y_quat);
+                    app->camera.rotation = quat_mul(app->camera.rotation, rot_quat);
+                }
             }
-            mouse_pos_pre = app->input.mouse_screen_pos;
         }
     }
 }
@@ -107,29 +130,9 @@ void app_render(Application *app) {
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        // secamera3d_update_view(&camera);
-        // camera.view = mat4_lookat(camera.pos, vec3_zero(), vec3_up());
-
         i32 window_w, window_h;
         SDL_GetWindowSize(app->window, &window_w, &window_h);
-
-        app->camera.view = secamera3d_get_view(&app->camera);
-        app->camera.projection = mat4_perspective(SEMATH_PI * 0.25f,
-                                        window_w / (f32) window_h,
-                                        0.1f, 1000.0f);
-
-        // app->quad_transform = mat4_mul(app->quad_transform, mat4_euler_y(0.01f));
-
-        { // -- normals
-
-        }
-
-        { // -- lighting
-            // Vec3 from_light = {0, -1, 0}; // light towards down
-            // vec3_normalise(&from_light);
-
-            // seshader_set_uniform_vec3(&app->shader, "fromt_light", from_light);
-        }
+        secamera3d_update_projection(&app->camera, window_w, window_h);
 
         semesh_draw(&app->mesh, &app->camera);
     }

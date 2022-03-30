@@ -3,7 +3,7 @@
 #ifndef SEMATH_H
 #define SEMATH_H
 
-#include "defines.h"
+#include "sedefines.h"
 #include "semath_defines.h"
 #include <memory.h>
 

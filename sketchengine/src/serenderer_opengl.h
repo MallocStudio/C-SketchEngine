@@ -4,7 +4,7 @@
 /// After implementing physics testbed, and learning more about rendering and graphics,
 /// here's a second attempt at building a graphics library in c
 
-#include "defines.h"
+#include "sedefines.h"
 #include "GL/glew.h"
 #include "semath.h"
 
@@ -23,11 +23,14 @@ SEINLINE Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
     Mat4 rotation = quat_to_mat4(cam->rotation);
     Vec3 forward = mat4_forward(rotation);
     return mat4_lookat(cam->position, vec3_add(cam->position, forward), vec3_up());
+}
 
-    // Mat4 rotation = quat_to_mat4(cam->rotation);
-    // Vec3 forward = mat4_forward(rotation);
-    // Mat4 transform = mat4_identity();
-    // mat4
+/// updates the given camera's view and projection
+SEINLINE void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h) {
+    cam->view = secamera3d_get_view(cam);
+    cam->projection = mat4_perspective(SEMATH_PI * 0.25f,
+                                        window_w / (f32) window_h,
+                                        0.1f, 1000.0f);
 }
 
 ///
@@ -55,7 +58,7 @@ void seshader_init_from(SE_Shader *shader_program, const char *vertex_filename, 
 /// Unloads GL resources used by the shader program
 void seshader_deinit(SE_Shader *shader);
 /// Binds the given shader for the GPU to use
-void seshader_use(SE_Shader *shader);
+void seshader_use(const SE_Shader *shader);
 /// Get the address of a uniform
 GLuint seshader_get_uniform_loc(SE_Shader *shader, const char *uniform_name);
 /// Set a shader uniform
@@ -83,18 +86,23 @@ typedef struct SE_Texture {
 } SE_Texture;
 
 void setexture_load(SE_Texture *texture, const char *filepath);
+void setexture_load_data(SE_Texture *texture, ubyte *data);
 void setexture_unload(SE_Texture *texture);
-void setexture_bind(const SE_Texture *texture);
+void setexture_bind(const SE_Texture *texture, u32 index);
 void setexture_unbind();
 
-#define SEMATERIAL_NAME_SIZE 256
+///
+/// MATERIAL
+/// (think of material as a bunch of parameters)
+
+// #define SEMATERIAL_NAME_SIZE 256
 typedef struct SE_Material {
     /* Material name */
-    char name[SEMATERIAL_NAME_SIZE];
+    // char name[SEMATERIAL_NAME_SIZE];
 
     /* Texture maps */
-    SE_Texture map_Ka;
-    SE_Texture map_Kd;
+    SE_Texture texture_diffuse;
+/*    SE_Texture map_Ka;
     SE_Texture map_Ks;
     SE_Texture map_Ke;
     SE_Texture map_Kt;
@@ -102,22 +110,20 @@ typedef struct SE_Material {
     SE_Texture map_Ni;
     SE_Texture map_d;
     SE_Texture map_bump;
-
-    SE_Shader shader;
+*/
 } SE_Material;
 
 /// Deallocates memory and uninitialises the textures
 SEINLINE void sematerial_deinit(SE_Material *material) {
-    seshader_deinit(&material->shader);
-    if (material->map_Ka.loaded)   setexture_unload(&material->map_Ka);
-    if (material->map_Kd.loaded)   setexture_unload(&material->map_Kd);
-    if (material->map_Ks.loaded)   setexture_unload(&material->map_Ks);
-    if (material->map_Ke.loaded)   setexture_unload(&material->map_Ke);
-    if (material->map_Kt.loaded)   setexture_unload(&material->map_Kt);
-    if (material->map_Ns.loaded)   setexture_unload(&material->map_Ns);
-    if (material->map_Ni.loaded)   setexture_unload(&material->map_Ni);
-    if (material->map_d.loaded)    setexture_unload(&material->map_d);
-    if (material->map_bump.loaded) setexture_unload(&material->map_bump);
+    // if (material->map_Ka.loaded)   setexture_unload(&material->map_Ka);
+    if (material->texture_diffuse.loaded)   setexture_unload(&material->texture_diffuse);
+    // if (material->map_Ks.loaded)   setexture_unload(&material->map_Ks);
+    // if (material->map_Ke.loaded)   setexture_unload(&material->map_Ke);
+    // if (material->map_Kt.loaded)   setexture_unload(&material->map_Kt);
+    // if (material->map_Ns.loaded)   setexture_unload(&material->map_Ns);
+    // if (material->map_Ni.loaded)   setexture_unload(&material->map_Ni);
+    // if (material->map_d.loaded)    setexture_unload(&material->map_d);
+    // if (material->map_bump.loaded) setexture_unload(&material->map_bump);
 }
 
 ///
@@ -132,15 +138,12 @@ typedef struct SE_Mesh {
     u32 ibo; // index buffer object
     bool indexed; // whether we're using index buffers
 
-    SE_Material material;
     Mat4 transform;
+    u32 material_index;
 } SE_Mesh;
 
 /// delete vao, vbo, ibo
 void semesh_deinit(SE_Mesh *mesh);
-/// draw the mesh
-void semesh_draw(SE_Mesh *mesh, const SE_Camera3D *cam);
-
 /// generate a quad. The mesh better be uninitialised because this function assumes there are
 /// no previous data stored on the mesh
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale);
@@ -153,5 +156,53 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 ///
 // void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices);
 
+///
+/// RENDERER
+///
+
+typedef struct SE_Renderer3D {
+    u32 meshes_count;
+    SE_Mesh **meshes;
+
+    u32 shaders_count;
+    SE_Shader **shaders;
+
+    u32 materials_count;
+    SE_Material **materials;
+
+    SE_Camera3D *current_camera;
+} SE_Renderer3D;
+
+SEINLINE void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {
+    memset(renderer, 0, sizeof(SE_Renderer3D));
+    renderer->current_camera = current_camera;
+
+    // add a default shader
+    renderer->shaders[renderer->shaders_count] = new (SE_Shader);
+    seshader_init_from(renderer->shaders[renderer->shaders_count], vsd, fsd);
+    renderer->shaders_count++;
+}
+
+SEINLINE void serender3d_deinit(SE_Renderer3D *renderer) {
+    for (u32 i = 0; i < renderer->meshes_count; ++i) {
+        semesh_deinit(renderer->meshes[i]);
+    }
+    renderer->meshes_count = 0;
+
+    for (u32 i = 0; i < renderer->shaders_count; ++i) {
+        seshader_deinit(renderer->shaders[i]);
+    }
+    renderer->shaders_count = 0;
+
+    for (u32 i = 0; i < renderer->materials_count; ++i) {
+        sematerial_deinit(renderer->materials[i]);
+    }
+    renderer->materials_count = 0;
+}
+
+/// Load a mesh and add it to the renderer
+void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
+/// Render all of the meshes the renderer contains
+void serender3d_render(SE_Renderer3D *renderer);
 
 #endif // SERENDERER_OPENGL

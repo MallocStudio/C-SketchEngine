@@ -4,7 +4,7 @@
 #define SE_OPENGL // compatibility for other graphics APIs
 #ifdef SE_OPENGL
 
-#include "defines.h"
+#include "sedefines.h"
 #include "semath_defines.h"
 #include "serenderer_opengl.h"
 

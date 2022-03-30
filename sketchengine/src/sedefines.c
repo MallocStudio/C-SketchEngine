@@ -1,4 +1,4 @@
-#include "defines.h"
+#include "sedefines.h"
 #include <stdio.h> // ! required for printf
 
 void print_sdl_error() {

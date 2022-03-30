@@ -1,7 +1,7 @@
 #ifndef SEINPUT_H
 #define SEINPUT_H
 
-#include "defines.h"
+#include "sedefines.h"
 #include "semath_defines.h"
 
 // /// get the mouse position (relative to the window). Optionally pass bools to get mouse state
@@ -32,16 +32,22 @@ typedef struct SE_Input {
     // the mouse position
     Vec2 mouse_world_pos;
     Vec2 mouse_screen_pos;
+    // mouse position last time update was called
+    Vec2 previous_mouse_world_pos;
+    Vec2 previous_mouse_screen_pos;
+    // delta
+    // Vec2 mouse_world_pos_delta; // @unsupported // @incomplete
+    Vec2 mouse_screen_pos_delta;
     // the position the mouse was initially pressed
     Vec2 mouse_world_pressed_pos;
     Vec2 mouse_screen_pressed_pos;
     // Vec2 mouse_grab_offset;
     // information from the current frame
-    bool  is_mouse_left_down;
-    bool  is_mouse_right_down;
+    bool is_mouse_left_down;
+    bool is_mouse_right_down;
     // information from the previous frame
-    bool  was_mouse_left_down;
-    bool  was_mouse_right_down;
+    bool was_mouse_left_down;
+    bool was_mouse_right_down;
     // whethered we want to let others know that we've handled the mouse input
     bool is_mouse_left_handled;
     bool is_mouse_right_handled;
@@ -63,7 +69,7 @@ typedef struct SE_Input {
 /// initialise input once! allocates memory
 SEINLINE void seinput_init(SE_Input *input) {
     // set all values to zero to begin with
-    *input = (SE_Input) {0};
+    memset(input, 0, sizeof(SE_Input));
 }
 
 /// note that mouse pos will be relative to top left position of window
@@ -89,10 +95,17 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
     //         input->mouse_grab_offset.y = input->mouse_pressed_pos.y;
     //     }
     // }
-    // -- remember what happened the previous frame
-    input->was_mouse_left_down = input->is_mouse_left_down;
-    input->was_mouse_right_down = input->is_mouse_right_down;
-    get_mouse_pos(&input->is_mouse_left_down, &input->is_mouse_right_down);
+
+    { // -- remember what happened the previous frame
+        // pos
+        input->previous_mouse_screen_pos = input->mouse_screen_pos;
+        input->previous_mouse_world_pos = input->mouse_world_pos;
+        // pressed
+        input->was_mouse_left_down = input->is_mouse_left_down;
+        input->was_mouse_right_down = input->is_mouse_right_down;
+        // update for this frame
+        get_mouse_pos(&input->is_mouse_left_down, &input->is_mouse_right_down);
+    }
 
     { // reset
         if (!input->is_mouse_left_down) {
@@ -142,7 +155,7 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
         }
     }
 
-    { // -- mouse warping
+    { // -- mouse warping // @incomplete
         if (input->should_mouse_warp) {
             // Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
 

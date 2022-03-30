@@ -1,5 +1,5 @@
-#ifndef DEFINES_H
-#define DEFINES_H
+#ifndef SEDEFINES_H
+#define SEDEFINES_H
 
 /// inlining
 #ifdef _MSC_VER
@@ -27,9 +27,12 @@ typedef char u8;
 typedef float f32;
 typedef long long f64;
 typedef unsigned char ubyte;
-typedef enum bool {
-    false, true
-} bool;
+// typedef enum bool {
+//     false, true
+// } bool;
+typedef unsigned short bool;
+#define false 0
+#define true 1
 
 typedef struct RGBA {
     // f32 r, g, b, a;
@@ -85,4 +88,4 @@ typedef struct RGB {
 //     array->data = new(
 // }
 
-#endif // DEFINES_H
+#endif // SEDEFINES_H

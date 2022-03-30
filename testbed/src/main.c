@@ -1,7 +1,7 @@
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 
 #define DEFINES_IMPL
-#include "defines.h"
+#include "sedefines.h"
 #include "finn_game.h"
 
 int main () {

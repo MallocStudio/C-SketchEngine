@@ -1,7 +1,7 @@
 #ifndef SEUI_H
 #define SEUI_H
 
-#include "defines.h"
+#include "sedefines.h"
 #include "serenderer.h"
 #include "setext.h"
 #include "semath.h"

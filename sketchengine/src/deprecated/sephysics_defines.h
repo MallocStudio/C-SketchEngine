@@ -1,7 +1,7 @@
 #ifndef SEPHYSICS_DEFINES_H
 #define SEPHYSICS_DEFINES_H
 
-#include "defines.h"
+#include "sedefines.h"
 #include "semath.h"
 #include <float.h>
 
@@ -13,7 +13,7 @@
 /// The types of collision shapes
 typedef enum SE_SHAPES {
     SE_SHAPES_NONE  = -2, // future proof
-    SE_SHAPES_JOINT = -1, // future proof 
+    SE_SHAPES_JOINT = -1, // future proof
     SE_SHAPES_PLANE = 0,
     SE_SHAPES_CIRCLE, SE_SHAPES_BOX, SE_SHAPES_POLYGON,
     // SE_SHAPES_AABB,

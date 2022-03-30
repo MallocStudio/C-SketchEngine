@@ -1,6 +1,13 @@
 #include "serenderer_opengl.h"
 #include <stdio.h> // for loading file as string
 #include "stb_image.h"
+#include "semesh_loader.h"
+
+#include "assimp/postprocess.h"
+#include "assimp/cimport.h"
+#include "assimp/scene.h"
+#include "sestring.h"
+
 
 void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
     sp->loaded_successfully = true; // set to false later on if errors occure
@@ -76,7 +83,7 @@ void seshader_deinit(SE_Shader *shader) {
     }
 }
 
-void seshader_use(SE_Shader *shader) {
+void seshader_use(const SE_Shader *shader) {
     glUseProgram(shader->shader_program);
 }
 
@@ -153,7 +160,15 @@ void setexture_load(SE_Texture *texture, const char *filepath) {
     texture->loaded = true;
 
     ubyte *image_data = stbi_load(filepath, &texture->width, &texture->height, &texture->channel_count, 0);
+    if (image_data != NULL) {
+        setexture_load_data(texture, image_data);
+    } else {
+        printf("ERROR: cannot load %s (%s)\n", filepath, stbi_failure_reason());
 
+    }
+}
+
+void setexture_load_data(SE_Texture *texture, ubyte *image_data) {
     // @TODO add proper error handling
 
     glGenTextures(1, &texture->id);
@@ -164,7 +179,7 @@ void setexture_load(SE_Texture *texture, const char *filepath) {
     } else if (texture->channel_count == 4) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     } else {
-        printf("ERROR: cannot load %s, because we don't support %i channels\n", filepath, texture->channel_count);
+        printf("ERROR: cannot load texture, because we don't support %i channels\n", texture->channel_count);
         texture->loaded = false;
     }
 
@@ -186,8 +201,8 @@ void setexture_unload(SE_Texture *texture) {
     }
 }
 
-void setexture_bind(const SE_Texture *texture) {
-    glActiveTexture(GL_TEXTURE0);
+void setexture_bind(const SE_Texture *texture, u32 index) { // @TODO change index to an enum of different texture types that map to an index internally
+    glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_2D, texture->id);
 }
 
@@ -205,6 +220,10 @@ void semesh_deinit(SE_Mesh *mesh) {
     glDeleteBuffers(1, &mesh->ibo);
 
     sematerial_deinit(&mesh->material);
+
+    if (mesh->next_mesh != NULL) {
+        semesh_deinit(mesh->next_mesh);
+    }
 }
 
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
@@ -349,24 +368,145 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 //     glDisableVertexAttribArray(0);
 // }
 
-void semesh_draw(SE_Mesh *mesh, const SE_Camera3D *cam) {
-    seshader_use(&mesh->material.shader);
+///
+/// RENDER 3D
+///
 
-    // take the quad (world space) and project it to view space
-    Mat4 pvm = mat4_mul(mesh->transform, cam->view);
-    // then take that and project it to the clip space
-    pvm = mat4_mul(pvm, cam->projection);
-    // then pass that final projection matrix and give it to the shader
-    seshader_set_uniform_mat4(&mesh->material.shader, "projection_view_model", pvm);
+void semesh_construct(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+    u32 verts_count = 0;
+    u32 index_count = 0;
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
+    u32       *indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
 
-    seshader_set_uniform_i32(&mesh->material.shader, "texture0", 0);
-    setexture_bind(&mesh->material.map_Kd);
+    // -- vertices
 
-    glBindVertexArray(mesh->vao);
-    if (mesh->indexed) {
-        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
-    } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+    for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
+        SE_Vertex3D vertex = {0};
+        vertex.position.x = ai_mesh->mVertices[i].x;
+        vertex.position.y = ai_mesh->mVertices[i].y;
+        vertex.position.z = ai_mesh->mVertices[i].z;
+        vertex.position.w = 1;
+
+        vertex.rgba = RGBA_WHITE;
+
+        vertex.normal.x = ai_mesh->mNormals[i].x;
+        vertex.normal.y = ai_mesh->mNormals[i].y;
+        vertex.normal.z = ai_mesh->mNormals[i].z;
+        vertex.normal.w = 0;
+
+        if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
+            vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
+            vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
+        }
+
+        verts[verts_count] = vertex;
+        verts_count++;
     }
-    glBindVertexArray(0);
+
+    // -- indices
+
+    for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
+        // ! we triangulate on import, so every face has three vertices
+        indices[index_count+0] = ai_mesh->mFaces[i].mIndices[0];
+        indices[index_count+1] = ai_mesh->mFaces[i].mIndices[1];
+        indices[index_count+2] = ai_mesh->mFaces[i].mIndices[2];
+        index_count += 3;
+    }
+
+    semesh_generate(mesh, verts_count, verts, index_count, indices);
+
+    { // -- materials
+
+        if (scene->mNumMaterials > 0) {
+            // add a material to the renderer
+            renderer->materials[renderer->materials_count] = new(SE_Material);
+            memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
+            u32 material_index = renderer->materials_count;
+            renderer->materials_count++;
+
+            mesh->material_index = material_index;
+
+            // find the directory part of filepath
+            SE_String filepath_string;
+            sestring_init(&filepath_string, filepath);
+
+            SE_String dir;
+            sestring_init(&dir, "");
+
+            u32 slash_index = sestring_lastof(&filepath_string, '/');
+            if (slash_index == SESTRING_MAX_SIZE) {
+                sestring_append(&dir, "/");
+            } else if (slash_index == 0) {
+                sestring_append(&dir, ".");
+            } else {
+                sestring_append_length(&dir, filepath, slash_index);
+                sestring_append(&dir, "/");
+            }
+
+            // now add the texture path to directory
+            const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+            struct aiString *texture_path = new(struct aiString);
+            aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE, 0, texture_path, NULL, NULL, NULL, NULL, NULL, NULL);
+
+            sestring_append(&dir, texture_path->data);
+
+            setexture_load(&renderer->materials[material_index].texture_diffuse, dir.buffer);
+
+            free(texture_path);
+            sestring_deinit(&filepath_string);
+            sestring_deinit(&dir);
+        }
+    }
+}
+
+void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
+    // load mesh from file
+    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    if (scene == NULL) {
+        printf("ERROR: could not load load mesh from %s\n", model_filepath);
+        return;
+    }
+
+    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
+        struct aiMesh *ai_mesh = scene->mMeshes[i];
+
+        // add a mesh to the renderer
+        renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+        memset(renderer->meshes, 0, sizeof(SE_Mesh));
+
+        semesh_construct(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        renderer->meshes_count++;
+    }
+}
+
+void serender3d_render(SE_Renderer3D *renderer) {
+
+    for (u32 i = 0; i < renderer->meshes_count; ++i) {
+        SE_Mesh *mesh = renderer->meshes[i];
+        SE_Material *material = renderer->materials[mesh->material_index];
+
+        // take the quad (world space) and project it to view space
+        // then take that and project it to the clip space
+        // then pass that final projection matrix and give it to the shader
+        Mat4 pvm = mat4_mul(mesh->transform, renderer->current_camera->view);
+        pvm = mat4_mul(pvm, renderer->current_camera->projection);
+
+        seshader_use(renderer->shaders[0]); // use the default shader
+
+        seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
+        seshader_set_uniform_i32(renderer->shaders[0], "texture0", 0);
+
+        setexture_bind(&material->texture_diffuse, 0);
+
+        glBindVertexArray(mesh->vao);
+
+        if (mesh->indexed) {
+            glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        } else {
+            glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+        }
+
+        glBindVertexArray(0);
+
+    }
 }

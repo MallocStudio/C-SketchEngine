@@ -1,6 +1,6 @@
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 
-#include "defines.h"
+#include "sedefines.h"
 #include "GL/glew.h"
 #include "application.h"
 
@@ -38,8 +38,8 @@ int main() {
     Application *app = new(Application);
     app_init(app, window);
 
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-    // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
     // -- main loop
     while (!app->should_quit) {
@@ -80,6 +80,10 @@ int main() {
                     // }
                     // camera.view = mat4_mul(camera.view, mat4_euler_y(angle));
                 } break;
+                case SDL_MOUSEMOTION: {
+                    app->input.mouse_screen_pos_delta.x = event.motion.xrel;
+                    app->input.mouse_screen_pos_delta.y = event.motion.yrel;
+                }
             }
         }
 

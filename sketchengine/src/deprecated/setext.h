@@ -2,7 +2,7 @@
 #ifndef SETEXT_H
 #define SETEXT_H
 
-#include "defines.h"
+#include "sedefines.h"
 #include "FreeType/freetype.h"
 #include "serenderer.h"
 
@@ -38,7 +38,7 @@ typedef struct SE_Text_Renderer {
 
     u32 VAO, VBO;
     bool initialised;
-    
+
     SE_Text_Character characters[SE_TEXT_NUM_OF_GLYPHS];
 
     Mat4 shader_projection_matrix;
@@ -49,16 +49,16 @@ typedef struct SE_Text_Renderer {
 
 /// Initialises freetype.
 /// SE_Text_Renderer will be used by the rest of the procedures.
-/// To deinitialise the text renderer call setext_deinit to free all the 
+/// To deinitialise the text renderer call setext_deinit to free all the
 /// memory used by setext and freetype.
 /// Returns SETEXT_ERROR if something went wrong.
 i32 setext_init (SE_Text_Renderer *txt, Rect viewport);
 
 /// Initialises freetype.
 /// SE_Text_Renderer will be used by the rest of the procedures.
-/// To deinitialise the text renderer call setext_deinit to free all the 
+/// To deinitialise the text renderer call setext_deinit to free all the
 /// memory used by setext and freetype.
-/// ALSO Loads the given font. Note that setting either width or height to 
+/// ALSO Loads the given font. Note that setting either width or height to
 /// zero, dynamically calculates the proper aspect ratio based on the other parameter.
 /// Returns SETEXT_ERROR if something went wrong.
 i32 setext_init_from (SE_Text_Renderer *txt, Rect viewport, const char *font_path, i32 width, i32 height);
@@ -75,11 +75,11 @@ i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i3
 /// prints the characters hashmap into the console
 i32 setext_print_loaded_characters(SE_Text_Renderer *txt);
 
-/// add the given string at the given position with colour and scale to txt. use setext_render() to render the texts. 
+/// add the given string at the given position with colour and scale to txt. use setext_render() to render the texts.
 /// REMEMBER TO CALL SETEXT_RENDER() at the end, otherwise, we will corrupt memory because we increment txt->strings_count each time we call this procedure
 i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color);
 
-/// render all the stored glyphs at once and "clear" the stored array of glyphs. 
+/// render all the stored glyphs at once and "clear" the stored array of glyphs.
 /// Note that it does not actually draw an array of vertices at once yet. We go through each "String"
 /// and set the shader color to that.
 /// @TODO change this behaviour : store an array of colours that are synced with txt->strings.

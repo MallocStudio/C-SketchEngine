@@ -3,7 +3,7 @@
         "sdl.h": "c",
         "finn_game.h": "c",
         "sephysics_defines.h": "c",
-        "defines.h": "c",
+        "sedefines.h": "c",
         "sephysics_render.h": "c",
         "sketchengine.h": "c",
         "*.rh": "c",
@@ -18,6 +18,8 @@
         "sephysics.h": "c",
         "serenderer_opengl.h": "c",
         "cgltf.h": "c",
-        "cstddef": "c"
+        "cstddef": "c",
+        "sds.h": "c",
+        "gb_string.h": "c"
     }
 }

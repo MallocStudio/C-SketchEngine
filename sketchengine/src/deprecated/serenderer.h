@@ -2,7 +2,7 @@
 #define SKETCHENGINE_OPENGL
 #include "GL/glew.h"
 #include "semath.h"
-#include "defines.h"
+#include "sedefines.h"
 
 /// ---------
 /// 2D camera
@@ -92,7 +92,7 @@ typedef struct SEGL_Renderer2D {
     bool initialised;    // whether the renderer has been initialised and ready to roll
     RGB current_colour; // can be set directly
     RGB default_colour; // set during init, but when changed this will become the default
-    
+
     GLuint vertices_buffer_id;
     GLuint colours_buffer_id;
     GLsizei vertices_current_index;

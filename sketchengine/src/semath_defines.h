@@ -3,7 +3,7 @@
 /// note: this math library was made while following the Kohi game engine tutorial series
 /// MATH TYPES
 /// ----------
-#include "defines.h"
+#include "sedefines.h"
 
 #ifndef semath_max
     #define semath_max(a,b) (((a) > (b)) ? (a) : (b))

@@ -1,6 +1,6 @@
 #ifndef SKETCHENGINE
 #define SKETCHENGINE
-#include "defines.h"
+#include "sedefines.h"
 #include "semath.h"
 #include "seinput.h"
 #include "serenderer_opengl.h"
