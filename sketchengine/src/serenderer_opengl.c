@@ -409,55 +409,52 @@ void semesh_construct(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMes
 
     semesh_generate(mesh, verts_count, verts, index_count, indices);
 
-    { // -- materials
+    if (scene->mNumMaterials > 0) { // -- materials
+        // add a material to the renderer
+        renderer->materials[renderer->materials_count] = new(SE_Material);
+        memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
+        u32 material_index = renderer->materials_count;
+        renderer->materials_count++;
 
-        if (scene->mNumMaterials > 0) {
-            // add a material to the renderer
-            renderer->materials[renderer->materials_count] = new(SE_Material);
-            memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
-            u32 material_index = renderer->materials_count;
-            renderer->materials_count++;
+        mesh->material_index = material_index;
 
-            mesh->material_index = material_index;
+        // find the directory part of filepath
+        SE_String filepath_string;
+        sestring_init(&filepath_string, filepath);
 
-            // find the directory part of filepath
-            SE_String filepath_string;
-            sestring_init(&filepath_string, filepath);
+        SE_String dir;
+        sestring_init(&dir, "");
 
-            SE_String dir;
-            sestring_init(&dir, "");
-
-            u32 slash_index = sestring_lastof(&filepath_string, '/');
-            if (slash_index == SESTRING_MAX_SIZE) {
-                sestring_append(&dir, "/");
-            } else if (slash_index == 0) {
-                sestring_append(&dir, ".");
-            } else {
-                sestring_append_length(&dir, filepath, slash_index);
-                sestring_append(&dir, "/");
-            }
-
-            // now add the texture path to directory
-            const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
-            struct aiString *texture_path = new(struct aiString);
-            aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE, 0, texture_path, NULL, NULL, NULL, NULL, NULL, NULL);
-
-            sestring_append(&dir, texture_path->data);
-
-            setexture_load(&renderer->materials[material_index]->texture_diffuse, dir.buffer);
-
-            free(texture_path);
-            sestring_deinit(&filepath_string);
-            sestring_deinit(&dir);
+        u32 slash_index = sestring_lastof(&filepath_string, '/');
+        if (slash_index == SESTRING_MAX_SIZE) {
+            sestring_append(&dir, "/");
+        } else if (slash_index == 0) {
+            sestring_append(&dir, ".");
+        } else {
+            sestring_append_length(&dir, filepath, slash_index);
+            sestring_append(&dir, "/");
         }
+
+        // now add the texture path to directory
+        const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+        struct aiString *texture_path = new(struct aiString);
+        aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE, 0, texture_path, NULL, NULL, NULL, NULL, NULL, NULL); // @incomplete use this procedure fully
+
+        sestring_append(&dir, texture_path->data);
+
+        setexture_load(&renderer->materials[material_index]->texture_diffuse, dir.buffer);
+
+        free(texture_path);
+        sestring_deinit(&filepath_string);
+        sestring_deinit(&dir);
     }
 }
 
 void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
     // load mesh from file
-    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
     if (scene == NULL) {
-        printf("ERROR: could not load load mesh from %s\n", model_filepath);
+        printf("ERROR: could not load load mesh from %s (%s)\n", model_filepath, aiGetErrorString());
         return;
     }
 

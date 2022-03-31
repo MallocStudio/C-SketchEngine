@@ -27,7 +27,10 @@ void app_init(Application *app, SDL_Window *window) {
         { // -- obj file
             // semesh_load(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
             // semesh_load(&app->mesh, "assets/spaceship2/Intergalactic_Spaceship-(FBX 7.4 binary).fbx");
+
             serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
+            // serender3d_load_mesh(&app->renderer, "assets/Monkey/Monkey_T.obj");
+            // serender3d_load_mesh(&app->renderer, "assets/bfg-50/source/model.dae");
 
             // semesh_load_obj(&app->mesh, "assets/soulspear/soulspear/soulspear.obj");
 
@@ -71,9 +74,6 @@ void app_update(Application *app) {
         Mat4 final_transform = mat4_mul(cam_transform, movement_transform);
 
         app->camera.position = mat4_get_translation(final_transform);
-        }
-        {
-
         }
 
         { // -- rotate camera
