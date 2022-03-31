@@ -1,17 +1,30 @@
 #version 450
 
-in vec4 _Colour;
+in vec4 _Colour; // @temp for now _Colour is the normal
 in vec2 _TexCoord;
+//in vec3 N; // normalised surface normal
 
 uniform sampler2D texture0; // diffuse
+uniform vec3 L = vec3(-1, -1, 0); // normalised light direction from the light
+
+// gray environment ambient light and white diffuse light
+uniform vec3 iA = vec3(0.25, 0.25, 0.25);
+uniform vec3 iD = vec3(1, 1, 1);
 
 out vec4 FragColour;
 
 void main()
 {
-	// FragColour = vec4(Colour, 1);
-	//
+	vec3 kD = texture(texture0, _TexCoord).xyz; // surface diffuse
+	vec3 kA = kD; // surface ambient
 
-	//FragColour = _Colour;
-	FragColour = texture(texture0, _TexCoord);
+	vec3 ambient = kA * iA; // ambient light
+
+	// lambert term with L reversed to face the light
+	vec3 N = _Colour.xyz;
+	float lambert = max( 0.0, dot(N, -L));
+
+	vec3 diffuse = kD * iD * lambert; // diffuse light for one light
+
+	FragColour = vec4(ambient + diffuse, 1);
 }
