@@ -1,7 +1,6 @@
 #include "serenderer_opengl.h"
 #include <stdio.h> // for loading file as string
 #include "stb_image.h"
-#include "semesh_loader.h"
 
 #include "assimp/postprocess.h"
 #include "assimp/cimport.h"
@@ -218,12 +217,7 @@ void semesh_deinit(SE_Mesh *mesh) {
     glDeleteVertexArrays(1, &mesh->vao);
     glDeleteBuffers(1, &mesh->vbo);
     glDeleteBuffers(1, &mesh->ibo);
-
-    sematerial_deinit(&mesh->material);
-
-    if (mesh->next_mesh != NULL) {
-        semesh_deinit(mesh->next_mesh);
-    }
+    mesh->material_index = 0;
 }
 
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
@@ -450,7 +444,7 @@ void semesh_construct(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMes
 
             sestring_append(&dir, texture_path->data);
 
-            setexture_load(&renderer->materials[material_index].texture_diffuse, dir.buffer);
+            setexture_load(&renderer->materials[material_index]->texture_diffuse, dir.buffer);
 
             free(texture_path);
             sestring_deinit(&filepath_string);
@@ -472,9 +466,16 @@ void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
 
         // add a mesh to the renderer
         renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
-        memset(renderer->meshes, 0, sizeof(SE_Mesh));
+        memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
         semesh_construct(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        renderer->meshes[renderer->meshes_count]->transform = (Mat4) {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1,
+        };
+
         renderer->meshes_count++;
     }
 }

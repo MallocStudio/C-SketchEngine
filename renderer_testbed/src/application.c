@@ -1,5 +1,4 @@
 #include "application.h"
-#include "semesh_loader.h"
 #include "stdio.h" // @remove
 
 void app_init(Application *app, SDL_Window *window) {
@@ -37,13 +36,6 @@ void app_init(Application *app, SDL_Window *window) {
             // semesh_load_obj(&app->mesh, "assets/cube/cube3.obj");
             // semesh_load_obj(&app->mesh, "assets/skull/12140_Skull_v3_L2.obj");
         }
-
-        app->mesh.transform = (Mat4) {
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0,  1,
-        };
     }
 }
 
@@ -134,6 +126,6 @@ void app_render(Application *app) {
         SDL_GetWindowSize(app->window, &window_w, &window_h);
         secamera3d_update_projection(&app->camera, window_w, window_h);
 
-        semesh_draw(&app->mesh, &app->camera);
+        serender3d_render(&app->renderer);
     }
 }

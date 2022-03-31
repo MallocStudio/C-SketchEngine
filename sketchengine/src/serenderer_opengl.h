@@ -160,27 +160,35 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 /// RENDERER
 ///
 
+#define SERENDERER3D_MAX_MESHES 100
+#define SERENDERER3D_MAX_SHADERS 100
+#define SERENDERER3D_MAX_MATERIALS 100
+
 typedef struct SE_Renderer3D {
     u32 meshes_count;
-    SE_Mesh **meshes;
+    SE_Mesh *meshes[SERENDERER3D_MAX_MESHES];
 
     u32 shaders_count;
-    SE_Shader **shaders;
+    SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
 
     u32 materials_count;
-    SE_Material **materials;
+    SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
     SE_Camera3D *current_camera;
 } SE_Renderer3D;
+
+SEINLINE void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
+    // add a default shader
+    renderer->shaders[renderer->shaders_count] = new (SE_Shader);
+    seshader_init_from(renderer->shaders[renderer->shaders_count], vsd, fsd);
+    renderer->shaders_count++;
+}
 
 SEINLINE void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
 
-    // add a default shader
-    renderer->shaders[renderer->shaders_count] = new (SE_Shader);
-    seshader_init_from(renderer->shaders[renderer->shaders_count], vsd, fsd);
-    renderer->shaders_count++;
+    serender3d_add_shader(renderer, vsd, fsd);
 }
 
 SEINLINE void serender3d_deinit(SE_Renderer3D *renderer) {
