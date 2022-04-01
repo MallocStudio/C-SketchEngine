@@ -10,11 +10,14 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- init camera
         app->camera.position = vec3_create(10, 10, 10);
-        app->camera.rotation = quat_identity();
+        app->camera.oriantation = vec2_zero();
     }
 
     { // -- init renderer
         serender3d_init(&app->renderer, &app->camera, "Simple.vsd", "Simple.fsd");
+        app->renderer.light_directional.direction = vec3_create(0, -1, 0);
+        app->renderer.light_directional.ambient   = (RGB) {50, 50, 50};
+        app->renderer.light_directional.diffuse   = (RGB) {255, 100, 100};
     }
 
     { // -- load mesh
@@ -66,51 +69,30 @@ void app_update(Application *app) {
             input.x, input.z, input.y
         };
 
-        { // @remove
-        movement = quat_mul_vec3(app->camera.rotation, movement);
+        { // @incomplete
+            Mat4 cam_transform = mat4_translation(app->camera.position);
 
-        Mat4 cam_transform = mat4_translation(app->camera.position);
-        Mat4 movement_transform = mat4_translation(vec3_mul_scalar(movement, 0.016 * 10));
-        Mat4 final_transform = mat4_mul(cam_transform, movement_transform);
+            Mat4 movement_transform = mat4_translation(vec3_mul_scalar(movement, 0.016 * 10));
 
-        app->camera.position = mat4_get_translation(final_transform);
+            Quat rotation_q_x = quat_from_axis_angle(vec3_up(), app->camera.oriantation.x, true);
+            Quat rotation_q_y = quat_from_axis_angle(vec3_right(), app->camera.oriantation.y, true);
+            Quat rotation_q = quat_mul(rotation_q_x, rotation_q_y);
+
+            Mat4 rotation = quat_to_rotation_matrix(rotation_q, app->camera.position);
+
+            Mat4 final_transform = mat4_mul(cam_transform, movement_transform);
+            final_transform = mat4_mul(rotation, final_transform); // @note doing this does not change the transform because we go mat4_get_translation below
+
+
+            app->camera.position = mat4_get_translation(final_transform);
         }
 
         { // -- rotate camera
             u8 mouse_state = SDL_GetMouseState(NULL, NULL);
             if (mouse_state & SDL_BUTTON_RMASK) {
                 f32 turn_speed = -0.1f * SEMATH_DEG2RAD_MULTIPLIER;
-
-                { // method A
-                    // Vec3 rot_input = {0};
-                    // rot_input.x = app->input.mouse_screen_pos_delta.x;
-                    // rot_input.y = app->input.mouse_screen_pos_delta.y - 1;
-                    // printf("delta : {%f, %f}\n", app->input.mouse_screen_pos_delta.x, app->input.mouse_screen_pos_delta.y);
-
-                    // Quat rot = quat_from_axis_angle(rot_input, turn_speed, true);
-                    // app->camera.rotation = quat_mul(app->camera.rotation, rot);
-                }
-                { // method B
-                    // Vec3 vertical   = {0};
-                    // Vec3 horizontal = {0};
-                    // vertical.x   += app->input.mouse_screen_pos_delta.y;
-                    // horizontal.y += app->input.mouse_screen_pos_delta.x;
-                    // if (horizontal.y != 0 || vertical.x != 0) {
-                    //     Quat pitch = quat_from_axis_angle(horizontal, turn_speed, true); // rot around x
-                    //     Quat yawn = quat_from_axis_angle(vertical, turn_speed, true);     // rot around y
-                    //     Quat rot_delta = quat_mul(pitch, yawn);
-                    //     app->camera.rotation = quat_mul(app->camera.rotation, rot_delta);
-                    // }
-                }
-                { // Method C
-                    Vec3 rotation = {0};
-                    rotation.x = app->input.mouse_screen_pos_delta.x * turn_speed;
-                    rotation.y = app->input.mouse_screen_pos_delta.y * turn_speed * -1;
-                    Quat x_quat = quat_from_axis_angle(vec3_up(), rotation.x, true);
-                    Quat y_quat = quat_from_axis_angle(vec3_left(), rotation.y, true);
-                    Quat rot_quat = quat_mul(x_quat, y_quat);
-                    app->camera.rotation = quat_mul(app->camera.rotation, rot_quat);
-                }
+                app->camera.oriantation.x += app->input.mouse_screen_pos_delta.x * turn_speed;
+                app->camera.oriantation.y += app->input.mouse_screen_pos_delta.y * turn_speed;
             }
         }
     }
@@ -118,13 +100,18 @@ void app_update(Application *app) {
 
 void app_render(Application *app) {
     { // -- application level render
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        RGB ambient = app->renderer.light_directional.ambient;
+        rgb_normalise(&ambient);
+        glClearColor(ambient.r, ambient.g, ambient.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
 
         i32 window_w, window_h;
         SDL_GetWindowSize(app->window, &window_w, &window_h);
         secamera3d_update_projection(&app->camera, window_w, window_h);
+
+        Vec3 cam_forward = mat4_forward(app->camera.view);
+        app->renderer.light_directional.direction = cam_forward;
 
         serender3d_render(&app->renderer);
     }

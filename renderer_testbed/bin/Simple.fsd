@@ -1,7 +1,8 @@
 #version 450
 
-in vec4 _Colour; // @temp for now _Colour is the normal
+in vec4 _Colour;
 in vec2 _TexCoord;
+in vec4 _Normal;
 //in vec3 N; // normalised surface normal
 
 uniform sampler2D texture0; // diffuse
@@ -21,7 +22,7 @@ void main()
 	vec3 ambient = kA * iA; // ambient light
 
 	// lambert term with L reversed to face the light
-	vec3 N = _Colour.xyz;
+	vec3 N = _Normal.xyz;
 	float lambert = max( 0.0, dot(N, -L));
 
 	vec3 diffuse = kD * iD * lambert; // diffuse light for one light

@@ -108,6 +108,13 @@ void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec
     glUniform3f(var_loc, value.x, value.y, value.z);
 }
 
+void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value) {
+    GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    seshader_use(shader);
+    rgb_normalise(&value);
+    glUniform3f(var_loc, value.r, value.g, value.b);
+}
+
 void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     seshader_use(shader);
@@ -315,7 +322,7 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
     // -- enable color
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
+    glVertexAttribPointer(1, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
     // -- enable normal
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
@@ -329,7 +336,11 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     // unselect
     glBindVertexArray(0); // stop the macro
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glDisableVertexAttribArray(3);
 }
 
 // void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices) {
@@ -493,6 +504,11 @@ void serender3d_render(SE_Renderer3D *renderer) {
 
         seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
         seshader_set_uniform_i32(renderer->shaders[0], "texture0", 0);
+
+        // light uniforms
+        seshader_set_uniform_vec3(renderer->shaders[0], "L", renderer->light_directional.direction);
+        seshader_set_uniform_rgb(renderer->shaders[0], "iA", renderer->light_directional.ambient);
+        seshader_set_uniform_rgb(renderer->shaders[0], "iD", renderer->light_directional.diffuse);
 
         setexture_bind(&material->texture_diffuse, 0);
 

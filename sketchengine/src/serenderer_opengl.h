@@ -9,31 +9,6 @@
 #include "semath.h"
 
 ///
-/// Camera
-///
-
-typedef struct SE_Camera3D {
-    Mat4 projection; // projection transform
-    Mat4 view;       // view transform
-    Vec3 position;
-    Quat rotation;
-} SE_Camera3D;
-
-SEINLINE Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
-    Mat4 rotation = quat_to_mat4(cam->rotation);
-    Vec3 forward = mat4_forward(rotation);
-    return mat4_lookat(cam->position, vec3_add(cam->position, forward), vec3_up());
-}
-
-/// updates the given camera's view and projection
-SEINLINE void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h) {
-    cam->view = secamera3d_get_view(cam);
-    cam->projection = mat4_perspective(SEMATH_PI * 0.25f,
-                                        window_w / (f32) window_h,
-                                        0.1f, 1000.0f);
-}
-
-///
 /// Shader program info
 ///
 
@@ -67,6 +42,8 @@ void seshader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32
 void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value);
 /// Set a shader uniform
 void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value);
+/// Set a shader uniform
+void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value);
 /// Set a shader uniform
 void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value);
 /// returns a pointer to a string on the heap.
@@ -157,6 +134,47 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 // void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices);
 
 ///
+/// Light
+///
+
+typedef struct SE_Light {
+    Vec3 direction;
+    RGB ambient;
+    RGB diffuse;
+} SE_Light;
+
+///
+/// Camera
+///
+
+typedef struct SE_Camera3D {
+    Mat4 projection; // projection transform
+    Mat4 view;       // view transform
+    Vec3 position;
+    Vec2 oriantation; // x horizontal rotation, y is vertical rotation
+} SE_Camera3D;
+
+SEINLINE Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
+    // Mat4 rotation = mat4_euler_xyz(cam->oriantation.y, cam->oriantation.x, 0);
+
+    Quat rotation_q_x = quat_from_axis_angle(vec3_up(), cam->oriantation.x, true);
+    Quat rotation_q_y = quat_from_axis_angle(vec3_right(), cam->oriantation.y, true);
+    Quat rotation_q = quat_mul(rotation_q_x, rotation_q_y);
+
+    Mat4 rotation = quat_to_mat4(rotation_q);
+    Vec3 forward = mat4_forward(rotation);
+    return mat4_lookat(cam->position, vec3_add(cam->position, forward), vec3_up());
+}
+
+/// updates the given camera's view and projection
+SEINLINE void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h) {
+    cam->view = secamera3d_get_view(cam);
+    cam->projection = mat4_perspective(SEMATH_PI * 0.25f,
+                                        window_w / (f32) window_h,
+                                        0.1f, 1000.0f);
+}
+
+///
 /// RENDERER
 ///
 
@@ -175,6 +193,7 @@ typedef struct SE_Renderer3D {
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
     SE_Camera3D *current_camera;
+    SE_Light light_directional;
 } SE_Renderer3D;
 
 SEINLINE void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {

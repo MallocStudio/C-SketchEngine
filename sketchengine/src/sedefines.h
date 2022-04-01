@@ -35,17 +35,32 @@ typedef unsigned short bool;
 #define true 1
 
 typedef struct RGBA {
-    // f32 r, g, b, a;
-    ubyte r, g, b, a;
+    f32 r, g, b, a;   // 0 - 255
 } RGBA;
+#define TYPEOF_RGBA_OPENGL GL_FLOAT
 typedef struct RGB {
-    ubyte r, g, b;
+    f32 r, g, b; // 0 - 255
 } RGB;
+#define TYPEOF_RGB_OPENGL GL_FLOAT
+
+SEINLINE void rgb_normalise(RGB *rgb) {
+    rgb->r = rgb->r / 255;
+    rgb->g = rgb->g / 255;
+    rgb->b = rgb->b / 255;
+}
+
+SEINLINE void rgba_normalise(RGBA *rgb) {
+    rgb->r = rgb->r / 255;
+    rgb->g = rgb->g / 255;
+    rgb->b = rgb->b / 255;
+    rgb->a = rgb->a / 255;
+}
 
 #define RGBA_RED   (RGBA){255, 0, 0, 255}
 #define RGBA_BLUE  (RGBA){0, 255, 0, 255}
 #define RGBA_GREEN (RGBA){0, 0, 255, 255}
 #define RGBA_WHITE (RGBA){255, 255, 255, 255}
+#define RGBA_BLACK (RGBA){0, 0, 0, 255}
 
 // ///
 // /// "dynamic" array type
@@ -82,7 +97,7 @@ typedef struct RGB {
 
 //         } break;
 //         default : {
-//             SDL_assert("Given a type that's not defines here mate");
+//             SDL_assert("Given a type that's not defined here mate");
 //         }
 //     }
 //     array->data = new(
