@@ -1,0 +1,13 @@
+#version 450
+
+layout ( location = 0 ) in vec2 in_pos;
+layout ( location = 1 ) in vec4 in_rgba;
+
+uniform mat4 projection_view;
+
+out vec4 _rgba;
+
+void main () {
+    gl_Position = projection_view * vec4(in_pos, 0, 1);
+    _rgba = in_rgba;
+}

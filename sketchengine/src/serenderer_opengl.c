@@ -92,12 +92,14 @@ GLuint seshader_get_uniform_loc(SE_Shader *shader, const char *uniform_name) {
 
 void seshader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32 value) {
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    // if ((i32)var_loc == -1) printf("Something's boned (%s)\n", uniform_name);
     seshader_use(shader);
     glUniform1f(var_loc, value);
 }
 
 void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value) {
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    // if ((i32)var_loc == -1) printf("Something's boned (%s)\n", uniform_name);
     seshader_use(shader);
     glUniform1i(var_loc, value);
 }
@@ -106,6 +108,12 @@ void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     seshader_use(shader);
     glUniform3f(var_loc, value.x, value.y, value.z);
+}
+
+void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value) {
+    GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    seshader_use(shader);
+    glUniform2f(var_loc, value.x, value.y);
 }
 
 void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value) {
@@ -170,7 +178,7 @@ void setexture_load(SE_Texture *texture, const char *filepath) {
         setexture_load_data(texture, image_data);
     } else {
         printf("ERROR: cannot load %s (%s)\n", filepath, stbi_failure_reason());
-
+        texture->loaded = false;
     }
 }
 
@@ -208,6 +216,7 @@ void setexture_unload(SE_Texture *texture) {
 }
 
 void setexture_bind(const SE_Texture *texture, u32 index) { // @TODO change index to an enum of different texture types that map to an index internally
+    SDL_assert(texture->loaded == true && "texture was not loaded so we can't bind");
     glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_2D, texture->id);
 }
@@ -231,20 +240,20 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
     SE_Vertex3D verts[4];
 
     scale = vec2_mul_scalar(scale, 0.5f);
-    verts[0].position = (Vec4) {-scale.x, 0, +scale.y, 1};
-    verts[1].position = (Vec4) {+scale.x, 0, +scale.y, 1};
-    verts[2].position = (Vec4) {-scale.x, 0, -scale.y, 1};
-    verts[3].position = (Vec4) {+scale.x, 0, -scale.y, 1};
+    verts[0].position = (Vec3) {-scale.x, 0, +scale.y};
+    verts[1].position = (Vec3) {+scale.x, 0, +scale.y};
+    verts[2].position = (Vec3) {-scale.x, 0, -scale.y};
+    verts[3].position = (Vec3) {+scale.x, 0, -scale.y};
 
     verts[0].rgba = (RGBA) {255, 255, 255, 255};
     verts[1].rgba = (RGBA) {255, 255, 255, 255};
     verts[2].rgba = (RGBA) {255, 255, 255, 255};
     verts[3].rgba = (RGBA) {255, 255, 255, 255};
 
-    verts[0].normal = (Vec4) {0, 1, 0, 1};
-    verts[1].normal = (Vec4) {0, 1, 0, 1};
-    verts[2].normal = (Vec4) {0, 1, 0, 1};
-    verts[3].normal = (Vec4) {0, 1, 0, 1};
+    verts[0].normal = (Vec3) {0, 1, 0};
+    verts[1].normal = (Vec3) {0, 1, 0};
+    verts[2].normal = (Vec3) {0, 1, 0};
+    verts[3].normal = (Vec3) {0, 1, 0};
 
     u32 indices[6] = {0, 1, 2, 2, 1, 3};
     semesh_generate(mesh, 4, verts, 6, indices);
@@ -254,14 +263,14 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     SE_Vertex3D verts[8];
 
     scale = vec3_mul_scalar(scale, 0.5f);
-    verts[0].position = (Vec4) {+scale.x, +scale.y, +scale.z, 1};
-    verts[1].position = (Vec4) {-scale.x, +scale.y, +scale.z, 1};
-    verts[2].position = (Vec4) {-scale.x, -scale.y, +scale.z, 1};
-    verts[3].position = (Vec4) {+scale.x, -scale.y, +scale.z, 1};
-    verts[4].position = (Vec4) {+scale.x, -scale.y, -scale.z, 1};
-    verts[5].position = (Vec4) {+scale.x, +scale.y, -scale.z, 1};
-    verts[6].position = (Vec4) {-scale.x, +scale.y, -scale.z, 1};
-    verts[7].position = (Vec4) {-scale.x, -scale.y, -scale.z, 1};
+    verts[0].position = (Vec3) {+scale.x, +scale.y, +scale.z};
+    verts[1].position = (Vec3) {-scale.x, +scale.y, +scale.z};
+    verts[2].position = (Vec3) {-scale.x, -scale.y, +scale.z};
+    verts[3].position = (Vec3) {+scale.x, -scale.y, +scale.z};
+    verts[4].position = (Vec3) {+scale.x, -scale.y, -scale.z};
+    verts[5].position = (Vec3) {+scale.x, +scale.y, -scale.z};
+    verts[6].position = (Vec3) {-scale.x, +scale.y, -scale.z};
+    verts[7].position = (Vec3) {-scale.x, -scale.y, -scale.z};
 
     verts[0].rgba = RGBA_WHITE;
     verts[1].rgba = RGBA_WHITE;
@@ -273,14 +282,14 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[7].rgba = RGBA_WHITE;
 
     // @TODO generate better normals
-    verts[0].normal = (Vec4) {+0.5f, +0.5f, +0.5f, 1};
-    verts[1].normal = (Vec4) {-0.5f, +0.5f, +0.5f, 1};
-    verts[2].normal = (Vec4) {-0.5f, -0.5f, +0.5f, 1};
-    verts[3].normal = (Vec4) {+0.5f, -0.5f, +0.5f, 1};
-    verts[4].normal = (Vec4) {+0.5f, -0.5f, -0.5f, 1};
-    verts[5].normal = (Vec4) {+0.5f, +0.5f, -0.5f, 1};
-    verts[6].normal = (Vec4) {-0.5f, +0.5f, -0.5f, 1};
-    verts[7].normal = (Vec4) {-0.5f, -0.5f, -0.5f, 1};
+    verts[0].normal = (Vec3) {+0.5f, +0.5f, +0.5f};
+    verts[1].normal = (Vec3) {-0.5f, +0.5f, +0.5f};
+    verts[2].normal = (Vec3) {-0.5f, -0.5f, +0.5f};
+    verts[3].normal = (Vec3) {+0.5f, -0.5f, +0.5f};
+    verts[4].normal = (Vec3) {+0.5f, -0.5f, -0.5f};
+    verts[5].normal = (Vec3) {+0.5f, +0.5f, -0.5f};
+    verts[6].normal = (Vec3) {-0.5f, +0.5f, -0.5f};
+    verts[7].normal = (Vec3) {-0.5f, -0.5f, -0.5f};
 
     u32 indices[12 * 3] = {
         0, 1, 2,
@@ -316,19 +325,24 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
 
-
     // -- enable position
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
     // -- enable color
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
     // -- enable normal
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
     // -- enable uv
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+    // -- enable tangent
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
+    // -- enable bitangent
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
@@ -377,7 +391,59 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 /// RENDER 3D
 ///
 
-void semesh_construct(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+static void load_material
+(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene, enum aiTextureType texture_type) {
+    // add a material to the renderer
+    renderer->materials[renderer->materials_count] = new(SE_Material);
+    memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
+    u32 material_index = renderer->materials_count;
+    renderer->materials_count++;
+
+    mesh->material_index = material_index;
+
+    // find the directory part of filepath
+    SE_String filepath_string;
+    sestring_init(&filepath_string, filepath);
+
+    SE_String dir;
+    sestring_init(&dir, "");
+
+    u32 slash_index = sestring_lastof(&filepath_string, '/');
+    if (slash_index == SESTRING_MAX_SIZE) {
+        sestring_append(&dir, "/");
+    } else if (slash_index == 0) {
+        sestring_append(&dir, ".");
+    } else {
+        sestring_append_length(&dir, filepath, slash_index);
+        sestring_append(&dir, "/");
+    }
+
+    // now add the texture path to directory
+    const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+    struct aiString *texture_path = new(struct aiString);
+    aiGetMaterialTexture(ai_material, texture_type, 0, texture_path, NULL, NULL, NULL, NULL, NULL, NULL); // @incomplete use this procedure fully
+
+    sestring_append(&dir, texture_path->data);
+
+    switch (texture_type) {
+        case aiTextureType_DIFFUSE: {
+            setexture_load(&renderer->materials[material_index]->texture_diffuse, dir.buffer);
+        } break;
+        case aiTextureType_SPECULAR: {
+            setexture_load(&renderer->materials[material_index]->texture_specular, dir.buffer);
+        } break;
+        case aiTextureType_NORMALS: {
+            setexture_load(&renderer->materials[material_index]->texture_normal, dir.buffer);
+        } break;
+    }
+
+    free(texture_path);
+    sestring_deinit(&filepath_string);
+    sestring_deinit(&dir);
+}
+
+void semesh_construct
+(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     u32 verts_count = 0;
     u32 index_count = 0;
     SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
@@ -387,18 +453,31 @@ void semesh_construct(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMes
 
     for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
         SE_Vertex3D vertex = {0};
+
+        // -- pos
         vertex.position.x = ai_mesh->mVertices[i].x;
         vertex.position.y = ai_mesh->mVertices[i].y;
         vertex.position.z = ai_mesh->mVertices[i].z;
-        vertex.position.w = 1;
 
+        // -- colour
         vertex.rgba = RGBA_WHITE;
 
+        // -- normals
         vertex.normal.x = ai_mesh->mNormals[i].x;
         vertex.normal.y = ai_mesh->mNormals[i].y;
         vertex.normal.z = ai_mesh->mNormals[i].z;
-        vertex.normal.w = 0;
 
+        // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
+        vertex.tangent.x = ai_mesh->mTangents[i].x;
+        vertex.tangent.y = ai_mesh->mTangents[i].y;
+        vertex.tangent.z = ai_mesh->mTangents[i].z;
+
+        // -- bi-tangents
+        vertex.bitangent.x = ai_mesh->mBitangents[i].x;
+        vertex.bitangent.y = ai_mesh->mBitangents[i].y;
+        vertex.bitangent.z = ai_mesh->mBitangents[i].z;
+
+        // -- uvs
         if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
             vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
             vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
@@ -421,49 +500,16 @@ void semesh_construct(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMes
     semesh_generate(mesh, verts_count, verts, index_count, indices);
 
     if (scene->mNumMaterials > 0) { // -- materials
-        // add a material to the renderer
-        renderer->materials[renderer->materials_count] = new(SE_Material);
-        memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
-        u32 material_index = renderer->materials_count;
-        renderer->materials_count++;
-
-        mesh->material_index = material_index;
-
-        // find the directory part of filepath
-        SE_String filepath_string;
-        sestring_init(&filepath_string, filepath);
-
-        SE_String dir;
-        sestring_init(&dir, "");
-
-        u32 slash_index = sestring_lastof(&filepath_string, '/');
-        if (slash_index == SESTRING_MAX_SIZE) {
-            sestring_append(&dir, "/");
-        } else if (slash_index == 0) {
-            sestring_append(&dir, ".");
-        } else {
-            sestring_append_length(&dir, filepath, slash_index);
-            sestring_append(&dir, "/");
-        }
-
-        // now add the texture path to directory
-        const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
-        struct aiString *texture_path = new(struct aiString);
-        aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE, 0, texture_path, NULL, NULL, NULL, NULL, NULL, NULL); // @incomplete use this procedure fully
-
-        sestring_append(&dir, texture_path->data);
-
-        setexture_load(&renderer->materials[material_index]->texture_diffuse, dir.buffer);
-
-        free(texture_path);
-        sestring_deinit(&filepath_string);
-        sestring_deinit(&dir);
+        load_material(renderer, mesh, ai_mesh, filepath, scene, aiTextureType_NORMALS);
+        load_material(renderer, mesh, ai_mesh, filepath, scene, aiTextureType_SPECULAR); // @TODO found the problem fix it,
+        load_material(renderer, mesh, ai_mesh, filepath, scene, aiTextureType_DIFFUSE);
     }
 }
 
 void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
     // load mesh from file
-    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
     if (scene == NULL) {
         printf("ERROR: could not load load mesh from %s (%s)\n", model_filepath, aiGetErrorString());
         return;
@@ -497,13 +543,24 @@ void serender3d_render(SE_Renderer3D *renderer) {
         // take the quad (world space) and project it to view space
         // then take that and project it to the clip space
         // then pass that final projection matrix and give it to the shader
+        Mat4 rotation = quat_to_mat4(quat_from_axis_angle(vec3_up(), 0.02f, true));
+        mesh->transform = mat4_mul(mesh->transform, rotation);
         Mat4 pvm = mat4_mul(mesh->transform, renderer->current_camera->view);
         pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
         seshader_use(renderer->shaders[0]); // use the default shader
 
+        // material->texture_diffuse.width = 100; // @nocheckin
+
         seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
-        seshader_set_uniform_i32(renderer->shaders[0], "texture0", 0);
+        seshader_set_uniform_mat4(renderer->shaders[0], "model_matrix", mesh->transform);
+        seshader_set_uniform_vec3(renderer->shaders[0], "camera_pos", renderer->current_camera->position);
+
+        seshader_set_uniform_f32(renderer->shaders[0], "specular_power", 0.5f);
+
+        seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
+        seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
+        seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
 
         // light uniforms
         seshader_set_uniform_vec3(renderer->shaders[0], "L", renderer->light_directional.direction);
@@ -511,6 +568,8 @@ void serender3d_render(SE_Renderer3D *renderer) {
         seshader_set_uniform_rgb(renderer->shaders[0], "iD", renderer->light_directional.diffuse);
 
         setexture_bind(&material->texture_diffuse, 0);
+        setexture_bind(&material->texture_specular, 1);
+        setexture_bind(&material->texture_normal, 2);
 
         glBindVertexArray(mesh->vao);
 
@@ -521,6 +580,5 @@ void serender3d_render(SE_Renderer3D *renderer) {
         }
 
         glBindVertexArray(0);
-
     }
 }

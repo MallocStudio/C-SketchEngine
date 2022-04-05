@@ -1,9 +1,16 @@
 #include "application.h"
 #include "stdio.h" // @remove
+#include "seui.h"
+
+#if 0
+SEUI_Context *ctx;
+#endif
 
 void app_init(Application *app, SDL_Window *window) {
     app->window = window;
     app->should_quit = false;
+    u32 window_w, window_h;
+    SDL_GetWindowSize(window, &window_w, &window_h);
 
     // -- input input
     seinput_init(&app->input);
@@ -17,36 +24,27 @@ void app_init(Application *app, SDL_Window *window) {
         serender3d_init(&app->renderer, &app->camera, "Simple.vsd", "Simple.fsd");
         app->renderer.light_directional.direction = vec3_create(0, -1, 0);
         app->renderer.light_directional.ambient   = (RGB) {50, 50, 50};
-        app->renderer.light_directional.diffuse   = (RGB) {255, 100, 100};
+        app->renderer.light_directional.diffuse   = (RGB) {255, 255, 255};
     }
 
+    #if 0
+    { // -- init UI
+        ctx = new(SEUI_Context);
+        seui_init(ctx, (Rect) {0, 0, window_w, window_h}, "UI.vsd", "UI.fsd", &app->input);
+    }
+    #endif
+
     { // -- load mesh
-
-        { // -- cube
-            // semesh_generate_cube(&app->mesh, (Vec3){1, 1, 1});
-            // semesh_generate_quad(&app->mesh, (Vec2) {1, 1});
-        }
-
-        { // -- obj file
-            // semesh_load(&app->mesh, "assets/spaceship/Intergalactic_Spaceship-(Wavefront).obj");
-            // semesh_load(&app->mesh, "assets/spaceship2/Intergalactic_Spaceship-(FBX 7.4 binary).fbx");
-
-            serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
-            // serender3d_load_mesh(&app->renderer, "assets/Monkey/Monkey_T.obj");
-            // serender3d_load_mesh(&app->renderer, "assets/bfg-50/source/model.dae");
-
-            // semesh_load_obj(&app->mesh, "assets/soulspear/soulspear/soulspear.obj");
-
-            // semesh_load_obj(&app->mesh, "assets/assassins-creed-altair-obj/assassins-creed-altair.obj");
-
-            // semesh_load_obj(&app->mesh, "assets/cube/cube3.obj");
-            // semesh_load_obj(&app->mesh, "assets/skull/12140_Skull_v3_L2.obj");
-        }
+        // serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
+        serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
     }
 }
 
 void app_deinit(Application *app) {
     serender3d_deinit(&app->renderer);
+    #if 0
+    seui_deinit(ctx);
+    #endif
 }
 
 void app_update(Application *app) {
@@ -83,7 +81,6 @@ void app_update(Application *app) {
             Mat4 final_transform = mat4_mul(cam_transform, movement_transform);
             final_transform = mat4_mul(rotation, final_transform); // @note doing this does not change the transform because we go mat4_get_translation below
 
-
             app->camera.position = mat4_get_translation(final_transform);
         }
 
@@ -96,16 +93,25 @@ void app_update(Application *app) {
             }
         }
     }
+    #if 0
+    { // -- ui
+        // seui_render_rect(&ctx->renderer, (Rect) {0, 0, 200, 100}, RGBA_RED);
+        // seui_render_rect(&ctx->renderer, (Rect) {100, 200, 200, 100}, RGBA_RED);
+        // seui_renderer_upload(&ctx->renderer);
+        seui_begin(ctx);
+        seui_panel_begin(ctx, (Rect) {0, 0, 200, 100});
+    }
+    #endif
 }
-
 void app_render(Application *app) {
-    { // -- application level render
+    {
         RGB ambient = app->renderer.light_directional.ambient;
         rgb_normalise(&ambient);
         glClearColor(ambient.r, ambient.g, ambient.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-
+    }
+    { // -- application level render
         i32 window_w, window_h;
         SDL_GetWindowSize(app->window, &window_w, &window_h);
         secamera3d_update_projection(&app->camera, window_w, window_h);
@@ -115,4 +121,10 @@ void app_render(Application *app) {
 
         serender3d_render(&app->renderer);
     }
+    #if 0
+    { // -- ui
+        // seui_renderer_draw(&ctx->renderer);
+        seui_render(ctx);
+    }
+    #endif
 }

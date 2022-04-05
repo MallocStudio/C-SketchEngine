@@ -35,9 +35,9 @@ typedef unsigned short bool;
 #define true 1
 
 typedef struct RGBA {
-    f32 r, g, b, a;   // 0 - 255
+    ubyte r, g, b, a;   // 0 - 255
 } RGBA;
-#define TYPEOF_RGBA_OPENGL GL_FLOAT
+#define TYPEOF_RGBA_OPENGL GL_UNSIGNED_BYTE
 typedef struct RGB {
     f32 r, g, b; // 0 - 255
 } RGB;

@@ -1,0 +1,8 @@
+#version 450
+
+in  vec4 _rgba;
+out vec4 FragColour;
+
+void main () {
+    FragColour = _rgba;
+}

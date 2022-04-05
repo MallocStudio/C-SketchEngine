@@ -22,8 +22,10 @@ typedef struct SE_Shader {
 
 /// Vertex info of a mesh
 typedef struct SE_Vertex3D {
-    Vec4 position;
-    Vec4 normal;
+    Vec3 position;
+    Vec3 normal; // @TODO change normal and position to Vec3
+    Vec3 tangent;
+    Vec3 bitangent;
     Vec2 texture_coord;
     RGBA rgba;
 } SE_Vertex3D;
@@ -42,6 +44,8 @@ void seshader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32
 void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value);
 /// Set a shader uniform
 void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value);
+///
+void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value);
 /// Set a shader uniform
 void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value);
 /// Set a shader uniform
@@ -79,6 +83,8 @@ typedef struct SE_Material {
 
     /* Texture maps */
     SE_Texture texture_diffuse;
+    SE_Texture texture_specular;
+    SE_Texture texture_normal;
 /*    SE_Texture map_Ka;
     SE_Texture map_Ks;
     SE_Texture map_Ke;
@@ -92,15 +98,9 @@ typedef struct SE_Material {
 
 /// Deallocates memory and uninitialises the textures
 SEINLINE void sematerial_deinit(SE_Material *material) {
-    // if (material->map_Ka.loaded)   setexture_unload(&material->map_Ka);
-    if (material->texture_diffuse.loaded)   setexture_unload(&material->texture_diffuse);
-    // if (material->map_Ks.loaded)   setexture_unload(&material->map_Ks);
-    // if (material->map_Ke.loaded)   setexture_unload(&material->map_Ke);
-    // if (material->map_Kt.loaded)   setexture_unload(&material->map_Kt);
-    // if (material->map_Ns.loaded)   setexture_unload(&material->map_Ns);
-    // if (material->map_Ni.loaded)   setexture_unload(&material->map_Ni);
-    // if (material->map_d.loaded)    setexture_unload(&material->map_d);
-    // if (material->map_bump.loaded) setexture_unload(&material->map_bump);
+    if (material->texture_diffuse.loaded)  setexture_unload(&material->texture_diffuse);
+    if (material->texture_specular.loaded) setexture_unload(&material->texture_specular);
+    if (material->texture_normal.loaded)   setexture_unload(&material->texture_normal);
 }
 
 ///
