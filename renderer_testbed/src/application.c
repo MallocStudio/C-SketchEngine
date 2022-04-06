@@ -6,7 +6,12 @@
 SEUI_Context *ctx;
 #endif
 
+
 void app_init(Application *app, SDL_Window *window) {
+    u32 player = -1; // @remove
+    u32 player2 = -1;
+    memset(app, 0, sizeof(Application));
+
     app->window = window;
     app->should_quit = false;
     u32 window_w, window_h;
@@ -20,10 +25,17 @@ void app_init(Application *app, SDL_Window *window) {
     }
 
     { // -- init renderer
-        serender3d_init(&app->renderer, &app->camera, "Simple.vsd", "Simple.fsd");
+        serender3d_init(&app->renderer, &app->camera, "shaders/Simple.vsd", "shaders/Simple.fsd");
         app->renderer.light_directional.direction = (Vec3) {0, -1, 0};
         app->renderer.light_directional.ambient   = (RGB)  {50, 50, 50};
         app->renderer.light_directional.diffuse   = (RGB)  {255, 255, 255};
+    }
+
+    { // -- init entities
+        player  = app_add_entity(app);
+        player2 = app_add_entity(app);
+        app->entities[player].transform = mat4_translation(vec3_zero());
+        app->entities[player2].transform = mat4_translation(vec3_create(10, 0, 5));
     }
 
     #if 0
@@ -35,7 +47,8 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- load mesh
         // serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
-        serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player2].mesh_index = serender3d_add_cube(&app->renderer);
     }
 }
 
@@ -86,7 +99,9 @@ void app_render(Application *app) {
         // app->renderer.light_directional.direction = cam_forward;
         app->renderer.light_directional.direction = vec3_right();
 
-        serender3d_render(&app->renderer);
+        for (u32 i = 0; i < app->entity_count; ++i) {
+            entity_render(&app->entities[i], &app->renderer);
+        }
     }
     #if 0
     { // -- ui
@@ -94,4 +109,10 @@ void app_render(Application *app) {
         seui_render(ctx);
     }
     #endif
+}
+
+u32 app_add_entity(Application *app) {
+    u32 result = app->entity_count;
+    app->entity_count++;
+    return result;
 }

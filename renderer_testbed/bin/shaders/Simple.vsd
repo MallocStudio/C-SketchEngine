@@ -20,7 +20,7 @@ out vec3 _Bitangent;
 
 void main() {
 	_Position = (model_matrix * vec4(Position, 1.0)).xyz;
-	_Colour = (vec4(Normal, 0.0) + 1) * 0.5;
+	_Colour = Colour;//(vec4(Normal, 0.0) + 1) * 0.5;
 	_Normal = Normal;
 	_TexCoord = TexCoord;
 	_Tangent = Tangent;

@@ -7,6 +7,100 @@
 #include "assimp/scene.h"
 #include "sestring.h"
 
+#include "seinput.h" // for camera
+
+///
+/// Materials
+///
+
+void sematerial_deinit(SE_Material *material) {
+    if (material->texture_diffuse.loaded)  setexture_unload(&material->texture_diffuse);
+    if (material->texture_specular.loaded) setexture_unload(&material->texture_specular);
+    if (material->texture_normal.loaded)   setexture_unload(&material->texture_normal);
+}
+
+///
+/// Camera
+///
+
+void secamera3d_init(SE_Camera3D *cam) {
+    cam->position = vec3_zero();
+    cam->yaw = 0;
+    cam->pitch = 0;
+    cam->up = vec3_up();
+}
+
+Vec3 secamera3d_get_front(const SE_Camera3D *cam) {
+    f32 yaw = cam->yaw;
+    f32 pitch = cam->pitch;
+    Vec3 camera_front = {0};
+    camera_front.x = semath_cos(yaw * SEMATH_DEG2RAD_MULTIPLIER) * semath_cos(pitch * SEMATH_DEG2RAD_MULTIPLIER);
+    camera_front.y = semath_sin(pitch * SEMATH_DEG2RAD_MULTIPLIER);
+    camera_front.z = semath_sin(yaw * SEMATH_DEG2RAD_MULTIPLIER) * semath_cos(pitch * SEMATH_DEG2RAD_MULTIPLIER);
+    vec3_normalise(&camera_front);
+    return camera_front;
+}
+
+Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
+    Vec3 camera_front = secamera3d_get_front(cam);
+    return mat4_lookat(cam->position, vec3_add(cam->position, camera_front), cam->up);
+}
+
+void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h) {
+    cam->view = secamera3d_get_view(cam);
+    cam->projection = mat4_perspective(SEMATH_PI * 0.25f,
+                                        window_w / (f32) window_h,
+                                        0.1f, 1000.0f);
+}
+
+void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
+    { // movement
+        const u8 *keyboard = seinput->keyboard;
+        i32 r = keyboard[SDL_SCANCODE_D] == true       ? 1 : 0;
+        i32 l = keyboard[SDL_SCANCODE_A] == true       ? 1 : 0;
+        i32 d = keyboard[SDL_SCANCODE_S] == true       ? 1 : 0;
+        i32 u = keyboard[SDL_SCANCODE_W] == true       ? 1 : 0;
+        i32 elevate = keyboard[SDL_SCANCODE_E] == true ? 1 : 0;
+        i32 dive = keyboard[SDL_SCANCODE_Q] == true    ? 1 : 0;
+
+        Vec3 input = vec3_create(r - l, d - u, elevate - dive);
+
+        f32 camera_speed = 0.05f; // adjust accordingly
+
+        Vec3 movement = {
+            -input.x * camera_speed,
+            -input.y * camera_speed,
+            input.z * camera_speed,
+        };
+
+        Vec3 camera_front = secamera3d_get_front(camera);
+        Vec3 camera_right = vec3_normalised(vec3_cross(camera->up, camera_front));
+        Vec3 camera_up = vec3_normalised(vec3_cross(camera_front, camera_right));
+
+        if (movement.x != 0) {
+            camera->position = vec3_add(camera->position, vec3_mul_scalar(camera_right, movement.x));
+        }
+        if (movement.y != 0) {
+            camera->position = vec3_add(camera->position, vec3_mul_scalar(camera_front, movement.y));
+        }
+        if (movement.z != 0) {
+            camera->position = vec3_add(camera->position, vec3_mul_scalar(camera_up, movement.z));
+        }
+    }
+    { // -- rotate camera
+        u8 mouse_state = SDL_GetMouseState(NULL, NULL);
+        if (mouse_state & SDL_BUTTON_RMASK) {
+            f32 sensitivity = 0.1f;
+            f32 xoffset = seinput->mouse_screen_pos_delta.x * sensitivity;
+            f32 yoffset = seinput->mouse_screen_pos_delta.y * sensitivity * -1;
+
+            if (semath_abs(xoffset) > sensitivity) camera->yaw += xoffset;
+            if (semath_abs(yoffset) > sensitivity) camera->pitch += yoffset;
+            if(camera->pitch > +89.0f) camera->pitch = +89.0f;
+            if(camera->pitch < -89.0f) camera->pitch = -89.0f;
+        }
+    }
+}
 
 void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
     sp->loaded_successfully = true; // set to false later on if errors occure
@@ -260,7 +354,7 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
 }
 
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
-    SE_Vertex3D verts[8];
+    SE_Vertex3D verts[8] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
     verts[0].position = (Vec3) {+scale.x, +scale.y, +scale.z};
@@ -357,41 +451,11 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glDisableVertexAttribArray(3);
 }
 
-// void semesh_generate_unindexed(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices) {
-//     // generate buffers
-//     glGenBuffers(1, &mesh->vbo);
-//     glGenVertexArrays(1, &mesh->vao);
-
-//     glBindVertexArray(mesh->vao); // start the macro
-//     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-
-//     // fill data
-//     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
-
-//     // enable first attribute as position
-//     glEnableVertexAttribArray(0);
-//     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-//     // enable second attribute as color
-//     glEnableVertexAttribArray(1);
-//     glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
-//     // enable uv
-//     glEnableVertexAttribArray(3);
-//     glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
-
-//     mesh->vert_count = vert_count;
-//     mesh->indexed = false;
-
-//     // unselect
-//     glBindVertexArray(0); // stop the macro
-//     glBindBuffer(GL_ARRAY_BUFFER, 0);
-//     glDisableVertexAttribArray(0);
-// }
-
 ///
 /// RENDER 3D
 ///
 
-void semesh_construct
+static void semesh_construct
 (SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     u32 verts_count = 0;
     u32 index_count = 0;
@@ -514,13 +578,14 @@ void semesh_construct
     }
 }
 
-void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
+u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
+    u32 result = -1;
     // load mesh from file
     const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     if (scene == NULL) {
         printf("ERROR: could not load load mesh from %s (%s)\n", model_filepath, aiGetErrorString());
-        return;
+        return result;
     }
 
     for (u32 i = 0; i < scene->mNumMeshes; ++i) {
@@ -531,63 +596,103 @@ void serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
         memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
         semesh_construct(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
-        renderer->meshes[renderer->meshes_count]->transform = (Mat4) {
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1,
-        };
-
+        // @remove once entities can render their own meshes
+        // renderer->meshes[renderer->meshes_count]->transform = (Mat4) {
+        //     1, 0, 0, 0,
+        //     0, 1, 0, 0,
+        //     0, 0, 1, 0,
+        //     0, 0, 0, 1,
+        // };
+        result = renderer->meshes_count;
         renderer->meshes_count++;
     }
+    return result;
 }
 
-void serender3d_render(SE_Renderer3D *renderer) {
+void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+    SE_Mesh *mesh = renderer->meshes[mesh_index];
+    SE_Material *material = renderer->materials[mesh->material_index];
 
-    for (u32 i = 0; i < renderer->meshes_count; ++i) {
-        SE_Mesh *mesh = renderer->meshes[i];
-        SE_Material *material = renderer->materials[mesh->material_index];
+    // take the quad (world space) and project it to view space
+    // then take that and project it to the clip space
+    // then pass that final projection matrix and give it to the shader
 
-        // take the quad (world space) and project it to view space
-        // then take that and project it to the clip space
-        // then pass that final projection matrix and give it to the shader
+    Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+    pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
-        Mat4 rotation = quat_to_mat4(quat_from_axis_angle(vec3_up(), 0.02f, true));
-        mesh->transform = mat4_mul(mesh->transform, rotation);
-        Mat4 pvm = mat4_mul(mesh->transform, renderer->current_camera->view);
-        pvm = mat4_mul(pvm, renderer->current_camera->projection);
+    seshader_use(renderer->shaders[0]); // use the default shader
 
-        seshader_use(renderer->shaders[0]); // use the default shader
+    // the good old days when debugging:
+    // material->texture_diffuse.width = 100;
 
-        // material->texture_diffuse.width = 100; // @nocheckin
+    seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
+    seshader_set_uniform_mat4(renderer->shaders[0], "model_matrix", transform);
+    seshader_set_uniform_vec3(renderer->shaders[0], "camera_pos", renderer->current_camera->position);
 
-        seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
-        seshader_set_uniform_mat4(renderer->shaders[0], "model_matrix", mesh->transform);
-        seshader_set_uniform_vec3(renderer->shaders[0], "camera_pos", renderer->current_camera->position);
+    seshader_set_uniform_f32(renderer->shaders[0], "specular_power", 0.5f);
 
-        seshader_set_uniform_f32(renderer->shaders[0], "specular_power", 0.5f);
+    seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
+    seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
+    seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
 
-        seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
-        seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
-        seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
+    // light uniforms
+    seshader_set_uniform_vec3(renderer->shaders[0], "L", renderer->light_directional.direction);
+    seshader_set_uniform_rgb(renderer->shaders[0], "iA", renderer->light_directional.ambient);
+    seshader_set_uniform_rgb(renderer->shaders[0], "iD", renderer->light_directional.diffuse);
 
-        // light uniforms
-        seshader_set_uniform_vec3(renderer->shaders[0], "L", renderer->light_directional.direction);
-        seshader_set_uniform_rgb(renderer->shaders[0], "iA", renderer->light_directional.ambient);
-        seshader_set_uniform_rgb(renderer->shaders[0], "iD", renderer->light_directional.diffuse);
+    setexture_bind(&material->texture_diffuse, 0);
+    setexture_bind(&material->texture_specular, 1);
+    setexture_bind(&material->texture_normal, 2);
 
-        setexture_bind(&material->texture_diffuse, 0);
-        setexture_bind(&material->texture_specular, 1);
-        setexture_bind(&material->texture_normal, 2);
+    glBindVertexArray(mesh->vao);
 
-        glBindVertexArray(mesh->vao);
-
-        if (mesh->indexed) {
-            glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
-        } else {
-            glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
-        }
-
-        glBindVertexArray(0);
+    if (mesh->indexed) {
+        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
     }
+
+    glBindVertexArray(0);
+}
+
+void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
+    // add a default shader
+    renderer->shaders[renderer->shaders_count] = new (SE_Shader);
+    seshader_init_from(renderer->shaders[renderer->shaders_count], vsd, fsd);
+    renderer->shaders_count++;
+}
+
+void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {
+    memset(renderer, 0, sizeof(SE_Renderer3D));
+    renderer->current_camera = current_camera;
+
+    serender3d_add_shader(renderer, vsd, fsd);
+}
+
+void serender3d_deinit(SE_Renderer3D *renderer) {
+    for (u32 i = 0; i < renderer->meshes_count; ++i) {
+        semesh_deinit(renderer->meshes[i]);
+    }
+    renderer->meshes_count = 0;
+
+    for (u32 i = 0; i < renderer->shaders_count; ++i) {
+        seshader_deinit(renderer->shaders[i]);
+    }
+    renderer->shaders_count = 0;
+
+    for (u32 i = 0; i < renderer->materials_count; ++i) {
+        sematerial_deinit(renderer->materials[i]);
+    }
+    renderer->materials_count = 0;
+}
+
+u32 serender3d_add_cube(SE_Renderer3D *renderer) {
+    u32 result = renderer->meshes_count;
+
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_cube(renderer->meshes[renderer->meshes_count], vec3_one());
+
+    renderer->meshes_count++;
+    return result;
 }
