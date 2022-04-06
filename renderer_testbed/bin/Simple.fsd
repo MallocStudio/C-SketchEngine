@@ -57,6 +57,5 @@ void main() {
 	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term; // diffuse light for one light
 	vec3 specular = iA * kS * tex_diffuse * specular_term;
 
-	FragColour = vec4(tex_diffuse, 1);
-	// FragColour = vec4(N, 1);
+	FragColour = vec4(ambient + diffuse + specular, 1);
 }

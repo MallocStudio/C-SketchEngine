@@ -391,57 +391,6 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 /// RENDER 3D
 ///
 
-static void load_material
-(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene, enum aiTextureType texture_type) {
-    // add a material to the renderer
-    renderer->materials[renderer->materials_count] = new(SE_Material);
-    memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
-    u32 material_index = renderer->materials_count;
-    renderer->materials_count++;
-
-    mesh->material_index = material_index;
-
-    // find the directory part of filepath
-    SE_String filepath_string;
-    sestring_init(&filepath_string, filepath);
-
-    SE_String dir;
-    sestring_init(&dir, "");
-
-    u32 slash_index = sestring_lastof(&filepath_string, '/');
-    if (slash_index == SESTRING_MAX_SIZE) {
-        sestring_append(&dir, "/");
-    } else if (slash_index == 0) {
-        sestring_append(&dir, ".");
-    } else {
-        sestring_append_length(&dir, filepath, slash_index);
-        sestring_append(&dir, "/");
-    }
-
-    // now add the texture path to directory
-    const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
-    struct aiString *texture_path = new(struct aiString);
-    aiGetMaterialTexture(ai_material, texture_type, 0, texture_path, NULL, NULL, NULL, NULL, NULL, NULL); // @incomplete use this procedure fully
-
-    sestring_append(&dir, texture_path->data);
-
-    switch (texture_type) {
-        case aiTextureType_DIFFUSE: {
-            setexture_load(&renderer->materials[material_index]->texture_diffuse, dir.buffer);
-        } break;
-        case aiTextureType_SPECULAR: {
-            setexture_load(&renderer->materials[material_index]->texture_specular, dir.buffer);
-        } break;
-        case aiTextureType_NORMALS: {
-            setexture_load(&renderer->materials[material_index]->texture_normal, dir.buffer);
-        } break;
-    }
-
-    free(texture_path);
-    sestring_deinit(&filepath_string);
-    sestring_deinit(&dir);
-}
-
 void semesh_construct
 (SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     u32 verts_count = 0;
@@ -500,9 +449,68 @@ void semesh_construct
     semesh_generate(mesh, verts_count, verts, index_count, indices);
 
     if (scene->mNumMaterials > 0) { // -- materials
-        load_material(renderer, mesh, ai_mesh, filepath, scene, aiTextureType_NORMALS);
-        load_material(renderer, mesh, ai_mesh, filepath, scene, aiTextureType_SPECULAR); // @TODO found the problem fix it,
-        load_material(renderer, mesh, ai_mesh, filepath, scene, aiTextureType_DIFFUSE);
+        // add a material to the renderer
+        renderer->materials[renderer->materials_count] = new(SE_Material);
+        memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
+        u32 material_index = renderer->materials_count;
+        renderer->materials_count++;
+
+        mesh->material_index = material_index;
+
+        // find the directory part of filepath
+        SE_String filepath_string;
+        sestring_init(&filepath_string, filepath);
+
+        SE_String dir;
+        sestring_init(&dir, "");
+
+        u32 slash_index = sestring_lastof(&filepath_string, '/');
+        if (slash_index == SESTRING_MAX_SIZE) {
+            sestring_append(&dir, "/");
+        } else if (slash_index == 0) {
+            sestring_append(&dir, ".");
+        } else {
+            sestring_append_length(&dir, filepath, slash_index);
+            sestring_append(&dir, "/");
+        }
+
+        // now add the texture path to directory
+        const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+
+        SE_String diffuse_path;
+        SE_String specular_path;
+        SE_String normal_path;
+
+        sestring_init(&diffuse_path, dir.buffer);
+        sestring_init(&specular_path, dir.buffer);
+        sestring_init(&normal_path, dir.buffer);
+
+        struct aiString *ai_texture_path_diffuse  = new(struct aiString);
+        struct aiString *ai_texture_path_specular = new(struct aiString);
+        struct aiString *ai_texture_path_normal   = new(struct aiString);
+
+        // @incomplete use these procedure fully
+        aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL);
+        aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL);
+        aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL);
+
+        sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
+        sestring_append(&specular_path, ai_texture_path_specular->data);
+        sestring_append(&normal_path, ai_texture_path_normal->data);
+
+        setexture_load(&renderer->materials[material_index]->texture_diffuse , diffuse_path.buffer);
+        setexture_load(&renderer->materials[material_index]->texture_specular, specular_path.buffer);
+        setexture_load(&renderer->materials[material_index]->texture_normal  , normal_path.buffer);
+
+        free(ai_texture_path_diffuse);
+        free(ai_texture_path_specular);
+        free(ai_texture_path_normal);
+
+        sestring_deinit(&diffuse_path);
+        sestring_deinit(&specular_path);
+        sestring_deinit(&normal_path);
+
+        sestring_deinit(&dir);
     }
 }
 
@@ -543,6 +551,7 @@ void serender3d_render(SE_Renderer3D *renderer) {
         // take the quad (world space) and project it to view space
         // then take that and project it to the clip space
         // then pass that final projection matrix and give it to the shader
+
         Mat4 rotation = quat_to_mat4(quat_from_axis_angle(vec3_up(), 0.02f, true));
         mesh->transform = mat4_mul(mesh->transform, rotation);
         Mat4 pvm = mat4_mul(mesh->transform, renderer->current_camera->view);

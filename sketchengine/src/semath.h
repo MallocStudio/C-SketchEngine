@@ -887,6 +887,15 @@ SEINLINE Quat quat_inverse(Quat q) {
     return quat_normalize(quat_conjugate(q));
 }
 
+SEINLINE Quat quat_cross(Quat q1, Quat q2) {
+    Quat q;
+    q.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
+    q.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
+    q.y = q1.w * q2.y + q1.y * q2.w + q1.z * q2.x - q1.x * q2.z;
+    q.z = q1.w * q2.z + q1.z * q2.w + q1.x * q2.y - q1.y * q2.x;
+    return q;
+}
+
 /**
  * @brief Multiplies the provided quaternions.
  *

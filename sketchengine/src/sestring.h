@@ -15,7 +15,7 @@ void sestring_init(SE_String *string, const char *buffer);
 /// Frees potentially allocated memory
 void sestring_deinit(SE_String *string);
 /// Duplicates string1's content to string2's content.
-void sestring_duplicate(SE_String *string1, SE_String *string2);
+void sestring_duplicate(SE_String *src, SE_String *dest);
 /// Appends string's buffer. Potentially allocates more memory
 void sestring_append(SE_String *string, const char *buffer);
 /// Appends string's buffer by going through buffer 'length' amount
