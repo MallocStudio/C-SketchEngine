@@ -23,8 +23,10 @@ int main() {
     SDL_GLContext g_context = SDL_GL_CreateContext(window);
     ERROR_ON_NULL_SDL(g_context, "OpenGL context could not be created!");
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    // @TODO add these back once I figured out how to deal with the issue with text rendering
+    // the issue is that our text appears behind the ui rect and does not get rendered.
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_LEQUAL);
 
     // -- Init GLEW
     GLenum glew_error = glewInit();

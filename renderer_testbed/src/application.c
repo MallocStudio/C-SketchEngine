@@ -6,6 +6,7 @@
 SEUI_Context *ctx;
 #endif
 
+SE_UI *ctx;
 
 void app_init(Application *app, SDL_Window *window) {
     u32 player = -1; // @remove
@@ -38,12 +39,12 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player2].transform = mat4_translation(vec3_create(10, 0, 5));
     }
 
-    #if 0
     { // -- init UI
-        ctx = new(SEUI_Context);
-        seui_init(ctx, (Rect) {0, 0, window_w, window_h}, "UI.vsd", "UI.fsd", &app->input);
+        // ctx = new(SEUI_Context);
+        // seui_init(ctx, (Rect) {0, 0, window_w, window_h}, "UI.vsd", "UI.fsd", &app->input);
+        ctx = new (SE_UI);
+        seui_init(ctx, &app->input, window_w, window_h);
     }
-    #endif
 
     { // -- load mesh
         // serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
@@ -54,9 +55,7 @@ void app_init(Application *app, SDL_Window *window) {
 
 void app_deinit(Application *app) {
     serender3d_deinit(&app->renderer);
-    #if 0
     seui_deinit(ctx);
-    #endif
 }
 
 void app_update(Application *app) {
@@ -103,12 +102,14 @@ void app_render(Application *app) {
             entity_render(&app->entities[i], &app->renderer);
         }
     }
-    #if 0
     { // -- ui
         // seui_renderer_draw(&ctx->renderer);
+        // seui_render(ctx);
+        if (seui_button(ctx, "test", (Rect) {10, 10, 200, 100})) {
+            printf("pressed\n");
+        }
         seui_render(ctx);
     }
-    #endif
 }
 
 u32 app_add_entity(Application *app) {

@@ -1,135 +1,47 @@
-#if 0
 #ifndef SEUI_H
 #define SEUI_H
 
-#define SE_OPENGL // compatibility for other graphics APIs
-#ifdef SE_OPENGL
-
-#include "sedefines.h"
-#include "semath_defines.h"
-#include "serenderer_opengl.h"
+#include "seui_renderer.h"
 #include "seinput.h"
+#include "setext.h"
 
-#endif // SE_OPENGL
+typedef enum UI_STATES {
+    UI_STATE_DISABLED, // this UI element is unusable but is rendererd
+    UI_STATE_IDLE,     // this UI element is usable and is rendered
+    UI_STATE_WARM,     // about to be selected (hover, selection)
+    UI_STATE_HOT,      // this UI element is being used (pressed, a text editor that might be active)
+    UI_STATE_ACTIVE,   // this UI element must execute (mouse released on a button...)
+} UI_STATES;
 
-///
-/// RENDERER
-///
+#define SEUI_ID_NULL 0
+typedef struct SE_UI {
+    u32 warm;
+    u32 hot;
+    struct UI_Renderer renderer;
+    SE_Text_Renderer txt_renderer;
+    struct SE_Input *input; // ! not owned
+} SE_UI;
 
-typedef struct UI_Vertex {
-    Vec2 pos;
-    RGBA colour;
-} UI_Vertex;
+SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
+    ctx->warm = SEUI_ID_NULL;
+    ctx->hot = SEUI_ID_NULL;
+    ctx->input = input;
+    seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);
+    setext_init (&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+}
 
-#define UI_SHAPE_VERTEX_MAX_SIZE 64
-typedef struct UI_Shape {
-    u32 vertex_count;
-    UI_Vertex vertices[UI_SHAPE_VERTEX_MAX_SIZE];
-} UI_Shape;
+SEINLINE void seui_deinit(SE_UI *ctx) {
+    seui_renderer_deinit(&ctx->renderer);
+    setext_deinit(&ctx->txt_renderer);
+}
 
-#define UI_RENDERER_SHAPE_MAX_SIZE 1024
-typedef struct UI_Renderer {
-    u32 shape_count;
-    u32 vertex_count; // calculated when data is uploaded to the GPU
-    UI_Shape shapes[UI_RENDERER_SHAPE_MAX_SIZE];
+SEINLINE void seui_render(SE_UI *ctx) {
+    seui_renderer_upload(&ctx->renderer);
+    seui_renderer_draw  (&ctx->renderer);
+    seui_renderer_clear (&ctx->renderer);
+    setext_render(&ctx->txt_renderer);
+}
 
-    u32 vao; // vertex array object
-    u32 vbo; // vertex buffer object
-    u32 ibo; // index  buffer object
-
-    SE_Shader shader; // the shader used to render the UI
-    bool initialised; // is the renderer initialised
-
-    Mat4 view_projection;
-} UI_Renderer;
-
-void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd, u32 window_w, u32 window_h);
-void seui_renderer_deinit(UI_Renderer *renderer);
-/// Upload the renderer's data to the GPU so we can draw it
-void seui_renderer_upload(UI_Renderer *renderer);
-/// Sets shape_count to zero
-void seui_renderer_clear(UI_Renderer *renderer);
-/// The draw call. (Remember to call seui_renderer_upload() before this procedure)
-void seui_renderer_draw(UI_Renderer *renderer);
-void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
-// void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
-// void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
-// void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
-
-void seui_render_text(UI_Renderer *renderer, const char *text, Vec2 pos);
-void seui_render_text_rect(UI_Renderer *renderer, const char *text, Rect rect);
-void seui_render_text_colour(UI_Renderer *renderer, const char *text, Vec2 pos, RGBA colour);
-void seui_render_text_ex(UI_Renderer *renderer, const char *text, Rect rect, RGBA colour);
-
-///
-/// THEME
-///
-
-typedef struct UI_Theme {
-    RGBA colour_primary;
-    RGBA colour_secondary;
-    RGBA colour_bg;
-    RGBA colour_fg;
-
-    RGBA colour_hot;
-    RGBA colour_active;
-} UI_Theme;
-
-void seui_theme_init(UI_Theme *theme);
-
-typedef u32 UI_ID;
-#define UI_ID_NULL 0
-
-///
-/// PANEL
-///
-
-/// each context is made out of multiple panels. It is the panels that hold and arrange widgets
-typedef struct SEUI_Panel {
-    Rect rect;
-    UI_Theme *theme; // ! NOT OWNED
-
-    Rect min_rect;
-    Rect prev_item_rect;
-    f32 at_x;
-    f32 at_y;
-    f32 at_w;
-    f32 at_h;
-} SEUI_Panel;
-
-///
-/// CTX CONTEXT
-///
-
-typedef struct SEUI_Context {
-    SEUI_Panel *current_panel; // the panel we are adding widgets to right now
-    u32 panel_count; // number of panels
-    SEUI_Panel panels[10]; // a list of all panels inside of this context
-
-    UI_Renderer renderer;
-    // SE_Text_Renderer txt_renderer;
-    UI_Theme theme;
-
-    // -- input
-    SE_Input *input; // ! not owned
-
-    // -- to be compare against id (internally)
-    UI_ID hot;            // the item is about to be interacted with (eg mouse over)
-    UI_ID active;         // the currently active item
-    UI_ID current_max_id; // UI_ID_NULL means none. At start time, this value should be UI_ID_NULL
-
-    Rect view_rect;
-} SEUI_Context;
-
-void seui_init(SEUI_Context *ctx, Rect viewport, const char *vsd, const char *fsd, SE_Input *input);
-void seui_deinit(SEUI_Context *ctx);
-
-void seui_begin(SEUI_Context *ctx);
-void seui_render(SEUI_Context *ctx);
-
-/// begin a panel
-void seui_panel_begin(SEUI_Context *ctx, Rect initial_size);
-void seui_button_grab(SEUI_Context *ctx, Vec2 pos);
+bool seui_button(SE_UI *ctx, const char *text, Rect rect);
 
 #endif // SEUI_H
-#endif

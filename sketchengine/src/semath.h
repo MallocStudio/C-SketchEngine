@@ -675,7 +675,7 @@ SEINLINE Mat4 mat4_inverse(Mat4 matrix) {
 
 /// get the standard ortho projection matrix from a viewport. near clip is set to -1, far clip is set to 1
 SEINLINE Mat4 viewport_to_ortho_projection_matrix (Rect viewport) {
-    return mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+    return mat4_ortho(viewport.x, viewport.w, viewport.y, viewport.h, -1.0f, 1.0f);
 }
 
 /// get the standard ortho projection matrix from a viewport with near clip and far clip adjustable

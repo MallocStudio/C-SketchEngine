@@ -1,0 +1,58 @@
+#ifndef SEUI_RENDERER_H
+#define SEUI_RENDERER_H
+
+#include "sedefines.h"
+#include "semath_defines.h"
+#include "serenderer_opengl.h"
+
+///
+/// RENDERER
+///
+
+typedef struct UI_Vertex {
+    Vec2 pos;
+    RGBA colour;
+} UI_Vertex;
+
+#define UI_SHAPE_VERTEX_MAX_SIZE 64
+typedef struct UI_Shape {
+    u32 vertex_count;
+    UI_Vertex vertices[UI_SHAPE_VERTEX_MAX_SIZE];
+} UI_Shape;
+
+#define UI_RENDERER_SHAPE_MAX_SIZE 1024
+typedef struct UI_Renderer {
+    u32 shape_count;
+    u32 vertex_count; // calculated when data is uploaded to the GPU
+    UI_Shape shapes[UI_RENDERER_SHAPE_MAX_SIZE];
+
+    u32 vao; // vertex array object
+    u32 vbo; // vertex buffer object
+    u32 ibo; // index  buffer object
+
+    SE_Shader shader; // the shader used to render the UI
+    bool initialised; // is the renderer initialised
+
+    Mat4 view_projection;
+} UI_Renderer;
+
+void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd, u32 window_w, u32 window_h);
+void seui_renderer_deinit(UI_Renderer *renderer);
+/// Upload the renderer's data to the GPU so we can draw it
+void seui_renderer_upload(UI_Renderer *renderer);
+/// Sets shape_count to zero
+void seui_renderer_clear(UI_Renderer *renderer);
+/// The draw call. (Remember to call seui_renderer_upload() before this procedure)
+void seui_renderer_draw(UI_Renderer *renderer);
+void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
+
+// void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
+// void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
+// void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
+
+// void seui_render_text(UI_Renderer *renderer, const char *text, Vec2 pos);
+// void seui_render_text_rect(UI_Renderer *renderer, const char *text, Rect rect);
+// void seui_render_text_colour(UI_Renderer *renderer, const char *text, Vec2 pos, RGBA colour);
+// void seui_render_text_ex(UI_Renderer *renderer, const char *text, Rect rect, RGBA colour);
+
+#endif // SEUI_RENDERER_H
