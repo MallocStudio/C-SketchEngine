@@ -4,6 +4,6 @@
 #include "setext.h"
 #include "freetype/freetype.h"
 
-Rect setext_get_string_size(const char *string, FT_Face *font);
+Vec2 setext_get_string_size(const char *string, SE_Text_Renderer *txt);
 
 #endif // SETEXT_UTIL_H

@@ -39,7 +39,6 @@ typedef enum SETEXT_FLAGS {
 typedef struct SE_Text_Renderer {
     FT_Library library;
     FT_Face face; // the font
-    // SEGL_Shader_Program *shader_program;
     SE_Shader *shader_program;
 
     u32 VAO, VBO;

@@ -72,7 +72,8 @@ bool seui_button(SE_UI *ctx, const char *text, Rect rect) {
    }
 
     seui_render_rect(renderer, rect, colour);
-    setext_render_text(&ctx->txt_renderer, text, rect.x, rect.y, 1, vec3_create(1, 1, 1), SETEXT_FLAG_CENTER); // the reason text is not rendering is because depth buffer is enabled and for some reason they pick up text as behind
+    // the reason text is not rendering is because depth buffer is enabled and for some reason they pick up text as behind
+    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1));
 
     return ui_state == UI_STATE_ACTIVE;
 }

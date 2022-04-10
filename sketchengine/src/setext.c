@@ -1,4 +1,5 @@
 #include "setext.h"
+#include "setext_util.h"
 
 /// -------
 /// SE_Text_Renderer
@@ -66,6 +67,8 @@ void setext_set_viewport(SE_Text_Renderer *txt, Rect viewport) {
     txt->shader_projection_matrix = viewport_to_ortho_projection_matrix(viewport);
 }
 
+// @TODO https://stackoverflow.com/questions/43272946/how-to-get-text-width-in-freetype
+// Take a look at the link above and see how they load their font.
 i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i32 height) {
     // -- load font
     if (FT_New_Face(txt->library, font_path, 0, &txt->face)) {
@@ -190,7 +193,11 @@ i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect
     f32 scale = 1;
     f32 x = rect.x;
     f32 y = rect.y;
-    FT_Size(
+    Vec2 string_size = setext_get_string_size(string, txt);
+
+    x += (rect.w - string_size.x) * 0.5f;
+    y += (rect.h - string_size.y) * 0.5f;
+
     // -- loop through all the characters and generate the glyphs
     for (u32 i = 0; i < SDL_strlen(string); ++i) {
         SE_Text_Character character = txt->characters[(u32)string[i]];
