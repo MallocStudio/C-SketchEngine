@@ -119,7 +119,7 @@ i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i3
 }
 
 static void generate_glyph_vertex(SE_Text_Stored_Letter *txt_string, f32 xpos, f32 ypos, f32 w, f32 h) {
-    txt_string->vertices[0][0] = xpos;
+    /*txt_string->vertices[0][0] = xpos;
     txt_string->vertices[0][1] = ypos + h;
     txt_string->vertices[0][2] = 0.0f;
     txt_string->vertices[0][3] = 0.0f;
@@ -147,7 +147,37 @@ static void generate_glyph_vertex(SE_Text_Stored_Letter *txt_string, f32 xpos, f
     txt_string->vertices[5][0] = xpos + w;
     txt_string->vertices[5][1] = ypos + h;
     txt_string->vertices[5][2] = 1.0f;
+    txt_string->vertices[5][3] = 0.0f;*/
+
+    txt_string->vertices[5][0] = xpos;
+    txt_string->vertices[5][1] = ypos + h;
+    txt_string->vertices[5][2] = 0.0f;
     txt_string->vertices[5][3] = 0.0f;
+
+    txt_string->vertices[4][0] = xpos;
+    txt_string->vertices[4][1] = ypos;
+    txt_string->vertices[4][2] = 0.0f;
+    txt_string->vertices[4][3] = 1.0f;
+
+    txt_string->vertices[3][0] = xpos + w;
+    txt_string->vertices[3][1] = ypos;
+    txt_string->vertices[3][2] = 1.0f;
+    txt_string->vertices[3][3] = 1.0f;
+
+    txt_string->vertices[2][0] = xpos;
+    txt_string->vertices[2][1] = ypos + h;
+    txt_string->vertices[2][2] = 0.0f;
+    txt_string->vertices[2][3] = 0.0f;
+
+    txt_string->vertices[1][0] = xpos + w;
+    txt_string->vertices[1][1] = ypos;
+    txt_string->vertices[1][2] = 1.0f;
+    txt_string->vertices[1][3] = 1.0f;
+
+    txt_string->vertices[0][0] = xpos + w;
+    txt_string->vertices[0][1] = ypos + h;
+    txt_string->vertices[0][2] = 1.0f;
+    txt_string->vertices[0][3] = 0.0f;
 }
 
 i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color) {
@@ -227,6 +257,7 @@ i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect
 }
 
 i32 setext_render(SE_Text_Renderer *txt) {
+    glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND); // @check // @question // @incomplete maybe move this out to the main loop? ask finn if it's a good idea to have this here or not
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -285,6 +316,7 @@ i32 setext_render(SE_Text_Renderer *txt) {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
     // -- "clear" the strings array
     txt->strings_count = 0;
