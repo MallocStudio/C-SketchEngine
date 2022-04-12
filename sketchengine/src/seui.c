@@ -31,12 +31,10 @@ static Rect panel_put(SE_UI *ctx) {
 
     result.w = panel_rect.w / ctx->current_panel_columns;
     result.h = height;
-    // result.x = panel_rect.x;
-    // result.y = panel_rect.y + panel_rect.h - result.h; // start from the top not the buttom
     result.x = cursor.x;
     result.y = cursor.y - result.h;
 
-    // Increment the cursor // @check spell check
+    // Increment the cursor
     if (ctx->current_panel_cursor.x + result.w >= panel_rect.w) {
         ctx->current_panel_cursor.x = 0;
         ctx->current_panel_cursor.y -= height; // since we're going down
@@ -149,7 +147,6 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
    }
 
     seui_render_rect(renderer, rect, colour);
-    // the reason text is not rendering is because depth buffer is enabled and for some reason they pick up text as behind
     setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1));
 
     return ui_state == UI_STATE_ACTIVE;
