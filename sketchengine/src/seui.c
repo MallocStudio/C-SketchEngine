@@ -89,8 +89,9 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
     return result;
 }
 
-bool seui_panel(SE_UI *ctx, const char *title, Rect *initial_rect, u32 columns, f32 item_height) {
+bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, Rect *initial_rect, bool *minimised) {
     Rect rect = *initial_rect;
+    bool is_minimised = *minimised;
     RGBA colour = (RGBA) {10, 10, 10, 255};
 
     u32 id = generate_ui_id(ctx);
@@ -104,14 +105,21 @@ bool seui_panel(SE_UI *ctx, const char *title, Rect *initial_rect, u32 columns, 
     };
 
     // draw a rectangle that represents the panel's dimensions
-    seui_render_rect(&ctx->renderer, rect, colour);
+    if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
+
+    // panel widgets
+    f32 minimise_button_size = 16;
 
     Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
-    Vec2 drag = seui_drag_button_at(ctx, (Rect) {cursor.x, cursor.y, rect.w, 16});
+    Vec2 drag = seui_drag_button_at(ctx, (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size});
     initial_rect->x += drag.x;
     initial_rect->y += drag.y;
 
-    return true;
+    if (seui_button_at(ctx, "", (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size})) {
+        *minimised = !*minimised;
+    }
+
+    return !is_minimised;
 }
 
 bool seui_button(SE_UI *ctx, const char *text) {

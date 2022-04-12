@@ -67,7 +67,7 @@ SEINLINE void seui_render(SE_UI *ctx) {
 /// Start a panel at the given position. Aligns the items inside of the panel
 /// based on the given number of columns.
 /// Returns true if the panel is not minimised.
-bool seui_panel(SE_UI *ctx, const char *title, Rect *initial_rect, u32 columns, f32 item_height);
+bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, Rect *initial_rect, bool *minimised);
 
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.
