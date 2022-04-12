@@ -46,7 +46,7 @@ static Rect panel_put(SE_UI *ctx) {
     return result;
 }
 
-static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input) {
+static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */) {
     UI_STATES result = UI_STATE_IDLE;
 
     bool mouse_down   = input->is_mouse_left_down;
@@ -73,7 +73,7 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input) {
         }
     } else if (ctx->warm == id) {
         ctx->warm = SEUI_ID_NULL;
-    } else if (ctx->hot == id) {
+    } else if (ctx->hot == id && !stay_active_on_mouse_leave) {
         ctx->hot = SEUI_ID_NULL;
     }
 
@@ -135,7 +135,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour_pressed = (RGBA) {100, 50, 50, 255};
     RGBA colour = colour_normal;
 
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_normal;
@@ -167,7 +167,7 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
     RGBA colour = colour_normal;
 
     Vec2 drag = {0};
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, true);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_normal;
@@ -177,7 +177,7 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
         } break;
         case UI_STATE_HOT: {
             colour = colour_pressed;
-            return input->mouse_screen_pos_delta;
+            drag = input->mouse_screen_pos_delta;
         } break;
     }
 
