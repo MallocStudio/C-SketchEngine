@@ -13,6 +13,11 @@ static bool rect_overlaps_rect(Rect a, Rect b) {
     return true;
 }
 
+static u32 generate_ui_id(SE_UI *ctx) {
+    u32 id = ctx->max_id;
+    ctx->max_id++;
+}
+
 static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input) {
     UI_STATES result = UI_STATE_IDLE;
 
@@ -53,12 +58,14 @@ bool seui_button(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
 
+    u32 id = generate_ui_id(ctx);
+
     RGBA colour_normal  = (RGBA) {200, 150, 150, 255};
     RGBA colour_hover   = (RGBA) {250, 150, 150, 255};
     RGBA colour_pressed = (RGBA) {100, 50, 50, 255};
     RGBA colour = colour_normal;
 
-    UI_STATES ui_state = get_ui_state(ctx, 1, rect, input);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_normal;

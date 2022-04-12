@@ -105,8 +105,12 @@ void app_render(Application *app) {
     { // -- ui
         // seui_renderer_draw(&ctx->renderer);
         // seui_render(ctx);
+        seui_reset(ctx);
         if (seui_button(ctx, "test", (Rect) {10, 10, 200, 100})) {
             printf("pressed\n");
+        }
+        if (seui_button(ctx, "test 2", (Rect) {10, 400, 200, 100})) {
+            printf("pressed 2\n");
         }
         seui_render(ctx);
     }
