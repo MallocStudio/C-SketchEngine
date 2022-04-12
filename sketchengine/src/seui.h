@@ -15,17 +15,32 @@ typedef enum UI_STATES {
 
 #define SEUI_ID_NULL 0
 typedef struct SE_UI {
+    /* UI Widgets */
     u32 warm; // hover / selection
     u32 hot;  // pressed / active
     u32 max_id; // the maximum generated id
+
+    /* Renderes and Inputs */
     struct UI_Renderer renderer;
     SE_Text_Renderer txt_renderer;
     struct SE_Input *input; // ! not owned
+
+    /* Panels */
+    u32 current_panel;         // the panel id
+    Rect current_panel_rect;   // the rect of the panel
+    u32 current_panel_columns; // number of columns
+    Vec2 current_panel_cursor; // the relative cursor used to position the placement of the items
+    f32 current_panel_item_height;
 } SE_UI;
 
 /// call this at the beginning of every frame before creating other widgets
 SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->max_id = SEUI_ID_NULL;
+    ctx->current_panel = SEUI_ID_NULL;
+    ctx->current_panel_rect = (Rect) {0};
+    ctx->current_panel_columns = 0;
+    ctx->current_panel_cursor = (Vec2) {0};
+    ctx->current_panel_item_height = 0;
 }
 
 SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
@@ -36,7 +51,6 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);
     setext_init (&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
 }
-
 
 SEINLINE void seui_deinit(SE_UI *ctx) {
     seui_renderer_deinit(&ctx->renderer);
@@ -50,6 +64,20 @@ SEINLINE void seui_render(SE_UI *ctx) {
     setext_render(&ctx->txt_renderer);
 }
 
-bool seui_button(SE_UI *ctx, const char *text, Rect rect);
+/// Start a panel at the given position. Aligns the items inside of the panel
+/// based on the given number of columns.
+/// Returns true if the panel is not minimised.
+bool seui_panel(SE_UI *ctx, const char *title, Rect *initial_rect, u32 columns, f32 item_height);
+
+/// Draws a button but figures out the position and the rect based on the current
+/// context and panel.
+bool seui_button(SE_UI *ctx, const char *text); // @TODO
+
+/// Draws a button at the given rectangle.
+bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
+
+/// Draws a button that returns the drag if the mouse is trying to drag it.
+/// That means is the mouse is hovering over the button and pressing down.
+Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect);
 
 #endif // SEUI_H

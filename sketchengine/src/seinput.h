@@ -29,14 +29,15 @@ SEINLINE Vec2 get_mouse_pos(bool *lpressed, bool *rpressed) {
 typedef struct SE_Input {
     // -- mouse
 
-    // the mouse position
+    /* the mouse position */
     Vec2 mouse_world_pos;
     Vec2 mouse_screen_pos;
-    // mouse position last time update was called
+    /* mouse position last time update was called */
     Vec2 previous_mouse_world_pos;
     Vec2 previous_mouse_screen_pos;
-    // delta
-    // Vec2 mouse_world_pos_delta; // @unsupported // @incomplete
+    /* delta */
+    // @unsupported // @incomplete
+    // Vec2 mouse_world_pos_delta;
     Vec2 mouse_screen_pos_delta;
     // the position the mouse was initially pressed
     Vec2 mouse_world_pressed_pos;
@@ -168,6 +169,11 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
         }
 
         // SDL_SetWindowMouseGrab(window, input->should_mouse_warp);
+    }
+
+    { // -- delta
+        input->mouse_screen_pos_delta.x = input->mouse_screen_pos.x - input->previous_mouse_screen_pos.x;
+        input->mouse_screen_pos_delta.y = input->mouse_screen_pos.y - input->previous_mouse_screen_pos.y;
     }
 }
 

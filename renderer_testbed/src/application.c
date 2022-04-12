@@ -7,6 +7,7 @@ SEUI_Context *ctx;
 #endif
 
 SE_UI *ctx;
+Rect panel_rect;
 
 void app_init(Application *app, SDL_Window *window) {
     u32 player = -1; // @remove
@@ -40,14 +41,12 @@ void app_init(Application *app, SDL_Window *window) {
     }
 
     { // -- init UI
-        // ctx = new(SEUI_Context);
-        // seui_init(ctx, (Rect) {0, 0, window_w, window_h}, "UI.vsd", "UI.fsd", &app->input);
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
+        panel_rect = (Rect) {250, 300, 300, 400};
     }
 
     { // -- load mesh
-        // serender3d_load_mesh(&app->renderer, "assets/skull/12140_Skull_v3_L2.obj");
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
         app->entities[player2].mesh_index = serender3d_add_cube(&app->renderer);
     }
@@ -70,15 +69,24 @@ void app_update(Application *app) {
 
     secamera3d_input(&app->camera, &app->input);
 
-    #if 0
     { // -- ui
-        // seui_render_rect(&ctx->renderer, (Rect) {0, 0, 200, 100}, RGBA_RED);
-        // seui_render_rect(&ctx->renderer, (Rect) {100, 200, 200, 100}, RGBA_RED);
-        // seui_renderer_upload(&ctx->renderer);
-        seui_begin(ctx);
-        seui_panel_begin(ctx, (Rect) {0, 0, 200, 100});
+        seui_reset(ctx);
+
+        seui_panel(ctx, "panel", &panel_rect, 3, 100);
+
+        if (seui_button(ctx, "1")) printf("pressed 1\n");
+        if (seui_button(ctx, "2")) printf("pressed 2\n");
+        if (seui_button(ctx, "3")) printf("pressed 3\n");
+        if (seui_button(ctx, "4")) printf("pressed 4\n");
+        if (seui_button(ctx, "5")) printf("pressed 5\n");
+
+        if (seui_button_at(ctx, "test 1", (Rect) {10, 10, 200, 100})) {
+            printf("pressed 1\n");
+        }
+        if (seui_button_at(ctx, "test 2", (Rect) {10, 400, 200, 100})) {
+            printf("pressed 2\n");
+        }
     }
-    #endif
 }
 
 void app_render(Application *app) {
@@ -103,15 +111,6 @@ void app_render(Application *app) {
         }
     }
     { // -- ui
-        // seui_renderer_draw(&ctx->renderer);
-        // seui_render(ctx);
-        seui_reset(ctx);
-        if (seui_button(ctx, "test", (Rect) {10, 10, 200, 100})) {
-            printf("pressed\n");
-        }
-        if (seui_button(ctx, "test 2", (Rect) {10, 400, 200, 100})) {
-            printf("pressed 2\n");
-        }
         seui_render(ctx);
     }
 }

@@ -14,15 +14,43 @@ static bool rect_overlaps_rect(Rect a, Rect b) {
 }
 
 static u32 generate_ui_id(SE_UI *ctx) {
+    ctx->max_id++; // we start with zero. So we increase first.
     u32 id = ctx->max_id;
-    ctx->max_id++;
+    return id;
+}
+
+/// Returns a rectangle that's suppose to be the rect
+/// of the new item inside of the current panel.
+static Rect panel_put(SE_UI *ctx) {
+    Rect result = {0};
+    Rect panel_rect = ctx->current_panel_rect;
+    f32 height = ctx->current_panel_item_height;
+
+    Vec2 cursor = ctx->current_panel_cursor;
+    cursor = vec2_add(cursor, (Vec2) {panel_rect.x, panel_rect.y});
+
+    result.w = panel_rect.w / ctx->current_panel_columns;
+    result.h = height;
+    // result.x = panel_rect.x;
+    // result.y = panel_rect.y + panel_rect.h - result.h; // start from the top not the buttom
+    result.x = cursor.x;
+    result.y = cursor.y - result.h;
+
+    // Increment the cursor // @check spell check
+    if (ctx->current_panel_cursor.x + result.w >= panel_rect.w) {
+        ctx->current_panel_cursor.x = 0;
+        ctx->current_panel_cursor.y -= height; // since we're going down
+    } else {
+        ctx->current_panel_cursor.x += result.w;
+    }
+    return result;
 }
 
 static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input) {
     UI_STATES result = UI_STATE_IDLE;
 
-    bool mouse_up = !input->is_mouse_left_down;
-    bool mouse_down = !mouse_up;
+    bool mouse_down   = input->is_mouse_left_down;
+    bool mouse_up     = !mouse_down;
     bool mouse_inside = point_overlaps_rect(input->mouse_screen_pos, rect);
 
     if (ctx->hot == id) { // pressing down
@@ -34,10 +62,8 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input) {
         if (mouse_down) { // make hot
             input->is_mouse_left_handled = true; // tell input that we've used up this input
             ctx->hot = id;
-            result = UI_STATE_HOT;
-        } else { // make warm
-            result = UI_STATE_WARM;
         }
+        // else remain warm
     }
 
     if (mouse_inside) {
@@ -51,10 +77,54 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input) {
         ctx->hot = SEUI_ID_NULL;
     }
 
+    // figure out result
+    if (result != UI_STATE_ACTIVE) {
+        if (ctx->hot == id) {
+            result = UI_STATE_HOT;
+        } else if (ctx->warm == id) {
+            result = UI_STATE_WARM;
+        } else {
+            result = UI_STATE_IDLE;
+        }
+    }
+
     return result;
 }
 
-bool seui_button(SE_UI *ctx, const char *text, Rect rect) {
+bool seui_panel(SE_UI *ctx, const char *title, Rect *initial_rect, u32 columns, f32 item_height) {
+    Rect rect = *initial_rect;
+    RGBA colour = (RGBA) {10, 10, 10, 255};
+
+    u32 id = generate_ui_id(ctx);
+    ctx->current_panel = id;
+    ctx->current_panel_rect = rect;
+    ctx->current_panel_columns = columns;
+    ctx->current_panel_item_height = item_height;
+    ctx->current_panel_cursor = (Vec2) {
+        0,
+        rect.h // start from the top
+    };
+
+    // draw a rectangle that represents the panel's dimensions
+    seui_render_rect(&ctx->renderer, rect, colour);
+
+    Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
+    Vec2 drag = seui_drag_button_at(ctx, (Rect) {cursor.x, cursor.y, rect.w, 16});
+    initial_rect->x += drag.x;
+    initial_rect->y += drag.y;
+
+    return true;
+}
+
+bool seui_button(SE_UI *ctx, const char *text) {
+    Rect rect = {0, 0, 100, 100}; // default button size
+    if (ctx->current_panel != SEUI_ID_NULL) {
+        rect = panel_put(ctx);
+    }
+    return seui_button_at(ctx, text, rect);
+}
+
+bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
 
@@ -83,4 +153,34 @@ bool seui_button(SE_UI *ctx, const char *text, Rect rect) {
     setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1));
 
     return ui_state == UI_STATE_ACTIVE;
+}
+
+Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
+    SE_Input *input = ctx->input;
+    UI_Renderer *renderer = &ctx->renderer;
+
+    u32 id = generate_ui_id(ctx);
+
+    RGBA colour_normal  = (RGBA) {200, 150, 150, 255};
+    RGBA colour_hover   = (RGBA) {250, 150, 150, 255};
+    RGBA colour_pressed = (RGBA) {100, 50, 50, 255};
+    RGBA colour = colour_normal;
+
+    Vec2 drag = {0};
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input);
+    switch (ui_state) {
+        case UI_STATE_IDLE: {
+            colour = colour_normal;
+        } break;
+        case UI_STATE_WARM: {
+            colour = colour_hover;
+        } break;
+        case UI_STATE_HOT: {
+            colour = colour_pressed;
+            return input->mouse_screen_pos_delta;
+        } break;
+    }
+
+    seui_render_rect(renderer, rect, colour);
+    return drag;
 }

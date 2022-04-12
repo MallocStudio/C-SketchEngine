@@ -80,10 +80,6 @@ int main() {
                     // }
                     // camera.view = mat4_mul(camera.view, mat4_euler_y(angle));
                 } break;
-                case SDL_MOUSEMOTION: {
-                    app->input.mouse_screen_pos_delta.x = event.motion.xrel;
-                    app->input.mouse_screen_pos_delta.y = event.motion.yrel;
-                }
             }
         }
 

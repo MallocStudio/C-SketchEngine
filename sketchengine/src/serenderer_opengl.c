@@ -92,7 +92,7 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
         if (mouse_state & SDL_BUTTON_RMASK) {
             f32 sensitivity = 0.1f;
             f32 xoffset = seinput->mouse_screen_pos_delta.x * sensitivity;
-            f32 yoffset = seinput->mouse_screen_pos_delta.y * sensitivity * -1;
+            f32 yoffset = seinput->mouse_screen_pos_delta.y * sensitivity;
 
             if (semath_abs(xoffset) > sensitivity) camera->yaw += xoffset;
             if (semath_abs(yoffset) > sensitivity) camera->pitch += yoffset;
