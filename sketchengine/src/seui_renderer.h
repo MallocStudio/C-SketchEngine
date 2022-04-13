@@ -10,20 +10,25 @@
 ///
 
 typedef struct UI_Vertex {
-    Vec2 pos;
-    RGBA colour;
+    Vec2 pos;        // vertex position
+    RGBA colour;     // vertex colour
+    Vec2 texture_uv; // the uv of the texture atlas
 } UI_Vertex;
 
 #define UI_SHAPE_VERTEX_MAX_SIZE 64
+#define UI_SHAPE_INDEX_MAX_SIZE 10
 typedef struct UI_Shape {
     u32 vertex_count;
     UI_Vertex vertices[UI_SHAPE_VERTEX_MAX_SIZE];
+    u32 index_count;
+    u32 indices[UI_SHAPE_INDEX_MAX_SIZE];
 } UI_Shape;
 
 #define UI_RENDERER_SHAPE_MAX_SIZE 1024
 typedef struct UI_Renderer {
-    u32 shape_count;
     u32 vertex_count; // calculated when data is uploaded to the GPU
+    u32 index_count; // calculated when data is uploaded to the GPU
+    u32 shape_count;
     UI_Shape shapes[UI_RENDERER_SHAPE_MAX_SIZE];
 
     u32 vao; // vertex array object
@@ -32,6 +37,8 @@ typedef struct UI_Renderer {
 
     SE_Shader shader; // the shader used to render the UI
     bool initialised; // is the renderer initialised
+
+    SE_Texture_Atlas icons;
 
     Mat4 view_projection;
 } UI_Renderer;
@@ -45,6 +52,8 @@ void seui_renderer_clear(UI_Renderer *renderer);
 /// The draw call. (Remember to call seui_renderer_upload() before this procedure)
 void seui_renderer_draw(UI_Renderer *renderer);
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
+/// indexes into the texture atlas and creates vertices with proper UVs
+void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index);
 
 // void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
 // void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);

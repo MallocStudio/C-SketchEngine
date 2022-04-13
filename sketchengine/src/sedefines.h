@@ -56,6 +56,23 @@ SEINLINE void rgba_normalise(RGBA *rgb) {
     rgb->a = rgb->a / 255;
 }
 
+SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
+    // if (semath_abs(v1.r - v2.r) > tolerance) {
+    //     return false;
+    // }
+    // if (semath_abs(v1.g - v2.g) > tolerance) {
+    //     return false;
+    // }
+    // if (semath_abs(v1.b - v2.b) > tolerance) {
+    //     return false;
+    // }
+    // if (semath_abs(v1.a - v2.a) > tolerance) {
+    //     return false;
+    // }
+    // return true;
+    return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
+}
+
 #define RGBA_RED   (RGBA){255, 0, 0, 255}
 #define RGBA_BLUE  (RGBA){0, 255, 0, 255}
 #define RGBA_GREEN (RGBA){0, 0, 255, 255}

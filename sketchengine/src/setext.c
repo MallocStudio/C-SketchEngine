@@ -6,7 +6,7 @@
 /// -------
 
 i32 setext_init (SE_Text_Renderer *txt, Rect viewport) {
-    return setext_init_from(txt, viewport, DEFAULT_FONT_PATH, 0, 32);
+    return setext_init_from(txt, viewport, DEFAULT_FONT_PATH, 0, 18);
 }
 
 i32 setext_init_from (SE_Text_Renderer *txt, Rect viewport, const char *font_path, i32 width, i32 height) {

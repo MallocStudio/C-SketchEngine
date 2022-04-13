@@ -1,8 +1,16 @@
 #version 450
 
-in  vec4 _rgba;
+in vec4 _rgba;
+in vec2 _uv;
 out vec4 FragColour;
 
+uniform sampler2D icons_texture;
+
 void main () {
+    vec2 uv = _uv;
+    uv.y = 1 - uv.y;
+    vec4 tex_diffuse = texture(icons_texture, uv);
     FragColour = _rgba;
+    // FragColour = tex_diffuse;
+    // FragColour = vec4(uv, 0, 1);
 }

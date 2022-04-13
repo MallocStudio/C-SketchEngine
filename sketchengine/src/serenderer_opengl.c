@@ -320,6 +320,32 @@ void setexture_unbind() {
 }
 
 ///
+/// TEXTURE ATLAS
+///
+
+void setexture_atlas_load(SE_Texture_Atlas *texture_atlas, const char *filepath, u32 columns, u32 rows) {
+    setexture_load(&texture_atlas->texture, filepath);
+    if (texture_atlas->texture.loaded) {
+        texture_atlas->columns = columns;
+        texture_atlas->rows = rows;
+    }
+}
+
+void setexture_atlas_unload(SE_Texture_Atlas *texture_atlas) {
+    setexture_unload(&texture_atlas->texture);
+    texture_atlas->columns = 0;
+    texture_atlas->rows = 0;
+}
+
+void setexture_atlas_bind(SE_Texture_Atlas *texture_atlas) {
+    setexture_bind(&texture_atlas->texture, 0);
+}
+
+void setexture_atlas_unbind() {
+    setexture_unbind();
+}
+
+///
 /// MESH
 ///
 
@@ -445,10 +471,10 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glBindVertexArray(0); // stop the macro
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-    glDisableVertexAttribArray(3);
+    // glDisableVertexAttribArray(0);
+    // glDisableVertexAttribArray(1);
+    // glDisableVertexAttribArray(2);
+    // glDisableVertexAttribArray(3);
 }
 
 ///

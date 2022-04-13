@@ -106,17 +106,21 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
 
     // draw a rectangle that represents the panel's dimensions
     if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
+    // if (!is_minimised) seui_render_texture(&ctx->renderer, rect, (Vec2) {0, 0});
 
-    // panel widgets
-    f32 minimise_button_size = 16;
+    { // panel widgets
+#if 0
+        f32 minimise_button_size = 16;
 
-    Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
-    Vec2 drag = seui_drag_button_at(ctx, (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size});
-    initial_rect->x += drag.x;
-    initial_rect->y += drag.y;
+        Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
+        Vec2 drag = seui_drag_button_at(ctx, (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size});
+        initial_rect->x += drag.x;
+        initial_rect->y += drag.y;
 
-    if (seui_button_at(ctx, "", (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size})) {
-        *minimised = !*minimised;
+        if (seui_button_at(ctx, "", (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size})) {
+            *minimised = !*minimised;
+        }
+#endif
     }
 
     return !is_minimised;

@@ -74,12 +74,12 @@ void app_update(Application *app) {
     { // -- ui
         seui_reset(ctx);
 
-        if (seui_panel_at(ctx, "panel", 3, 100, &panel_rect, &panel_minimised)) {
-            if (seui_button(ctx, "1")) printf("pressed 1\n");
-            if (seui_button(ctx, "2")) printf("pressed 2\n");
-            if (seui_button(ctx, "3")) printf("pressed 3\n");
-            if (seui_button(ctx, "4")) printf("pressed 4\n");
-            if (seui_button(ctx, "5")) printf("pressed 5\n");
+        if (seui_panel_at(ctx, "panel", 1, 100, &panel_rect, &panel_minimised)) {
+            // if (seui_button(ctx, "1")) printf("pressed 1\n");
+            // if (seui_button(ctx, "2")) printf("pressed 2\n");
+            // if (seui_button(ctx, "3")) printf("pressed 3\n");
+            // if (seui_button(ctx, "4")) printf("pressed 4\n");
+            // if (seui_button(ctx, "5")) printf("pressed 5\n");
         }
 
         if (seui_button_at(ctx, "test 1", (Rect) {10, 10, 200, 100})) {
