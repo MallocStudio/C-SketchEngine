@@ -32,7 +32,7 @@ void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd,
 
         renderer->view_projection = mat4_ortho(0, window_w, 0, window_h, -1.0f, 1000);
 
-        setexture_atlas_load(&renderer->icons, "assets/UI/gameicons/Spritesheet/sheet_white1x.png", 11, 10);
+        setexture_atlas_load(&renderer->icons, "assets/UI/icons/ui_icons_atlas.png", 11, 10);
     } else {
         renderer->initialised = false;
     }
@@ -66,43 +66,43 @@ void seui_renderer_upload(UI_Renderer *renderer) {
     u32 vertex_count = 0;
     u32 index_count = 0;
 
-    u32 c = 0;
     for (u32 shape_index = 0; shape_index < renderer->shape_count; ++shape_index) {
         vertex_count += renderer->shapes[shape_index].vertex_count;
         index_count  += renderer->shapes[shape_index].index_count;
-        c++;
     }
 
     renderer->vertex_count = vertex_count;
     renderer->index_count  = index_count;
 
     UI_Vertex *verts = malloc(sizeof(UI_Vertex) * vertex_count);
-    u32 *indices = malloc(sizeof(u32) * index_count);
+    u32     *indices = malloc(sizeof(u32)       * index_count);
 
     u32 vertex_index = 0;
     u32 index_index = 0;
-    u32 previous_shape_index_count = 0;
-    for (u32 shape_index = 0; shape_index < renderer->shape_count; ++shape_index) {
-        u32 shape_vertex_count = renderer->shapes[shape_index].vertex_count;
-        u32 shape_index_count  = renderer->shapes[shape_index].index_count;
+    u32 previous_shape_vertex_count = 0;
 
-        for (u32 shape_vertex_index = 0; shape_vertex_index < shape_vertex_count; ++shape_vertex_index) {
-            verts[vertex_index].colour = renderer->shapes[shape_index].vertices[shape_vertex_index].colour;
-            verts[vertex_index].pos = renderer->shapes[shape_index].vertices[shape_vertex_index].pos;
-            verts[vertex_index].texture_uv = renderer->shapes[shape_index].vertices[shape_vertex_index].texture_uv;
+    /* loop through every shape and copy their vertices and indices to renderer's vertex and index buffer */
+    for (u32 shape_index = 0; shape_index < renderer->shape_count; ++shape_index) {
+
+        /* vertices */
+        for (u32 i = 0; i < renderer->shapes[shape_index].vertex_count; ++i) {
+            verts[vertex_index].colour = renderer->shapes[shape_index].vertices[i].colour;
+            verts[vertex_index].pos = renderer->shapes[shape_index].vertices[i].pos;
+            verts[vertex_index].texture_uv = renderer->shapes[shape_index].vertices[i].texture_uv;
             vertex_index++;
         }
 
-        printf("-- shape %i --\n", shape_index);
-        for (u32 shape_index_index = 0; shape_index_index < shape_index_count; ++shape_index_index) {
-            indices[index_index] = renderer->shapes[shape_index].indices[shape_index_index] + (shape_index) * previous_shape_index_count;
-            printf("index: %i\n", indices[index_index]);
+        /* indices */
+        for (u32 i = 0; i < renderer->shapes[shape_index].index_count; ++i) {
+            indices[index_index] = renderer->shapes[shape_index].indices[i] + (shape_index) * previous_shape_vertex_count;
             index_index++;
         }
 
-        previous_shape_index_count = shape_index_count;
-        SDL_assert_always(previous_shape_index_count == 6 && "previous shape index count was not 6!");
+        previous_shape_vertex_count = renderer->shapes[shape_index].vertex_count;
     }
+
+    // SDL_assert_always(vertex_index == vertex_count); // make sure we've looped through every shape
+    // SDL_assert_always(index_index == index_count);
 
     // fill data
     glBufferData(GL_ARRAY_BUFFER, sizeof(UI_Vertex) * vertex_count, verts,    GL_STATIC_DRAW);
@@ -118,8 +118,8 @@ void seui_renderer_upload(UI_Renderer *renderer) {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, texture_uv));
 
-    debug_print_verts(verts, vertex_count);
-    debug_print_indices(indices, index_count);
+    // debug_print_verts(verts, vertex_count);
+    // debug_print_indices(indices, index_count);
 
     free(verts);
     free(indices);
@@ -138,20 +138,11 @@ void seui_renderer_draw(UI_Renderer *renderer) {
     setexture_atlas_bind(&renderer->icons);
 
     glBindVertexArray(renderer->vao);
-    // glDrawArrays(GL_TRIANGLES, 0, renderer->vertex_count);
-
-    // for (u32 i = 0; i < renderer->shape_count; ++i) {
-    //     // the not indexed way
-    //     // u32 shape_vertex_count = renderer->shapes[i].vertex_count;
-    //     // glDrawArrays(GL_TRIANGLE_FAN, i * shape_vertex_count, shape_vertex_count);
-
-    // }
 
     // the indexed way
-    glDrawElements(GL_TRIANGLES, renderer->vertex_count, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, renderer->index_count, GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
-
     setexture_atlas_unbind();
 }
 
@@ -187,6 +178,7 @@ static void seui_shape_rect(UI_Shape *shape, Rect rect, RGBA colour) {
     seui_shape_add_vertex(shape, (Vec2) {rect.x         , rect.y + rect.h}, colour);
     seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y + rect.h}, colour);
     seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y         }, colour);
+    SDL_assert_always(shape->vertex_count == 4);
 
     /* add the indices */
     shape->index_count = 0;
@@ -196,11 +188,17 @@ static void seui_shape_rect(UI_Shape *shape, Rect rect, RGBA colour) {
     seui_shape_add_index(shape, 2);
     seui_shape_add_index(shape, 3);
     seui_shape_add_index(shape, 0);
+    SDL_assert_always(shape->index_count == 6);
 }
 
 static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index, Vec2 cell_size) {
     Vec2 pos1, pos2, pos3, pos4;
     Vec2 uv1, uv2, uv3, uv4;
+    uv1 = (Vec2) {0};
+    uv2 = (Vec2) {0};
+    uv3 = (Vec2) {0};
+    uv4 = (Vec2) {0};
+    cell_size = (Vec2) {16, 16};
 
     pos1 = (Vec2) {rect.x         , rect.y         };
     pos2 = (Vec2) {rect.x         , rect.y + rect.h};
@@ -219,11 +217,37 @@ static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index
     uv3.x += cell_size.x; uv3.y += cell_size.y;
     uv4.x += cell_size.x; uv4.y += 0;
 
+    /* remap uvs to 0 - 1 */
+    uv1.x = uv1.x / 16;
+    uv1.y = uv1.y / 16;
+    uv2.x = uv2.x / 16;
+    uv2.y = uv2.y / 16;
+    uv3.x = uv3.x / 16;
+    uv3.y = uv3.y / 16;
+    uv4.x = uv4.x / 16;
+    uv4.y = uv4.y / 16;
+
+    uv1.x = 0;
+    uv1.y = 0;
+    uv2.x = 0;
+    uv2.y = 1;
+    uv3.x = 0.5f;
+    uv3.y = 1;
+    uv4.x = 0.5f;
+    uv4.y = 0;
+
+    /* @nocheckin */
+    // uv1.x = 0; uv1.y = 0;
+    // uv2.x = 0; uv2.y = 1;
+    // uv3.x = 1; uv3.y = 1;
+    // uv4.x = 1; uv4.y = 0;
+
     shape->vertex_count = 0;
     seui_shape_add_vertex_textured(shape, pos1, uv1);
     seui_shape_add_vertex_textured(shape, pos2, uv2);
     seui_shape_add_vertex_textured(shape, pos3, uv3);
     seui_shape_add_vertex_textured(shape, pos4, uv4);
+    SDL_assert_always(shape->vertex_count == 4);
 
     /* add the indices */
     shape->index_count = 0;
@@ -233,6 +257,7 @@ static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index
     seui_shape_add_index(shape, 2);
     seui_shape_add_index(shape, 3);
     seui_shape_add_index(shape, 0);
+    SDL_assert_always(shape->index_count == 6);
 }
 
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour) {

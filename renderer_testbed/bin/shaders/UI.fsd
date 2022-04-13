@@ -10,7 +10,10 @@ void main () {
     vec2 uv = _uv;
     uv.y = 1 - uv.y;
     vec4 tex_diffuse = texture(icons_texture, uv);
-    FragColour = _rgba;
-    // FragColour = tex_diffuse;
+
+    // FragColour = _rgba;
     // FragColour = vec4(uv, 0, 1);
+    // FragColour = tex_diffuse;
+
+    FragColour = tex_diffuse + _rgba;
 }

@@ -92,7 +92,7 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
 bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, Rect *initial_rect, bool *minimised) {
     Rect rect = *initial_rect;
     bool is_minimised = *minimised;
-    RGBA colour = (RGBA) {10, 10, 10, 255};
+    RGBA colour = (RGBA) {20, 20, 20, 255};
 
     u32 id = generate_ui_id(ctx);
     ctx->current_panel = id;
@@ -109,7 +109,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
     // if (!is_minimised) seui_render_texture(&ctx->renderer, rect, (Vec2) {0, 0});
 
     { // panel widgets
-#if 0
         f32 minimise_button_size = 16;
 
         Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
@@ -120,7 +119,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
         if (seui_button_at(ctx, "", (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size})) {
             *minimised = !*minimised;
         }
-#endif
+        seui_render_texture(&ctx->renderer, (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size}, vec2_zero());
     }
 
     return !is_minimised;
