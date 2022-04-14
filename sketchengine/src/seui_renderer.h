@@ -25,15 +25,26 @@ typedef struct UI_Shape {
 } UI_Shape;
 
 #define UI_RENDERER_SHAPE_MAX_SIZE 1024
+#define UI_ICON_INDEX_COLLAPSE   (Vec2) {1, 0}
+#define UI_ICON_INDEX_UNCOLLAPSE (Vec2) {2, 0}
+#define UI_ICON_INDEX_CLOSE      (Vec2) {0, 1}
+#define UI_ICON_INDEX_SLIDER     (Vec2) {3, 0}
+
 typedef struct UI_Renderer {
     u32 vertex_count; // calculated when data is uploaded to the GPU
     u32 index_count; // calculated when data is uploaded to the GPU
+    u32 vertex_count_lines; // calculated when data is uploaded to the GPU
+    u32 index_count_lines; // calculated when data is uploaded to the GPU
     u32 shape_count;
     UI_Shape shapes[UI_RENDERER_SHAPE_MAX_SIZE];
 
     u32 vao; // vertex array object
     u32 vbo; // vertex buffer object
     u32 ibo; // index  buffer object
+
+    u32 vao_lines;
+    u32 vbo_lines;
+    u32 ibo_lines;
 
     SE_Shader shader; // the shader used to render the UI
     bool initialised; // is the renderer initialised
@@ -60,6 +71,8 @@ void seui_renderer_draw(UI_Renderer *renderer);
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index);
+/// render a line
+void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width);
 
 // void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 

@@ -109,6 +109,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
     if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
 
     { // panel widgets
+    #if 1
         f32 minimise_button_size = 16;
         Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
 
@@ -123,8 +124,9 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
             *minimised = !*minimised;
         }
 
-        Vec2 index = is_minimised ? (Vec2){2, 0} : (Vec2){1, 0};
+        Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
         seui_render_texture(&ctx->renderer, minimise_button_rect, index);
+    #endif
     }
 
     return !is_minimised;
@@ -222,10 +224,12 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     Rect line = {pos1.x, pos1.y, pos2.x - pos1.x, 8};
 
     /* draw the line */
-    seui_render_rect(&ctx->renderer, line, ctx->theme.colour_pressed);
+    // seui_render_rect(&ctx->renderer, line, ctx->theme.colour_pressed);
+    seui_render_line(&ctx->renderer, pos1, pos2, 3);
     /* draw the slider button */
-    seui_render_rect(&ctx->renderer, button, ctx->theme.colour_normal);
-
+    // seui_render_rect(&ctx->renderer, button, ctx->theme.colour_normal);
     Vec2 drag = seui_drag_button_at(ctx, button);
+    seui_render_texture(&ctx->renderer, button, UI_ICON_INDEX_SLIDER);
+
     *value += drag.x * 0.01f;
 }

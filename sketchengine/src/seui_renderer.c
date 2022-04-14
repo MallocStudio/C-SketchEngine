@@ -26,9 +26,15 @@ void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd,
     renderer->index_count = 0;
     seshader_init_from(&renderer->shader, vsd, fsd);
     if (renderer->shader.loaded_successfully) {
+        /* filled shapes */
         glGenBuffers(1, &renderer->vbo);
         glGenBuffers(1, &renderer->ibo);
         glGenVertexArrays(1, &renderer->vao);
+
+        /* lines */
+        glGenBuffers(1, &renderer->vbo_lines);
+        glGenBuffers(1, &renderer->ibo_lines);
+        glGenVertexArrays(1, &renderer->vao_lines);
 
         renderer->view_projection = mat4_ortho(0, window_w, 0, window_h, -1.0f, 1000);
 
@@ -41,9 +47,17 @@ void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd,
 void seui_renderer_deinit(UI_Renderer *renderer) {
     if (renderer->initialised) {
         seshader_deinit(&renderer->shader);
+
+        /* filled shapes */
         glDeleteVertexArrays(1, &renderer->vao);
-        glDeleteBuffers(1, &renderer->vbo);
-        glDeleteBuffers(1, &renderer->ibo);
+        glDeleteBuffers     (1, &renderer->vbo);
+        glDeleteBuffers     (1, &renderer->ibo);
+
+        /* lines */
+        glDeleteVertexArrays(1, &renderer->vao_lines);
+        glDeleteBuffers     (1, &renderer->vbo_lines);
+        glDeleteBuffers     (1, &renderer->ibo_lines);
+
         renderer->initialised = false;
         renderer->shape_count = 0;
         setexture_atlas_unload(&renderer->icons);
@@ -55,79 +69,151 @@ void seui_renderer_clear(UI_Renderer *renderer) {
 }
 
 void seui_renderer_upload(UI_Renderer *renderer) {
-    // Bind our array object once here so later
-    // we can just bind the array object and the
-    // rest of the stuff gets bind with it.
-    glBindVertexArray(renderer->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer->ibo);
-
-    // get the data from shapes
+    // -- get the data from shapes
     u32 vertex_count = 0;
     u32 index_count  = 0;
-
+    u32 vertex_count_lines = 0;
+    u32 index_count_lines = 0;
     for (u32 shape_index = 0; shape_index < renderer->shape_count; ++shape_index) {
-        vertex_count += renderer->shapes[shape_index].vertex_count;
-        index_count  += renderer->shapes[shape_index].index_count;
+        if (renderer->shapes[shape_index].vertex_count == 2) {
+            // lines
+            vertex_count_lines += renderer->shapes[shape_index].vertex_count;
+            index_count_lines  += renderer->shapes[shape_index].index_count;
+        } else {
+            // filled shapes
+            vertex_count += renderer->shapes[shape_index].vertex_count;
+            index_count  += renderer->shapes[shape_index].index_count;
+        }
     }
 
     renderer->vertex_count = vertex_count;
     renderer->index_count  = index_count;
 
+    renderer->vertex_count_lines = vertex_count_lines;
+    renderer->index_count_lines  = index_count_lines;
+
     UI_Vertex *verts = malloc(sizeof(UI_Vertex) * vertex_count);
     u32     *indices = malloc(sizeof(u32)       * index_count);
+    UI_Vertex *verts_lines = malloc(sizeof(UI_Vertex) * vertex_count_lines);
+    u32     *indices_lines = malloc(sizeof(u32)       * index_count_lines);
 
     u32 vertex_index = 0;
     u32 index_index = 0;
+    u32 vertex_index_lines = 0;
+    u32 index_index_lines = 0;
+
+    u32 shape_index_filled = 0; // used to calculate the offset of vertices
     u32 previous_shape_vertex_count = 0;
+    u32 shape_index_lines = 0;
+    u32 previous_shape_vertex_count_lines = 0;
 
     /* loop through every shape and copy their vertices and indices to renderer's vertex and index buffer */
     for (u32 shape_index = 0; shape_index < renderer->shape_count; ++shape_index) {
-
         /* vertices */
         for (u32 i = 0; i < renderer->shapes[shape_index].vertex_count; ++i) {
-            verts[vertex_index].colour = renderer->shapes[shape_index].vertices[i].colour;
-            verts[vertex_index].pos = renderer->shapes[shape_index].vertices[i].pos;
-            verts[vertex_index].texture_uv = renderer->shapes[shape_index].vertices[i].texture_uv;
-            vertex_index++;
+            if (renderer->shapes[shape_index].vertex_count == 2) {
+                // lines
+                verts_lines[vertex_index_lines].colour = renderer->shapes[shape_index].vertices[i].colour;
+                verts_lines[vertex_index_lines].pos = renderer->shapes[shape_index].vertices[i].pos;
+                verts_lines[vertex_index_lines].texture_uv = renderer->shapes[shape_index].vertices[i].texture_uv;
+                vertex_index_lines++;
+            } else {
+                // filled shapes
+                verts[vertex_index].colour = renderer->shapes[shape_index].vertices[i].colour;
+                verts[vertex_index].pos = renderer->shapes[shape_index].vertices[i].pos;
+                verts[vertex_index].texture_uv = renderer->shapes[shape_index].vertices[i].texture_uv;
+                vertex_index++;
+            }
         }
 
         /* indices */
         for (u32 i = 0; i < renderer->shapes[shape_index].index_count; ++i) {
-            indices[index_index] = renderer->shapes[shape_index].indices[i] + (shape_index) * previous_shape_vertex_count;
-            index_index++;
+            if (renderer->shapes[shape_index].vertex_count == 2) {
+                // lines
+                indices_lines[index_index_lines] = renderer->shapes[shape_index].indices[i] + (shape_index_lines) * previous_shape_vertex_count_lines;
+                index_index_lines++;
+            } else {
+                // filled shapes
+                indices[index_index] = renderer->shapes[shape_index].indices[i] + (shape_index_filled) * previous_shape_vertex_count;
+                index_index++;
+            }
         }
 
-        previous_shape_vertex_count = renderer->shapes[shape_index].vertex_count;
+        if (renderer->shapes[shape_index].vertex_count == 2) {
+            // lines
+            previous_shape_vertex_count_lines = renderer->shapes[shape_index].vertex_count;
+            shape_index_lines++;
+        } else {
+            // filled shapes
+            previous_shape_vertex_count = renderer->shapes[shape_index].vertex_count;
+            shape_index_filled++;
+        }
     }
 
     // SDL_assert_always(vertex_index == vertex_count); // make sure we've looped through every shape
     // SDL_assert_always(index_index == index_count);
 
-    // fill data
-    glBufferData(GL_ARRAY_BUFFER, sizeof(UI_Vertex) * vertex_count, verts,    GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * index_count, indices, GL_STATIC_DRAW);
-
-    // -- enable position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, pos));
-    // -- enable color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, colour));
-    // -- enable texture_uv
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, texture_uv));
 
     // debug_print_verts(verts, vertex_count);
     // debug_print_indices(indices, index_count);
+    { // -- filled shapes
+        // Bind our array object once here so later
+        // we can just bind the array object and the
+        // rest of the stuff gets bind with it.
+        glBindVertexArray(renderer->vao);
+        glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer->ibo);
+
+
+        // fill data
+        glBufferData(GL_ARRAY_BUFFER, sizeof(UI_Vertex) * vertex_count, verts,    GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * index_count, indices, GL_STATIC_DRAW);
+
+        // -- enable position
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, pos));
+        // -- enable color
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, colour));
+        // -- enable texture_uv
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, texture_uv));
+
+        // unselect
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+    { // -- lines
+        // Bind our array object once here
+        glBindVertexArray(renderer->vao_lines);
+        glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo_lines);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer->ibo_lines);
+
+        // fill data
+        glBufferData(GL_ARRAY_BUFFER, sizeof(UI_Vertex) *  vertex_count_lines,   verts_lines, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * index_count_lines, indices_lines, GL_STATIC_DRAW);
+
+        // -- enable position
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, pos));
+        // -- enable color
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, colour));
+        // -- enable texture_uv
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(UI_Vertex), (void*)offsetof(UI_Vertex, texture_uv));
+
+        // unselect
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
 
     free(verts);
     free(indices);
-
-    // unselect
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    free(verts_lines);
+    free(indices_lines);
 }
 
 void seui_renderer_draw(UI_Renderer *renderer) {
@@ -140,12 +226,17 @@ void seui_renderer_draw(UI_Renderer *renderer) {
     seshader_set_uniform_i32(&renderer->shader, "icons_texture", 0);
     setexture_atlas_bind(&renderer->icons);
 
-    glBindVertexArray(renderer->vao);
+    { // -- filled shapes
+        glBindVertexArray(renderer->vao);
+        glDrawElements(GL_TRIANGLES, renderer->index_count, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+    { // -- lines
+        glBindVertexArray(renderer->vao_lines);
+        glDrawElements(GL_LINES, renderer->index_count_lines, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
 
-    // the indexed way
-    glDrawElements(GL_TRIANGLES, renderer->index_count, GL_UNSIGNED_INT, 0);
-
-    glBindVertexArray(0);
     setexture_atlas_unbind();
     glDisable(GL_BLEND);
 
@@ -241,6 +332,20 @@ static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index
     SDL_assert_always(shape->index_count == 6);
 }
 
+void static seui_shape_line(UI_Shape *shape, Vec2 pos1, Vec2 pos2, f32 width) {
+    RGBA colour = RGBA_WHITE;
+    /* vertices */
+    shape->vertex_count = 0;
+
+    seui_shape_add_vertex(shape, pos1, colour);
+    seui_shape_add_vertex(shape, pos2, colour);
+
+    /* indices */
+    shape->index_count = 0;
+    seui_shape_add_index(shape, 0);
+    seui_shape_add_index(shape, 1);
+}
+
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour) {
     seui_shape_rect(&renderer->shapes[renderer->shape_count], rect, colour);
     renderer->shape_count++;
@@ -256,5 +361,10 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index) {
         texture_size.y / renderer->icons.rows,
     };
     seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size, texture_size);
+    renderer->shape_count++;
+}
+
+void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width) {
+    seui_shape_line(&renderer->shapes[renderer->shape_count], pos1, pos2, width);
     renderer->shape_count++;
 }
