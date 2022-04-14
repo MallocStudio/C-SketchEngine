@@ -51,12 +51,19 @@ void seui_renderer_upload(UI_Renderer *renderer);
 void seui_renderer_clear(UI_Renderer *renderer);
 /// The draw call. (Remember to call seui_renderer_upload() before this procedure)
 void seui_renderer_draw(UI_Renderer *renderer);
+
+///
+/// shapes:
+///
+
+/// render a filled rectangle
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index);
 
-// void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
 // void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
+
+// void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
 // void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 
 // void seui_render_text(UI_Renderer *renderer, const char *text, Vec2 pos);

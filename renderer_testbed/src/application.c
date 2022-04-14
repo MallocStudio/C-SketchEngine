@@ -59,6 +59,7 @@ void app_deinit(Application *app) {
     seui_deinit(ctx);
 }
 
+f32 slider_value = 0.5f;
 void app_update(Application *app) {
     // -- input
     u32 window_w, window_h;
@@ -80,6 +81,7 @@ void app_update(Application *app) {
             if (seui_button(ctx, "3")) printf("pressed 3\n");
             if (seui_button(ctx, "4")) printf("pressed 4\n");
             if (seui_button(ctx, "5")) printf("pressed 5\n");
+            seui_label(ctx, "label");
         }
 
         if (seui_button_at(ctx, "test 1", (Rect) {10, 10, 200, 100})) {
@@ -88,6 +90,8 @@ void app_update(Application *app) {
         if (seui_button_at(ctx, "test 2", (Rect) {10, 400, 200, 100})) {
             printf("pressed 2\n");
         }
+
+        seui_slider_at(ctx, vec2_create(300, 200), vec2_create(400, 200), &slider_value);
     }
 }
 

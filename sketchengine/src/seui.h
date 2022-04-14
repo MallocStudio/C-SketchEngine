@@ -5,6 +5,21 @@
 #include "seinput.h"
 #include "setext.h"
 
+typedef struct SE_Theme {
+    RGBA colour_normal;
+    RGBA colour_hover;
+    RGBA colour_pressed;
+    RGBA colour_bg; // background
+    RGBA colour_fg; // foreground
+} SE_Theme;
+SEINLINE void seui_theme_default(SE_Theme *theme) {
+    theme->colour_normal  = (RGBA) {65, 84, 105, 255};
+    theme->colour_hover   = (RGBA) {108, 145, 173, 255};
+    theme->colour_pressed = (RGBA) {33, 46, 61, 255};
+    theme->colour_bg = (RGBA) {33, 39, 43, 255};
+    theme->colour_fg = (RGBA) {56, 95, 161, 255};
+}
+
 typedef enum UI_STATES {
     UI_STATE_DISABLED, // this UI element is unusable but is rendererd
     UI_STATE_IDLE,     // this UI element is usable and is rendered
@@ -24,6 +39,7 @@ typedef struct SE_UI {
     struct UI_Renderer renderer;
     SE_Text_Renderer txt_renderer;
     struct SE_Input *input; // ! not owned
+    SE_Theme theme;
 
     /* Panels */
     u32 current_panel;         // the panel id
@@ -50,6 +66,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     ctx->input = input;
     seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);
     setext_init (&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+    seui_theme_default(&ctx->theme);
 }
 
 SEINLINE void seui_deinit(SE_UI *ctx) {
@@ -71,7 +88,8 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
 
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.
-bool seui_button(SE_UI *ctx, const char *text); // @TODO
+bool seui_button(SE_UI *ctx, const char *text);
+void seui_label(SE_UI *ctx, const char *text);
 
 /// Draws a button at the given rectangle.
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
@@ -79,5 +97,10 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
 /// Draws a button that returns the drag if the mouse is trying to drag it.
 /// That means is the mouse is hovering over the button and pressing down.
 Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect);
+
+void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
+
+/// value is clamped between 0 - 1
+void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value);
 
 #endif // SEUI_H

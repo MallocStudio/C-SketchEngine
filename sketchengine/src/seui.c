@@ -44,6 +44,7 @@ static Rect panel_put(SE_UI *ctx) {
     return result;
 }
 
+/// note that stay_active_on_mouse_leave is used for dragging ui items
 static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */) {
     UI_STATES result = UI_STATE_IDLE;
 
@@ -92,7 +93,7 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
 bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, Rect *initial_rect, bool *minimised) {
     Rect rect = *initial_rect;
     bool is_minimised = *minimised;
-    RGBA colour = (RGBA) {20, 20, 20, 255};
+    RGBA colour = ctx->theme.colour_bg;
 
     u32 id = generate_ui_id(ctx);
     ctx->current_panel = id;
@@ -106,20 +107,23 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
 
     // draw a rectangle that represents the panel's dimensions
     if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
-    // if (!is_minimised) seui_render_texture(&ctx->renderer, rect, (Vec2) {0, 0});
+    // if (!is_minimised) seui_render_texture(&ctx->renderer, rect, (Vec2) {0, 0}); // @nocheckin
 
     { // panel widgets
         f32 minimise_button_size = 16;
-
         Vec2 cursor = vec2_add(ctx->current_panel_cursor, (Vec2) {rect.x, rect.y});
-        Vec2 drag = seui_drag_button_at(ctx, (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size});
+
+        Rect drag_button_rect = (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size};
+        Rect minimise_button_rect = (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
+
+        Vec2 drag = seui_drag_button_at(ctx, drag_button_rect);
         initial_rect->x += drag.x;
         initial_rect->y += drag.y;
 
-        if (seui_button_at(ctx, "", (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size})) {
+        if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
-        seui_render_texture(&ctx->renderer, (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size}, vec2_zero());
+        seui_render_texture(&ctx->renderer, minimise_button_rect, vec2_zero());
     }
 
     return !is_minimised;
@@ -133,15 +137,23 @@ bool seui_button(SE_UI *ctx, const char *text) {
     return seui_button_at(ctx, text, rect);
 }
 
+void seui_label(SE_UI *ctx, const char *text) {
+    Rect rect = {0, 0, 100, 100}; // default label size
+    if (ctx->current_panel != SEUI_ID_NULL) {
+        rect = panel_put(ctx);
+    }
+    seui_label_at(ctx, text, rect);
+}
+
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
 
     u32 id = generate_ui_id(ctx);
 
-    RGBA colour_normal  = (RGBA) {200, 150, 150, 255};
-    RGBA colour_hover   = (RGBA) {250, 150, 150, 255};
-    RGBA colour_pressed = (RGBA) {100, 50, 50, 255};
+    RGBA colour_normal  = ctx->theme.colour_normal;
+    RGBA colour_hover   = ctx->theme.colour_hover;
+    RGBA colour_pressed = ctx->theme.colour_pressed;
     RGBA colour = colour_normal;
 
     UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
@@ -169,9 +181,9 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
 
     u32 id = generate_ui_id(ctx);
 
-    RGBA colour_normal  = (RGBA) {200, 150, 150, 255};
-    RGBA colour_hover   = (RGBA) {250, 150, 150, 255};
-    RGBA colour_pressed = (RGBA) {100, 50, 50, 255};
+    RGBA colour_normal  = ctx->theme.colour_normal;
+    RGBA colour_hover   = ctx->theme.colour_hover;
+    RGBA colour_pressed = ctx->theme.colour_pressed;
     RGBA colour = colour_normal;
 
     Vec2 drag = {0};
@@ -191,4 +203,28 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
 
     seui_render_rect(renderer, rect, colour);
     return drag;
+}
+
+void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
+    RGBA colour = RGBA_WHITE;
+    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1));
+}
+
+void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
+    Rect button = {0, 0, 16, 16};
+
+    if (*value < 0) *value = 0;
+    if (*value > 1) *value = 1;
+
+    button.x = (pos1.x + pos2.x) * (*value) - 4 + pos1.x;
+    button.y = (pos1.y + pos2.y) * (*value) - 4 + pos1.y;
+    Rect line = {pos1.x, pos1.y, pos2.x - pos1.x, 8};
+
+    /* draw the line */
+    seui_render_rect(&ctx->renderer, line, ctx->theme.colour_pressed);
+    /* draw the slider button */
+    seui_render_rect(&ctx->renderer, button, ctx->theme.colour_normal);
+
+    Vec2 drag = seui_drag_button_at(ctx, button);
+    *value += drag.x * 0.01f;
 }

@@ -64,7 +64,7 @@ void seui_renderer_upload(UI_Renderer *renderer) {
 
     // get the data from shapes
     u32 vertex_count = 0;
-    u32 index_count = 0;
+    u32 index_count  = 0;
 
     for (u32 shape_index = 0; shape_index < renderer->shape_count; ++shape_index) {
         vertex_count += renderer->shapes[shape_index].vertex_count;
@@ -131,6 +131,9 @@ void seui_renderer_upload(UI_Renderer *renderer) {
 }
 
 void seui_renderer_draw(UI_Renderer *renderer) {
+    glDisable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
     seshader_use(&renderer->shader);
     seshader_set_uniform_mat4(&renderer->shader, "projection_view", renderer->view_projection);
 
@@ -144,6 +147,9 @@ void seui_renderer_draw(UI_Renderer *renderer) {
 
     glBindVertexArray(0);
     setexture_atlas_unbind();
+    glDisable(GL_BLEND);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 static bool vertex_equals(UI_Vertex v1, UI_Vertex v2) {

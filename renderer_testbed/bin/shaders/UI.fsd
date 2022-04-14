@@ -11,9 +11,12 @@ void main () {
     uv.y = 1 - uv.y;
     vec4 tex_diffuse = texture(icons_texture, uv);
 
+    // the commented out stuff are the things I've tried
+    // but sometimes things other than the icon get discarded (or their alpha channel gets set to zero)
+
     // FragColour = _rgba;
     // FragColour = vec4(uv, 0, 1);
-    // FragColour = tex_diffuse;
-
-    FragColour = tex_diffuse + _rgba;
+    vec4 final_colour = tex_diffuse + _rgba;
+    // final_colour.a *= tex_diffuse.a * _rgba.a;
+    FragColour = final_colour;
 }
