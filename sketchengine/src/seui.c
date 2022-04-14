@@ -123,7 +123,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
-        seui_render_texture(&ctx->renderer, minimise_button_rect, vec2_zero());
+        seui_render_texture(&ctx->renderer, minimise_button_rect, (Vec2) {1, 0});
     }
 
     return !is_minimised;

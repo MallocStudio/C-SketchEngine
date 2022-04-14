@@ -19,4 +19,6 @@ void main () {
     vec4 final_colour = tex_diffuse + _rgba;
     // final_colour.a *= tex_diffuse.a * _rgba.a;
     FragColour = final_colour;
+
+    FragColour = texture(icons_texture, uv) * _rgba;
 }

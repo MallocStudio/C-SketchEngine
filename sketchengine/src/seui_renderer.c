@@ -166,7 +166,7 @@ static void seui_shape_add_vertex(UI_Shape *shape, Vec2 pos, RGBA colour) {
 
 static void seui_shape_add_vertex_textured(UI_Shape *shape, Vec2 pos, Vec2 uv) {
     shape->vertices[shape->vertex_count].pos        = pos;
-    shape->vertices[shape->vertex_count].colour     = RGBA_BLACK;
+    shape->vertices[shape->vertex_count].colour     = RGBA_WHITE;
     shape->vertices[shape->vertex_count].texture_uv = uv;
     shape->vertex_count++;
 }
@@ -197,56 +197,29 @@ static void seui_shape_rect(UI_Shape *shape, Rect rect, RGBA colour) {
     SDL_assert_always(shape->index_count == 6);
 }
 
-static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index, Vec2 cell_size) {
+static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index, Vec2 cell_size, Vec2 texture_size) {
     Vec2 pos1, pos2, pos3, pos4;
     Vec2 uv1, uv2, uv3, uv4;
     uv1 = (Vec2) {0};
     uv2 = (Vec2) {0};
     uv3 = (Vec2) {0};
     uv4 = (Vec2) {0};
-    cell_size = (Vec2) {16, 16};
 
     pos1 = (Vec2) {rect.x         , rect.y         };
     pos2 = (Vec2) {rect.x         , rect.y + rect.h};
     pos3 = (Vec2) {rect.x + rect.w, rect.y + rect.h};
     pos4 = (Vec2) {rect.x + rect.w, rect.y         };
 
-    /* set uvs to the index */
-    uv1 = vec2_mul(cell_index, cell_size);
-    uv2 = vec2_mul(cell_index, cell_size);
-    uv3 = vec2_mul(cell_index, cell_size);
-    uv4 = vec2_mul(cell_index, cell_size);
+    /* calculate uvs based on cell size and index */
+    Vec2 pixel_pos1 = vec2_mul(cell_size, cell_index); // a pixel pos on texture (not 0 - 1)
+    Vec2 pixel_pos2 = vec2_add(pixel_pos1, (Vec2) {0, cell_size.y});
+    Vec2 pixel_pos3 = vec2_add(pixel_pos1, (Vec2) {cell_size.x, cell_size.y});
+    Vec2 pixel_pos4 = vec2_add(pixel_pos1, (Vec2) {cell_size.x,           0});
 
-    /* shape the rect uv */
-    uv1.x += 0;           uv1.y += 0;
-    uv2.x += 0;           uv2.y += cell_size.y;
-    uv3.x += cell_size.x; uv3.y += cell_size.y;
-    uv4.x += cell_size.x; uv4.y += 0;
-
-    /* remap uvs to 0 - 1 */
-    uv1.x = uv1.x / 16;
-    uv1.y = uv1.y / 16;
-    uv2.x = uv2.x / 16;
-    uv2.y = uv2.y / 16;
-    uv3.x = uv3.x / 16;
-    uv3.y = uv3.y / 16;
-    uv4.x = uv4.x / 16;
-    uv4.y = uv4.y / 16;
-
-    uv1.x = 0;
-    uv1.y = 0;
-    uv2.x = 0;
-    uv2.y = 1;
-    uv3.x = 0.5f;
-    uv3.y = 1;
-    uv4.x = 0.5f;
-    uv4.y = 0;
-
-    /* @nocheckin */
-    // uv1.x = 0; uv1.y = 0;
-    // uv2.x = 0; uv2.y = 1;
-    // uv3.x = 1; uv3.y = 1;
-    // uv4.x = 1; uv4.y = 0;
+    uv1 = vec2_div(pixel_pos1, texture_size);
+    uv2 = vec2_div(pixel_pos2, texture_size);
+    uv3 = vec2_div(pixel_pos3, texture_size);
+    uv4 = vec2_div(pixel_pos4, texture_size);
 
     shape->vertex_count = 0;
     seui_shape_add_vertex_textured(shape, pos1, uv1);
@@ -272,9 +245,11 @@ void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour) {
 }
 
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index) {
-    Vec2 cell_size;
-    cell_size.x = renderer->icons.texture.width  / (f32) renderer->icons.columns;
-    cell_size.y = renderer->icons.texture.height / (f32) renderer->icons.rows;
-    seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size);
+    Vec2 cell_size = {16, 16};
+    Vec2 texture_size = {
+        renderer->icons.texture.width,
+        renderer->icons.texture.height,
+    };
+    seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size, texture_size);
     renderer->shape_count++;
 }

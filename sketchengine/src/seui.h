@@ -16,7 +16,7 @@ SEINLINE void seui_theme_default(SE_Theme *theme) {
     theme->colour_normal  = (RGBA) {65, 84, 105, 255};
     theme->colour_hover   = (RGBA) {108, 145, 173, 255};
     theme->colour_pressed = (RGBA) {33, 46, 61, 255};
-    theme->colour_bg = (RGBA) {33, 39, 43, 255};
+    theme->colour_bg = (RGBA) {33, 39, 43, 150};
     theme->colour_fg = (RGBA) {56, 95, 161, 255};
 }
 
