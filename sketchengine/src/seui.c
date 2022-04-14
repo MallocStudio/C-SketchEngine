@@ -1,18 +1,5 @@
 #include "seui.h"
 
-static bool point_overlaps_rect(Vec2 point, Rect rect) {
-    return (point.x > rect.x && point.x < rect.x + rect.w) && (point.y > rect.y && point.y < rect.y + rect.h);
-}
-
-static bool rect_overlaps_rect(Rect a, Rect b) {
-    // following Ericson, C, 2004. Real-Time Collision Detection. 1.  CRC Press.
-    // page 79, AABB vs AABB
-    f32 t;
-    if ((t = a.x - b.x) > b.w || -t > a.w) return false;
-    if ((t = a.y - b.y) > b.h || -t > a.h) return false;
-    return true;
-}
-
 static u32 generate_ui_id(SE_UI *ctx) {
     ctx->max_id++; // we start with zero. So we increase first.
     u32 id = ctx->max_id;
@@ -50,7 +37,7 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
 
     bool mouse_down   = input->is_mouse_left_down;
     bool mouse_up     = !mouse_down;
-    bool mouse_inside = point_overlaps_rect(input->mouse_screen_pos, rect);
+    bool mouse_inside = rect_overlaps_point(rect, input->mouse_screen_pos);
 
     if (ctx->hot == id) { // pressing down
         if (mouse_up) { // make active
@@ -214,22 +201,28 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
 }
 
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
-    Rect button = {0, 0, 16, 16};
-
+    // clamp before doing anything
     if (*value < 0) *value = 0;
     if (*value > 1) *value = 1;
 
-    button.x = (pos1.x + pos2.x) * (*value) - 4 + pos1.x;
-    button.y = (pos1.y + pos2.y) * (*value) - 4 + pos1.y;
-    Rect line = {pos1.x, pos1.y, pos2.x - pos1.x, 8};
+    Vec2 button_size = {16, 16};
+    Vec2 pos_rel1 = vec2_zero();
+    Vec2 pos_rel2 = vec2_sub(pos2, pos1);
+    Vec2 pos_offset = vec2_create(-8, -8);
+    Vec2 button_pos = vec2_add(vec2_add(vec2_mul_scalar(vec2_average(pos_rel1, pos_rel2), *value * 2), pos1), pos_offset);
+
 
     /* draw the line */
-    // seui_render_rect(&ctx->renderer, line, ctx->theme.colour_pressed);
     seui_render_line(&ctx->renderer, pos1, pos2, 3);
-    /* draw the slider button */
-    // seui_render_rect(&ctx->renderer, button, ctx->theme.colour_normal);
-    Vec2 drag = seui_drag_button_at(ctx, button);
-    seui_render_texture(&ctx->renderer, button, UI_ICON_INDEX_SLIDER);
 
+    /* draw the slider button */
+    Rect button_rect = rect_create(button_pos, button_size);
+
+    Vec2 drag = seui_drag_button_at(ctx, button_rect);
+    seui_render_texture(&ctx->renderer, button_rect, UI_ICON_INDEX_SLIDER);
+
+    // clamp before concluding
     *value += drag.x * 0.01f;
+    if (*value < 0) *value = 0;
+    if (*value > 1) *value = 1;
 }

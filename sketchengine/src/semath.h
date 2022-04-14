@@ -143,6 +143,13 @@ SEINLINE f32 vec2_dot(Vec2 v1, Vec2 v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
+SEINLINE Vec2 vec2_average(Vec2 v1, Vec2 v2) {
+    return (Vec2) {
+        (v2.x + v1.x) * 0.5f,
+        (v2.y + v1.y) * 0.5f,
+    };
+}
+
 SEINLINE Vec2 vec2_rotated(Vec2 v, f32 angle_radians) { // @check
     f32 cos = semath_cos(angle_radians);
     f32 sin = semath_sin(angle_radians);
@@ -1108,7 +1115,26 @@ SEINLINE Quat quat_slerp(Quat q_0, Quat q_1, f32 percentage) {
         (v0.w * s0) + (v1.w * s1)};
 }
 
+/// ----
+/// RECT
+/// ----
 
+SEINLINE Rect rect_create(Vec2 pos, Vec2 size) {
+    return (Rect) {pos.x, pos.y, size.x, size.y};
+}
+
+SEINLINE bool rect_overlaps_rect(Rect a, Rect b) {
+    // following Ericson, C, 2004. Real-Time Collision Detection. 1.  CRC Press.
+    // page 79, AABB vs AABB
+    f32 t;
+    if ((t = a.x - b.x) > b.w || -t > a.w) return false;
+    if ((t = a.y - b.y) > b.h || -t > a.h) return false;
+    return true;
+}
+
+SEINLINE bool rect_overlaps_point(Rect rect, Vec2 point) {
+    return (point.x > rect.x && point.x < rect.x + rect.w) && (point.y > rect.y && point.y < rect.y + rect.h);
+}
 
 /// -----
 /// TESTS
