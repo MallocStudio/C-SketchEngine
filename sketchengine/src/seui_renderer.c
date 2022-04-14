@@ -32,7 +32,7 @@ void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd,
 
         renderer->view_projection = mat4_ortho(0, window_w, 0, window_h, -1.0f, 1000);
 
-        setexture_atlas_load(&renderer->icons, "assets/UI/icons/ui_icons_atlas.png", 11, 10);
+        setexture_atlas_load(&renderer->icons, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
     } else {
         renderer->initialised = false;
     }
@@ -212,14 +212,16 @@ static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index
 
     /* calculate uvs based on cell size and index */
     Vec2 pixel_pos1 = vec2_mul(cell_size, cell_index); // a pixel pos on texture (not 0 - 1)
-    Vec2 pixel_pos2 = vec2_add(pixel_pos1, (Vec2) {0, cell_size.y});
+    // (in case of index {1, 0} -> pixel_pos1 = {cell_size.x, 0}
+         pixel_pos1 = vec2_add(pixel_pos1, (Vec2) {0, 0});
+    Vec2 pixel_pos2 = vec2_add(pixel_pos1, (Vec2) {0, cell_size.x});
     Vec2 pixel_pos3 = vec2_add(pixel_pos1, (Vec2) {cell_size.x, cell_size.y});
-    Vec2 pixel_pos4 = vec2_add(pixel_pos1, (Vec2) {cell_size.x,           0});
+    Vec2 pixel_pos4 = vec2_add(pixel_pos1, (Vec2) {cell_size.x, 0});
 
-    uv1 = vec2_div(pixel_pos1, texture_size);
-    uv2 = vec2_div(pixel_pos2, texture_size);
-    uv3 = vec2_div(pixel_pos3, texture_size);
-    uv4 = vec2_div(pixel_pos4, texture_size);
+    uv1 = vec2_div(pixel_pos2, texture_size);
+    uv2 = vec2_div(pixel_pos1, texture_size);
+    uv3 = vec2_div(pixel_pos4, texture_size);
+    uv4 = vec2_div(pixel_pos3, texture_size);
 
     shape->vertex_count = 0;
     seui_shape_add_vertex_textured(shape, pos1, uv1);
@@ -245,10 +247,13 @@ void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour) {
 }
 
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index) {
-    Vec2 cell_size = {16, 16};
     Vec2 texture_size = {
         renderer->icons.texture.width,
         renderer->icons.texture.height,
+    };
+    Vec2 cell_size = {
+        texture_size.x / renderer->icons.columns,
+        texture_size.y / renderer->icons.rows,
     };
     seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size, texture_size);
     renderer->shape_count++;

@@ -107,7 +107,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
 
     // draw a rectangle that represents the panel's dimensions
     if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
-    // if (!is_minimised) seui_render_texture(&ctx->renderer, rect, (Vec2) {0, 0}); // @nocheckin
 
     { // panel widgets
         f32 minimise_button_size = 16;
@@ -123,7 +122,9 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
-        seui_render_texture(&ctx->renderer, minimise_button_rect, (Vec2) {1, 0});
+
+        Vec2 index = is_minimised ? (Vec2){2, 0} : (Vec2){1, 0};
+        seui_render_texture(&ctx->renderer, minimise_button_rect, index);
     }
 
     return !is_minimised;

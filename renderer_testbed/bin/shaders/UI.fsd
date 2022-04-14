@@ -8,7 +8,6 @@ uniform sampler2D icons_texture;
 
 void main () {
     vec2 uv = _uv;
-    uv.y = 1 - uv.y;
     vec4 tex_diffuse = texture(icons_texture, uv);
 
     // the commented out stuff are the things I've tried
