@@ -59,6 +59,7 @@ typedef struct UI_Renderer {
 } UI_Renderer;
 
 void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd, u32 window_w, u32 window_h);
+void seui_renderer_resize(UI_Renderer *renderer, u32 window_w, u32 window_h);
 void seui_renderer_deinit(UI_Renderer *renderer);
 /// Upload the renderer's data to the GPU so we can draw it
 void seui_renderer_upload(UI_Renderer *renderer);
@@ -78,8 +79,8 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint
 /// render a line
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width);
 void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
+void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
 
-// void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
 // void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 
 // void seui_render_text(UI_Renderer *renderer, const char *text, Vec2 pos);

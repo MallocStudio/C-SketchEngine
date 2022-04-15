@@ -66,6 +66,7 @@ void app_update(Application *app) {
     SDL_GetWindowSize(app->window, &window_w, &window_h);
     secamera3d_update_projection(&app->camera, window_w, window_h);
     seinput_update(&app->input, app->camera.projection, app->window);
+    seui_resize(ctx, window_w, window_h);
 
     const u8 *keyboard = app->input.keyboard;
     if (keyboard[SDL_SCANCODE_ESCAPE]) app->should_quit = true;
@@ -75,19 +76,10 @@ void app_update(Application *app) {
     { // -- ui
         seui_reset(ctx);
 
-        if (seui_panel_at(ctx, "panel", 3, 100, &panel)) {
-            if (seui_button(ctx, "1")) printf("pressed 1\n");
-            if (seui_button(ctx, "2")) printf("pressed 2\n");
-            if (seui_button(ctx, "3")) printf("pressed 3\n");
-            if (seui_button(ctx, "4")) printf("pressed 4\n");
-            if (seui_button(ctx, "5")) printf("pressed 5\n");
-            seui_label(ctx, "label");
-            seui_slider(ctx, &slider_value);
+        if (seui_panel_at(ctx, "panel", 2, 100, &panel)) {
+            seui_label(ctx, "light direction:");
             seui_slider2d(ctx, &slider2d_value);
         }
-
-        // seui_render_circle(&ctx->renderer, (Vec2) {100, 100}, 32, RGBA_WHITE);
-        // seui_slider2d_at(ctx, (Vec2) {200, 200}, 64, &slider2d_value);
     }
 }
 

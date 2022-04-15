@@ -144,10 +144,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
                 initial_rect->h += resize.y;
                 initial_rect->y -= resize.y;
             }
-
-            Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
-            seui_render_texture(&ctx->renderer, minimise_button_rect, index, RGBA_WHITE);
         }
+
+        // minimise button
+        Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
+        seui_render_texture(&ctx->renderer, minimise_button_rect, index, RGBA_WHITE);
 
         { // -- docking
             RGBA dock_colour = {150, 0, 0, 100};

@@ -36,14 +36,18 @@ void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd,
         glGenBuffers(1, &renderer->ibo_lines);
         glGenVertexArrays(1, &renderer->vao_lines);
 
-        renderer->view_width = window_w;
-        renderer->view_height = window_h;
-        renderer->view_projection = mat4_ortho(0, renderer->view_width, 0, renderer->view_height, -1.0f, 1000);
+        seui_renderer_resize(renderer, window_w, window_h);
 
         setexture_atlas_load(&renderer->icons, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
     } else {
         renderer->initialised = false;
     }
+}
+
+void seui_renderer_resize(UI_Renderer *renderer, u32 window_w, u32 window_h) {
+    renderer->view_width = window_w;
+    renderer->view_height = window_h;
+    renderer->view_projection = mat4_ortho(0, renderer->view_width, 0, renderer->view_height, -1.0f, 1000);
 }
 
 void seui_renderer_deinit(UI_Renderer *renderer) {
@@ -228,15 +232,17 @@ void seui_renderer_draw(UI_Renderer *renderer) {
     seshader_set_uniform_i32(&renderer->shader, "icons_texture", 0);
     setexture_atlas_bind(&renderer->icons);
 
-    { // -- lines
-        glBindVertexArray(renderer->vao_lines);
-        glDrawElements(GL_LINES, renderer->index_count_lines, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-    }
     { // -- filled shapes
         glBindVertexArray(renderer->vao);
         glDrawElements(GL_TRIANGLES, renderer->index_count, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+    }
+    { // -- lines
+        glLineWidth(2);
+        glBindVertexArray(renderer->vao_lines);
+        glDrawElements(GL_LINES, renderer->index_count_lines, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+        glLineWidth(1);
     }
 
     setexture_atlas_unbind();
@@ -428,4 +434,17 @@ void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA col
     };
     seui_shape_circle(&renderer->shapes[renderer->shape_count], center, radius, colour, cell_size, texture_size);
     renderer->shape_count++;
+}
+
+void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour) {
+    f32 width = 1;
+    Vec2 pos1, pos2, pos3, pos4;
+    pos1.x = rect.x;          pos1.y = rect.y;
+    pos2.x = rect.x;          pos2.y = rect.y + rect.h;
+    pos3.x = rect.x + rect.w; pos3.y = rect.y + rect.h;
+    pos4.x = rect.x + rect.w; pos4.y = rect.y;
+    seui_render_line(renderer, pos1, pos2, width);
+    seui_render_line(renderer, pos2, pos3, width);
+    seui_render_line(renderer, pos3, pos4, width);
+    seui_render_line(renderer, pos4, pos1, width);
 }

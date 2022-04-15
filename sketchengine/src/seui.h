@@ -76,6 +76,11 @@ SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->current_panel_item_count = 0;
 }
 
+SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
+    seui_renderer_resize(&ctx->renderer, window_w, window_h);
+    setext_set_viewport(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+}
+
 SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
     ctx->warm = SEUI_ID_NULL;
     ctx->hot = SEUI_ID_NULL;
