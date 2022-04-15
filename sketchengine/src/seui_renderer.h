@@ -30,6 +30,7 @@ typedef struct UI_Shape {
 #define UI_ICON_INDEX_UNCOLLAPSE (Vec2) {2, 0}
 #define UI_ICON_INDEX_CLOSE      (Vec2) {0, 1}
 #define UI_ICON_INDEX_SLIDER     (Vec2) {3, 0}
+#define UI_ICON_INDEX_CIRCLE_FILLED (Vec2) {1, 1};
 
 typedef struct UI_Renderer {
     u32 vertex_count; // calculated when data is uploaded to the GPU
@@ -74,8 +75,7 @@ void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint);
 /// render a line
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width);
-
-// void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
+void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 
 // void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
 // void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);

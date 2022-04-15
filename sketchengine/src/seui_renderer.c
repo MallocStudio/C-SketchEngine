@@ -332,6 +332,52 @@ static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index
     SDL_assert_always(shape->index_count == 6);
 }
 
+static void seui_shape_circle(UI_Shape *shape, Vec2 center, f32 radius, RGBA colour, Vec2 cell_size, Vec2 texture_size) {
+    Vec2 cell_index = UI_ICON_INDEX_CIRCLE_FILLED;
+
+    Vec2 pos1, pos2, pos3, pos4;
+    Vec2 uv1, uv2, uv3, uv4;
+    uv1 = (Vec2) {0};
+    uv2 = (Vec2) {0};
+    uv3 = (Vec2) {0};
+    uv4 = (Vec2) {0};
+
+    pos1 = (Vec2) {center.x - radius * 0.5f, center.y - radius * 0.5f};
+    pos2 = (Vec2) {center.x - radius * 0.5f, center.y + radius * 0.5f};
+    pos3 = (Vec2) {center.x + radius * 0.5f, center.y + radius * 0.5f};
+    pos4 = (Vec2) {center.x + radius * 0.5f, center.y - radius * 0.5f};
+
+    /* calculate uvs based on cell size and index */
+    Vec2 pixel_pos1 = vec2_mul(cell_size, cell_index); // a pixel pos on texture (not 0 - 1)
+    // (in case of index {1, 0} -> pixel_pos1 = {cell_size.x, 0}
+         pixel_pos1 = vec2_add(pixel_pos1, (Vec2) {0, 0});
+    Vec2 pixel_pos2 = vec2_add(pixel_pos1, (Vec2) {0, cell_size.x});
+    Vec2 pixel_pos3 = vec2_add(pixel_pos1, (Vec2) {cell_size.x, cell_size.y});
+    Vec2 pixel_pos4 = vec2_add(pixel_pos1, (Vec2) {cell_size.x, 0});
+
+    uv1 = vec2_div(pixel_pos2, texture_size);
+    uv2 = vec2_div(pixel_pos1, texture_size);
+    uv3 = vec2_div(pixel_pos4, texture_size);
+    uv4 = vec2_div(pixel_pos3, texture_size);
+
+    shape->vertex_count = 0;
+    seui_shape_add_vertex_textured(shape, pos1, uv1, colour);
+    seui_shape_add_vertex_textured(shape, pos2, uv2, colour);
+    seui_shape_add_vertex_textured(shape, pos3, uv3, colour);
+    seui_shape_add_vertex_textured(shape, pos4, uv4, colour);
+    SDL_assert_always(shape->vertex_count == 4);
+
+    /* add the indices */
+    shape->index_count = 0;
+    seui_shape_add_index(shape, 0);
+    seui_shape_add_index(shape, 1);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 3);
+    seui_shape_add_index(shape, 0);
+    SDL_assert_always(shape->index_count == 6);
+}
+
 void static seui_shape_line(UI_Shape *shape, Vec2 pos1, Vec2 pos2, f32 width) {
     RGBA colour = RGBA_WHITE;
     /* vertices */
@@ -366,5 +412,18 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index, RGBA
 
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width) {
     seui_shape_line(&renderer->shapes[renderer->shape_count], pos1, pos2, width);
+    renderer->shape_count++;
+}
+
+void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour) {
+    Vec2 texture_size = {
+        renderer->icons.texture.width,
+        renderer->icons.texture.height,
+    };
+    Vec2 cell_size = {
+        texture_size.x / renderer->icons.columns,
+        texture_size.y / renderer->icons.rows,
+    };
+    seui_shape_circle(&renderer->shapes[renderer->shape_count], center, radius, colour, cell_size, texture_size);
     renderer->shape_count++;
 }

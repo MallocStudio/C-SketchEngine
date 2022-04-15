@@ -243,3 +243,42 @@ void seui_slider(SE_UI *ctx, f32 *value) {
     Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
     seui_slider_at(ctx, pos1, pos2, value);
 }
+
+void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
+    // normalise before doing anything
+    vec2_normalise(value);
+
+    Vec2 button_size = {24, 24};
+    Vec2 button_pos = center;
+
+    // value
+    button_pos = vec2_add(button_pos, vec2_mul_scalar(*value, radius * 0.5f));
+
+    // size
+    button_pos = vec2_sub(button_pos, vec2_mul_scalar(button_size, 0.5f));
+
+    /* draw the border */
+    seui_render_circle(&ctx->renderer, center, radius, (RGBA) {0, 0, 0, 50});
+
+    /* draw the button */
+    Rect button_rect = rect_create(button_pos, button_size);
+    Vec2 drag = seui_drag_button_textured_at(ctx, button_rect, UI_ICON_INDEX_SLIDER);
+
+    // clamp before concluding
+    // *value += drag.x * 0.01f;
+    *value = vec2_add(*value, vec2_mul_scalar(drag, 0.05f));
+    vec2_normalise(value);
+}
+
+void seui_slider2d(SE_UI *ctx, Vec2 *value) {
+    Rect rect = {0, 0, 100, 100}; // default
+    if (ctx->current_panel != SEUI_ID_NULL) {
+        rect = panel_put(ctx);
+    }
+    Vec2 center = {
+        (rect.x + rect.x + rect.w) * 0.5f,
+        (rect.y + rect.y + rect.h) * 0.5f
+    };
+    f32 radius = rect.h * 0.8f;
+    seui_slider2d_at(ctx, center, radius, value);
+}

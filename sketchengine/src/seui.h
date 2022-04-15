@@ -15,9 +15,9 @@ typedef struct SE_Theme {
 SEINLINE void seui_theme_default(SE_Theme *theme) {
     theme->colour_normal  = (RGBA) {65, 84, 105, 255};
     theme->colour_hover   = (RGBA) {108, 145, 173, 255};
-    theme->colour_pressed = (RGBA) {33, 46, 61, 255};
-    theme->colour_bg = (RGBA) {33, 39, 43, 150};
-    theme->colour_fg = (RGBA) {56, 95, 161, 255};
+    theme->colour_pressed = (RGBA) {43, 56, 71, 255};
+    theme->colour_bg      = (RGBA) {33, 39, 43, 200};
+    theme->colour_fg      = (RGBA) {56, 95, 161, 255};
 }
 
 typedef enum UI_STATES {
@@ -109,4 +109,7 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value);
 void seui_slider(SE_UI *ctx, f32 *value);
 
+/// a 2d slider that returns a normalised vec2
+void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);
+void seui_slider2d(SE_UI *ctx, Vec2 *value);
 #endif // SEUI_H

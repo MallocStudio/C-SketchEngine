@@ -295,7 +295,7 @@ void setexture_load_data(SE_Texture *texture, ubyte *image_data) {
     // glGenerateMipmap(GL_TEXTURE_2D);
 
     // Instead of generating mipmaps we can set the texture param to not use mipmaps. We have to do one of these or our texture won't appear
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glBindTexture(GL_TEXTURE_2D, 0);

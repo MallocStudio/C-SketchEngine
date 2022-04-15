@@ -60,6 +60,7 @@ void app_deinit(Application *app) {
 }
 
 f32 slider_value = 0.5f;
+Vec2 slider2d_value = {0};
 void app_update(Application *app) {
     // -- input
     u32 window_w, window_h;
@@ -83,8 +84,11 @@ void app_update(Application *app) {
             if (seui_button(ctx, "5")) printf("pressed 5\n");
             seui_label(ctx, "label");
             seui_slider(ctx, &slider_value);
+            seui_slider2d(ctx, &slider2d_value);
         }
 
+        // seui_render_circle(&ctx->renderer, (Vec2) {100, 100}, 32, RGBA_WHITE);
+        // seui_slider2d_at(ctx, (Vec2) {200, 200}, 64, &slider2d_value);
     }
 }
 
@@ -103,7 +107,13 @@ void app_render(Application *app) {
 
         // Vec3 cam_forward = mat4_forward(app->camera.view);
         // app->renderer.light_directional.direction = cam_forward;
-        app->renderer.light_directional.direction = vec3_right();
+        Vec3 light_direction = {
+            -slider2d_value.x,
+            -slider2d_value.y,
+            0
+        };
+        vec3_normalise(&light_direction);
+        app->renderer.light_directional.direction = light_direction; //vec3_right();
 
         for (u32 i = 0; i < app->entity_count; ++i) {
             entity_render(&app->entities[i], &app->renderer);

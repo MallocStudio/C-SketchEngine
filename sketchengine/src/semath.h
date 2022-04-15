@@ -176,8 +176,10 @@ SEINLINE f32 vec2_magnitude(Vec2 vec) {
 /// normalises the provided vector in place to a unit vector
 SEINLINE void vec2_normalise(Vec2 *vec) {
     const f32 mag = vec2_magnitude(*vec);
-    vec->x /= mag;
-    vec->y /= mag;
+    if (mag > 1) {
+        vec->x /= mag;
+        vec->y /= mag;
+    }
 }
 
 /// returns the normalised version of the provided vector
