@@ -7,8 +7,7 @@ SEUI_Context *ctx;
 #endif
 
 SE_UI *ctx;
-Rect panel_rect;
-bool panel_minimised;
+SEUI_Panel panel;
 
 void app_init(Application *app, SDL_Window *window) {
     u32 player = -1; // @remove
@@ -44,8 +43,8 @@ void app_init(Application *app, SDL_Window *window) {
     { // -- init UI
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
-        panel_rect = (Rect) {250, 300, 300, 400};
-        panel_minimised = false;
+        panel.initial_rect = (Rect) {250, 300, 300, 400};
+        panel.minimised = false;
     }
 
     { // -- load mesh
@@ -76,7 +75,7 @@ void app_update(Application *app) {
     { // -- ui
         seui_reset(ctx);
 
-        if (seui_panel_at(ctx, "panel", 3, 100, &panel_rect, &panel_minimised)) {
+        if (seui_panel_at(ctx, "panel", 3, 100, &panel)) {
             if (seui_button(ctx, "1")) printf("pressed 1\n");
             if (seui_button(ctx, "2")) printf("pressed 2\n");
             if (seui_button(ctx, "3")) printf("pressed 3\n");

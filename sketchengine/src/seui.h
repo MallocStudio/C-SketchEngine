@@ -37,6 +37,12 @@ typedef enum UI_STATES {
 #define SEUI_VIEW_REGION_RIGHT  (Rect) {1 - SEUI_VIEW_REGION_SIZE_X, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
 #define SEUI_VIEW_REGION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
 
+typedef struct SEUI_Panel {
+    Rect initial_rect;
+    bool minimised;
+    Vec2 min_size;
+} SEUI_Panel;
+
 typedef struct SE_UI {
     /* UI Widgets */
     u32 warm; // hover / selection
@@ -55,6 +61,8 @@ typedef struct SE_UI {
     u32 current_panel_columns; // number of columns
     Vec2 current_panel_cursor; // the relative cursor used to position the placement of the items
     f32 current_panel_item_height;
+    i32 current_panel_item_count;
+    SEUI_Panel *current_panel_data;
 } SE_UI;
 
 /// call this at the beginning of every frame before creating other widgets
@@ -65,6 +73,7 @@ SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->current_panel_columns = 0;
     ctx->current_panel_cursor = (Vec2) {0};
     ctx->current_panel_item_height = 0;
+    ctx->current_panel_item_count = 0;
 }
 
 SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
@@ -92,7 +101,7 @@ SEINLINE void seui_render(SE_UI *ctx) {
 /// Start a panel at the given position. Aligns the items inside of the panel
 /// based on the given number of columns.
 /// Returns true if the panel is not minimised.
-bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, Rect *initial_rect, bool *minimised);
+bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, SEUI_Panel *panel_data);
 
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.

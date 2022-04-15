@@ -22,23 +22,15 @@ static Rect panel_put(SE_UI *ctx) {
     result.y = cursor.y - result.h;
 
     // Increment the cursor
-    if (ctx->current_panel_cursor.x + result.w >= panel_rect.w) {
+    if (ctx->current_panel_cursor.x + result.w >= panel_rect.w - 16) { // 16 is just a buffer size
         ctx->current_panel_cursor.x = 0;
         ctx->current_panel_cursor.y -= height; // since we're going down
+        ctx->current_panel_data->min_size.y += height; // @incomplete move this away from this procedure
     } else {
         ctx->current_panel_cursor.x += result.w;
     }
-    return result;
-}
 
-/// calculates the minimum size of the current panel
-static Vec2 panel_min_size(SE_UI *ctx) {
-    Vec2 result = {0};
-    f32 min_item_w = 64;
-    if (ctx->current_panel != SEUI_ID_NULL) {
-        result.x = min_item_w * ctx->current_panel_columns;
-        result.y = ctx->current_panel_cursor.y;
-    }
+    ctx->current_panel_item_count++;
     return result;
 }
 
@@ -97,7 +89,11 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
     return result;
 }
 
-bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, Rect *initial_rect, bool *minimised) {
+bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, SEUI_Panel *panel_data) {
+    ctx->current_panel_data = panel_data;
+    Rect *initial_rect = &panel_data->initial_rect;
+    bool *minimised    = &panel_data->minimised;
+
     Rect rect = *initial_rect;
     bool is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
@@ -111,7 +107,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
         0,
         rect.h // start from the top
     };
-
 
     // draw a rectangle that represents the panel's dimensions
     if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
@@ -134,7 +129,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
 
         /* resizeing */
         if (!is_minimised) {
-            Vec2 min_size = panel_min_size(ctx);
+            Vec2 min_size = panel_data->min_size;
             Rect resize_button = {
                 rect.x + rect.w- 16, rect.y, 16, 16
             };
@@ -186,6 +181,9 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
         }
     }
 
+    panel_data->min_size = (Vec2) {0};
+    panel_data->min_size.x = ctx->current_panel_columns * 64; // 64 is default item width
+    panel_data->min_size.y = ctx->current_panel_item_height;
     return !is_minimised;
 }
 
