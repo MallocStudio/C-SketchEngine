@@ -29,6 +29,14 @@ typedef enum UI_STATES {
 } UI_STATES;
 
 #define SEUI_ID_NULL 0
+
+// #define SEUI_VIEW_REGION_PADDING 0.1f
+#define SEUI_VIEW_REGION_SIZE_X 0.25f
+#define SEUI_VIEW_REGION_SIZE_Y 0.75f
+// #define SEUI_VIEW_REGION_CENTER (Rect) {SEUI_VIEW_REGION_PADDING, SEUI_VIEW_REGION_PADDING, 1 - SEUI_VIEW_REGION_SIZE, SEUI_VIEW_REGION_PADDING * 2}
+#define SEUI_VIEW_REGION_RIGHT  (Rect) {1 - SEUI_VIEW_REGION_SIZE_X, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
+#define SEUI_VIEW_REGION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
+
 typedef struct SE_UI {
     /* UI Widgets */
     u32 warm; // hover / selection
@@ -96,12 +104,12 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
 
 /// Draws a button that returns the drag if the mouse is trying to drag it.
 /// That means is the mouse is hovering over the button and pressing down.
-Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect);
+Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state);
 
 /// Draws a button that returns the drag if the mouse is trying to drag it.
 /// That means is the mouse is hovering over the button and pressing down.
 /// If the texture_index is (Vec2) {0} it will draw a simple rectangle.
-Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index);
+Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_STATES *state);
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 

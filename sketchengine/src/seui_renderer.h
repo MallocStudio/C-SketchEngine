@@ -54,6 +54,8 @@ typedef struct UI_Renderer {
     SE_Texture_Atlas icons;
 
     Mat4 view_projection;
+    f32 view_width;
+    f32 view_height;
 } UI_Renderer;
 
 void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd, u32 window_w, u32 window_h);

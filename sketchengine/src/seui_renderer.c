@@ -36,7 +36,9 @@ void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd,
         glGenBuffers(1, &renderer->ibo_lines);
         glGenVertexArrays(1, &renderer->vao_lines);
 
-        renderer->view_projection = mat4_ortho(0, window_w, 0, window_h, -1.0f, 1000);
+        renderer->view_width = window_w;
+        renderer->view_height = window_h;
+        renderer->view_projection = mat4_ortho(0, renderer->view_width, 0, renderer->view_height, -1.0f, 1000);
 
         setexture_atlas_load(&renderer->icons, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
     } else {
