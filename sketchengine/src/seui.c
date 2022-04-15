@@ -112,7 +112,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, 
         }
 
         Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
-        seui_render_texture(&ctx->renderer, minimise_button_rect, index);
+        seui_render_texture(&ctx->renderer, minimise_button_rect, index, RGBA_WHITE);
     #endif
     }
 
@@ -165,7 +165,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     return ui_state == UI_STATE_ACTIVE;
 }
 
-Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
+Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
 
@@ -191,8 +191,17 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
         } break;
     }
 
-    seui_render_rect(renderer, rect, colour);
+    if (texture_index.x == 0 && texture_index.y == 0) {
+        seui_render_rect(renderer, rect, colour);
+    } else {
+        seui_render_texture(renderer, rect, texture_index, colour);
+    }
+
     return drag;
+}
+
+Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect) {
+    return seui_drag_button_textured_at(ctx, rect, UI_ICON_INDEX_NULL);
 }
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
@@ -205,12 +214,11 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     if (*value < 0) *value = 0;
     if (*value > 1) *value = 1;
 
-    Vec2 button_size = {16, 16};
+    Vec2 button_size = {24, 24};
     Vec2 pos_rel1 = vec2_zero();
     Vec2 pos_rel2 = vec2_sub(pos2, pos1);
-    Vec2 pos_offset = vec2_create(-8, -8);
+    Vec2 pos_offset = vec2_mul_scalar(button_size, -0.5f);
     Vec2 button_pos = vec2_add(vec2_add(vec2_mul_scalar(vec2_average(pos_rel1, pos_rel2), *value * 2), pos1), pos_offset);
-
 
     /* draw the line */
     seui_render_line(&ctx->renderer, pos1, pos2, 3);
@@ -218,11 +226,20 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     /* draw the slider button */
     Rect button_rect = rect_create(button_pos, button_size);
 
-    Vec2 drag = seui_drag_button_at(ctx, button_rect);
-    seui_render_texture(&ctx->renderer, button_rect, UI_ICON_INDEX_SLIDER);
+    Vec2 drag = seui_drag_button_textured_at(ctx, button_rect, UI_ICON_INDEX_SLIDER);
 
     // clamp before concluding
     *value += drag.x * 0.01f;
     if (*value < 0) *value = 0;
     if (*value > 1) *value = 1;
+}
+
+void seui_slider(SE_UI *ctx, f32 *value) {
+    Rect rect = {0, 0, 100, 100}; // default size
+    if (ctx->current_panel != SEUI_ID_NULL) {
+        rect = panel_put(ctx);
+    }
+    Vec2 pos1 = {rect.x, (rect.y + rect.y + rect.h) * 0.5f};
+    Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
+    seui_slider_at(ctx, pos1, pos2, value);
 }

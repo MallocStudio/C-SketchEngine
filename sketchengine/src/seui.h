@@ -98,9 +98,15 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
 /// That means is the mouse is hovering over the button and pressing down.
 Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect);
 
+/// Draws a button that returns the drag if the mouse is trying to drag it.
+/// That means is the mouse is hovering over the button and pressing down.
+/// If the texture_index is (Vec2) {0} it will draw a simple rectangle.
+Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index);
+
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 
 /// value is clamped between 0 - 1
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value);
+void seui_slider(SE_UI *ctx, f32 *value);
 
 #endif // SEUI_H

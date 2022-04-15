@@ -82,9 +82,9 @@ void app_update(Application *app) {
             if (seui_button(ctx, "4")) printf("pressed 4\n");
             if (seui_button(ctx, "5")) printf("pressed 5\n");
             seui_label(ctx, "label");
+            seui_slider(ctx, &slider_value);
         }
 
-        seui_slider_at(ctx, vec2_create(300, 200), vec2_create(400, 200), &slider_value);
     }
 }
 

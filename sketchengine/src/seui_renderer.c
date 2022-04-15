@@ -226,14 +226,14 @@ void seui_renderer_draw(UI_Renderer *renderer) {
     seshader_set_uniform_i32(&renderer->shader, "icons_texture", 0);
     setexture_atlas_bind(&renderer->icons);
 
-    { // -- filled shapes
-        glBindVertexArray(renderer->vao);
-        glDrawElements(GL_TRIANGLES, renderer->index_count, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-    }
     { // -- lines
         glBindVertexArray(renderer->vao_lines);
         glDrawElements(GL_LINES, renderer->index_count_lines, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+    { // -- filled shapes
+        glBindVertexArray(renderer->vao);
+        glDrawElements(GL_TRIANGLES, renderer->index_count, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
@@ -255,9 +255,9 @@ static void seui_shape_add_vertex(UI_Shape *shape, Vec2 pos, RGBA colour) {
     shape->vertex_count++;
 }
 
-static void seui_shape_add_vertex_textured(UI_Shape *shape, Vec2 pos, Vec2 uv) {
+static void seui_shape_add_vertex_textured(UI_Shape *shape, Vec2 pos, Vec2 uv, RGBA tint) {
     shape->vertices[shape->vertex_count].pos        = pos;
-    shape->vertices[shape->vertex_count].colour     = RGBA_WHITE;
+    shape->vertices[shape->vertex_count].colour     = tint;
     shape->vertices[shape->vertex_count].texture_uv = uv;
     shape->vertex_count++;
 }
@@ -288,7 +288,7 @@ static void seui_shape_rect(UI_Shape *shape, Rect rect, RGBA colour) {
     SDL_assert_always(shape->index_count == 6);
 }
 
-static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index, Vec2 cell_size, Vec2 texture_size) {
+static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index, Vec2 cell_size, Vec2 texture_size, RGBA tint) {
     Vec2 pos1, pos2, pos3, pos4;
     Vec2 uv1, uv2, uv3, uv4;
     uv1 = (Vec2) {0};
@@ -315,10 +315,10 @@ static void seui_shape_rect_textured(UI_Shape *shape, Rect rect, Vec2 cell_index
     uv4 = vec2_div(pixel_pos3, texture_size);
 
     shape->vertex_count = 0;
-    seui_shape_add_vertex_textured(shape, pos1, uv1);
-    seui_shape_add_vertex_textured(shape, pos2, uv2);
-    seui_shape_add_vertex_textured(shape, pos3, uv3);
-    seui_shape_add_vertex_textured(shape, pos4, uv4);
+    seui_shape_add_vertex_textured(shape, pos1, uv1, tint);
+    seui_shape_add_vertex_textured(shape, pos2, uv2, tint);
+    seui_shape_add_vertex_textured(shape, pos3, uv3, tint);
+    seui_shape_add_vertex_textured(shape, pos4, uv4, tint);
     SDL_assert_always(shape->vertex_count == 4);
 
     /* add the indices */
@@ -351,7 +351,7 @@ void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour) {
     renderer->shape_count++;
 }
 
-void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index) {
+void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index, RGBA tint) {
     Vec2 texture_size = {
         renderer->icons.texture.width,
         renderer->icons.texture.height,
@@ -360,7 +360,7 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index) {
         texture_size.x / renderer->icons.columns,
         texture_size.y / renderer->icons.rows,
     };
-    seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size, texture_size);
+    seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size, texture_size, tint);
     renderer->shape_count++;
 }
 

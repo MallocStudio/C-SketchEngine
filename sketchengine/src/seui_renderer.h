@@ -25,6 +25,7 @@ typedef struct UI_Shape {
 } UI_Shape;
 
 #define UI_RENDERER_SHAPE_MAX_SIZE 1024
+#define UI_ICON_INDEX_NULL       (Vec2) {0, 0}
 #define UI_ICON_INDEX_COLLAPSE   (Vec2) {1, 0}
 #define UI_ICON_INDEX_UNCOLLAPSE (Vec2) {2, 0}
 #define UI_ICON_INDEX_CLOSE      (Vec2) {0, 1}
@@ -70,7 +71,7 @@ void seui_renderer_draw(UI_Renderer *renderer);
 /// render a filled rectangle
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs
-void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index);
+void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint);
 /// render a line
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width);
 
