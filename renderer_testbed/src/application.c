@@ -49,7 +49,8 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- load mesh
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
-        app->entities[player2].mesh_index = serender3d_add_cube(&app->renderer);
+        // app->entities[player2].mesh_index = serender3d_add_cube(&app->renderer);
+        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/plane/plane.fbx");
     }
 }
 
