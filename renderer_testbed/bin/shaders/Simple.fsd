@@ -12,6 +12,7 @@ in vec3 _Bitangent;
 uniform sampler2D texture_diffuse;  // diffuse
 uniform sampler2D texture_specular; // specular
 uniform sampler2D texture_normal;   // normal map
+uniform sampler2D shadow_map;   // shadow map // @temp
 uniform vec4 base_diffuse;          // diffuse multiplier
 uniform vec3 L = vec3(-1, -1, 0);  // normalised light direction from the light
 
@@ -59,4 +60,6 @@ void main() {
 	vec3 specular = iA * kS * tex_diffuse * specular_term;
 
 	FragColour = vec4(ambient + diffuse + specular, 1);
+	float depth_value = texture(shadow_map, _TexCoord).r;
+	FragColour = vec4(vec3(depth_value), 1.0);
 }

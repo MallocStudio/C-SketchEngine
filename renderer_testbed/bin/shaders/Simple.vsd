@@ -10,6 +10,7 @@ layout ( location = 5 ) in vec3 Bitangent;
 
 uniform mat4 projection_view_model;
 uniform mat4 model_matrix;
+uniform mat4 light_space_matrix;
 
 out vec4 _Colour;
 out vec2 _TexCoord;
@@ -18,6 +19,13 @@ out vec3 _Position;
 out vec3 _Tangent;
 out vec3 _Bitangent;
 
+out VS_SHADOW_OUT {
+	vec3 frag_pos;
+    vec3 normal;
+    vec2 tex_coords;
+    vec4 frag_pos_light_space;
+} vs_shadow_out;
+
 void main() {
 	_Position = (model_matrix * vec4(Position, 1.0)).xyz;
 	_Colour = Colour;//(vec4(Normal, 0.0) + 1) * 0.5;
@@ -25,6 +33,13 @@ void main() {
 	_TexCoord = TexCoord;
 	_Tangent = Tangent;
 	_Bitangent = Bitangent;
+
+	vs_shadow_out.frag_pos = vec3(model_matrix * vec4(Position, 1.0));
+    vs_shadow_out.normal = transpose(inverse(mat3(model_matrix))) * Normal;
+    vs_shadow_out.tex_coords = TexCoord;
+    vs_shadow_out.frag_pos_light_space = light_space_matrix * vec4(vs_out.frag_pos, 1.0);
+
+    // gl_Position = projection * view * vec4(vs_out.FragPos, 1.0);
 
 	gl_Position = projection_view_model * vec4(Position, 1.0);
 }

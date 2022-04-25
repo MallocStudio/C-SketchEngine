@@ -192,6 +192,12 @@ typedef struct SE_Renderer3D {
 
     SE_Camera3D *current_camera;
     SE_Light light_directional;
+
+    /* shadow mapping */
+    u32 shadow_depth_map_fbo;
+    u32 shadow_depth_map;
+    SE_Shader shadow_shader;
+
 } SE_Renderer3D;
 
 void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);

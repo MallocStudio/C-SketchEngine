@@ -661,6 +661,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
 }
 
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+    // @lefthere trying to move shadow_render to here but we don't want to re render shadows here
     SE_Mesh *mesh = renderer->meshes[mesh_index];
     SE_Material *material = renderer->materials[mesh->material_index];
 
@@ -685,6 +686,7 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
     seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
     seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
+    seshader_set_uniform_i32(renderer->shaders[0], "shadow_map", 3); // @temp
     seshader_set_uniform_vec4(renderer->shaders[0], "base_diffuse", material->base_diffuse);
 
     // light uniforms
@@ -714,11 +716,36 @@ void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char 
     renderer->shaders_count++;
 }
 
+#define shadow_w  1024
+#define shadow_h  1024
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
 
     serender3d_add_shader(renderer, vsd, fsd);
+
+    { /* shadow mapping */
+        // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+        glGenFramebuffers(1, &renderer->shadow_depth_map_fbo);
+
+        glGenTextures(1, &renderer->shadow_depth_map);
+        glBindTexture(GL_TEXTURE_2D, renderer->shadow_depth_map);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadow_w, shadow_h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, renderer->shadow_depth_map_fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderer->shadow_depth_map, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        seshader_init_from(&renderer->shadow_shader, "shaders/SimpleShadow.vsd", "shaders/SimpleShadow.fsd");
+        // seshader_init_from(&renderer->shadow_depth_map_shader, "shaders/ShadowDepthMap.vsd", "shaders/ShadowDepthMap.fsd");
+    }
 }
 
 void serender3d_deinit(SE_Renderer3D *renderer) {
