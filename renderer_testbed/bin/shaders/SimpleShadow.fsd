@@ -1,0 +1,7 @@
+#version 330 core
+
+void main()
+{
+    // sense we're using the depth buffer we don't need any rendering here
+    // gl_FragDepth = gl_FragCoord.z;
+}

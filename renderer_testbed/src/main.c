@@ -6,7 +6,9 @@
 
 int main() {
     SDL_Window *window;
-    i32 window_w = 1600;
+    // i32 window_w = 1600;
+    // i32 window_h = 1024;
+    i32 window_w = 1024;
     i32 window_h = 1024;
     // -- init SDL
     ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");

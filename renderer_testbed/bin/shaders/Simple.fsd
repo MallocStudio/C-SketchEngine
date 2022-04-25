@@ -10,8 +10,9 @@ in vec3 _Bitangent;
 //in vec3 N; // normalised surface normal
 
 uniform sampler2D texture_diffuse;  // diffuse
-uniform sampler2D texture_specular; // diffuse
+uniform sampler2D texture_specular; // specular
 uniform sampler2D texture_normal;   // normal map
+uniform vec4 base_diffuse;          // diffuse multiplier
 uniform vec3 L = vec3(-1, -1, 0);  // normalised light direction from the light
 
 // environment ambient light and diffuse light
@@ -22,6 +23,7 @@ uniform float specular_power = 0.5;
 uniform mat4 model_matrix;
 
 out vec4 FragColour;
+layout (location = 0) out vec3 FragColour_Rendertarget; // this is used for rendering to using render targets
 
 void main() {
 	vec3 tex_diffuse = texture(texture_diffuse, _TexCoord).xyz; // surface diffuse
@@ -31,7 +33,6 @@ void main() {
 	vec3 kD = vec3(1, 1, 1); // material colour
 	vec3 kA = kD; // surface ambient
 	vec3 kS = normalize(kD); // material specular
-
 
 	// lambert term with L reversed to face the light
 	vec3 T = normalize(_Tangent);
@@ -54,7 +55,7 @@ void main() {
 
 	// calculate each light properly
 	vec3 ambient  = kA * iA * tex_diffuse; // ambient light
-	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term * _Colour.rgb; // diffuse light for one light
+	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term * _Colour.rgb + base_diffuse.xyz; // diffuse light for one light // @temp adding base instead of multiplying
 	vec3 specular = iA * kS * tex_diffuse * specular_term;
 
 	FragColour = vec4(ambient + diffuse + specular, 1);

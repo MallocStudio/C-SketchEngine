@@ -45,6 +45,8 @@ void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32
 /// Set a shader uniform
 void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value);
 ///
+void seshader_set_uniform_vec4 (SE_Shader *shader, const char *uniform_name, Vec4 value);
+///
 void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value);
 /// Set a shader uniform
 void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value);
@@ -92,6 +94,7 @@ void setexture_atlas_unbind();
 /// (think of material as a bunch of parameters)
 
 typedef struct SE_Material {
+    Vec4 base_diffuse;
     SE_Texture texture_diffuse;
     SE_Texture texture_specular;
     SE_Texture texture_normal;
@@ -152,6 +155,22 @@ Mat4 secamera3d_get_view(const SE_Camera3D *cam);
 /// updates the given camera's view and projection
 void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h);
 void secamera3d_input(SE_Camera3D *camera, struct SE_Input *seinput);
+
+///
+/// Render target
+///
+
+typedef struct SE_Render_Target {
+    Rect viewport;
+    bool has_depth; // set during init
+    GLuint frame_buffer;
+    GLuint texture; // rendered texture
+    GLuint depth_buffer;
+} SE_Render_Target;
+
+void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_depth);
+void serender_target_deinit(SE_Render_Target *render_target);
+void serender_target_use(SE_Render_Target *render_target);
 
 ///
 /// RENDERER

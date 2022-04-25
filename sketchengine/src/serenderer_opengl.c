@@ -65,7 +65,7 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
 
         Vec3 input = vec3_create(r - l, d - u, elevate - dive);
 
-        f32 camera_speed = 0.05f; // adjust accordingly
+        f32 camera_speed = 0.2f; // adjust accordingly
 
         Vec3 movement = {
             -input.x * camera_speed,
@@ -202,6 +202,12 @@ void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     seshader_use(shader);
     glUniform3f(var_loc, value.x, value.y, value.z);
+}
+
+void seshader_set_uniform_vec4 (SE_Shader *shader, const char *uniform_name, Vec4 value) {
+    GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    seshader_use(shader);
+    glUniform4f(var_loc, value.x, value.y, value.z, value.w);
 }
 
 void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value) {
@@ -579,22 +585,41 @@ static void semesh_construct
         struct aiString *ai_texture_path_specular = new(struct aiString);
         struct aiString *ai_texture_path_normal   = new(struct aiString);
 
+        bool has_diffuse  = true;
+        bool has_specular = true;
+        bool has_normal   = true;
+
         // @incomplete use these procedure fully
-        aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL);
-        aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL);
-        aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL);
+        if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
+            has_diffuse = false;
+        }
+        if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
+            has_specular = false;
+        }
+        if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
+            has_normal = false;
+        }
 
-        sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
-        sestring_append(&specular_path, ai_texture_path_specular->data);
-        sestring_append(&normal_path, ai_texture_path_normal->data);
-
-        setexture_load(&renderer->materials[material_index]->texture_diffuse , diffuse_path.buffer);
-        setexture_load(&renderer->materials[material_index]->texture_specular, specular_path.buffer);
-        setexture_load(&renderer->materials[material_index]->texture_normal  , normal_path.buffer);
-
-        free(ai_texture_path_diffuse);
-        free(ai_texture_path_specular);
-        free(ai_texture_path_normal);
+        /* diffuse */
+        if (has_diffuse) {
+            sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
+            setexture_load(&renderer->materials[material_index]->texture_diffuse , diffuse_path.buffer);
+            free(ai_texture_path_diffuse);
+        } else {
+            renderer->materials[material_index]->base_diffuse = (Vec4) {255, 255, 255, 255};
+        }
+        /* specular */
+        if (has_specular) {
+            sestring_append(&specular_path, ai_texture_path_specular->data);
+            setexture_load(&renderer->materials[material_index]->texture_specular, specular_path.buffer);
+            free(ai_texture_path_specular);
+        }
+        /* normal */
+        if (has_normal) {
+            sestring_append(&normal_path, ai_texture_path_normal->data);
+            setexture_load(&renderer->materials[material_index]->texture_normal  , normal_path.buffer);
+            free(ai_texture_path_normal);
+        }
 
         sestring_deinit(&diffuse_path);
         sestring_deinit(&specular_path);
@@ -655,11 +680,12 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     seshader_set_uniform_mat4(renderer->shaders[0], "model_matrix", transform);
     seshader_set_uniform_vec3(renderer->shaders[0], "camera_pos", renderer->current_camera->position);
 
+    /* material uniforms */
     seshader_set_uniform_f32(renderer->shaders[0], "specular_power", 0.5f);
-
     seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
     seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
     seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
+    seshader_set_uniform_vec4(renderer->shaders[0], "base_diffuse", material->base_diffuse);
 
     // light uniforms
     seshader_set_uniform_vec3(renderer->shaders[0], "L", renderer->light_directional.direction);
@@ -721,4 +747,76 @@ u32 serender3d_add_cube(SE_Renderer3D *renderer) {
 
     renderer->meshes_count++;
     return result;
+}
+
+///
+/// Render Targets
+///
+
+static void serender_target_reset(SE_Render_Target *render_target) {
+    render_target->has_depth = false;
+    render_target->viewport = (Rect) {0, 0, 0, 0};
+    render_target->frame_buffer = 0;
+    render_target->texture = 0;
+    render_target->depth_buffer = 0;
+}
+
+void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_depth) {
+    serender_target_reset(render_target);
+
+    render_target->viewport = viewport;
+    render_target->has_depth = has_depth;
+
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    glGenFramebuffers(1, &render_target->frame_buffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, render_target->frame_buffer);
+
+    // the texture we're going to be rendering to
+    glGenTextures(1, &render_target->texture);
+
+    glBindTexture(GL_TEXTURE_2D, render_target->texture);
+    // Give an empty image to opengl (the last '0')
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.w, viewport.h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    // poor filtering required
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // the depth buffer
+    if (has_depth) {
+        glGenRenderbuffers(1, &render_target->depth_buffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, render_target->depth_buffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport.w, viewport.h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_target->depth_buffer);
+    }
+
+    // -- configure our frame buffer
+    // set texture as our colour attachment #0
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, render_target->texture, 0);
+    // set the list of draw buffers
+    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, draw_buffers); // 1 is the size of draw_buffers
+
+    // check for errors
+    SDL_assert_always(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    if (has_depth) glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void serender_target_deinit(SE_Render_Target *render_target) {
+    if (render_target->has_depth) {
+        glDeleteRenderbuffers(1, &render_target->depth_buffer);
+    }
+    glDeleteTextures(1, &render_target->texture);
+    glDeleteFramebuffers(1, &render_target->frame_buffer);
+
+    serender_target_reset(render_target);
+}
+
+void serender_target_use(SE_Render_Target *render_target) {
+    glBindFramebuffer(GL_FRAMEBUFFER, render_target->frame_buffer);
+    Rect v = render_target->viewport;
+    glViewport(v.x, v.y, v.w, v.h);
 }
