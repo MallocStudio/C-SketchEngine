@@ -207,6 +207,7 @@ void serender3d_deinit(SE_Renderer3D *renderer);
 /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
 u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
+u32 serender3d_add_plane(SE_Renderer3D *renderer);
 /// Render all of the meshes the renderer contains
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 #endif // SERENDERER_OPENGL

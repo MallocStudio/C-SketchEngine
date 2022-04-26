@@ -9,12 +9,7 @@ in vec3 _Tangent;
 in vec3 _Bitangent;
 //in vec3 N; // normalised surface normal
 
-in VS_SHADOW_OUT {
-	vec3 frag_pos;
-    vec3 normal;
-    vec2 tex_coords;
-	vec4 frag_pos_light_space;
-} fs_shadow_in;
+vec4 frag_pos_light_space;
 
 uniform sampler2D texture_diffuse;  // diffuse
 uniform sampler2D texture_specular; // specular
@@ -33,10 +28,10 @@ uniform mat4 model_matrix;
 out vec4 FragColour;
 layout (location = 0) out vec3 FragColour_Rendertarget; // this is used for rendering to using render targets
 
-float shadow_calculation(vec4 frag_pos_light_space) {
+float shadow_calculation(vec4 param_frag_pos_light_space) {
 	// @TODO use the inverse matrix projection
 	// perform perspective divide
-	vec3 proj_coords = frag_pos_light_space.xyz / frag_pos_light_space.w;
+	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
 	// transform to [0,1] range
 	proj_coords = proj_coords * 0.5 + 0.5;
 	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
@@ -82,11 +77,12 @@ void main() {
 	vec3 specular = iA * kS * tex_diffuse * specular_term;
 
 	// calculate shadow
-	float shadow = shadow_calculation(fs_shadow_in.frag_pos_light_space);
+	float shadow = shadow_calculation(frag_pos_light_space);
 	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * _Colour.rgb;
 
 	FragColour = vec4(lighting, 1.0);
-	// FragColour = vec4(vec3(shadow), 1.0);
+	// FragColour = vec4(texture(shadow_map, _TexCoord).rgb, 1.0); // render out the shadow map
+	FragColour = vec4(vec3(shadow), 1.0);
 
 	// FragColour = vec4(ambient + diffuse + specular, 1);
 

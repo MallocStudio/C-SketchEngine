@@ -13,9 +13,11 @@ Vec3 light_pos_normalised;
 // u32 cheat_vbo;
 // Mat4 cheat_transform;
 
+u32 player       = -1;
+u32 player2      = -1;
+u32 player3      = -1;
+u32 light_entity = -1;
 void app_init(Application *app, SDL_Window *window) {
-    u32 player = -1; // @remove
-    u32 player2 = -1;
     memset(app, 0, sizeof(Application));
 
     app->window = window;
@@ -42,8 +44,12 @@ void app_init(Application *app, SDL_Window *window) {
     { // -- init entities
         player  = app_add_entity(app);
         player2 = app_add_entity(app);
+        player3 = app_add_entity(app);
+        light_entity = app_add_entity(app);
         app->entities[player].transform = mat4_translation(vec3_zero());
         app->entities[player2].transform = mat4_translation((Vec3) {0, -1.2f, 0}); // mat4_translation(vec3_create(10, 0, 5));
+        app->entities[player3].transform = mat4_translation((Vec3) {-2.0f, -1.2f, -1.0f}); // mat4_translation(vec3_create(10, 0, 5));
+        app->entities[light_entity].transform = mat4_translation(light_pos);
     }
 
     { // -- init UI
@@ -55,11 +61,17 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- load mesh
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+
         // app->entities[player2].mesh_index = serender3d_add_cube(&app->renderer);
-        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/plane/plane.fbx");
-        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/stone-ground-01/source/Stone_ground_01/Stone_ground_01.obj");
-        app->entities[player2].transform = mat4_mul(mat4_euler_x(SEMATH_HALF_PI), app->entities[player2].transform);
-        app->entities[player2].transform = mat4_mul(mat4_scale((Vec3) {0.1f, 0.1f, 0.1f}), app->entities[player2].transform);
+        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/plane/plane.fbx");
+
+        app->entities[player2].mesh_index = serender3d_add_plane(&app->renderer);
+        app->entities[player2].transform = mat4_mul(mat4_scale((Vec3) {10.0f, 10.0f, 10.0f}), app->entities[player2].transform);
+
+        app->entities[light_entity].mesh_index = serender3d_add_cube(&app->renderer);
+
+        app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player3].transform = mat4_mul(mat4_euler_x(SEMATH_HALF_PI), app->entities[player3].transform);
     }
 }
 
@@ -107,6 +119,8 @@ void app_update(Application *app) {
             light_pos.x = light_pos_normalised.x * 10 - 5;
             light_pos.y = light_pos_normalised.y * 10 - 5;
             light_pos.z = light_pos_normalised.z * 10 - 5;
+
+            app->entities[light_entity].transform = mat4_translation(light_pos);
         }
     }
 }
@@ -136,9 +150,9 @@ void app_render(Application *app) {
             // Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
             Mat4 light_view = mat4_lookat(light_pos, vec3_zero(), vec3_up());
 
-            // f32 near_plane = 1.0f, far_plane = 7.5f;
-            // Mat4 light_projection = mat4_ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); // what is visible to the light
-            Mat4 light_proj = mat4_perspective(SEMATH_PI * 0.25f, window_w / (f32) window_h, 0.1f, 1000.0f);
+            f32 near_plane = 1.0f, far_plane = 7.5f;
+            Mat4 light_proj = mat4_ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); // what is visible to the light
+            // Mat4 light_proj = mat4_perspective(SEMATH_PI * 0.25f, window_w / (f32) window_h, 0.1f, 1000.0f);
 
             Mat4 light_space_mat = mat4_mul(light_view, light_proj);
 #else

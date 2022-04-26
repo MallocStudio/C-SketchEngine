@@ -386,17 +386,19 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
 }
 
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
+#if 1
     SE_Vertex3D verts[8] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
-    verts[0].position = (Vec3) {+scale.x, +scale.y, +scale.z};
-    verts[1].position = (Vec3) {-scale.x, +scale.y, +scale.z};
-    verts[2].position = (Vec3) {-scale.x, -scale.y, +scale.z};
-    verts[3].position = (Vec3) {+scale.x, -scale.y, +scale.z};
-    verts[4].position = (Vec3) {+scale.x, -scale.y, -scale.z};
-    verts[5].position = (Vec3) {+scale.x, +scale.y, -scale.z};
-    verts[6].position = (Vec3) {-scale.x, +scale.y, -scale.z};
-    verts[7].position = (Vec3) {-scale.x, -scale.y, -scale.z};
+
+    verts[0].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // 0
+    verts[1].position = (Vec3) {-scale.x, +scale.y, +scale.z}; // 1
+    verts[2].position = (Vec3) {+scale.x, +scale.y, +scale.z}; // 2
+    verts[3].position = (Vec3) {+scale.x, -scale.y, +scale.z}; // 3
+    verts[4].position = (Vec3) {+scale.x, -scale.y, -scale.z}; // 4
+    verts[5].position = (Vec3) {+scale.x, +scale.y, -scale.z}; // 5
+    verts[6].position = (Vec3) {-scale.x, +scale.y, -scale.z}; // 6
+    verts[7].position = (Vec3) {-scale.x, -scale.y, -scale.z}; // 7
 
     verts[0].rgba = RGBA_WHITE;
     verts[1].rgba = RGBA_WHITE;
@@ -408,14 +410,14 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[7].rgba = RGBA_WHITE;
 
     // @TODO generate better normals
-    verts[0].normal = (Vec3) {+0.5f, +0.5f, +0.5f};
-    verts[1].normal = (Vec3) {-0.5f, +0.5f, +0.5f};
-    verts[2].normal = (Vec3) {-0.5f, -0.5f, +0.5f};
-    verts[3].normal = (Vec3) {+0.5f, -0.5f, +0.5f};
-    verts[4].normal = (Vec3) {+0.5f, -0.5f, -0.5f};
-    verts[5].normal = (Vec3) {+0.5f, +0.5f, -0.5f};
-    verts[6].normal = (Vec3) {-0.5f, +0.5f, -0.5f};
-    verts[7].normal = (Vec3) {-0.5f, -0.5f, -0.5f};
+    verts[0].normal = (Vec3) {0, 0, 1};
+    verts[1].normal = (Vec3) {0, 0, 1};
+    verts[2].normal = (Vec3) {0, 0, 1};
+    verts[3].normal = (Vec3) {0, 0, 1};
+    verts[4].normal = (Vec3) {1, 0, 0};
+    verts[5].normal = (Vec3) {1, 0, 0};
+    verts[6].normal = (Vec3) {0, 1, 0};
+    verts[7].normal = (Vec3) {-1, 0, 0};
 
     u32 indices[12 * 3] = {
         0, 1, 2,
@@ -432,6 +434,178 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
         3, 7, 4
     };
     semesh_generate(mesh, 8, verts, 12 * 3, indices);
+#else
+    SE_Vertex3D verts[24] = {0};
+    scale = vec3_mul_scalar(scale, 0.5f);
+    RGBA colour = RGBA_WHITE;
+
+    verts[0+0].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // negative y
+    verts[1+0].position = (Vec3) {+scale.x, -scale.y, +scale.z};
+    verts[2+0].position = (Vec3) {+scale.x, -scale.y, -scale.z};
+    verts[3+0].position = (Vec3) {-scale.x, -scale.y, -scale.z};
+
+    verts[0+0].rgba = colour;
+    verts[1+0].rgba = colour;
+    verts[2+0].rgba = colour;
+    verts[3+0].rgba = colour;
+
+    verts[0+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
+    verts[1+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
+    verts[2+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
+    verts[3+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
+
+    verts[0+0].texture_coord = (Vec2) {0, 0};
+    verts[1+0].texture_coord = (Vec2) {0, 1};
+    verts[2+0].texture_coord = (Vec2) {1, 1};
+    verts[3+0].texture_coord = (Vec2) {1, 0};
+
+    verts[0+1].position = (Vec3) {-scale.x, +scale.y, +scale.z}; // positive y
+    verts[1+1].position = (Vec3) {-scale.x, +scale.y, -scale.z};
+    verts[2+1].position = (Vec3) {+scale.x, +scale.y, -scale.z};
+    verts[3+1].position = (Vec3) {+scale.x, +scale.y, +scale.z};
+
+    verts[0+1].rgba = colour;
+    verts[1+1].rgba = colour;
+    verts[2+1].rgba = colour;
+    verts[3+1].rgba = colour;
+
+    verts[0+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
+    verts[1+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
+    verts[2+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
+    verts[3+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
+
+    verts[0+1].texture_coord = (Vec2) {0, 0};
+    verts[1+1].texture_coord = (Vec2) {0, 1};
+    verts[2+1].texture_coord = (Vec2) {1, 1};
+    verts[3+1].texture_coord = (Vec2) {1, 0};
+
+    verts[0+2].position = (Vec3) {+scale.x, -scale.y, +scale.z}; // positive x
+    verts[1+2].position = (Vec3) {+scale.x, +scale.y, +scale.z};
+    verts[2+2].position = (Vec3) {+scale.x, +scale.y, -scale.z};
+    verts[3+2].position = (Vec3) {+scale.x, -scale.y, -scale.z};
+
+    verts[0+2].rgba = colour;
+    verts[1+2].rgba = colour;
+    verts[2+2].rgba = colour;
+    verts[3+2].rgba = colour;
+
+    verts[0+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
+    verts[1+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
+    verts[2+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
+    verts[3+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
+
+    verts[0+2].texture_coord = (Vec2) {0, 0};
+    verts[1+2].texture_coord = (Vec2) {0, 1};
+    verts[2+2].texture_coord = (Vec2) {1, 1};
+    verts[3+2].texture_coord = (Vec2) {1, 0};
+
+    verts[0+3].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // negative x
+    verts[1+3].position = (Vec3) {-scale.x, -scale.y, -scale.z};
+    verts[2+3].position = (Vec3) {-scale.x, +scale.y, -scale.z};
+    verts[3+3].position = (Vec3) {-scale.x, +scale.y, +scale.z};
+
+    verts[0+3].rgba = colour;
+    verts[1+3].rgba = colour;
+    verts[2+3].rgba = colour;
+    verts[3+3].rgba = colour;
+
+    verts[0+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
+    verts[1+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
+    verts[2+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
+    verts[3+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
+
+    verts[0+3].texture_coord = (Vec2) {0, 0};
+    verts[1+3].texture_coord = (Vec2) {0, 1};
+    verts[2+3].texture_coord = (Vec2) {1, 1};
+    verts[3+3].texture_coord = (Vec2) {1, 0};
+
+    verts[0+4].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // positive z
+    verts[1+4].position = (Vec3) {-scale.x, +scale.y, +scale.z};
+    verts[2+4].position = (Vec3) {+scale.x, +scale.y, +scale.z};
+    verts[3+4].position = (Vec3) {+scale.x, -scale.y, +scale.z};
+
+    verts[0+4].rgba = colour;
+    verts[1+4].rgba = colour;
+    verts[2+4].rgba = colour;
+    verts[3+4].rgba = colour;
+
+    verts[0+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
+    verts[1+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
+    verts[2+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
+    verts[3+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
+
+    verts[0+4].texture_coord = (Vec2) {0, 0};
+    verts[1+4].texture_coord = (Vec2) {0, 1};
+    verts[2+4].texture_coord = (Vec2) {1, 1};
+    verts[3+4].texture_coord = (Vec2) {1, 0};
+
+    verts[0+5].position = (Vec3) {-scale.x, -scale.y, -scale.z}; // negative z
+    verts[1+5].position = (Vec3) {+scale.x, -scale.y, -scale.z};
+    verts[2+5].position = (Vec3) {-scale.x, +scale.y, -scale.z};
+    verts[3+5].position = (Vec3) {+scale.x, +scale.y, -scale.z};
+
+    verts[0+5].rgba = colour;
+    verts[1+5].rgba = colour;
+    verts[2+5].rgba = colour;
+    verts[3+5].rgba = colour;
+
+    verts[0+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
+    verts[1+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
+    verts[2+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
+    verts[3+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
+
+    verts[0+5].texture_coord = (Vec2) {0, 0};
+    verts[1+5].texture_coord = (Vec2) {0, 1};
+    verts[2+5].texture_coord = (Vec2) {1, 1};
+    verts[3+5].texture_coord = (Vec2) {1, 0};
+
+    u32 indices[36] = {
+        0+0, 1+0, 2+0, // negative y
+        2+0, 3+0, 0+0,
+        0+1, 1+1, 2+1, // positive y
+        2+1, 3+1, 0+1,
+        0+2, 1+2, 2+2, // positive x
+        2+2, 3+2, 0+2,
+        0+3, 1+3, 2+3, // negative x
+        2+3, 3+3, 0+3,
+        0+4, 1+4, 2+4, // positive z
+        2+4, 3+4, 0+4,
+        0+5, 1+5, 2+5, // negative z
+        2+5, 3+5, 0+5,
+    };
+    semesh_generate(mesh, 36, verts, 24, indices);
+#endif
+}
+
+void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
+    SE_Vertex3D verts[4] = {0};
+
+    scale = vec3_mul_scalar(scale, 0.5f);
+    verts[0].position = (Vec3) {-scale.x, 0.0f, -scale.z};
+    verts[1].position = (Vec3) {-scale.x, 0.0f, +scale.z};
+    verts[2].position = (Vec3) {+scale.x, 0.0f, +scale.z};
+    verts[3].position = (Vec3) {+scale.x, 0.0f, -scale.z};
+
+    verts[0].rgba = RGBA_WHITE;
+    verts[1].rgba = RGBA_WHITE;
+    verts[2].rgba = RGBA_WHITE;
+    verts[3].rgba = RGBA_WHITE;
+
+    verts[0].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[1].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[2].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[3].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+
+    verts[0].texture_coord = (Vec2) {0, 0};
+    verts[1].texture_coord = (Vec2) {0, 1};
+    verts[2].texture_coord = (Vec2) {1, 1};
+    verts[3].texture_coord = (Vec2) {1, 0};
+
+    u32 indices[6] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+    semesh_generate(mesh, 4, verts, 6, indices);
 }
 
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
@@ -647,13 +821,6 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
         memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
         semesh_construct(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
-        // @remove once entities can render their own meshes
-        // renderer->meshes[renderer->meshes_count]->transform = (Mat4) {
-        //     1, 0, 0, 0,
-        //     0, 1, 0, 0,
-        //     0, 0, 1, 0,
-        //     0, 0, 0, 1,
-        // };
         result = renderer->meshes_count;
         renderer->meshes_count++;
     }
@@ -792,6 +959,17 @@ u32 serender3d_add_cube(SE_Renderer3D *renderer) {
     return result;
 }
 
+u32 serender3d_add_plane(SE_Renderer3D *renderer) {
+    u32 result = renderer->meshes_count;
+
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_plane(renderer->meshes[renderer->meshes_count], vec3_one());
+
+    renderer->meshes_count++;
+    return result;
+}
+
 ///
 /// Render Targets
 ///
@@ -829,7 +1007,7 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
 
     // the depth buffer
     if (has_depth) {
-#if 1 // render buffer
+#if 0 // render buffer
         glGenRenderbuffers(1, &render_target->depth_buffer); // @TODO this should be texture not render buffer
         glBindRenderbuffer(GL_RENDERBUFFER, render_target->depth_buffer);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport.w, viewport.h);
