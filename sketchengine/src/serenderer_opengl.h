@@ -198,10 +198,11 @@ typedef struct SE_Renderer3D {
     // u32 shadow_depth_map;
     SE_Render_Target shadow_render_target;
     SE_Shader shadow_shader;
+    Mat4 light_space_matrix;
 
 } SE_Renderer3D;
 
-void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
+u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd);
 void serender3d_deinit(SE_Renderer3D *renderer);
 /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.

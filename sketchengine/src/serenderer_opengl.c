@@ -827,11 +827,6 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
     return result;
 }
 
-// setup shader uniforms for rendering meshes
-void serender3d_render_mesh_setup(const SE_Renderer3D *renderer) {
-
-}
-
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
@@ -851,6 +846,7 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
 
     seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
     seshader_set_uniform_mat4(renderer->shaders[0], "model_matrix", transform);
+    seshader_set_uniform_mat4(renderer->shaders[0], "light_space_matrix", renderer->light_space_matrix);
     seshader_set_uniform_vec3(renderer->shaders[0], "camera_pos", renderer->current_camera->position);
 
     /* material uniforms */
@@ -858,7 +854,7 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
     seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
     seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
-    seshader_set_uniform_i32(renderer->shaders[0], "shadow_map", 3); // @temp
+    seshader_set_uniform_i32(renderer->shaders[0], "shadow_map", 3);
     seshader_set_uniform_vec4(renderer->shaders[0], "base_diffuse", material->base_diffuse);
 
     // light uniforms
@@ -869,6 +865,9 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     setexture_bind(&material->texture_diffuse, 0);
     setexture_bind(&material->texture_specular, 1);
     setexture_bind(&material->texture_normal, 2);
+
+    glActiveTexture(GL_TEXTURE0 + 3); // shadow map
+    glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
 
     glBindVertexArray(mesh->vao);
 
@@ -881,11 +880,13 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     glBindVertexArray(0);
 }
 
-void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
+u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
     // add a default shader
-    renderer->shaders[renderer->shaders_count] = new (SE_Shader);
-    seshader_init_from(renderer->shaders[renderer->shaders_count], vsd, fsd);
+    u32 shader = renderer->shaders_count;
+    renderer->shaders[shader] = new (SE_Shader);
+    seshader_init_from(renderer->shaders[shader], vsd, fsd);
     renderer->shaders_count++;
+    return shader;
 }
 
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {

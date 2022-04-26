@@ -14,7 +14,7 @@ vec4 frag_pos_light_space;
 uniform sampler2D texture_diffuse;  // diffuse
 uniform sampler2D texture_specular; // specular
 uniform sampler2D texture_normal;   // normal map
-uniform sampler2D shadow_map;   // shadow map // @temp
+uniform sampler2D shadow_map;   	// shadow map
 uniform vec4 base_diffuse;          // diffuse multiplier
 uniform vec3 L = vec3(-1, -1, 0);  // normalised light direction from the light
 
@@ -82,7 +82,7 @@ void main() {
 
 	FragColour = vec4(lighting, 1.0);
 	// FragColour = vec4(texture(shadow_map, _TexCoord).rgb, 1.0); // render out the shadow map
-	FragColour = vec4(vec3(shadow), 1.0);
+	// FragColour = vec4(vec3(shadow), 1.0);
 
 	// FragColour = vec4(ambient + diffuse + specular, 1);
 
