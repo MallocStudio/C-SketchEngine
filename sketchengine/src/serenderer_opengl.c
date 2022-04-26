@@ -660,6 +660,12 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
     return result;
 }
 
+// setup shader uniforms for rendering meshes
+void serender3d_render_mesh_setup(const SE_Renderer3D *renderer) {
+
+}
+
+// make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     // @lefthere trying to move shadow_render to here but we don't want to re render shadows here
     SE_Mesh *mesh = renderer->meshes[mesh_index];
