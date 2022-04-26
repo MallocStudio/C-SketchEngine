@@ -194,8 +194,9 @@ typedef struct SE_Renderer3D {
     SE_Light light_directional;
 
     /* shadow mapping */
-    u32 shadow_depth_map_fbo;
-    u32 shadow_depth_map;
+    // u32 shadow_depth_map_fbo;
+    // u32 shadow_depth_map;
+    SE_Render_Target shadow_render_target;
     SE_Shader shadow_shader;
 
 } SE_Renderer3D;
@@ -208,5 +209,4 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
 /// Render all of the meshes the renderer contains
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
-
 #endif // SERENDERER_OPENGL

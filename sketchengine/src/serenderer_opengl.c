@@ -48,9 +48,9 @@ Mat4 secamera3d_get_view(const SE_Camera3D *cam) {
 
 void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h) {
     cam->view = secamera3d_get_view(cam);
-    cam->projection = mat4_perspective(SEMATH_PI * 0.25f,
-                                        window_w / (f32) window_h,
-                                        0.1f, 1000.0f);
+    // f32 near_plane = 0.01f, far_plane = 70.5f;
+    // cam->projection = mat4_ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    cam->projection = mat4_perspective(SEMATH_PI * 0.25f, window_w / (f32) window_h, 0.1f, 1000.0f);
 }
 
 void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
@@ -667,7 +667,6 @@ void serender3d_render_mesh_setup(const SE_Renderer3D *renderer) {
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
-    // @lefthere trying to move shadow_render to here but we don't want to re render shadows here
     SE_Mesh *mesh = renderer->meshes[mesh_index];
     SE_Material *material = renderer->materials[mesh->material_index];
 
@@ -722,36 +721,41 @@ void serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char 
     renderer->shaders_count++;
 }
 
-#define shadow_w  1024
-#define shadow_h  1024
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
 
     serender3d_add_shader(renderer, vsd, fsd);
 
-    { /* shadow mapping */
-        // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-        glGenFramebuffers(1, &renderer->shadow_depth_map_fbo);
 
-        glGenTextures(1, &renderer->shadow_depth_map);
-        glBindTexture(GL_TEXTURE_2D, renderer->shadow_depth_map);
+    // { /* shadow mapping */
+    //     // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+    //     glGenFramebuffers(1, &renderer->shadow_depth_map_fbo);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadow_w, shadow_h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    //     glGenTextures(1, &renderer->shadow_depth_map);
+    //     glBindTexture(GL_TEXTURE_2D, renderer->shadow_depth_map);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, renderer->shadow_depth_map_fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderer->shadow_depth_map, 0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadow_w, shadow_h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        seshader_init_from(&renderer->shadow_shader, "shaders/SimpleShadow.vsd", "shaders/SimpleShadow.fsd");
-        // seshader_init_from(&renderer->shadow_depth_map_shader, "shaders/ShadowDepthMap.vsd", "shaders/ShadowDepthMap.fsd");
-    }
+    //     glBindFramebuffer(GL_FRAMEBUFFER, renderer->shadow_depth_map_fbo);
+    //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderer->shadow_depth_map, 0);
+    //     glDrawBuffer(GL_NONE);
+    //     glReadBuffer(GL_NONE);
+    //     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //     seshader_init_from(&renderer->shadow_shader, "shaders/SimpleShadow.vsd", "shaders/SimpleShadow.fsd");
+    //     // seshader_init_from(&renderer->shadow_depth_map_shader, "shaders/ShadowDepthMap.vsd", "shaders/ShadowDepthMap.fsd");
+    // }
+
+    /* shadow mapping */
+    f32 shadow_w = 1024;
+    f32 shadow_h = 1024;
+    serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true);
+    seshader_init_from(&renderer->shadow_shader, "shaders/SimpleShadow.vsd", "shaders/SimpleShadow.fsd");
 }
 
 void serender3d_deinit(SE_Renderer3D *renderer) {
@@ -769,6 +773,12 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
         sematerial_deinit(renderer->materials[i]);
     }
     renderer->materials_count = 0;
+
+    /* shadow mapping */
+    // seshader_deinit(&renderer->shadow_shader);
+    // seshader_deinit(&shadow_depth_map_shader);
+
+    serender_target_deinit(&renderer->shadow_render_target);
 }
 
 u32 serender3d_add_cube(SE_Renderer3D *renderer) {
@@ -814,13 +824,25 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
     // poor filtering required
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     // the depth buffer
     if (has_depth) {
-        glGenRenderbuffers(1, &render_target->depth_buffer);
+#if 1 // render buffer
+        glGenRenderbuffers(1, &render_target->depth_buffer); // @TODO this should be texture not render buffer
         glBindRenderbuffer(GL_RENDERBUFFER, render_target->depth_buffer);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport.w, viewport.h);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_target->depth_buffer);
+#else // texture
+        glGenTextures(1, &render_target->depth_buffer);
+        glBindTexture(GL_TEXTURE_2D, render_target->depth_buffer);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, viewport.w, viewport.h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+#endif
     }
 
     // -- configure our frame buffer
@@ -849,7 +871,11 @@ void serender_target_deinit(SE_Render_Target *render_target) {
 }
 
 void serender_target_use(SE_Render_Target *render_target) {
-    glBindFramebuffer(GL_FRAMEBUFFER, render_target->frame_buffer);
-    Rect v = render_target->viewport;
-    glViewport(v.x, v.y, v.w, v.h);
+    if (render_target == NULL) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    } else {
+        glBindFramebuffer(GL_FRAMEBUFFER, render_target->frame_buffer);
+        Rect v = render_target->viewport;
+        glViewport(v.x, v.y, v.w, v.h);
+    }
 }
