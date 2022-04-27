@@ -3,7 +3,7 @@
 #include "sedefines.h"
 #include "semath.h"
 #include "seinput.h"
-#include "serenderer_opengl.h"
+#include "serenderer.h"
 
 // deprecated for now
 // #include "seui.h"

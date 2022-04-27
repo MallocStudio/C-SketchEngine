@@ -3,7 +3,7 @@
 
 #include "sedefines.h"
 #include "semath_defines.h"
-#include "serenderer_opengl.h"
+#include "serenderer.h"
 
 ///
 /// RENDERER

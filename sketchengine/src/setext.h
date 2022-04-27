@@ -5,7 +5,7 @@
 #include "sedefines.h"
 #include "FreeType/freetype.h"
 // #include "serenderer.h"
-#include "serenderer_opengl.h"
+#include "serenderer.h"
 
 // #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
 #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
