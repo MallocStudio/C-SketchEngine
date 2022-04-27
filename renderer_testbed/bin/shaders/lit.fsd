@@ -9,7 +9,7 @@ in vec3 _Tangent;
 in vec3 _Bitangent;
 //in vec3 N; // normalised surface normal
 
-vec4 frag_pos_light_space;
+in vec4 frag_pos_light_space;
 
 uniform sampler2D texture_diffuse;  // diffuse
 uniform sampler2D texture_specular; // specular
@@ -39,12 +39,15 @@ float shadow_calculation(vec4 param_frag_pos_light_space) {
 	// get depth of current fragment from light's perspective
 	float current_depth = proj_coords.z;
 	// check whether current frag pos is in shadow
-	float shadow = current_depth > closest_depth ? 1.0 : 0.0;
+
+	float bias = max(0.05 * (1.0 - dot(_Normal, L)), 0.005);
+	float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+
+	if (proj_coords.z > 1.0) shadow = 0.0;
 	return shadow;
 }
 
 vec3 shadow_projection(vec4 param_frag_pos_light_space) {
-	vec3 proj_coord = param_frag_pos_light
 	// perform perspective divide
 	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
 	// transform to [0,1] range
@@ -91,8 +94,16 @@ void main() {
 	float shadow = shadow_calculation(frag_pos_light_space);
 	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * _Colour.rgb;
 
-	FragColour = vec4(lighting, 1.0);
-	FragColour = shadow_projection(frag_pos_light_space);
+	// if (shadow > 0) {
+	// 	FragColour = vec4(0.0, 0.0, 0.0, 1.0);
+	// } else {
+	// 	FragColour = vec4(lighting, 1.0);
+	// }
+		FragColour = vec4(lighting, 1.0);
+	// FragColour = vec4(shadow_projection(frag_pos_light_space), 1.0);
+
+	// FragColour = vec4((frag_pos_light_space).rgb, 1.0);
+
 	// FragColour = vec4(texture(shadow_map, _TexCoord).rgb, 1.0); // render out the shadow map
 	// FragColour = vec4(vec3(shadow), 1.0);
 

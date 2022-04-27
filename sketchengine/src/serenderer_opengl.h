@@ -187,6 +187,10 @@ typedef struct SE_Renderer3D {
     u32 shaders_count;
     SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
 
+    u32 shader_lit;
+    u32 shader_shadow_calc;
+    u32 shader_shadow_debug_render;
+
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
@@ -197,13 +201,12 @@ typedef struct SE_Renderer3D {
     // u32 shadow_depth_map_fbo;
     // u32 shadow_depth_map;
     SE_Render_Target shadow_render_target;
-    SE_Shader shadow_shader;
     Mat4 light_space_matrix;
 
 } SE_Renderer3D;
 
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
-void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd);
+void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera);
 void serender3d_deinit(SE_Renderer3D *renderer);
 /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
 u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);

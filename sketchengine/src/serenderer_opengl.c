@@ -224,7 +224,12 @@ void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB 
 }
 
 void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {
-    GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    glGetError();
+    GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
+    }
     seshader_use(shader);
     glUniformMatrix4fv(var_loc, 1, GL_FALSE, (const GLfloat*)&value);
 }
@@ -596,6 +601,16 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
     verts[2].normal = (Vec3) {0.0f, 1.0f, 0.0f};
     verts[3].normal = (Vec3) {0.0f, 1.0f, 0.0f};
 
+    verts[0].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[1].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[2].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[3].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+
+    verts[0].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[1].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[2].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[3].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+
     verts[0].texture_coord = (Vec2) {0, 0};
     verts[1].texture_coord = (Vec2) {0, 1};
     verts[2].texture_coord = (Vec2) {1, 1};
@@ -839,28 +854,29 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
-    seshader_use(renderer->shaders[0]); // use the default shader
+    u32 shader = renderer->shader_lit;
+    seshader_use(renderer->shaders[shader]); // use the default shader
 
     // the good old days when debugging:
     // material->texture_diffuse.width = 100;
 
-    seshader_set_uniform_mat4(renderer->shaders[0], "projection_view_model", pvm);
-    seshader_set_uniform_mat4(renderer->shaders[0], "model_matrix", transform);
-    seshader_set_uniform_mat4(renderer->shaders[0], "light_space_matrix", renderer->light_space_matrix);
-    seshader_set_uniform_vec3(renderer->shaders[0], "camera_pos", renderer->current_camera->position);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
+    seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
 
     /* material uniforms */
-    seshader_set_uniform_f32(renderer->shaders[0], "specular_power", 0.5f);
-    seshader_set_uniform_i32(renderer->shaders[0], "texture_diffuse", 0);
-    seshader_set_uniform_i32(renderer->shaders[0], "texture_specular", 1);
-    seshader_set_uniform_i32(renderer->shaders[0], "texture_normal", 2);
-    seshader_set_uniform_i32(renderer->shaders[0], "shadow_map", 3);
-    seshader_set_uniform_vec4(renderer->shaders[0], "base_diffuse", material->base_diffuse);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "specular_power", 0.1f);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "texture_diffuse", 0);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "texture_specular", 1);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "texture_normal", 2);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
+    seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
 
     // light uniforms
-    seshader_set_uniform_vec3(renderer->shaders[0], "L", renderer->light_directional.direction);
-    seshader_set_uniform_rgb(renderer->shaders[0], "iA", renderer->light_directional.ambient);
-    seshader_set_uniform_rgb(renderer->shaders[0], "iD", renderer->light_directional.diffuse);
+    seshader_set_uniform_vec3(renderer->shaders[shader], "L", renderer->light_directional.direction);
+    seshader_set_uniform_rgb(renderer->shaders[shader], "iA", renderer->light_directional.ambient);
+    seshader_set_uniform_rgb(renderer->shaders[shader], "iD", renderer->light_directional.diffuse);
 
     setexture_bind(&material->texture_diffuse, 0);
     setexture_bind(&material->texture_specular, 1);
@@ -889,41 +905,18 @@ u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *
     return shader;
 }
 
-void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera, const char *vsd, const char *fsd) {
+void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
 
-    serender3d_add_shader(renderer, vsd, fsd);
-
-
-    // { /* shadow mapping */
-    //     // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-    //     glGenFramebuffers(1, &renderer->shadow_depth_map_fbo);
-
-    //     glGenTextures(1, &renderer->shadow_depth_map);
-    //     glBindTexture(GL_TEXTURE_2D, renderer->shadow_depth_map);
-
-    //     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadow_w, shadow_h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    //     glBindFramebuffer(GL_FRAMEBUFFER, renderer->shadow_depth_map_fbo);
-    //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderer->shadow_depth_map, 0);
-    //     glDrawBuffer(GL_NONE);
-    //     glReadBuffer(GL_NONE);
-    //     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    //     seshader_init_from(&renderer->shadow_shader, "shaders/SimpleShadow.vsd", "shaders/SimpleShadow.fsd");
-    //     // seshader_init_from(&renderer->shadow_depth_map_shader, "shaders/ShadowDepthMap.vsd", "shaders/ShadowDepthMap.fsd");
-    // }
+    renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit.fsd");
+    renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
+    renderer->shader_shadow_debug_render = serender3d_add_shader(renderer, "shaders/shadow_debug_render.vsd", "shaders/shadow_debug_render.fsd");
 
     /* shadow mapping */
     f32 shadow_w = 1024;
     f32 shadow_h = 1024;
     serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true);
-    seshader_init_from(&renderer->shadow_shader, "shaders/SimpleShadow.vsd", "shaders/SimpleShadow.fsd");
 }
 
 void serender3d_deinit(SE_Renderer3D *renderer) {
@@ -943,9 +936,6 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
     renderer->materials_count = 0;
 
     /* shadow mapping */
-    // seshader_deinit(&renderer->shadow_shader);
-    // seshader_deinit(&shadow_depth_map_shader);
-
     serender_target_deinit(&renderer->shadow_render_target);
 }
 
@@ -1008,26 +998,21 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
 
     // the depth buffer
     if (has_depth) {
-#if 0 // render buffer
-        glGenRenderbuffers(1, &render_target->depth_buffer); // @TODO this should be texture not render buffer
-        glBindRenderbuffer(GL_RENDERBUFFER, render_target->depth_buffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport.w, viewport.h);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_target->depth_buffer);
-#else // texture
         glGenTextures(1, &render_target->depth_buffer);
         glBindTexture(GL_TEXTURE_2D, render_target->depth_buffer);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, viewport.w, viewport.h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-#endif
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        f32 border_colour[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_colour);
     }
 
     // -- configure our frame buffer
     // set texture as our colour attachment #0
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, render_target->texture, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, render_target->depth_buffer, 0);
+    if (has_depth) glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, render_target->depth_buffer, 0);
     // set the list of draw buffers
     GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, draw_buffers); // 1 is the size of draw_buffers
@@ -1037,7 +1022,6 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-    if (has_depth) glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void serender_target_deinit(SE_Render_Target *render_target) {
