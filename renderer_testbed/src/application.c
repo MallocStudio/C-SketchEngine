@@ -194,8 +194,8 @@ void app_render(Application *app) {
         // Vec3 cam_forward = mat4_forward(app->camera.view);
         // app->renderer.light_directional.direction = cam_forward;
         Vec3 light_direction = {
-            -slider2d_value.x,
-            -slider2d_value.y,
+            slider2d_value.x,
+            slider2d_value.y,
             0
         };
         vec3_normalise(&light_direction);
@@ -206,7 +206,7 @@ void app_render(Application *app) {
             Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
             // Mat4 light_view = mat4_lookat(light_pos, vec3_zero(), vec3_up());
 
-            f32 near_plane = 1.0f, far_plane = 7.5f;
+            f32 near_plane = 0.1f, far_plane = 7.5f;
             Mat4 light_proj = mat4_ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); // what is visible to the light
             // Mat4 light_proj = mat4_perspective(SEMATH_PI * 0.25f, window_w / (f32) window_h, 0.1f, 1000.0f);
 
@@ -220,9 +220,9 @@ void app_render(Application *app) {
             seshader_set_uniform_mat4(&app->renderer.shadow_shader, "light_space_matrix", light_space_mat);
 
             { /* render the scene from the light's point of view */
-
+                glEnable(GL_DEPTH_TEST);
                 if (depth_mode_lequal) {
-                    glDepthFunc(GL_LEQUAL);
+                    glDepthFunc(GL_LESS);
                 } else {
                     glDepthFunc(GL_GEQUAL);
                 }
@@ -253,7 +253,8 @@ void app_render(Application *app) {
         // 2. render normally with the shadow map
         RGB ambient = app->renderer.light_directional.ambient;
         rgb_normalise(&ambient);
-        glClearColor(ambient.r, ambient.g, ambient.b, 1.0f);
+        // glClearColor(ambient.r, ambient.g, ambient.b, 1.0f);
+        glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window_w, window_h);
 

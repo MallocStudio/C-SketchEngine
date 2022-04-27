@@ -26,7 +26,8 @@ int main() {
     ERROR_ON_NULL_SDL(g_context, "OpenGL context could not be created!");
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    // glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LESS);
 
     // -- Init GLEW
     GLenum glew_error = glewInit();

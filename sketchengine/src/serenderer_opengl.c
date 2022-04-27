@@ -1027,6 +1027,7 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
     // -- configure our frame buffer
     // set texture as our colour attachment #0
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, render_target->texture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, render_target->depth_buffer, 0);
     // set the list of draw buffers
     GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, draw_buffers); // 1 is the size of draw_buffers

@@ -43,6 +43,17 @@ float shadow_calculation(vec4 param_frag_pos_light_space) {
 	return shadow;
 }
 
+vec3 shadow_projection(vec4 param_frag_pos_light_space) {
+	vec3 proj_coord = param_frag_pos_light
+	// perform perspective divide
+	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
+	// transform to [0,1] range
+	proj_coords = proj_coords * 0.5 + 0.5;
+	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
+	vec3 result = texture(shadow_map, proj_coords.xy).rgb;
+	return result;
+}
+
 void main() {
 	vec3 tex_diffuse = texture(texture_diffuse, _TexCoord).xyz; // surface diffuse
 	// vec3 tex_normal = texture(texture_normal, _TexCoord) * 2 - 1;
@@ -81,6 +92,7 @@ void main() {
 	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * _Colour.rgb;
 
 	FragColour = vec4(lighting, 1.0);
+	FragColour = shadow_projection(frag_pos_light_space);
 	// FragColour = vec4(texture(shadow_map, _TexCoord).rgb, 1.0); // render out the shadow map
 	// FragColour = vec4(vec3(shadow), 1.0);
 
