@@ -39,7 +39,7 @@ void app_init(Application *app, SDL_Window *window) {
         app->renderer.light_directional.direction = (Vec3) {0, -1, 0};
         app->renderer.light_directional.ambient   = (RGB)  {50, 50, 50};
         app->renderer.light_directional.diffuse   = (RGB)  {255, 255, 255};
-        light_pos = (Vec3) {0, 1, 0};
+        light_pos = (Vec3) {0.5f, 1, 0.5f};
         light_pos_normalised = vec3_normalised(light_pos);
     }
 
@@ -71,15 +71,14 @@ void app_init(Application *app, SDL_Window *window) {
 
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/plane/plane.fbx");
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/cube/cube3.obj");
-        app->entities[player2].mesh_index = serender3d_add_plane(&app->renderer);
-        app->entities[player2].transform = mat4_mul(mat4_scale((Vec3) {20.0f, 20.0f, 20.0f}), app->entities[player2].transform);
+        app->entities[player2].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
 
         app->entities[light_entity].mesh_index = serender3d_add_cube(&app->renderer);
 
         app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
         app->entities[player3].transform = mat4_mul(mat4_euler_x(SEMATH_HALF_PI), app->entities[player3].transform);
 
-        app->entities[shadow_map_plane_entity].mesh_index = serender3d_add_plane(&app->renderer);
+        app->entities[shadow_map_plane_entity].mesh_index = serender3d_add_plane(&app->renderer, vec3_one());
     }
 }
 
@@ -124,9 +123,9 @@ void app_update(Application *app) {
             seui_label(ctx, light_z_label);
             seui_slider(ctx, &light_pos_normalised.z);
 
-            light_pos.x = light_pos_normalised.x * 10 - 5;
-            light_pos.y = light_pos_normalised.y * 10 - 5;
-            light_pos.z = light_pos_normalised.z * 10 - 5;
+            light_pos.x = light_pos_normalised.x * 20 - 10;
+            light_pos.y = light_pos_normalised.y * 20 - 10;
+            light_pos.z = light_pos_normalised.z * 20 - 10;
 
             app->entities[light_entity].transform = mat4_translation(light_pos);
         }
@@ -192,7 +191,7 @@ void app_render(Application *app) {
             Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
             // Mat4 light_view = mat4_lookat(light_pos, vec3_zero(), vec3_up());
 
-            f32 near_plane = 0.1f, far_plane = 7.5f, border_size = 20.0f;
+            f32 near_plane = 0.1f, far_plane = 7.5f, border_size = 10.0f;
              // what is visible to the light
             Mat4 light_proj = mat4_ortho(-border_size, border_size, -border_size, border_size, near_plane, far_plane);
 

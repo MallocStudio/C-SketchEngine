@@ -950,12 +950,12 @@ u32 serender3d_add_cube(SE_Renderer3D *renderer) {
     return result;
 }
 
-u32 serender3d_add_plane(SE_Renderer3D *renderer) {
+u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_plane(renderer->meshes[renderer->meshes_count], vec3_one());
+    semesh_generate_plane(renderer->meshes[renderer->meshes_count], scale);
 
     renderer->meshes_count++;
     return result;

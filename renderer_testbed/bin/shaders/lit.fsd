@@ -41,20 +41,21 @@ float shadow_calculation(vec4 param_frag_pos_light_space) {
 	// check whether current frag pos is in shadow
 
 	float bias = max(0.05 * (1.0 - dot(_Normal, L)), 0.005);
-	float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+	// float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+	float shadow = 0.0;
+	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r;
+			shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
+		}
+	}
+	shadow /= 9.0;
 
 	if (proj_coords.z > 1.0) shadow = 0.0;
 	return shadow;
-}
-
-vec3 shadow_projection(vec4 param_frag_pos_light_space) {
-	// perform perspective divide
-	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
-	// transform to [0,1] range
-	proj_coords = proj_coords * 0.5 + 0.5;
-	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
-	vec3 result = texture(shadow_map, proj_coords.xy).rgb;
-	return result;
 }
 
 void main() {
@@ -94,21 +95,5 @@ void main() {
 	float shadow = shadow_calculation(frag_pos_light_space);
 	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * _Colour.rgb;
 
-	// if (shadow > 0) {
-	// 	FragColour = vec4(0.0, 0.0, 0.0, 1.0);
-	// } else {
-	// 	FragColour = vec4(lighting, 1.0);
-	// }
-		FragColour = vec4(lighting, 1.0);
-	// FragColour = vec4(shadow_projection(frag_pos_light_space), 1.0);
-
-	// FragColour = vec4((frag_pos_light_space).rgb, 1.0);
-
-	// FragColour = vec4(texture(shadow_map, _TexCoord).rgb, 1.0); // render out the shadow map
-	// FragColour = vec4(vec3(shadow), 1.0);
-
-	// FragColour = vec4(ambient + diffuse + specular, 1);
-
-	// float depth_value = texture(shadow_map, _TexCoord).r;
-	// FragColour = vec4(vec3(depth_value), 1.0);
+	FragColour = vec4(lighting, 1.0);
 }
