@@ -17,7 +17,7 @@ typedef struct SE_Render_Target {
     GLuint depth_buffer;
 } SE_Render_Target;
 
-void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_depth);
+void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_colour, const bool has_depth);
 void serender_target_deinit(SE_Render_Target *render_target);
 void serender_target_use(SE_Render_Target *render_target);
 

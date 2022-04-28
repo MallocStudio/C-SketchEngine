@@ -1,6 +1,5 @@
 #version 450
 
-in vec4 _Colour;
 in vec2 _TexCoord;
 in vec3 _Normal;
 in mat3 _TBN;
@@ -19,17 +18,17 @@ uniform vec4 base_diffuse;          // diffuse multiplier
 uniform vec3 L = vec3(-1, -1, 0);  // normalised light direction from the light
 
 // environment ambient light and diffuse light
+uniform float light_intensity;
 uniform vec3 iA;
 uniform vec3 iD;
 uniform vec3 camera_pos;
 uniform float specular_power = 0.5;
 uniform mat4 model_matrix;
 
-out vec4 FragColour;
-layout (location = 0) out vec3 FragColour_Rendertarget; // this is used for rendering to using render targets
+layout (location = 0) out vec4 FragColour;
+// layout (location = 0) out vec3 FragColour_Rendertarget; // this is used for rendering to using render targets
 
 float shadow_calculation(vec4 param_frag_pos_light_space) {
-	// @TODO use the inverse matrix projection
 	// perform perspective divide
 	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
 	// transform to [0,1] range
@@ -59,12 +58,13 @@ float shadow_calculation(vec4 param_frag_pos_light_space) {
 }
 
 void main() {
+	// -- setting up variables
+
 	vec3 tex_diffuse = texture(texture_diffuse, _TexCoord).xyz; // surface diffuse
-	// vec3 tex_normal = texture(texture_normal, _TexCoord) * 2 - 1;
-	vec3 tex_normal = texture(texture_normal, _TexCoord).xyz;
+	vec3 tex_normal = texture(texture_normal, _TexCoord).xyz; //  * 2 - 1;
 
 	vec3 kD = vec3(1, 1, 1); // material colour
-	vec3 kA = kD; // surface ambient
+	vec3 kA = kD;            // surface ambient
 	vec3 kS = normalize(kD); // material specular
 
 	// lambert term with L reversed to face the light
@@ -86,14 +86,20 @@ void main() {
 	// calculate specular term
 	float specular_term = pow(max(0, dot( R, V )), specular_power);
 
-	// calculate each light properly
-	vec3 ambient  = kA * iA * tex_diffuse; // ambient light
-	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term * _Colour.rgb + base_diffuse.xyz; // diffuse light for one light // @temp adding base instead of multiplying
+	// -- calculate each light properly
+	// ambient light
+	vec3 ambient  = kA * iA * tex_diffuse;
+	// diffuse light for one light
+	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term * base_diffuse.xyz;
 	vec3 specular = iA * kS * tex_diffuse * specular_term;
+
+	ambient *= light_intensity;
+	diffuse *= light_intensity;
+	specular *= light_intensity;
 
 	// calculate shadow
 	float shadow = shadow_calculation(frag_pos_light_space);
-	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * _Colour.rgb;
+	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * base_diffuse.xyz;
 
 	FragColour = vec4(lighting, 1.0);
 }

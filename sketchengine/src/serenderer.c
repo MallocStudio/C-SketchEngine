@@ -204,11 +204,6 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
     verts[2].position = (Vec3) {-scale.x, 0, -scale.y};
     verts[3].position = (Vec3) {+scale.x, 0, -scale.y};
 
-    verts[0].rgba = (RGBA) {255, 255, 255, 255};
-    verts[1].rgba = (RGBA) {255, 255, 255, 255};
-    verts[2].rgba = (RGBA) {255, 255, 255, 255};
-    verts[3].rgba = (RGBA) {255, 255, 255, 255};
-
     verts[0].normal = (Vec3) {0, 1, 0};
     verts[1].normal = (Vec3) {0, 1, 0};
     verts[2].normal = (Vec3) {0, 1, 0};
@@ -232,15 +227,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[5].position = (Vec3) {+scale.x, +scale.y, -scale.z}; // 5
     verts[6].position = (Vec3) {-scale.x, +scale.y, -scale.z}; // 6
     verts[7].position = (Vec3) {-scale.x, -scale.y, -scale.z}; // 7
-
-    verts[0].rgba = RGBA_WHITE;
-    verts[1].rgba = RGBA_WHITE;
-    verts[2].rgba = RGBA_WHITE;
-    verts[3].rgba = RGBA_WHITE;
-    verts[4].rgba = RGBA_WHITE;
-    verts[5].rgba = RGBA_WHITE;
-    verts[6].rgba = RGBA_WHITE;
-    verts[7].rgba = RGBA_WHITE;
 
     // @TODO generate better normals
     verts[0].normal = (Vec3) {0, 0, 1};
@@ -277,11 +263,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[2+0].position = (Vec3) {+scale.x, -scale.y, -scale.z};
     verts[3+0].position = (Vec3) {-scale.x, -scale.y, -scale.z};
 
-    verts[0+0].rgba = colour;
-    verts[1+0].rgba = colour;
-    verts[2+0].rgba = colour;
-    verts[3+0].rgba = colour;
-
     verts[0+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
     verts[1+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
     verts[2+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
@@ -296,11 +277,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[1+1].position = (Vec3) {-scale.x, +scale.y, -scale.z};
     verts[2+1].position = (Vec3) {+scale.x, +scale.y, -scale.z};
     verts[3+1].position = (Vec3) {+scale.x, +scale.y, +scale.z};
-
-    verts[0+1].rgba = colour;
-    verts[1+1].rgba = colour;
-    verts[2+1].rgba = colour;
-    verts[3+1].rgba = colour;
 
     verts[0+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
     verts[1+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
@@ -317,11 +293,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[2+2].position = (Vec3) {+scale.x, +scale.y, -scale.z};
     verts[3+2].position = (Vec3) {+scale.x, -scale.y, -scale.z};
 
-    verts[0+2].rgba = colour;
-    verts[1+2].rgba = colour;
-    verts[2+2].rgba = colour;
-    verts[3+2].rgba = colour;
-
     verts[0+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
     verts[1+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
     verts[2+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
@@ -336,11 +307,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[1+3].position = (Vec3) {-scale.x, -scale.y, -scale.z};
     verts[2+3].position = (Vec3) {-scale.x, +scale.y, -scale.z};
     verts[3+3].position = (Vec3) {-scale.x, +scale.y, +scale.z};
-
-    verts[0+3].rgba = colour;
-    verts[1+3].rgba = colour;
-    verts[2+3].rgba = colour;
-    verts[3+3].rgba = colour;
 
     verts[0+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
     verts[1+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
@@ -357,11 +323,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[2+4].position = (Vec3) {+scale.x, +scale.y, +scale.z};
     verts[3+4].position = (Vec3) {+scale.x, -scale.y, +scale.z};
 
-    verts[0+4].rgba = colour;
-    verts[1+4].rgba = colour;
-    verts[2+4].rgba = colour;
-    verts[3+4].rgba = colour;
-
     verts[0+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
     verts[1+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
     verts[2+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
@@ -376,11 +337,6 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     verts[1+5].position = (Vec3) {+scale.x, -scale.y, -scale.z};
     verts[2+5].position = (Vec3) {-scale.x, +scale.y, -scale.z};
     verts[3+5].position = (Vec3) {+scale.x, +scale.y, -scale.z};
-
-    verts[0+5].rgba = colour;
-    verts[1+5].rgba = colour;
-    verts[2+5].rgba = colour;
-    verts[3+5].rgba = colour;
 
     verts[0+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
     verts[1+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
@@ -418,11 +374,6 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
     verts[1].position = (Vec3) {-scale.x, 0.0f, +scale.z};
     verts[2].position = (Vec3) {+scale.x, 0.0f, +scale.z};
     verts[3].position = (Vec3) {+scale.x, 0.0f, -scale.z};
-
-    verts[0].rgba = RGBA_WHITE;
-    verts[1].rgba = RGBA_WHITE;
-    verts[2].rgba = RGBA_WHITE;
-    verts[3].rgba = RGBA_WHITE;
 
     verts[0].normal = (Vec3) {0.0f, 1.0f, 0.0f};
     verts[1].normal = (Vec3) {0.0f, 1.0f, 0.0f};
@@ -471,21 +422,18 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     // -- enable position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-    // -- enable color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, rgba));
     // -- enable normal
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
     // -- enable uv
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
     // -- enable tangent
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
     // -- enable bitangent
-    glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
@@ -504,6 +452,44 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 /// RENDER 3D
 ///
 
+AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count) {
+    f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
+
+    for (u32 i = 0; i < verts_count; ++i) {
+        Vec3 vert_pos = verts[i].position;
+        if (xmin > vert_pos.x) xmin = vert_pos.x;
+        if (ymin > vert_pos.y) ymin = vert_pos.y;
+        if (zmin > vert_pos.z) zmin = vert_pos.z;
+
+        if (xmax < vert_pos.x) xmax = vert_pos.x;
+        if (ymax < vert_pos.y) ymax = vert_pos.y;
+        if (zmax < vert_pos.z) zmax = vert_pos.z;
+    }
+
+    AABB3D result = {(Vec3) {xmin, ymin, zmin}, (Vec3) {xmax, ymax, zmax}};
+    return result;
+}
+
+AABB3D aabb3d_calc(const AABB3D *aabb, u32 aabb_count) {
+    f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
+
+    for (u32 i = 0; i < aabb_count; ++i) {
+        Vec3 min = aabb[i].min;
+        Vec3 max = aabb[i].max;
+
+        if (xmin > min.x) xmin = min.x;
+        if (ymin > min.y) ymin = min.y;
+        if (zmin > min.z) zmin = min.z;
+
+        if (xmax < max.x) xmax = max.x;
+        if (ymax < max.y) ymax = max.y;
+        if (zmax < max.z) zmax = max.z;
+    }
+
+    AABB3D result = {(Vec3) {xmin, ymin, zmin}, (Vec3) {xmax, ymax, zmax}};
+    return result;
+}
+
 static void semesh_construct
 (SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     u32 verts_count = 0;
@@ -520,9 +506,6 @@ static void semesh_construct
         vertex.position.x = ai_mesh->mVertices[i].x;
         vertex.position.y = ai_mesh->mVertices[i].y;
         vertex.position.z = ai_mesh->mVertices[i].z;
-
-        // -- colour
-        vertex.rgba = RGBA_WHITE;
 
         // -- normals
         vertex.normal.x = ai_mesh->mNormals[i].x;
@@ -559,7 +542,11 @@ static void semesh_construct
         index_count += 3;
     }
 
+    // aabb
+    mesh->aabb = semesh_calc_aabb(verts, verts_count);
+
     semesh_generate(mesh, verts_count, verts, index_count, indices);
+
 
     if (scene->mNumMaterials > 0) { // -- materials
         // add a material to the renderer
@@ -606,7 +593,6 @@ static void semesh_construct
         bool has_specular = true;
         bool has_normal   = true;
 
-        // @incomplete use these procedure fully
         if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
             has_diffuse = false;
         }
@@ -618,12 +604,11 @@ static void semesh_construct
         }
 
         /* diffuse */
+        renderer->materials[material_index]->base_diffuse = (Vec4) {1, 1, 1, 1};
         if (has_diffuse) {
             sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
             setexture_load(&renderer->materials[material_index]->texture_diffuse , diffuse_path.buffer);
             free(ai_texture_path_diffuse);
-        } else {
-            renderer->materials[material_index]->base_diffuse = (Vec4) {255, 255, 255, 255};
         }
         /* specular */
         if (has_specular) {
@@ -694,6 +679,7 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
 
     /* material uniforms */
+    seshader_set_uniform_f32 (renderer->shaders[shader], "light_intensity", renderer->light_directional.intensity);
     seshader_set_uniform_f32 (renderer->shaders[shader], "specular_power", 0.1f);
     seshader_set_uniform_i32 (renderer->shaders[shader], "texture_diffuse", 0);
     seshader_set_uniform_i32 (renderer->shaders[shader], "texture_specular", 1);
@@ -736,15 +722,15 @@ u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
+    renderer->light_directional.intensity = 0.5f;
 
     renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit.fsd");
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
-    renderer->shader_shadow_debug_render = serender3d_add_shader(renderer, "shaders/shadow_debug_render.vsd", "shaders/shadow_debug_render.fsd");
 
     /* shadow mapping */
     f32 shadow_w = 1024;
     f32 shadow_h = 1024;
-    serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true);
+    serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true, true);
 }
 
 void serender3d_deinit(SE_Renderer3D *renderer) {

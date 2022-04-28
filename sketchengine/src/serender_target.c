@@ -11,7 +11,7 @@ static void serender_target_reset(SE_Render_Target *render_target) {
     render_target->depth_buffer = 0;
 }
 
-void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_depth) {
+void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_colour, const bool has_depth) {
     serender_target_reset(render_target);
 
     render_target->viewport = viewport;
@@ -21,18 +21,20 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
     glGenFramebuffers(1, &render_target->frame_buffer);
     glBindFramebuffer(GL_FRAMEBUFFER, render_target->frame_buffer);
 
-    // the texture we're going to be rendering to
-    glGenTextures(1, &render_target->texture);
-
-    glBindTexture(GL_TEXTURE_2D, render_target->texture);
-    // Give an empty image to opengl (the last '0')
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.w, viewport.h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-    // poor filtering required
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    if (has_colour) {
+        // the texture we're going to be rendering to
+        glGenTextures(1, &render_target->texture);
+        glBindTexture(GL_TEXTURE_2D, render_target->texture);
+        // Give an empty image to opengl (the last '0')
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.w, viewport.h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        // poor filtering required
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        f32 border_colour[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_colour);
+    }
 
     // the depth buffer
     if (has_depth) {
@@ -48,12 +50,15 @@ void serender_target_init(SE_Render_Target *render_target, const Rect viewport, 
     }
 
     // -- configure our frame buffer
-    // set texture as our colour attachment #0
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, render_target->texture, 0);
     if (has_depth) glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, render_target->depth_buffer, 0);
-    // set the list of draw buffers
-    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, draw_buffers); // 1 is the size of draw_buffers
+
+    if (has_colour)  {
+        // set texture as our colour attachment #0
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, render_target->texture, 0);
+        // set the list of draw buffers
+        GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
+        glDrawBuffers(1, draw_buffers); // 1 is the size of draw_buffers
+    }
 
     // check for errors
     SDL_assert_always(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);

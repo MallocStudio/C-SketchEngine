@@ -54,6 +54,10 @@ typedef struct Mat4 {
     f32 data[16];
 } Mat4;
 
+typedef struct AABB3D {
+    Vec3 min;
+    Vec3 max;
+} AABB3D;
 
 
 #endif // SEMATH_TYPES

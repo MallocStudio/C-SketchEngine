@@ -1,5 +1,7 @@
 {
     "files.associations": {
+        "*.vsd": "glsl",
+        "*.fsd": "glsl",
         "sdl.h": "c",
         "finn_game.h": "c",
         "sephysics_defines.h": "c",
@@ -20,6 +22,7 @@
         "cgltf.h": "c",
         "cstddef": "c",
         "sds.h": "c",
-        "gb_string.h": "c"
+        "gb_string.h": "c",
+        "semath_defines.h": "c"
     }
 }

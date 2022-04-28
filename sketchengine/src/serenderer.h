@@ -18,7 +18,6 @@ typedef struct SE_Vertex3D {
     Vec3 tangent;
     Vec3 bitangent;
     Vec2 texture_coord;
-    RGBA rgba;
 } SE_Vertex3D;
 
 ///
@@ -59,7 +58,7 @@ void setexture_atlas_unbind();
 /// (think of material as a bunch of parameters)
 
 typedef struct SE_Material {
-    Vec4 base_diffuse;
+    Vec4 base_diffuse; // ! [0, 1] range !
     SE_Texture texture_diffuse;
     SE_Texture texture_specular;
     SE_Texture texture_normal;
@@ -75,10 +74,11 @@ void sematerial_deinit(SE_Material *material);
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
     u32 vert_count;
-    u32 vao; // vertex array object
-    u32 vbo; // vertex buffer object
-    u32 ibo; // index buffer object
+    u32 vao;      // vertex array object
+    u32 vbo;      // vertex buffer object
+    u32 ibo;      // index buffer object
     bool indexed; // whether we're using index buffers
+    AABB3D aabb;  // bounding box, calculated on load
     u32 material_index;
 } SE_Mesh;
 
@@ -97,6 +97,7 @@ typedef struct SE_Light {
     Vec3 direction;
     RGB ambient;
     RGB diffuse;
+    f32 intensity;
 } SE_Light;
 
 ///
@@ -138,7 +139,6 @@ typedef struct SE_Renderer3D {
 
     u32 shader_lit;
     u32 shader_shadow_calc;
-    u32 shader_shadow_debug_render;
 
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
@@ -151,16 +151,26 @@ typedef struct SE_Renderer3D {
     // u32 shadow_depth_map;
     SE_Render_Target shadow_render_target;
     Mat4 light_space_matrix;
-
 } SE_Renderer3D;
 
-u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera);
 void serender3d_deinit(SE_Renderer3D *renderer);
 /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
 u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
 u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale);
+/// Load a shader program and att it to the renderer. Returns the index of that shader.
+u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 /// Render all of the meshes the renderer contains
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+
+
+///
+/// UTILITIES
+///
+
+/// calculate the bounding box of a collection of vertices
+AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count);
+/// calculate the bounding box of a collection of bounding boxes
+AABB3D aabb3d_calc(const AABB3D *aabb, u32 aabb_count);
 #endif // SERENDERER_OPENGL
