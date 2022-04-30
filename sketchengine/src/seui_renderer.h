@@ -1,6 +1,8 @@
 #ifndef SEUI_RENDERER_H
 #define SEUI_RENDERER_H
 
+/* meant to be used in seui.c only */
+
 #include "sedefines.h"
 #include "semath_defines.h"
 #include "serenderer.h"

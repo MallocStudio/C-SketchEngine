@@ -6,7 +6,7 @@
 SE_UI *ctx;
 SEUI_Panel panel;
 
-f32 light_intensity = 0.5f;
+f32 light_intensity = 1.0f;
 
 /* to render any texture on the screen */
 // u32 cheat_vbo;
@@ -15,6 +15,7 @@ f32 light_intensity = 0.5f;
 u32 player       = -1;
 u32 player2      = -1;
 u32 player3      = -1;
+u32 line_entity =  -1;
 
 AABB3D world_aabb;
 void app_init(Application *app, SDL_Window *window) {
@@ -45,9 +46,11 @@ void app_init(Application *app, SDL_Window *window) {
         player  = app_add_entity(app);
         player2 = app_add_entity(app);
         player3 = app_add_entity(app);
+        line_entity = app_add_entity(app);
         app->entities[player].transform = mat4_translation(vec3_zero());
-        app->entities[player2].transform = mat4_translation((Vec3) {0, -1.2f, 0}); // mat4_translation(vec3_create(10, 0, 5));
-        app->entities[player3].transform = mat4_translation((Vec3) {-2.0f, -2.2f, -1.0f}); // mat4_translation(vec3_create(10, 0, 5));
+        app->entities[player2].transform = mat4_translation((Vec3) {0, -1.2f, 0});
+        app->entities[player3].transform = mat4_translation((Vec3) {-2.0f, -2.2f, -1.0f});
+        app->entities[line_entity].transform = mat4_translation((Vec3) {0, 0, 0});
     }
 
     { // -- init UI
@@ -59,24 +62,58 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- load mesh
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        // app->entities[player].transform = mat4_mul(mat4_euler_x(SEMATH_HALF_PI), app->entities[player].transform);
+        app->entities[player].transform = mat4_mul(mat4_scale((Vec3) {2, 2, 2}), app->entities[player].transform);
 
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/plane/plane.fbx");
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/cube/cube3.obj");
         app->entities[player2].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
 
         app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        // app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/gismoz/reference-frame/reference_frame.obj");
         app->entities[player3].transform = mat4_mul(mat4_euler_x(SEMATH_HALF_PI), app->entities[player3].transform);
+
+        // Vec3 pos1 = {0, 0, 0};
+        // Vec3 pos2 = {1, 1, 1};
+        // app->entities[line_entity].mesh_index = serender3d_add_line(&app->renderer, pos1, pos2, 3);
+        // app->entities[line_entity].mesh_index = serender3d_add_gizmos_coordniates(&app->renderer, 1, 3);
+
+        { // -- calculate world aabb
+            // AABB3D aabb[3];
+            // for (u32 i = 0; i < 3; ++i) {
+            //     aabb[i] = app->renderer.meshes[app->entities[i].mesh_index]->aabb;
+            //     Mat4 entity_transform = app->entities[i].transform;
+
+            //     Vec4 min = {aabb[i].min.x, aabb[i].min.y, aabb[i].min.z, 1.0f};
+            //     Vec4 max = {aabb[i].max.x, aabb[i].max.y, aabb[i].max.z, 1.0f};
+
+            //     min = mat4_mul_vec4(entity_transform, min);
+            //     max = mat4_mul_vec4(entity_transform, max);
+
+            //     aabb[i].min = (Vec3) {min.x, min.y, min.z};
+            //     aabb[i].max = (Vec3) {max.x, max.y, max.z};
+            // }
+            // world_aabb = aabb3d_calc(aabb, 3);
+            AABB3D aabb[1];
+            aabb[0] = app->renderer.meshes[app->entities[player].mesh_index]->aabb;
+
+            Mat4 entity_transform = app->entities[player].transform;
+
+            Vec4 min = {aabb[0].min.x, aabb[0].min.y, aabb[0].min.z, 1.0f};
+            Vec4 max = {aabb[0].max.x, aabb[0].max.y, aabb[0].max.z, 1.0f};
+
+            min = mat4_mul_vec4(entity_transform, min);
+            max = mat4_mul_vec4(entity_transform, max);
+            aabb[0].min = (Vec3) {min.x, min.y, min.z};
+            aabb[0].max = (Vec3) {max.x, max.y, max.z};
+
+            world_aabb = aabb3d_calc(aabb, 1);
+        }
+
+        app->entities[line_entity].mesh_index = serender3d_add_gizmos_aabb(&app->renderer, world_aabb.min, world_aabb.max, 3);
+        // app->entities[line_entity].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/gismoz/reference-frame/reference_frame.obj");
     }
 
-    { // -- calculate world aabb
-        AABB3D aabb[3];
-        for (u32 i = 0; i < 3; ++i) {
-            aabb[i] = app->renderer.meshes[app->entities[player3].mesh_index]->aabb;
-            aabb[i].min = vec3_add(aabb[i].min, mat4_get_translation(app->entities[i].transform));
-            aabb[i].max = vec3_add(aabb[i].max, mat4_get_translation(app->entities[i].transform));
-        }
-        world_aabb = aabb3d_calc(&aabb[0], 3);
-    }
 }
 
 void app_deinit(Application *app) {

@@ -125,7 +125,7 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
         cursor_pos.y = (cursor_pos.y / window_size.y) * 2.0f - 1.0f;
 
         Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
-        Vec4 mouse_pos_world = mat4_mul_vec4(&deprojection_world, &mouse_pos_ndc);
+        Vec4 mouse_pos_world = mat4_mul_vec4(deprojection_world, mouse_pos_ndc);
         cursor_pos.x = mouse_pos_world.x;
         cursor_pos.y = mouse_pos_world.y;
         input->mouse_world_pos = cursor_pos;
@@ -145,7 +145,7 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
         cursor_pos.y = (cursor_pos.y / window_size.y) * 2.0f - 1.0f;
 
         Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
-        Vec4 mouse_pos_screen = mat4_mul_vec4(&deprojection_screen, &mouse_pos_ndc);
+        Vec4 mouse_pos_screen = mat4_mul_vec4(deprojection_screen, mouse_pos_ndc);
         cursor_pos.x = mouse_pos_screen.x;
         cursor_pos.y = mouse_pos_screen.y;
 

@@ -196,6 +196,7 @@ void semesh_deinit(SE_Mesh *mesh) {
 }
 
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
+    mesh->is_line = false;
     SE_Vertex3D verts[4];
 
     scale = vec2_mul_scalar(scale, 0.5f);
@@ -215,6 +216,7 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
 
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
 #if 1
+    mesh->is_line = false;
     SE_Vertex3D verts[8] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
@@ -254,6 +256,7 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     };
     semesh_generate(mesh, 8, verts, 12 * 3, indices);
 #else
+    mesh->is_line = false;
     SE_Vertex3D verts[24] = {0};
     scale = vec3_mul_scalar(scale, 0.5f);
     RGBA colour = RGBA_WHITE;
@@ -367,6 +370,7 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
 }
 
 void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
+    mesh->is_line = false;
     SE_Vertex3D verts[4] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
@@ -399,7 +403,83 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
         0, 1, 2,
         2, 3, 0
     };
+
+    mesh->aabb = semesh_calc_aabb(verts, 4);
     semesh_generate(mesh, 4, verts, 6, indices);
+}
+
+void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
+    mesh->is_line = true;
+    mesh->line_width = width;
+
+    SE_Vertex3D verts[2] = {
+        {.position = pos1},
+        {.position = pos2}
+    };
+
+    u32 indices[2] = {
+        0, 1
+    };
+    semesh_generate(mesh, 2, verts, 2, indices);
+}
+
+void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width) {
+    mesh->is_line = true;
+    mesh->line_width = line_width;
+
+    SE_Vertex3D verts[8] = {
+        {.position = (Vec3) {min.x, min.y, min.z}}, // front bottom left - 0
+        {.position = (Vec3) {max.x, min.y, min.z}}, // front bottom right - 1
+        {.position = (Vec3) {max.x, max.y, min.z}}, // front top right - 2
+        {.position = (Vec3) {min.x, max.y, min.z}}, // front top left - 3
+
+        {.position = (Vec3) {min.x, min.y, max.z}}, // behind bottom left - 4
+        {.position = (Vec3) {max.x, min.y, max.z}}, // behind bottom right - 5
+        {.position = (Vec3) {max.x, max.y, max.z}}, // behind top right - 6
+        {.position = (Vec3) {min.x, max.y, max.z}}, // behind top left - 7
+    };
+
+    u32 indices[24] = {
+        0, 1,
+        0, 4,
+        0, 3,
+        5, 1,
+        5, 6,
+        5, 4,
+        2, 1,
+        2, 3,
+        2, 6,
+        7, 3,
+        7, 6,
+        7, 4
+    };
+    semesh_generate(mesh, 8, verts, 24, indices);
+}
+
+void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width) {
+    mesh->is_line = true;
+    mesh->line_width = width;
+
+    Vec3 pos_o = vec3_zero();
+    Vec3 pos_x = vec3_right();
+    Vec3 pos_y = vec3_up();
+    Vec3 pos_z = vec3_forward();
+
+    SE_Vertex3D verts[6] = {
+        {.position = pos_o}, // x
+        {.position = pos_x},
+        {.position = pos_o}, // y
+        {.position = pos_y},
+        {.position = pos_o}, // z
+        {.position = pos_z}
+    };
+
+    u32 indices[6] = {
+        0, 1, // x
+        2, 3, // y
+        4, 5, // z
+    };
+    semesh_generate(mesh, 6, verts, 6, indices);
 }
 
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
@@ -550,10 +630,7 @@ static void semesh_construct
 
     if (scene->mNumMaterials > 0) { // -- materials
         // add a material to the renderer
-        renderer->materials[renderer->materials_count] = new(SE_Material);
-        memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
-        u32 material_index = renderer->materials_count;
-        renderer->materials_count++;
+        u32 material_index = serender3d_add_material(renderer);
 
         mesh->material_index = material_index;
 
@@ -655,28 +732,21 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
     return result;
 }
 
-// make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
-void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
-    SE_Mesh *mesh = renderer->meshes[mesh_index];
-    SE_Material *material = renderer->materials[mesh->material_index];
-
-    // take the quad (world space) and project it to view space
-    // then take that and project it to the clip space
-    // then pass that final projection matrix and give it to the shader
+static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+    u32 shader = renderer->shader_lit;
+    seshader_use(renderer->shaders[shader]); // use the default shader
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
-    u32 shader = renderer->shader_lit;
-    seshader_use(renderer->shaders[shader]); // use the default shader
-
     // the good old days when debugging:
     // material->texture_diffuse.width = 100;
 
-    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
+    /* vertex */
     seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
     seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
     seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
 
     /* material uniforms */
     seshader_set_uniform_f32 (renderer->shaders[shader], "light_intensity", renderer->light_directional.intensity);
@@ -692,19 +762,61 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     seshader_set_uniform_rgb(renderer->shaders[shader], "iA", renderer->light_directional.ambient);
     seshader_set_uniform_rgb(renderer->shaders[shader], "iD", renderer->light_directional.diffuse);
 
-    setexture_bind(&material->texture_diffuse, 0);
+    if (material->texture_diffuse.loaded) {
+        setexture_bind(&material->texture_diffuse, 0);
+    } else {
+        setexture_bind(&renderer->texture_default, 0);
+    }
     setexture_bind(&material->texture_specular, 1);
     setexture_bind(&material->texture_normal, 2);
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
     glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
+}
+
+static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+    u32 shader = renderer->shader_lines;
+    seshader_use(renderer->shaders[shader]);
+
+    Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+    pvm = mat4_mul(pvm, renderer->current_camera->projection);
+
+    /* vertex */
+    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+
+    /* material */
+    seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
+}
+
+// make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
+void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+    SE_Mesh *mesh = renderer->meshes[mesh_index];
+
+    // take the quad (world space) and project it to view space
+    // then take that and project it to the clip space
+    // then pass that final projection matrix and give it to the shader
+
+    i32 primitive = GL_TRIANGLES;
+    if (mesh->is_line) {
+        primitive = GL_LINES;
+        glLineWidth(mesh->line_width);
+        SE_Material *material = renderer->materials[renderer->material_lines];
+        serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+    } else {
+        SE_Material *material = renderer->materials[mesh->material_index];
+        serender3d_render_set_material_uniforms_lit(renderer, material, transform);
+    }
 
     glBindVertexArray(mesh->vao);
 
     if (mesh->indexed) {
-        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+        glDrawArrays(primitive, 0, mesh->vert_count);
+    }
+
+    if (mesh->is_line) {
+        glLineWidth(1); // reset
     }
 
     glBindVertexArray(0);
@@ -726,6 +838,13 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
 
     renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit.fsd");
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
+    renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
+
+    /* default materials */
+    renderer->material_lines = serender3d_add_material(renderer);
+    renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
+
+    setexture_load(&renderer->texture_default, "assets/textures/checkerboard.png");
 
     /* shadow mapping */
     f32 shadow_w = 1024;
@@ -751,6 +870,17 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
 
     /* shadow mapping */
     serender_target_deinit(&renderer->shadow_render_target);
+
+    /* default stuff */
+    setexture_unload(&renderer->texture_default);
+}
+
+u32 serender3d_add_material(SE_Renderer3D *renderer) {
+    renderer->materials[renderer->materials_count] = new(SE_Material);
+    memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
+    u32 material_index = renderer->materials_count;
+    renderer->materials_count++;
+    return material_index;
 }
 
 u32 serender3d_add_cube(SE_Renderer3D *renderer) {
@@ -770,6 +900,39 @@ u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_plane(renderer->meshes[renderer->meshes_count], scale);
+
+    renderer->meshes_count++;
+    return result;
+}
+
+u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width) {
+    u32 result = renderer->meshes_count;
+
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width);
+
+    renderer->meshes_count++;
+    return result;
+}
+
+u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer, f32 scale, f32 width) {
+    u32 result = renderer->meshes_count;
+
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], scale, width);
+
+    renderer->meshes_count++;
+    return result;
+}
+
+u32 serender3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
+    u32 result = renderer->meshes_count;
+
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_gizmos_aabb(renderer->meshes[renderer->meshes_count], min, max, line_width);
 
     renderer->meshes_count++;
     return result;

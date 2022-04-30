@@ -817,12 +817,12 @@ SEINLINE Vec3 mat4_right(Mat4 m) {
 }
 
 /// creates and returns the result of the multiplication of m and v
-SEINLINE Vec4 mat4_mul_vec4 (const Mat4 *m, const Vec4 *v) {
+SEINLINE Vec4 mat4_mul_vec4 (Mat4 m, Vec4 v) {
     Vec4 result;
-    result.x = m->data[0 ] * v->x + m->data[1 ] * v->y + m->data[2 ] * v->z + m->data[3 ] * v->w;
-    result.y = m->data[4 ] * v->x + m->data[5 ] * v->y + m->data[6 ] * v->z + m->data[7 ] * v->w;
-    result.z = m->data[8 ] * v->x + m->data[9 ] * v->y + m->data[10] * v->z + m->data[11] * v->w;
-    result.w = m->data[12] * v->x + m->data[13] * v->y + m->data[14] * v->z + m->data[15] * v->w;
+    result.x = m.data[0 ] * v.x + m.data[1 ] * v.y + m.data[2 ] * v.z + m.data[3 ] * v.w;
+    result.y = m.data[4 ] * v.x + m.data[5 ] * v.y + m.data[6 ] * v.z + m.data[7 ] * v.w;
+    result.z = m.data[8 ] * v.x + m.data[9 ] * v.y + m.data[10] * v.z + m.data[11] * v.w;
+    result.w = m.data[12] * v.x + m.data[13] * v.y + m.data[14] * v.z + m.data[15] * v.w;
     return result;
 }
 

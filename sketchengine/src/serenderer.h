@@ -80,6 +80,10 @@ typedef struct SE_Mesh {
     bool indexed; // whether we're using index buffers
     AABB3D aabb;  // bounding box, calculated on load
     u32 material_index;
+
+    /* line */
+    bool is_line; // whether this mesh describes a line (use glLines)
+    f32 line_width;
 } SE_Mesh;
 
 /// delete vao, vbo, ibo
@@ -87,8 +91,10 @@ void semesh_deinit(SE_Mesh *mesh);
 /// generate a quad. The mesh better be uninitialised because this function assumes there are no previous data stored on the mesh
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale);
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale);
+void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width);
+void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width);
+void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width);
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
-
 ///
 /// Light
 ///
@@ -139,9 +145,13 @@ typedef struct SE_Renderer3D {
 
     u32 shader_lit;
     u32 shader_shadow_calc;
+    u32 shader_lines;
 
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
+
+    u32 material_lines;
+    SE_Texture texture_default;
 
     SE_Camera3D *current_camera;
     SE_Light light_directional;
@@ -159,8 +169,15 @@ void serender3d_deinit(SE_Renderer3D *renderer);
 u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
 u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale);
+u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width);
+
+/// Create one of those 3D coordinate gizmos that show the directions
+u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer, f32 scale, f32 width);
+u32 serender3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width);
 /// Load a shader program and att it to the renderer. Returns the index of that shader.
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
+/// Add an empty material to the renderer
+u32 serender3d_add_material(SE_Renderer3D *renderer);
 /// Render all of the meshes the renderer contains
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 
