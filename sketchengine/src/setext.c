@@ -225,6 +225,7 @@ i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect
     f32 y = rect.y;
     Vec2 string_size = setext_get_string_size(string, txt);
 
+    // center text
     x += (rect.w - string_size.x) * 0.5f;
     y += (rect.h - string_size.y) * 0.5f;
 
