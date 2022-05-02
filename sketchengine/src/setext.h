@@ -8,7 +8,8 @@
 #include "serenderer.h"
 
 // #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
-#define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
+// #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
+#define DEFAULT_FONT_PATH "assets/fonts/Nunito/static/Nunito-Medium.ttf"
 #define SETEXT_SUCCESS 0 // must be zero
 #define SETEXT_ERROR 1
 
@@ -84,7 +85,7 @@ i32 setext_print_loaded_characters(SE_Text_Renderer *txt);
 /// REMEMBER TO CALL SETEXT_RENDER() at the end, otherwise, we will corrupt memory because we increment txt->strings_count each time we call this procedure
 i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color);
 
-i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect, Vec3 color);
+i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect, Vec3 color, bool centered);
 
 /// render all the stored glyphs at once and "clear" the stored array of glyphs.
 /// Note that it does not actually draw an array of vertices at once yet. We go through each "String"

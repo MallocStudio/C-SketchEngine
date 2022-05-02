@@ -8,29 +8,35 @@ static u32 generate_ui_id(SE_UI *ctx) {
 
 /// Returns a rectangle that's suppose to be the rect
 /// of the new item inside of the current panel.
-static Rect panel_put(SE_UI *ctx, f32 min_width) {
+static Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height) {
     Rect result = {0};
     Rect panel_rect = ctx->current_panel_rect;
-    f32 height = ctx->current_panel_item_height;
+    if (min_height <= 0) {
+        min_height = ctx->current_panel_item_height;
+    }
+
+    if (min_height > ctx->current_panel_item_height) {
+        ctx->current_panel_item_height = min_height;
+    }
 
     Vec2 cursor = ctx->current_panel_cursor;
     cursor = vec2_add(cursor, (Vec2) {panel_rect.x, panel_rect.y});
 
     result.w = panel_rect.w / ctx->current_panel_columns;
-    result.h = height;
+    result.h = ctx->current_panel_item_height;
     result.x = cursor.x;
     result.y = cursor.y - result.h;
 
     // increment min width
-    if (ctx->current_panel_cursor.x + result.w > min_width) {
+    if (ctx->current_panel_cursor.x> min_width) {
         ctx->current_panel_data->min_size.x += min_width;
     }
 
     // Increment the cursor
     if (ctx->current_panel_cursor.x + result.w >= panel_rect.w - 16) { // 16 is just a buffer size
         ctx->current_panel_cursor.x = 0;
-        ctx->current_panel_cursor.y -= height; // since we're going down
-        ctx->current_panel_data->min_size.y += height; // @incomplete move this away from this procedure
+        ctx->current_panel_cursor.y -= min_height; // since we're going down
+        ctx->current_panel_data->min_size.y += min_height; // @incomplete move this away from this procedure
     } else {
         ctx->current_panel_cursor.x += result.w;
     }
@@ -197,7 +203,7 @@ bool seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 100, 100}; // default button size
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, text_size.x);
+        rect = panel_put(ctx, text_size.x, text_size.y);
     }
     return seui_button_at(ctx, text, rect);
 }
@@ -206,15 +212,15 @@ void seui_label(SE_UI *ctx, const char *text) {
     Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 100, 100}; // default label size
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, text_size.x);
+        rect = panel_put(ctx, text_size.x, text_size.y);
     }
     seui_label_at(ctx, text, rect);
 }
 
 void seui_slider(SE_UI *ctx, f32 *value) {
-    Rect rect = {0, 0, 100, 100}; // default size
+    Rect rect = {0, 0, 50, 50}; // default size
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, 100);
+        rect = panel_put(ctx, 50, 50);
     }
     Vec2 pos1 = {rect.x, (rect.y + rect.y + rect.h) * 0.5f};
     Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
@@ -222,9 +228,9 @@ void seui_slider(SE_UI *ctx, f32 *value) {
 }
 
 void seui_slider2d(SE_UI *ctx, Vec2 *value) {
-    Rect rect = {0, 0, 100, 100}; // default
+    Rect rect = {0, 0, 50, 50}; // default
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, 100);
+        rect = panel_put(ctx, 50, 50);
     }
     Vec2 center = {
         (rect.x + rect.x + rect.w) * 0.5f,
@@ -232,6 +238,14 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     };
     f32 radius = rect.h * 0.8f;
     seui_slider2d_at(ctx, center, radius, value);
+}
+
+void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value) {
+    Rect rect = {0, 0, 100, 100}; // default label size
+    if (ctx->current_panel != SEUI_ID_NULL) {
+        rect = panel_put(ctx, 100, 100);
+    }
+    seui_colour_picker_at(ctx, rect, hue, value);
 }
 
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
@@ -259,7 +273,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
    }
 
     seui_render_rect(renderer, rect, colour);
-    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1));
+    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1), false);
 
     return ui_state == UI_STATE_ACTIVE;
 }
@@ -307,7 +321,8 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state) {
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour = RGBA_WHITE;
-    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1));
+    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1), true);
+    seui_render_rect(&ctx->renderer, rect, (RGBA) {10, 10, 10, 255});
 }
 
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
@@ -364,4 +379,8 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     // *value += drag.x * 0.01f;
     *value = vec2_add(*value, vec2_mul_scalar(drag, 0.05f));
     vec2_normalise(value);
+}
+
+void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value) {
+    seui_render_colour_picker(&ctx->renderer, rect, hue);
 }

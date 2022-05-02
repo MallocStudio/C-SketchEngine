@@ -3,10 +3,14 @@
 #include "sketchengine.h"
 
 typedef struct Entity {
-    Mat4 transform;
     u32 mesh_index;
+
+    Vec3 oriantation;
+    Vec3 position;
+    Vec3 scale;
 } Entity;
 
-void entity_render(const Entity *entities, const SE_Renderer3D *renderer);
+Mat4 entity_get_transform(const Entity *entity);
+void entity_render(const Entity *entity, const SE_Renderer3D *renderer);
 
 #endif //ENTITY_H

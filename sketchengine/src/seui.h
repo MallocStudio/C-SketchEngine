@@ -108,11 +108,12 @@ SEINLINE void seui_render(SE_UI *ctx) {
 /// Returns true if the panel is not minimised.
 bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, SEUI_Panel *panel_data);
 
+void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
+void seui_label(SE_UI *ctx, const char *text);
+
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.
 bool seui_button(SE_UI *ctx, const char *text);
-void seui_label(SE_UI *ctx, const char *text);
-
 /// Draws a button at the given rectangle.
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
 
@@ -125,11 +126,12 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state);
 /// If the texture_index is (Vec2) {0} it will draw a simple rectangle.
 Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_STATES *state);
 
-void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
-
 /// value is clamped between 0 - 1
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value);
 void seui_slider(SE_UI *ctx, f32 *value);
+
+void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value);
+void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value);
 
 /// a 2d slider that returns a normalised vec2
 void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);

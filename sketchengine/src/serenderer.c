@@ -404,7 +404,7 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
         2, 3, 0
     };
 
-    mesh->aabb = semesh_calc_aabb(verts, 4);
+    // mesh->aabb = semesh_calc_aabb(verts, 4);
     semesh_generate(mesh, 4, verts, 6, indices);
 }
 
@@ -517,6 +517,7 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
+    mesh->aabb = semesh_calc_aabb(vertices, vert_count);
 
     // unselect
     glBindVertexArray(0); // stop the macro
@@ -550,23 +551,133 @@ AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count) {
     return result;
 }
 
-AABB3D aabb3d_calc(const AABB3D *aabb, u32 aabb_count) {
-    f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
+AABB3D aabb3d_from_points(Vec3 point1, Vec3 point2, Mat4 transform) {
+    /* generate a new aabb that's transformed */
+    Vec4 points[8] = {0};
+    points[0].x = point1.x;
+    points[0].y = point1.y;
+    points[0].z = point1.z;
 
+    points[1].x = point2.x;
+    points[1].y = point1.y;
+    points[1].z = point1.z;
+
+    points[2].x = point2.x;
+    points[2].y = point2.y;
+    points[2].z = point1.z;
+
+    points[3].x = point1.x;
+    points[3].y = point2.y;
+    points[3].z = point1.z;
+
+    points[4].x = point1.x;
+    points[4].y = point1.y;
+    points[4].z = point2.z;
+
+    points[5].x = point2.x;
+    points[5].y = point1.y;
+    points[5].z = point2.z;
+
+    points[6].x = point2.x;
+    points[6].y = point2.y;
+    points[6].z = point2.z;
+
+    points[7].x = point1.x;
+    points[7].y = point2.y;
+    points[7].z = point2.z;
+
+    points[0].w = 0.0f;
+    points[1].w = 0.0f;
+    points[2].w = 0.0f;
+    points[3].w = 0.0f;
+    points[4].w = 0.0f;
+    points[5].w = 0.0f;
+    points[6].w = 0.0f;
+    points[7].w = 0.0f;
+
+    /* transform the points */
+    points[0] = mat4_mul_vec4(transform, points[0]);
+    points[1] = mat4_mul_vec4(transform, points[1]);
+    points[2] = mat4_mul_vec4(transform, points[2]);
+    points[3] = mat4_mul_vec4(transform, points[3]);
+    points[4] = mat4_mul_vec4(transform, points[4]);
+    points[5] = mat4_mul_vec4(transform, points[5]);
+    points[6] = mat4_mul_vec4(transform, points[6]);
+    points[7] = mat4_mul_vec4(transform, points[7]);
+
+    /* calculate the new aabb based on transformed points */
+    SE_Vertex3D dummy_verts[8] = {0};
+    dummy_verts[0].position = (Vec3) {points[0].x, points[0].y, points[0].z};
+    dummy_verts[1].position = (Vec3) {points[1].x, points[1].y, points[1].z};
+    dummy_verts[2].position = (Vec3) {points[2].x, points[2].y, points[2].z};
+    dummy_verts[3].position = (Vec3) {points[3].x, points[3].y, points[3].z};
+    dummy_verts[4].position = (Vec3) {points[4].x, points[4].y, points[4].z};
+    dummy_verts[5].position = (Vec3) {points[5].x, points[5].y, points[5].z};
+    dummy_verts[6].position = (Vec3) {points[6].x, points[6].y, points[6].z};
+    dummy_verts[7].position = (Vec3) {points[7].x, points[7].y, points[7].z};
+    return semesh_calc_aabb(dummy_verts, 8);
+}
+
+AABB3D aabb3d_calc(const AABB3D *obj_aabb, u32 aabb_count) {
+
+    f32 pos1x = 0, pos2x = 0, pos1y = 0, pos2y = 0, pos1z = 0, pos2z = 0;
     for (u32 i = 0; i < aabb_count; ++i) {
-        Vec3 min = aabb[i].min;
-        Vec3 max = aabb[i].max;
+        // convert obj aabb to world space aabb (as in take rotation into account)
+        AABB3D aabb = obj_aabb[i];
+        Vec3 min = aabb.min;
+        Vec3 max = aabb.max;
 
-        if (xmin > min.x) xmin = min.x;
-        if (ymin > min.y) ymin = min.y;
-        if (zmin > min.z) zmin = min.z;
+        // if (min.x > max.x) {
+        //     f32 temp = min.x;
+        //     min.x = max.x;
+        //     max.x = temp;
+        // }
+        // if (min.y > max.y) {
+        //     f32 temp = min.y;
+        //     min.y = max.y;
+        //     max.y = temp;
+        // }
+        // if (min.z > max.z) {
+        //     f32 temp = min.z;
+        //     min.z = max.z;
+        //     max.z = temp;
+        // }
 
-        if (xmax < max.x) xmax = max.x;
-        if (ymax < max.y) ymax = max.y;
-        if (zmax < max.z) zmax = max.z;
+        // if (min.x > max.x) {
+        //     min.x = -min.x;
+        //     max.x = -max.x;
+        // }
+        // if (min.y > max.y) {
+        //     min.y = -min.y;
+        //     max.y = -max.y;
+        // }
+        // if (min.z > max.z) {
+        //     min.z = -min.z;
+        //     max.z = -max.z;
+        // }
+
+        // if (min.x > max.x || min.y > max.y || min.z > max.z) {
+        //     f32 temp = min.x;
+        //     min.x = max.x;
+        //     max.x = temp;
+        //     temp = min.y;
+        //     min.y = max.y;
+        //     max.y = temp;
+        //     temp = min.z;
+        //     min.z = max.z;
+        //     max.z = temp;
+        // }
+
+        if (pos1x > min.x) pos1x = min.x;
+        if (pos1y > min.y) pos1y = min.y;
+        if (pos1z > min.z) pos1z = min.z;
+
+        if (pos2x < max.x) pos2x = max.x;
+        if (pos2y < max.y) pos2y = max.y;
+        if (pos2z < max.z) pos2z = max.z;
     }
 
-    AABB3D result = {(Vec3) {xmin, ymin, zmin}, (Vec3) {xmax, ymax, zmax}};
+    AABB3D result = {(Vec3) {pos1x, pos1y, pos1z}, (Vec3) {pos2x, pos2y, pos2z}};
     return result;
 }
 
@@ -621,9 +732,6 @@ static void semesh_construct
         indices[index_count+2] = ai_mesh->mFaces[i].mIndices[2];
         index_count += 3;
     }
-
-    // aabb
-    mesh->aabb = semesh_calc_aabb(verts, verts_count);
 
     semesh_generate(mesh, verts_count, verts, index_count, indices);
 
@@ -936,4 +1044,10 @@ u32 serender3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 
 
     renderer->meshes_count++;
     return result;
+}
+
+void serender3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
+
+    memset(renderer->meshes[mesh_index], 0, sizeof(SE_Mesh));
+    semesh_generate_gizmos_aabb(renderer->meshes[mesh_index], min, max, line_width);
 }

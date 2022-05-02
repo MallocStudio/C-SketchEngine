@@ -219,15 +219,17 @@ i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, 
     return SETEXT_SUCCESS;
 }
 
-i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect, Vec3 color) {
+i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect, Vec3 color, bool centered) {
     f32 scale = 1;
     f32 x = rect.x;
     f32 y = rect.y;
     Vec2 string_size = setext_get_string_size(string, txt);
 
     // center text
-    x += (rect.w - string_size.x) * 0.5f;
-    y += (rect.h - string_size.y) * 0.5f;
+    if (centered) {
+        x += (rect.w - string_size.x) * 0.5f;
+        y += (rect.h - string_size.y) * 0.5f;
+    }
 
     // -- loop through all the characters and generate the glyphs
     for (u32 i = 0; i < SDL_strlen(string); ++i) {

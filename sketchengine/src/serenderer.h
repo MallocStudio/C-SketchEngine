@@ -174,6 +174,7 @@ u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width
 /// Create one of those 3D coordinate gizmos that show the directions
 u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer, f32 scale, f32 width);
 u32 serender3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width);
+void serender3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index);
 /// Load a shader program and att it to the renderer. Returns the index of that shader.
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 /// Add an empty material to the renderer
@@ -190,4 +191,5 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
 AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count);
 /// calculate the bounding box of a collection of bounding boxes
 AABB3D aabb3d_calc(const AABB3D *aabb, u32 aabb_count);
+AABB3D aabb3d_from_points(Vec3 point1, Vec3 point2, Mat4 transform);
 #endif // SERENDERER_OPENGL

@@ -448,3 +448,25 @@ void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour) {
     seui_render_line(renderer, pos3, pos4, width);
     seui_render_line(renderer, pos4, pos1, width);
 }
+
+void seui_render_colour_picker(UI_Renderer *renderer, Rect rect, RGBA hue) {
+    UI_Shape *shape = &renderer->shapes[renderer->shape_count];
+    renderer->shape_count++;
+
+    /* add the vertices */
+    shape->vertex_count = 0;
+    seui_shape_add_vertex(shape, (Vec2) {rect.x         , rect.y         }, RGBA_BLACK);
+    seui_shape_add_vertex(shape, (Vec2) {rect.x         , rect.y + rect.h}, RGBA_WHITE);
+    seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y + rect.h}, hue);
+    seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y         }, RGBA_BLACK);
+    SDL_assert_always(shape->vertex_count == 4);
+
+    /* add the indices */
+    shape->index_count = 0;
+    seui_shape_add_index(shape, 0);
+    seui_shape_add_index(shape, 1);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 3);
+    seui_shape_add_index(shape, 0);
+}
