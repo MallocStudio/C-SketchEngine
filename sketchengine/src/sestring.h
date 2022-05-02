@@ -23,4 +23,6 @@ void sestring_append_length(SE_String *string, const char *buffer, u32 length);
 /// Find the last index of a given character in the string.
 /// Returns SESTRING_MAX_SIZE if not found
 u32 sestring_lastof(SE_String *string, const char letter);
+/// Clears the buffer (deinits then inits)
+void sestring_clear(SE_String *string);
 #endif // SESTRING_H

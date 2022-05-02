@@ -3,13 +3,7 @@
 
 #include "sedefines.h"
 #include "semath_defines.h"
-
-// /// get the mouse position (relative to the window). Optionally pass bools to get mouse state
-// Vec2i get_mouse_pos(bool *lpressed, bool *rpressed);
-
-// /// returns true if the given sdl scancode has been pressed.
-// bool input_is_key_pressed(App *app, i32 sdl_scancode); // @incomplete not implemented yet
-
+#include "sestring.h"
 
 /// get the mouse position (relative to the window's top left position). Optionally pass bools to get mouse state
 SEINLINE Vec2 get_mouse_pos(bool *lpressed, bool *rpressed) {
@@ -55,6 +49,13 @@ typedef struct SE_Input {
     // warp mouse around window
     bool should_mouse_warp; // @incomplete
 
+    /* text input */
+    bool is_text_input_activated; // use seinput_text_input_activate()
+    SE_String text_input;
+    // u32 text_input_selection_index;
+    // u32 text_input_selection_length;
+    // u32 text_input_cursor;
+
     // -- keyboard
 
     // use SDL_SCANCODE_... to get the state of a key
@@ -71,6 +72,8 @@ typedef struct SE_Input {
 SEINLINE void seinput_init(SE_Input *input) {
     // set all values to zero to begin with
     memset(input, 0, sizeof(SE_Input));
+
+    sestring_init(&input->text_input, ""); // @leak
 }
 
 /// note that mouse pos will be relative to top left position of window
@@ -195,5 +198,22 @@ SEINLINE bool seinput_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_sca
 
 SEINLINE bool seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode) {
     return input->keyboard[sdl_scancode];
+}
+
+SEINLINE seinput_text_input_activate(SE_Input *input) {
+    input->is_text_input_activated = true;
+    SDL_StartTextInput();
+}
+
+SEINLINE seinput_text_input_deactivate(SE_Input *input) {
+    input->is_text_input_activated = false;
+    SDL_StopTextInput();
+}
+
+/// clears the text input buffer
+SEINLINE seinput_text_input_consume(SE_Input *input, char *dest) {
+    // strcat(dest, input->text_input.buffer);
+    sestring_append(...);
+    sestring_clear(&input->text_input);
 }
 #endif // SEINPUT_H

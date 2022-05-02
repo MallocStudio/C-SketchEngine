@@ -23,6 +23,8 @@
         "cstddef": "c",
         "sds.h": "c",
         "gb_string.h": "c",
-        "semath_defines.h": "c"
+        "semath_defines.h": "c",
+        "cstring": "c",
+        "sestring.h": "c"
     }
 }

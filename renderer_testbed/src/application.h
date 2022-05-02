@@ -7,12 +7,15 @@ typedef struct Application_Panel {
     f32 light_intensity;
     RGBA colour_test;
     Vec2 light_direction;
+    char *input_text;
 } Application_Panel;
 
 SEINLINE panel_init(Application_Panel *panel) {
     panel->light_intensity = 1.0f;
     panel->colour_test = RGBA_RED;
     panel->light_direction = (Vec2) {0, -1};
+    panel->input_text = malloc(sizeof(char) * 255); // @leak
+    panel->input_text = "enter text";
 }
 
 #define ENTITIES_MAX_COUNT 10

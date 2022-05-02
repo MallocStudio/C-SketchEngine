@@ -46,7 +46,7 @@ static Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height) {
 }
 
 /// note that stay_active_on_mouse_leave is used for dragging ui items
-static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */) {
+static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */, bool remain_active /* = false (used for text input)*/) {
     UI_STATES result = UI_STATE_IDLE;
 
     bool mouse_down   = input->is_mouse_left_down;
@@ -86,7 +86,16 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
         } else {
             result = UI_STATE_IDLE;
         }
+    } else {
+        // if ACTIVE
+        if (remain_active) {
+            ctx->active = id;
+        } else {
+            ctx->active = SEUI_ID_NULL;
+        }
     }
+
+    if (ctx->active == id) result = UI_STATE_ACTIVE;
 
     return result;
 }
@@ -259,7 +268,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour_pressed = ctx->theme.colour_pressed;
     RGBA colour = colour_normal;
 
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_normal;
@@ -290,7 +299,7 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
     RGBA colour = colour_normal;
 
     Vec2 drag = {0};
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, true);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, true, false);
 
     switch (ui_state) {
         case UI_STATE_IDLE: {
@@ -383,4 +392,42 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
 
 void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value) {
     seui_render_colour_picker(&ctx->renderer, rect, hue);
+}
+
+void seui_input_text_at(SE_UI *ctx, char *text, Rect rect) {
+    SE_Input *input = ctx->input;
+    UI_Renderer *renderer = &ctx->renderer;
+
+    u32 id = generate_ui_id(ctx);
+
+    RGBA colour_bg = (RGBA) {50, 60, 120, 255};
+    RGBA colour_highlight = (RGBA) {80, 90, 150, 255};
+    Vec3 colour_text = (Vec3) {255, 255, 255};
+    RGBA colour = colour_bg;
+
+    u32 current_active = ctx->active;
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false, true);
+    switch (ui_state) {
+        case UI_STATE_IDLE: {
+            colour = colour_bg;
+        } break;
+        case UI_STATE_WARM: {
+            colour = colour_highlight;
+        } break;
+        case UI_STATE_ACTIVE: {
+            colour = RGBA_BLACK;
+            if (input->is_text_input_activated == false) {
+                seinput_text_input_activate(input);
+            }
+
+            seinput_text_input_consume(input, text);
+        } break;
+    }
+
+    if (current_active != id) { // if we were previously active but not anymore
+        seinput_text_input_deactivate(input);
+    }
+
+    seui_render_rect(renderer, rect, colour);
+    setext_render_text_rect(&ctx->txt_renderer, text, rect, colour_text, true);
 }

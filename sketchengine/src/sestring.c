@@ -62,3 +62,12 @@ u32 sestring_lastof(SE_String *string, const char letter) {
     }
     return result;
 }
+
+void sestring_clear(SE_String *string) {
+    if (string->buffer == NULL || string->size == 0) {
+        return;
+    }
+
+    sestring_deinit(string);
+    sestring_init(string, "");
+}

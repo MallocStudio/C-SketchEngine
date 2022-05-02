@@ -120,6 +120,8 @@ void app_update(Application *app) {
             seui_label(ctx, "colour:");
             seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
 
+            seui_input_text_at(ctx, app_panel.input_text, (Rect) {0, 0, 200, 100});
+
             // char light_x_label[100];
             // sprintf(light_x_label, "x: %f", light_pos.x);
             // char light_y_label[100];

@@ -47,6 +47,7 @@ typedef struct SE_UI {
     /* UI Widgets */
     u32 warm; // hover / selection
     u32 hot;  // pressed / active
+    u32 active; // being used (used for text input)
     u32 max_id; // the maximum generated id
 
     /* Renderes and Inputs */
@@ -136,4 +137,6 @@ void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value);
 /// a 2d slider that returns a normalised vec2
 void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);
 void seui_slider2d(SE_UI *ctx, Vec2 *value);
+
+void seui_input_text_at(SE_UI *ctx, char *text, Rect rect);
 #endif // SEUI_H

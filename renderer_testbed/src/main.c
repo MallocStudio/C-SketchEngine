@@ -3,6 +3,8 @@
 #include "sedefines.h"
 #include "GL/glew.h"
 #include "application.h"
+#include "sestring.h"
+#include "stdio.h"
 
 int main() {
     SDL_Window *window;
@@ -82,6 +84,10 @@ int main() {
                     //     angle = -0.01f;
                     // }
                     // camera.view = mat4_mul(camera.view, mat4_euler_y(angle));
+                } break;
+                case SDL_TEXTINPUT: {
+                    sestring_append(&app->input.text_input, event.text.text);
+                    printf("receiving input %s", event.text.text);
                 } break;
             }
         }
