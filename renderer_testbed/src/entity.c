@@ -6,9 +6,9 @@ Mat4 entity_get_transform(const Entity *entity) {
     Vec3 rot = entity->oriantation;
     Vec3 scale = entity->scale;
 
-    result = mat4_mul(result, mat4_translation(pos));
-    result = mat4_mul(result, mat4_euler_xyz(rot.x, rot.y, rot.z));
     result = mat4_mul(result, mat4_scale(scale));
+    result = mat4_mul(result, mat4_euler_xyz(rot.x, rot.y, rot.z));
+    result = mat4_mul(result, mat4_translation(pos));
     return result;
 }
 

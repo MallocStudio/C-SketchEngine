@@ -119,7 +119,7 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
     }
 
     { // -- world pos
-        Mat4 deprojection_world = mat4_transposed(mat4_inverse(otho_projection_world));
+        Mat4 deprojection_world = mat4_inverse(otho_projection_world);
         Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
         cursor_pos.x = (cursor_pos.x / window_size.x) * 2.0f - 1.0f;
         cursor_pos.y = (cursor_pos.y / window_size.y) * 2.0f - 1.0f;
@@ -136,9 +136,9 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
     }
 
     { // -- screen pos
-        Mat4 deprojection_screen = mat4_transposed(mat4_inverse(viewport_to_ortho_projection_matrix(
+        Mat4 deprojection_screen = mat4_inverse(viewport_to_ortho_projection_matrix(
             (Rect) {0, 0, window_size.x, window_size.y}
-        )));
+        ));
 
         Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
         cursor_pos.x = (cursor_pos.x / window_size.x) * 2.0f - 1.0f;

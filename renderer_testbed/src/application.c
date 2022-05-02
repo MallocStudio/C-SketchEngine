@@ -6,18 +6,16 @@
 SE_UI *ctx;
 SEUI_Panel panel;
 
-f32 light_intensity = 1.0f;
+Application_Panel app_panel;
 
 /* to render any texture on the screen */
 // u32 cheat_vbo;
 // Mat4 cheat_transform;
 
 u32 player       = -1;
-u32 player2      = -1;
-u32 player3      = -1;
-u32 line_entity =  -1;
-
-RGBA colour_test;
+u32 plane      = -1;
+// u32 player3      = -1;
+u32 line_mesh =  -1;
 
 AABB3D world_aabb;
 void app_init(Application *app, SDL_Window *window) {
@@ -46,24 +44,22 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- init entities
         player  = app_add_entity(app);
-        player2 = app_add_entity(app);
-        player3 = app_add_entity(app);
-        line_entity = app_add_entity(app);
+        plane = app_add_entity(app);
+        // player3 = app_add_entity(app);
 
         app->entities[player].position = vec3_zero();
-        app->entities[player2].position = (Vec3) {0, -1.2f, 0};
-        app->entities[player3].position = (Vec3) {-2.0f, -2.2f, -1.0f};
-        app->entities[line_entity].position = (Vec3) {0, 0, 0};
+        // app->entities[plane].position = (Vec3) {0, -1.2f, 0};
+        // app->entities[player3].position = (Vec3) {-2.0f, -2.2f, -1.0f};
 
         app->entities[player].scale = vec3_one();
-        app->entities[player2].scale = vec3_one();
-        app->entities[player3].scale = vec3_one();
-        app->entities[line_entity].scale = vec3_one();
+        app->entities[plane].scale = vec3_one();
+        // app->entities[player3].scale = vec3_one();
 
         app->entities[player].oriantation      = vec3_zero();
-        app->entities[player2].oriantation     = vec3_zero();
-        app->entities[player3].oriantation     = vec3_zero();
-        app->entities[line_entity].oriantation = vec3_zero();
+        app->entities[plane].oriantation       = vec3_zero();
+        // app->entities[player3].oriantation     = vec3_zero();
+
+        line_mesh = serender3d_add_mesh_empty(&app->renderer);
     }
 
     { // -- init UI
@@ -71,14 +67,14 @@ void app_init(Application *app, SDL_Window *window) {
         seui_init(ctx, &app->input, window_w, window_h);
         panel.initial_rect = (Rect) {250, 300, 300, 400};
         panel.minimised = false;
+        panel_init(&app_panel);
     }
 
     { // -- load mesh
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
-        app->entities[player2].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
-        app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
-        app->entities[player3].oriantation = vec3_create(SEMATH_HALF_PI, 0, 0);
-        app->entities[line_entity].mesh_index = serender3d_add_gizmos_aabb(&app->renderer, world_aabb.min, world_aabb.max, 3);
+        app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
+        // app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        // app->entities[player3].oriantation = vec3_create(SEMATH_HALF_PI, 0, 0);
     }
 }
 
@@ -87,8 +83,6 @@ void app_deinit(Application *app) {
     seui_deinit(ctx);
 }
 
-f32 slider_value = 0.5f;
-Vec2 slider2d_value = {0, -1};
 void app_update(Application *app) {
     // -- input
     u32 window_w, window_h;
@@ -107,9 +101,9 @@ void app_update(Application *app) {
 
         if (seui_panel_at(ctx, "panel", 2, 100, &panel)) {
             seui_label(ctx, "light direction:");
-            seui_slider2d(ctx, &slider2d_value);
+            seui_slider2d(ctx, &app_panel.light_direction);
             seui_label(ctx, "light intensity:");
-            seui_slider(ctx, &light_intensity);
+            seui_slider(ctx, &app_panel.light_intensity);
             // seui_label(ctx, "test label 1:");
             // seui_label(ctx, "test label 2:");
             // seui_label(ctx, "test label 3:");
@@ -123,7 +117,8 @@ void app_update(Application *app) {
             seui_slider(ctx, &app->entities[player].oriantation.z);
 
             // seui_colour_picker_at(ctx, (Rect) {0, 0, 100, 100}, RGBA_RED, &colour_test);
-            seui_colour_picker(ctx, RGBA_RED, &colour_test);
+            seui_label(ctx, "colour:");
+            seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
 
             // char light_x_label[100];
             // sprintf(light_x_label, "x: %f", light_pos.x);
@@ -146,33 +141,23 @@ void app_update(Application *app) {
     }
 
     { // -- calculate world aabb
-        AABB3D aabb[3];
-        for (u32 i = 0; i < 3; ++i) {
-            aabb[i] = app->renderer.meshes[app->entities[i].mesh_index]->aabb;
+        AABB3D *aabb = malloc(sizeof(AABB3D) * app->entity_count);
+        Mat4 *transforms = malloc(sizeof(Mat4) * app->entity_count);
+
+        for (u32 i = 0; i < app->entity_count; ++i) {
+            AABB3D mesh_aabb = app->renderer.meshes[app->entities[i].mesh_index]->aabb;
             Mat4 entity_transform = entity_get_transform(&app->entities[i]);
 
-            Vec4 min = {aabb[i].min.x, aabb[i].min.y, aabb[i].min.z, 1.0f};
-            Vec4 max = {aabb[i].max.x, aabb[i].max.y, aabb[i].max.z, 1.0f};
-
-            min = mat4_mul_vec4(entity_transform, min);
-            max = mat4_mul_vec4(entity_transform, max);
-
-            aabb[i].min = (Vec3) {min.x, min.y, min.z};
-            aabb[i].max = (Vec3) {max.x, max.y, max.z};
+            aabb[i] = aabb3d_from_points(mesh_aabb.min, mesh_aabb.max, entity_transform);
         }
-        world_aabb = aabb3d_calc(aabb, 3);
-        // AABB3D aabb;
-        // Entity entity = app->entities[player];
-        // aabb = app->renderer.meshes[entity.mesh_index]->aabb;
+        world_aabb = aabb3d_calc(aabb, app->entity_count);
 
-        // /* transform the min and max */
-        // Vec3 min = {aabb.min.x, aabb.min.y, aabb.min.z};
-        // Vec3 max = {aabb.max.x, aabb.max.y, aabb.max.z};
-        // Mat4 entity_transform = entity_get_transform(&app->entities[player]);
-        // world_aabb = aabb3d_from_points(min, max, entity_transform);
+        free(aabb);
+        free(transforms);
     }
 
-    serender3d_update_gizmos_aabb(&app->renderer, world_aabb.min, world_aabb.max, 3, app->entities[line_entity].mesh_index);
+    // serender3d_update_gizmos_aabb(&app->renderer, world_aabb.min, world_aabb.max, 3, app->entities[line_entity].mesh_index);
+    semesh_generate_gizmos_aabb(app->renderer.meshes[line_mesh], world_aabb.min, world_aabb.max, 3);
 }
 
 void app_render(Application *app) {
@@ -184,8 +169,8 @@ void app_render(Application *app) {
         // Vec3 cam_forward = mat4_forward(app->camera.view);
         // app->renderer.light_directional.direction = cam_forward;
         Vec3 light_direction = {
-            slider2d_value.x,
-            slider2d_value.y,
+            app_panel.light_direction.x,
+            app_panel.light_direction.y,
             0
         };
         vec3_normalise(&light_direction);
@@ -193,21 +178,23 @@ void app_render(Application *app) {
 
         { // -- shadow mapping
             /* calculate the matrices */
-            f32 near_plane = 0.1f, far_plane = 10.0f, border_size = 10.0f;
             // what is visible to the light
-            Mat4 light_proj = mat4_ortho(-border_size, border_size, -border_size, border_size, near_plane, far_plane);
-            // f32 left   = world_aabb.min.x;
-            // f32 right  = world_aabb.max.x;
-            // f32 bottom = world_aabb.min.y;
-            // f32 top    = world_aabb.max.y;
-            // f32 near = 0.1f;
-            // f32 far = vec3_distance(world_aabb.min, world_aabb.max);
-            // Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
+            // f32 near_plane = 0.001f, far_plane = 40.0f, border_size = 40.0f;
+            // f32 near_plane = 0.1f, far_plane = far_plane_norm * 10.0f, border_size = border_size_norm * 20.0f;
+            // Mat4 light_proj = mat4_ortho(-border_size, border_size, -border_size, border_size, near_plane, far_plane);
 
-            Vec3 light_pos = world_aabb.max;
+            // OR:
+            f32 left   = world_aabb.max.x - world_aabb.min.x;
+            f32 right  = -left;
+            f32 bottom = world_aabb.max.y - world_aabb.min.y;
+            f32 top    = -bottom;
+            f32 near = 0.1f;
+            f32 far = 5.0f; //vec3_distance(world_aabb.min, world_aabb.max);
+            Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
+
+            Vec3 light_pos = vec3_create(0, 5, 0);//world_aabb.max;
             Vec3 light_target = vec3_add(app->renderer.light_directional.direction, light_pos);
             Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
-            // Mat4 light_view = mat4_lookat(light_pos, vec3_zero(), vec3_up());
 
             Mat4 light_space_mat = mat4_mul(light_view, light_proj);
 
@@ -245,7 +232,7 @@ void app_render(Application *app) {
         }
 
         // 2. render normally with the shadow map
-        app->renderer.light_directional.intensity = light_intensity;
+        app->renderer.light_directional.intensity = app_panel.light_intensity;
         RGB ambient = app->renderer.light_directional.ambient;
         rgb_normalise(&ambient);
         glClearColor(ambient.r, ambient.g, ambient.b, 1.0f);
@@ -256,6 +243,8 @@ void app_render(Application *app) {
         for (u32 i = 0; i < app->entity_count; ++i) {
             entity_render(&app->entities[i], &app->renderer);
         }
+
+        serender3d_render_mesh(&app->renderer, line_mesh, mat4_identity());
     }
     { // -- ui
         seui_render(ctx);

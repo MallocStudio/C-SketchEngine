@@ -404,7 +404,6 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
         2, 3, 0
     };
 
-    // mesh->aabb = semesh_calc_aabb(verts, 4);
     semesh_generate(mesh, 4, verts, 6, indices);
 }
 
@@ -421,6 +420,27 @@ void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
         0, 1
     };
     semesh_generate(mesh, 2, verts, 2, indices);
+}
+
+void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 positions_count, f32 line_width) {
+    mesh->is_line = true;
+    mesh->line_width = line_width;
+
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * (positions_count + 1));
+    verts[0].position = origin;
+    for (u32 i = 0; i < positions_count; ++i) {
+        verts[i + 1].position = positions[i];
+    }
+
+    u32 *indices = malloc(sizeof(u32) * (positions_count * 2));
+    for (u32 i = 0; i < positions_count * 2; i += 2) {
+        indices[i] = 0;
+        indices[i + 1] = i + 1;
+    }
+    semesh_generate(mesh, positions_count + 1, verts, positions_count * 2, indices);
+
+    free(verts);
+    free(indices);
 }
 
 void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width) {
@@ -618,55 +638,13 @@ AABB3D aabb3d_from_points(Vec3 point1, Vec3 point2, Mat4 transform) {
     return semesh_calc_aabb(dummy_verts, 8);
 }
 
-AABB3D aabb3d_calc(const AABB3D *obj_aabb, u32 aabb_count) {
-
+AABB3D aabb3d_calc(const AABB3D *aabbs, u32 aabb_count) {
     f32 pos1x = 0, pos2x = 0, pos1y = 0, pos2y = 0, pos1z = 0, pos2z = 0;
     for (u32 i = 0; i < aabb_count; ++i) {
         // convert obj aabb to world space aabb (as in take rotation into account)
-        AABB3D aabb = obj_aabb[i];
+        AABB3D aabb = aabbs[i];
         Vec3 min = aabb.min;
         Vec3 max = aabb.max;
-
-        // if (min.x > max.x) {
-        //     f32 temp = min.x;
-        //     min.x = max.x;
-        //     max.x = temp;
-        // }
-        // if (min.y > max.y) {
-        //     f32 temp = min.y;
-        //     min.y = max.y;
-        //     max.y = temp;
-        // }
-        // if (min.z > max.z) {
-        //     f32 temp = min.z;
-        //     min.z = max.z;
-        //     max.z = temp;
-        // }
-
-        // if (min.x > max.x) {
-        //     min.x = -min.x;
-        //     max.x = -max.x;
-        // }
-        // if (min.y > max.y) {
-        //     min.y = -min.y;
-        //     max.y = -max.y;
-        // }
-        // if (min.z > max.z) {
-        //     min.z = -min.z;
-        //     max.z = -max.z;
-        // }
-
-        // if (min.x > max.x || min.y > max.y || min.z > max.z) {
-        //     f32 temp = min.x;
-        //     min.x = max.x;
-        //     max.x = temp;
-        //     temp = min.y;
-        //     min.y = max.y;
-        //     max.y = temp;
-        //     temp = min.z;
-        //     min.z = max.z;
-        //     max.z = temp;
-        // }
 
         if (pos1x > min.x) pos1x = min.x;
         if (pos1y > min.y) pos1y = min.y;
@@ -1020,6 +998,14 @@ u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width);
 
+    renderer->meshes_count++;
+    return result;
+}
+
+u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
+    u32 result = renderer->meshes_count;
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     renderer->meshes_count++;
     return result;
 }

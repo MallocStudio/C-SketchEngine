@@ -57,6 +57,15 @@ float shadow_calculation(vec4 param_frag_pos_light_space) {
 	return shadow;
 }
 
+vec3 shadow_projection(vec4 param_frag_pos_light_space) {
+	// perform perspective divide
+	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
+	// transform to [0,1] range
+	proj_coords = proj_coords * 0.5 + 0.5;
+	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
+	return texture(shadow_map, proj_coords.xy).rgb;
+}
+
 void main() {
 	// -- setting up variables
 

@@ -3,6 +3,18 @@
 
 #include "entity.h"
 
+typedef struct Application_Panel {
+    f32 light_intensity;
+    RGBA colour_test;
+    Vec2 light_direction;
+} Application_Panel;
+
+SEINLINE panel_init(Application_Panel *panel) {
+    panel->light_intensity = 1.0f;
+    panel->colour_test = RGBA_RED;
+    panel->light_direction = (Vec2) {0, -1};
+}
+
 #define ENTITIES_MAX_COUNT 10
 typedef struct Application {
     SE_Input input;

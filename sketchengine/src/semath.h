@@ -818,11 +818,13 @@ SEINLINE Vec3 mat4_right(Mat4 m) {
 
 /// creates and returns the result of the multiplication of m and v
 SEINLINE Vec4 mat4_mul_vec4 (Mat4 m, Vec4 v) {
+    // https://gamedev.stackexchange.com/questions/136573/multiply-matrix4x4-with-vec4
+    // the v * M part (I think the other part is the same but transposed)
     Vec4 result;
-    result.x = m.data[0 ] * v.x + m.data[1 ] * v.y + m.data[2 ] * v.z + m.data[3 ] * v.w;
-    result.y = m.data[4 ] * v.x + m.data[5 ] * v.y + m.data[6 ] * v.z + m.data[7 ] * v.w;
-    result.z = m.data[8 ] * v.x + m.data[9 ] * v.y + m.data[10] * v.z + m.data[11] * v.w;
-    result.w = m.data[12] * v.x + m.data[13] * v.y + m.data[14] * v.z + m.data[15] * v.w;
+    result.x = v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8]  + v.w * m.data[12];
+    result.y = v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9]  + v.w * m.data[13];
+    result.z = v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + v.w * m.data[14];
+    result.w = v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15];
     return result;
 }
 
