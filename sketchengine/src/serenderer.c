@@ -870,7 +870,7 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     if (material->texture_normal.loaded) {
         setexture_bind(&material->texture_normal, 2);
     } else {
-        setexture_bind(&renderer->texture_default_diffuse, 2);
+        setexture_bind(&renderer->texture_default_normal, 2);
     }
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
