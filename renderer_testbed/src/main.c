@@ -87,7 +87,9 @@ int main() {
                 } break;
                 case SDL_TEXTINPUT: {
                     sestring_append(&app->input.text_input, event.text.text);
-                    printf("receiving input %s", event.text.text);
+                    printf("WHAT!!! %s\n", event.text.text);
+                } break;
+                case SDL_TEXTEDITING: {
                 } break;
             }
         }

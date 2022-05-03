@@ -229,7 +229,7 @@ void seui_label(SE_UI *ctx, const char *text) {
 void seui_slider(SE_UI *ctx, f32 *value) {
     Rect rect = {0, 0, 50, 50}; // default size
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, 50, 50);
+        rect = panel_put(ctx, 50, 24);
     }
     Vec2 pos1 = {rect.x, (rect.y + rect.y + rect.h) * 0.5f};
     Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
@@ -239,7 +239,7 @@ void seui_slider(SE_UI *ctx, f32 *value) {
 void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     Rect rect = {0, 0, 50, 50}; // default
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, 50, 50);
+        rect = panel_put(ctx, 32, 32);
     }
     Vec2 center = {
         (rect.x + rect.x + rect.w) * 0.5f,
@@ -252,9 +252,17 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
 void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value) {
     Rect rect = {0, 0, 100, 100}; // default label size
     if (ctx->current_panel != SEUI_ID_NULL) {
-        rect = panel_put(ctx, 100, 100);
+        rect = panel_put(ctx, 32, 32);
     }
     seui_colour_picker_at(ctx, rect, hue, value);
+}
+
+void seui_input_text(SE_UI *ctx, SE_String *text) {
+    Rect rect = {0, 0, 100, 100}; // default label size
+    if (ctx->current_panel != SEUI_ID_NULL) {
+        rect = panel_put(ctx, 100, 32);
+    }
+    seui_input_text_at(ctx, text, rect);
 }
 
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
@@ -394,7 +402,7 @@ void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value) {
     seui_render_colour_picker(&ctx->renderer, rect, hue);
 }
 
-void seui_input_text_at(SE_UI *ctx, char *text, Rect rect) {
+void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
 
@@ -404,6 +412,8 @@ void seui_input_text_at(SE_UI *ctx, char *text, Rect rect) {
     RGBA colour_highlight = (RGBA) {80, 90, 150, 255};
     Vec3 colour_text = (Vec3) {255, 255, 255};
     RGBA colour = colour_bg;
+
+    SE_String *displayed_text = text;
 
     u32 current_active = ctx->active;
     UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false, true);
@@ -416,18 +426,26 @@ void seui_input_text_at(SE_UI *ctx, char *text, Rect rect) {
         } break;
         case UI_STATE_ACTIVE: {
             colour = RGBA_BLACK;
+
             if (input->is_text_input_activated == false) {
-                seinput_text_input_activate(input);
+                sestring_clear(text);
+                sestring_duplicate(&input->text_input, text);
+                seinput_text_input_activate(input, text->buffer);
             }
 
-            seinput_text_input_consume(input, text);
+            displayed_text = &input->text_input;
+            if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE) || seinput_is_mouse_right_pressed(input)) {
+                sestring_delete_from_end(displayed_text, 1);
+            }
         } break;
     }
 
     if (current_active != id) { // if we were previously active but not anymore
+        sestring_clear(text);
+        sestring_duplicate(&input->text_input, text);
         seinput_text_input_deactivate(input);
     }
 
     seui_render_rect(renderer, rect, colour);
-    setext_render_text_rect(&ctx->txt_renderer, text, rect, colour_text, true);
+    setext_render_text_rect(&ctx->txt_renderer, displayed_text->buffer, rect, colour_text, true);
 }

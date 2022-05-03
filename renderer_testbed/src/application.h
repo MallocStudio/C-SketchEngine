@@ -2,20 +2,27 @@
 #define APPLICATION_H
 
 #include "entity.h"
+#include "sestring.h"
 
 typedef struct Application_Panel {
     f32 light_intensity;
     RGBA colour_test;
     Vec2 light_direction;
-    char *input_text;
+    SE_String input_text;
+    f32 left, right, bottom, top, near, far;
 } Application_Panel;
 
 SEINLINE panel_init(Application_Panel *panel) {
     panel->light_intensity = 1.0f;
     panel->colour_test = RGBA_RED;
     panel->light_direction = (Vec2) {0, -1};
-    panel->input_text = malloc(sizeof(char) * 255); // @leak
-    panel->input_text = "enter text";
+    sestring_init(&panel->input_text, "enter text"); // @leak
+    panel->left   = 0;
+    panel->right  = 1;
+    panel->bottom = 0;
+    panel->top    = 1;
+    panel->near   = 0;
+    panel->far    = 1;
 }
 
 #define ENTITIES_MAX_COUNT 10

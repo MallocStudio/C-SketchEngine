@@ -8,6 +8,7 @@
 typedef struct SE_String {
     char *buffer;
     u32 size;
+    u32 capacity;
 } SE_String;
 
 /// Allocates memory
@@ -25,4 +26,6 @@ void sestring_append_length(SE_String *string, const char *buffer, u32 length);
 u32 sestring_lastof(SE_String *string, const char letter);
 /// Clears the buffer (deinits then inits)
 void sestring_clear(SE_String *string);
+/// Deletes from the end of the buffer. Does not modify memory capacity
+void sestring_delete_from_end(SE_String *string, u32 amount);
 #endif // SESTRING_H

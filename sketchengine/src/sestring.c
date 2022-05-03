@@ -1,16 +1,18 @@
 #include "sestring.h"
-
+#include "memory.h"
 void sestring_init(SE_String *string, const char *buffer) {
     if (buffer != NULL) {
         string->size = SDL_strlen(buffer);
-        string->buffer = malloc(sizeof(char) * string->size);
+        string->capacity = string->size + 1; // +1 to accomidate '\0'
+
+        string->buffer = malloc(sizeof(char) * string->capacity);
 
         for (u32 i = 0; i < string->size+1; ++i) {
             string->buffer[i] = buffer[i];
         }
-
     } else {
         string->size = 0;
+        string->capacity = 0;
         string->buffer = NULL;
     }
 }
@@ -18,7 +20,9 @@ void sestring_init(SE_String *string, const char *buffer) {
 void sestring_deinit(SE_String *string) {
     if (string->buffer != NULL) {
         free(string->buffer);
+        string->buffer = NULL;
         string->size = 0;
+        string->capacity = 0;
     }
 }
 
@@ -33,17 +37,22 @@ void sestring_append(SE_String *string, const char *buffer) {
     sestring_append_length(string, buffer, SDL_strlen(buffer));
 }
 
-void sestring_append_length(SE_String *string, const char *buffer, u32 length) {
+void sestring_append_length(SE_String *string, const char *src, u32 length) {
     if (string->buffer == NULL) {
-        sestring_init(string, buffer);
+        // if this string is empty, initialise it with the given src
+        sestring_init(string, src);
     } else {
         u32 start_index = string->size;
 
         string->size += length;
-        string->buffer = realloc(string->buffer, sizeof(char) * string->size);
+
+        if (string->size > string->capacity) {
+            string->capacity = string->size+1; // +1 to accomidate '\0'
+            string->buffer = realloc(string->buffer, sizeof(char) * string->capacity);
+        }
 
         for (u32 i = start_index; i < string->size+1; ++i) { // +1 to inlcude '\0'
-            string->buffer[i] = buffer[i - start_index];
+            string->buffer[i] = src[i - start_index];
         }
     }
 }
@@ -67,7 +76,12 @@ void sestring_clear(SE_String *string) {
     if (string->buffer == NULL || string->size == 0) {
         return;
     }
+    string->size = 0;
+}
 
-    sestring_deinit(string);
-    sestring_init(string, "");
+void sestring_delete_from_end(SE_String *string, u32 amount) {
+    if (string->size >= amount) {
+        string->size -= amount;
+        string->buffer[string->size] = '\0';
+    }
 }

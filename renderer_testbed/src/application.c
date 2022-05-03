@@ -12,11 +12,13 @@ Application_Panel app_panel;
 // u32 cheat_vbo;
 // Mat4 cheat_transform;
 
-u32 player       = -1;
-u32 plane      = -1;
+u32 player = -1;
+u32 player2 = -1;
+u32 plane = -1;
 // u32 player3      = -1;
-u32 line_mesh =  -1;
-
+u32 line_mesh = -1;
+u32 proj_lines = -1;
+u32 proj_box   = -1;
 AABB3D world_aabb;
 void app_init(Application *app, SDL_Window *window) {
     memset(app, 0, sizeof(Application));
@@ -44,34 +46,41 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- init entities
         player  = app_add_entity(app);
+        player2  = app_add_entity(app);
         plane = app_add_entity(app);
         // player3 = app_add_entity(app);
 
         app->entities[player].position = vec3_zero();
+        app->entities[player2].position = vec3_create(-1, 0, -1);
         // app->entities[plane].position = (Vec3) {0, -1.2f, 0};
         // app->entities[player3].position = (Vec3) {-2.0f, -2.2f, -1.0f};
 
         app->entities[player].scale = vec3_one();
+        app->entities[player2].scale = vec3_one();
         app->entities[plane].scale = vec3_one();
         // app->entities[player3].scale = vec3_one();
 
         app->entities[player].oriantation      = vec3_zero();
+        app->entities[player2].oriantation      = vec3_zero();
         app->entities[plane].oriantation       = vec3_zero();
         // app->entities[player3].oriantation     = vec3_zero();
 
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
+        proj_lines = serender3d_add_mesh_empty(&app->renderer);
+        proj_box = serender3d_add_mesh_empty(&app->renderer);
     }
 
     { // -- init UI
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
-        panel.initial_rect = (Rect) {250, 300, 300, 400};
+        panel.initial_rect = (Rect) {0, 0, 300, 400};
         panel.minimised = false;
         panel_init(&app_panel);
     }
 
     { // -- load mesh
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
         // app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
         // app->entities[player3].oriantation = vec3_create(SEMATH_HALF_PI, 0, 0);
@@ -104,41 +113,33 @@ void app_update(Application *app) {
             seui_slider2d(ctx, &app_panel.light_direction);
             seui_label(ctx, "light intensity:");
             seui_slider(ctx, &app_panel.light_intensity);
-            // seui_label(ctx, "test label 1:");
-            // seui_label(ctx, "test label 2:");
-            // seui_label(ctx, "test label 3:");
-            // seui_label(ctx, "test label 4:");
 
-            seui_label(ctx, "rot x:");
-            seui_slider(ctx, &app->entities[player].oriantation.x);
-            seui_label(ctx, "rot y:");
-            seui_slider(ctx, &app->entities[player].oriantation.y);
-            seui_label(ctx, "rot z:");
-            seui_slider(ctx, &app->entities[player].oriantation.z);
+            // seui_label(ctx, "rot x:");
+            // seui_slider(ctx, &app->entities[player].oriantation.x);
+            // seui_label(ctx, "rot y:");
+            // seui_slider(ctx, &app->entities[player].oriantation.y);
+            // seui_label(ctx, "rot z:");
+            // seui_slider(ctx, &app->entities[player].oriantation.z);
 
-            // seui_colour_picker_at(ctx, (Rect) {0, 0, 100, 100}, RGBA_RED, &colour_test);
-            seui_label(ctx, "colour:");
-            seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
+            // // seui_colour_picker_at(ctx, (Rect) {0, 0, 100, 100}, RGBA_RED, &colour_test);
+            // seui_label(ctx, "colour:");
+            // seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
 
-            seui_input_text_at(ctx, app_panel.input_text, (Rect) {0, 0, 200, 100});
+            // seui_label(ctx, "test input:");
+            // seui_input_text(ctx, &app_panel.input_text);
 
-            // char light_x_label[100];
-            // sprintf(light_x_label, "x: %f", light_pos.x);
-            // char light_y_label[100];
-            // sprintf(light_y_label, "y: %f", light_pos.y);
-            // char light_z_label[100];
-            // sprintf(light_z_label, "z: %f", light_pos.z);
-
-            // seui_label(ctx, light_x_label);
-            // seui_slider(ctx, &light_pos_normalised.x);
-            // seui_label(ctx, light_y_label);
-            // seui_slider(ctx, &light_pos_normalised.y);
-            // seui_label(ctx, light_z_label);
-            // seui_slider(ctx, &light_pos_normalised.z);
-
-            // light_pos.x = light_pos_normalised.x * 20 - 10;
-            // light_pos.y = light_pos_normalised.y * 20 - 10;
-            // light_pos.z = light_pos_normalised.z * 20 - 10;
+            seui_label(ctx, "left");
+            seui_slider(ctx, &app_panel.left);
+            seui_label(ctx, "right");
+            seui_slider(ctx, &app_panel.right);
+            seui_label(ctx, "bottom");
+            seui_slider(ctx, &app_panel.bottom);
+            seui_label(ctx, "top");
+            seui_slider(ctx, &app_panel.top);
+            seui_label(ctx, "near");
+            seui_slider(ctx, &app_panel.near);
+            seui_label(ctx, "far");
+            seui_slider(ctx, &app_panel.far);
         }
     }
 
@@ -186,19 +187,100 @@ void app_render(Application *app) {
             // Mat4 light_proj = mat4_ortho(-border_size, border_size, -border_size, border_size, near_plane, far_plane);
 
             // OR:
-            f32 left   = world_aabb.max.x - world_aabb.min.x;
-            f32 right  = -left;
-            f32 bottom = world_aabb.max.y - world_aabb.min.y;
-            f32 top    = -bottom;
-            f32 near = 0.1f;
-            f32 far = 5.0f; //vec3_distance(world_aabb.min, world_aabb.max);
+            f32 left   =-10 + 20 * app_panel.left;   //world_aabb.min.x;
+            f32 right  =-10 + 20 * app_panel.right;  //world_aabb.max.x;
+            f32 bottom =-10 + 20 * app_panel.bottom; //world_aabb.min.y;
+            f32 top    =-10 + 20 * app_panel.top;    //world_aabb.max.y;
+            f32 near   =-10 + 20 * app_panel.near;   //world_aabb.min.z;
+            f32 far    =-10 + 20 * app_panel.far;    //world_aabb.max.z;
+            // f32 far = 5.0f; //vec3_distance(world_aabb.min, world_aabb.max);
             Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
 
-            Vec3 light_pos = vec3_create(0, 5, 0);//world_aabb.max;
+            // Vec3 light_pos = vec3_create((left + right) * 0.5f, top, (far + near) * 0.5f);//world_aabb.max;
+            Vec3 light_pos = (Vec3) {
+                -light_direction.x,
+                -light_direction.y,
+                0,
+            };
+
+            light_pos = vec3_mul_scalar(light_pos, 5);
+
             Vec3 light_target = vec3_add(app->renderer.light_directional.direction, light_pos);
             Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
-
             Mat4 light_space_mat = mat4_mul(light_view, light_proj);
+
+            { // -- visualise the orhto projection
+                f32 left    = -1;
+                f32 right   = +1;
+                f32 bottom  = -1;
+                f32 top     = +1;
+                f32 near    = -1;
+                f32 far     = +1;
+                Vec3 poss[8] = {
+                    {.x = left,  .y = bottom, .z = near}, // 0
+                    {.x = right, .y = bottom, .z = near}, // 1
+                    {.x = right, .y = top,    .z = near}, // 2
+                    {.x = left,  .y = top,    .z = near}, // 3
+                    {.x = left,  .y = bottom, .z = far }, // 4
+                    {.x = right, .y = bottom, .z = far }, // 5
+                    {.x = right, .y = top,    .z = far }, // 6
+                    {.x = left,  .y = top,    .z = far }  // 7
+                };
+
+                Vec4 poss_4d[8] = {
+                    {.x = left,  .y = bottom, .z = near, 0}, // 0
+                    {.x = right, .y = bottom, .z = near, 0}, // 1
+                    {.x = right, .y = top,    .z = near, 0}, // 2
+                    {.x = left,  .y = top,    .z = near, 0}, // 3
+                    {.x = left,  .y = bottom, .z = far , 0}, // 4
+                    {.x = right, .y = bottom, .z = far , 0}, // 5
+                    {.x = right, .y = top,    .z = far , 0}, // 6
+                    {.x = left,  .y = top,    .z = far , 0}  // 7
+                };
+
+                poss_4d[0] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[0]);
+                poss_4d[1] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[1]);
+                poss_4d[2] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[2]);
+                poss_4d[3] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[3]);
+                poss_4d[4] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[4]);
+                poss_4d[5] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[5]);
+                poss_4d[6] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[6]);
+                poss_4d[7] = mat4_mul_vec4(mat4_inverse(light_space_mat), poss_4d[7]);
+
+                SE_Vertex3D verts[8] = {
+                    {.position = (Vec3) {poss_4d[0].x, poss_4d[0].y, poss_4d[0].z}}, // 0
+                    {.position = (Vec3) {poss_4d[1].x, poss_4d[1].y, poss_4d[1].z}}, // 1
+                    {.position = (Vec3) {poss_4d[2].x, poss_4d[2].y, poss_4d[2].z}}, // 2
+                    {.position = (Vec3) {poss_4d[3].x, poss_4d[3].y, poss_4d[3].z}}, // 3
+                    {.position = (Vec3) {poss_4d[4].x, poss_4d[4].y, poss_4d[4].z}}, // 4
+                    {.position = (Vec3) {poss_4d[5].x, poss_4d[5].y, poss_4d[5].z}}, // 5
+                    {.position = (Vec3) {poss_4d[6].x, poss_4d[6].y, poss_4d[6].z}}, // 6
+                    {.position = (Vec3) {poss_4d[7].x, poss_4d[7].y, poss_4d[7].z}}  // 7
+                };
+
+                u32 indices[24] = {
+                    0, 1,
+                    0, 3,
+                    0, 4,
+                    5, 1,
+                    5, 6,
+                    5, 4,
+                    2, 6,
+                    2, 3,
+                    2, 1,
+                    7, 3,
+                    7, 6,
+                    7, 4
+                };
+
+                app->renderer.meshes[proj_lines]->is_line    = true;
+                app->renderer.meshes[proj_lines]->line_width = 4;
+                semesh_generate_line_fan(app->renderer.meshes[proj_lines], light_pos, poss, 8, 3);
+
+                app->renderer.meshes[proj_box]->is_line    = true;
+                app->renderer.meshes[proj_box]->line_width = 4;
+                semesh_generate(app->renderer.meshes[proj_box], 8, verts, 24, indices);
+            }
 
             { /* render the scene from the light's point of view */
                 glCullFace(GL_FRONT);
@@ -246,7 +328,9 @@ void app_render(Application *app) {
             entity_render(&app->entities[i], &app->renderer);
         }
 
-        serender3d_render_mesh(&app->renderer, line_mesh, mat4_identity());
+        // serender3d_render_mesh(&app->renderer, line_mesh, mat4_identity());
+        serender3d_render_mesh(&app->renderer, proj_lines, mat4_identity());
+        serender3d_render_mesh(&app->renderer, proj_box, mat4_identity());
     }
     { // -- ui
         seui_render(ctx);

@@ -433,9 +433,12 @@ void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 p
     }
 
     u32 *indices = malloc(sizeof(u32) * (positions_count * 2));
+
+    u32 index = 1;
     for (u32 i = 0; i < positions_count * 2; i += 2) {
         indices[i] = 0;
-        indices[i + 1] = i + 1;
+        indices[i + 1] = index;
+        ++index;
     }
     semesh_generate(mesh, positions_count + 1, verts, positions_count * 2, indices);
 

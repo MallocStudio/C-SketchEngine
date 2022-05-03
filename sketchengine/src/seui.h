@@ -138,5 +138,6 @@ void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value);
 void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);
 void seui_slider2d(SE_UI *ctx, Vec2 *value);
 
-void seui_input_text_at(SE_UI *ctx, char *text, Rect rect);
+void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect);
+void seui_input_text(SE_UI *ctx, SE_String *text);
 #endif // SEUI_H

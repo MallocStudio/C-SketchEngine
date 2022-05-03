@@ -3,6 +3,7 @@
 
 #include "sedefines.h"
 #include "semath_defines.h"
+#include "semath.h"
 #include "sestring.h"
 
 /// get the mouse position (relative to the window's top left position). Optionally pass bools to get mouse state
@@ -193,27 +194,25 @@ SEINLINE bool seinput_is_mouse_right_pressed (const SE_Input *input) {
 }
 
 SEINLINE bool seinput_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode) {
-    return (input->keyboard[sdl_scancode] && !input->keyboard_previous_frame[sdl_scancode]);
+    return (input->keyboard[sdl_scancode] == true && input->keyboard_previous_frame[sdl_scancode] == false);
 }
 
 SEINLINE bool seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode) {
     return input->keyboard[sdl_scancode];
 }
 
-SEINLINE seinput_text_input_activate(SE_Input *input) {
+SEINLINE void seinput_text_input_activate(SE_Input *input, char *initial_text) {
     input->is_text_input_activated = true;
+    sestring_clear(&input->text_input);
+    sestring_append(&input->text_input, initial_text);
     SDL_StartTextInput();
 }
 
-SEINLINE seinput_text_input_deactivate(SE_Input *input) {
+SEINLINE void seinput_text_input_deactivate(SE_Input *input) {
     input->is_text_input_activated = false;
     SDL_StopTextInput();
 }
 
 /// clears the text input buffer
-SEINLINE seinput_text_input_consume(SE_Input *input, char *dest) {
-    // strcat(dest, input->text_input.buffer);
-    sestring_append(...);
-    sestring_clear(&input->text_input);
-}
+void seinput_text_input_consume(SE_Input *input, char *dest);
 #endif // SEINPUT_H
