@@ -774,20 +774,24 @@ static void semesh_construct
         if (has_diffuse) {
             sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
             setexture_load(&renderer->materials[material_index]->texture_diffuse , diffuse_path.buffer);
-            free(ai_texture_path_diffuse);
+        } else {
+            setexture_load(&renderer->materials[material_index]->texture_diffuse, "assets/textures/checkerboard.png");
         }
+        free(ai_texture_path_diffuse);
         /* specular */
         if (has_specular) {
             sestring_append(&specular_path, ai_texture_path_specular->data);
             setexture_load(&renderer->materials[material_index]->texture_specular, specular_path.buffer);
-            free(ai_texture_path_specular);
         }
+        free(ai_texture_path_specular);
         /* normal */
         if (has_normal) {
             sestring_append(&normal_path, ai_texture_path_normal->data);
             setexture_load(&renderer->materials[material_index]->texture_normal  , normal_path.buffer);
-            free(ai_texture_path_normal);
+        } else {
+            setexture_load(&renderer->materials[material_index]->texture_diffuse, "assets/textures/default_normal.png");
         }
+        free(ai_texture_path_normal);
 
         sestring_deinit(&diffuse_path);
         sestring_deinit(&specular_path);
@@ -854,10 +858,20 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     if (material->texture_diffuse.loaded) {
         setexture_bind(&material->texture_diffuse, 0);
     } else {
-        setexture_bind(&renderer->texture_default, 0);
+        setexture_bind(&renderer->texture_default_diffuse, 0);
     }
-    setexture_bind(&material->texture_specular, 1);
-    setexture_bind(&material->texture_normal, 2);
+
+    if (material->texture_specular.loaded) {
+        setexture_bind(&material->texture_specular, 1);
+    } else {
+        setexture_bind(&renderer->texture_default_specular, 1);
+    }
+
+    if (material->texture_normal.loaded) {
+        setexture_bind(&material->texture_normal, 2);
+    } else {
+        setexture_bind(&renderer->texture_default_diffuse, 2);
+    }
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
     glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
@@ -933,7 +947,9 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->material_lines = serender3d_add_material(renderer);
     renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
 
-    setexture_load(&renderer->texture_default, "assets/textures/checkerboard.png");
+    setexture_load(&renderer->texture_default_diffuse, "assets/textures/checkerboard.png");
+    setexture_load(&renderer->texture_default_normal, "assets/textures/default_normal.png");
+    setexture_load(&renderer->texture_default_specular, "assets/textures/default_specular.png");
 
     /* shadow mapping */
     f32 shadow_w = 1024;
@@ -961,7 +977,9 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
     serender_target_deinit(&renderer->shadow_render_target);
 
     /* default stuff */
-    setexture_unload(&renderer->texture_default);
+    setexture_unload(&renderer->texture_default_diffuse);
+    setexture_unload(&renderer->texture_default_normal);
+    setexture_unload(&renderer->texture_default_specular);
 }
 
 u32 serender3d_add_material(SE_Renderer3D *renderer) {

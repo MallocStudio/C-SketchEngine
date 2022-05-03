@@ -222,6 +222,9 @@ SEINLINE Vec3 vec3_create(f32 x, f32 y, f32 z) {
     return result;
 }
 
+#define v3f(x, y, z) vec3_create(x, y, z)
+#define v2f(x, y) vec2_create(x, y)
+
 /// returns a Vec3 with x, y, z being zero
 SEINLINE Vec3 vec3_zero() {
     return (Vec3) {0.0f,0.0f,0.0f};

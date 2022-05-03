@@ -152,7 +152,9 @@ typedef struct SE_Renderer3D {
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
     u32 material_lines;
-    SE_Texture texture_default;
+    SE_Texture texture_default_diffuse;
+    SE_Texture texture_default_normal;
+    SE_Texture texture_default_specular;
 
     SE_Camera3D *current_camera;
     SE_Light light_directional;
