@@ -213,7 +213,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                     seui_render_rect(&ctx->renderer, expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT), dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
-                    printf("docked\n"); // @remove these prints
+                    // printf("docked\n");
                     panel_data->docked_dir = 2;
                 }
             } else
@@ -222,12 +222,12 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                     seui_render_rect(&ctx->renderer, expand_view_region(ctx, SEUI_VIEW_REGION_LEFT), dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
-                    printf("docked\n"); // @remove these prints
+                    // printf("docked\n");
                     panel_data->docked_dir = 1;
                 }
             } else { // NOT IN DOCKING BAY
                 if (panel_data->docked_dir > 0 && drag_state == UI_STATE_HOT) { // mouse is pressing so undock
-                    printf("undocked\n"); // @remove these prints
+                    // printf("undocked\n");
                     panel_data->docked_dir = 0;
                     // panel_data->rect.w = panel_data->min_size.x;
                     // panel_data->rect.h = panel_data->min_size.y;
