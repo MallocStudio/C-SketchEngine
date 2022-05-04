@@ -84,7 +84,7 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
         return (Rect) {0, 0, 32, 32};
     }
 
-    Rect panel_rect = panel->rect;
+    Rect panel_rect = panel->final_rect;
     Vec2 cursor = panel->cursor; // relative space
     cursor = vec2_add(cursor, (Vec2) {panel_rect.x, panel_rect.y}); // global space
 
@@ -128,85 +128,78 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
 }
 
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
-    Rect *initial_rect = &panel_data->initial_rect; // ! note that initial rect gets updated as we add widgets to this panel
     bool *minimised    = &panel_data->minimised;
-
-    Rect rect = *initial_rect; // the panel's dimensions at this frame
     bool is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
 
+    panel_data->final_rect = panel_data->rect; // record previous frame's rect
+
     ctx->current_panel = panel_data;
-    panel_data->rect = rect;
     panel_data->cursor = (Vec2) {
         0, // start from the top left
-        rect.h
+        panel_data->final_rect.h
     };
     panel_data->item_height = panel_data->min_item_height;
 
     // draw a rectangle that represents the panel's dimensions
-    if (!is_minimised && !panel_data->is_embedded) seui_render_rect(&ctx->renderer, rect, colour);
+    if (!is_minimised && !panel_data->is_embedded) seui_render_rect(&ctx->renderer, panel_data->final_rect, colour);
 
     { // panel widgets
         f32 minimise_button_size = 16;
         seui_panel_row(panel_data, 1);
-        Rect top_bar = panel_put(panel_data, rect.w, minimise_button_size, false);
+        Rect top_bar = panel_put(panel_data, panel_data->final_rect.w, minimise_button_size, false);
 
         /* if we're minimised, reduce panel min size */
         if (is_minimised) {
-            panel_data->min_size.x = top_bar.w;
-            panel_data->min_size.y = top_bar.h;
-            panel_data->rect.w = panel_data->min_size.x;
-            panel_data->rect.h = panel_data->min_size.y;
-            panel_data->rect.x = top_bar.x;
-            panel_data->rect.y = top_bar.y;
+            // panel_data->min_size.x = top_bar.w;
+            // panel_data->min_size.y = top_bar.h;
+            // panel_data->final_rect.w = panel_data->min_size.x;
+            // panel_data->final_rect.h = panel_data->min_size.y;
+            // panel_data->final_rect.x = top_bar.x;
+            // panel_data->final_rect.y = top_bar.y;
         }
 
         minimise_button_size = top_bar.h;
 
-        Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {rect.x, rect.y});
+        Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {panel_data->final_rect.x, panel_data->final_rect.y});
 
         UI_STATES drag_state = UI_STATE_DISABLED;
         if (panel_data->is_embedded == false) {
             /* drag button */
-            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size};
+            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->final_rect.w - minimise_button_size, minimise_button_size};
             Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
-            initial_rect->x += drag.x;
-            initial_rect->y += drag.y;
+            panel_data->rect.x += drag.x;
+            panel_data->rect.y += drag.y;
         }
 
         /* minimise button */
-        Rect minimise_button_rect = (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
+        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->final_rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
 
         /* panel outline */
-        seui_render_rect_outline(&ctx->renderer, panel_data->rect, 1, RGBA_BLACK);
+        seui_render_rect_outline(&ctx->renderer, panel_data->final_rect, 1, RGBA_BLACK);
 
         /* resizeing */
+        Vec2 min_size = panel_data->min_size;
         if (!is_minimised && !panel_data->is_embedded) {
 
-            Vec2 min_size = panel_data->min_size;
             Rect resize_button = {
-                rect.x + rect.w- 16, rect.y, 16, 16
+                panel_data->final_rect.x + panel_data->final_rect.w- 16, panel_data->final_rect.y, 16, 16
             };
             Vec2 resize = seui_drag_button_at(ctx, resize_button, NULL);
 
-            initial_rect->w += resize.x;
+            panel_data->rect.w += resize.x;
 
-            if (initial_rect->h - resize.y > min_size.y) {
-                initial_rect->h -= resize.y;
-                initial_rect->y += resize.y;
+            if (panel_data->rect.h - resize.y > min_size.y) {
+                panel_data->rect.h -= resize.y;
+                panel_data->rect.y += resize.y;
             }
-            // clamp to min size
-            if (initial_rect->w < min_size.x) initial_rect->w = min_size.x;
-            if (initial_rect->h < min_size.y) initial_rect->h = min_size.y;
         }
-        Vec2 min_size = panel_data->min_size;
-
         // clamp to min size
-        if (initial_rect->w < min_size.x) initial_rect->w = min_size.x;
-        if (initial_rect->h < min_size.y) initial_rect->h = min_size.y;
+        if (panel_data->rect.w < min_size.x) panel_data->rect.w = min_size.x;
+        if (panel_data->rect.h < min_size.y) panel_data->rect.h = min_size.y;
 
         // minimise button
         Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
@@ -214,7 +207,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
         if (!panel_data->is_embedded) { // -- docking
             RGBA dock_colour = {150, 0, 0, 100};
-            Rect normalised_rect = *initial_rect;
+            Rect normalised_rect = panel_data->rect;
             normalised_rect.x /= ctx->renderer.view_width;
             normalised_rect.w /= ctx->renderer.view_width;
             normalised_rect.y /= ctx->renderer.view_height;
@@ -232,7 +225,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
                     printf("docked\n");
                     normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT);
-                    *initial_rect = normalised_rect;
+                    panel_data->rect = normalised_rect;
                 }
             } else
             if (rect_overlaps_point(SEUI_VIEW_REGION_COLLISION_LEFT, normalised_cursor)) { // left
@@ -242,7 +235,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
                     printf("docked\n");
                     normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_LEFT);
-                    *initial_rect = normalised_rect;
+                    panel_data->rect = normalised_rect;
                 }
             }
         }
@@ -260,8 +253,8 @@ bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->is_embedded = true;
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, panel_data->initial_rect.w, panel_data->initial_rect.h, true);
-        panel_data->initial_rect = rect;
+        rect = panel_put(ctx->current_panel, panel_data->rect.w, panel_data->rect.h, true);
+        panel_data->rect = rect;
     }
     return seui_panel_at(ctx, title, panel_data);
 }

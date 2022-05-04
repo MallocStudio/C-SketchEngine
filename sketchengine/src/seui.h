@@ -44,12 +44,12 @@ typedef enum UI_STATES {
 
 typedef struct SEUI_Panel {
     /* settings */
-    Rect initial_rect;
+    Rect rect;
     bool minimised;
     f32 min_item_height;
 
     /* auto calculated */
-    Rect rect;   // the rect of the panel
+    Rect final_rect;   // the rect of the panel
     f32 item_height;
     i32 item_count;
     Vec2 min_size;
@@ -59,7 +59,7 @@ typedef struct SEUI_Panel {
 } SEUI_Panel;
 
 SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height) {
-    panel->initial_rect = initial_rect;
+    panel->rect = initial_rect;
     panel->minimised = minimised;
     panel->columns = 1;
     panel->min_item_height = min_item_height;
