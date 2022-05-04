@@ -7,7 +7,7 @@ static u32 generate_ui_id(SE_UI *ctx) {
 }
 
 /// note that stay_active_on_mouse_leave is used for dragging ui items
-static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */, bool remain_active /* = false (used for text input)*/) {
+static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */) {
     UI_STATES result = UI_STATE_IDLE;
 
     bool mouse_down   = input->is_mouse_left_down;
@@ -46,23 +46,6 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
             result = UI_STATE_WARM;
         } else {
             result = UI_STATE_IDLE;
-        }
-    } else {
-        // if ACTIVE
-        if (remain_active) {
-            ctx->active = id;
-        } else {
-            ctx->active = SEUI_ID_NULL;
-        }
-    }
-
-    if (ctx->active == id) result = UI_STATE_ACTIVE;
-
-    // if remain_active and when clicking outside or inside of this ui set active to false
-    // so for example when a ui is a text input and we press somewhere deactivate the text input
-    if (remain_active && result == UI_STATE_ACTIVE) {
-        if (ctx->input->is_mouse_left_down && ctx->active == id) {
-            ctx->active = SEUI_ID_NULL;
         }
     }
     return result;
@@ -341,7 +324,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour_pressed = ctx->theme.colour_pressed;
     RGBA colour = colour_normal;
 
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false, false);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_normal;
@@ -372,7 +355,7 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
     RGBA colour = colour_normal;
 
     Vec2 drag = {0};
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, true, false);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, true);
 
     switch (ui_state) {
         case UI_STATE_IDLE: {
@@ -480,8 +463,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 
     SE_String *displayed_text = text;
 
-    u32 current_active = ctx->active;
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false, true);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_bg;
@@ -490,27 +472,30 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             colour = colour_highlight;
         } break;
         case UI_STATE_ACTIVE: {
-            colour = RGBA_BLACK;
-
-            if (input->is_text_input_activated == false) {
-                sestring_clear(text);
-                sestring_duplicate(&input->text_input, text);
-                seinput_text_input_activate(input, text->buffer);
-            }
-
-            displayed_text = &input->text_input;
-            if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE) || seinput_is_mouse_right_pressed(input)) {
-                sestring_delete_from_end(displayed_text, 1);
+            if (ctx->active != id) {
+                // make this the current active widget
+                ctx->active = id;
+                seinput_text_input_activate(input, text);
             }
         } break;
     }
 
-    if (current_active != id) { // if we were previously active but not anymore
-        sestring_clear(text);
-        sestring_duplicate(&input->text_input, text);
-        seinput_text_input_deactivate(input);
+    if (ctx->active == id) {
+        colour = RGBA_BLACK;
+
+        // allow for deleting characters
+        if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
+            sestring_delete_from_end(text, 1);
+        }
+
+        /* deactivate */
+        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM) {
+            ctx->active = SEUI_ID_NULL;
+
+            seinput_text_input_deactivate(input);
+        }
     }
 
     seui_render_rect(renderer, rect, colour);
-    setext_render_text_rect(&ctx->txt_renderer, displayed_text->buffer, rect, colour_text, true);
+    setext_render_text_rect(&ctx->txt_renderer, text->buffer, rect, colour_text, true);
 }

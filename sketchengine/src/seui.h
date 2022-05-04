@@ -73,7 +73,14 @@ typedef struct SE_UI {
     /* UI Widgets */
     u32 warm; // hover / selection
     u32 hot;  // pressed / active
+
+    // if some widget is constantly active, we set active to their id
+    // this is to allow certain widgets hold the attention of input.
+    // For example this is used for text input. If we press on text input,
+    // active will be set to that ID, and until the user clicks somewhere else
+    // the active ID will remain the same. (This case is handled inside of seui_input_text_at())
     u32 active; // being used (used for text input)
+
     u32 max_id; // the maximum generated id
 
     /* Renderes and Inputs */
@@ -100,6 +107,7 @@ SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
 SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
     ctx->warm = SEUI_ID_NULL;
     ctx->hot = SEUI_ID_NULL;
+    ctx->active = SEUI_ID_NULL;
     seui_reset(ctx);
     ctx->input = input;
     seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);

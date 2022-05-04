@@ -52,7 +52,7 @@ typedef struct SE_Input {
 
     /* text input */
     bool is_text_input_activated; // use seinput_text_input_activate()
-    SE_String text_input;
+    SE_String *text_input_stream; // not owned. When this is not null and text_input is activated, stream to this string
     // u32 text_input_selection_index;
     // u32 text_input_selection_length;
     // u32 text_input_cursor;
@@ -74,7 +74,7 @@ SEINLINE void seinput_init(SE_Input *input) {
     // set all values to zero to begin with
     memset(input, 0, sizeof(SE_Input));
 
-    sestring_init(&input->text_input, ""); // @leak
+    // sestring_init(&input->text_input, ""); // @leak
 }
 
 /// note that mouse pos will be relative to top left position of window
@@ -187,10 +187,18 @@ SEINLINE bool seinput_is_mouse_left_pressed (const SE_Input *input) {
             && !input->was_mouse_left_down);
 }
 
+SEINLINE bool seinput_is_mouse_left_released (const SE_Input *input) {
+    return (input->was_mouse_left_down && !input->is_mouse_left_down);
+}
+
 SEINLINE bool seinput_is_mouse_right_pressed (const SE_Input *input) {
     return (input->is_mouse_right_handled == false
             && input->is_mouse_right_down
             && !input->was_mouse_right_down);
+}
+
+SEINLINE bool seinput_is_mouse_right_released (const SE_Input *input) {
+    return (input->was_mouse_right_down && !input->is_mouse_right_down);
 }
 
 SEINLINE bool seinput_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode) {
@@ -201,18 +209,15 @@ SEINLINE bool seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scanco
     return input->keyboard[sdl_scancode];
 }
 
-SEINLINE void seinput_text_input_activate(SE_Input *input, char *initial_text) {
+SEINLINE void seinput_text_input_activate(SE_Input *input, SE_String *stream_to) {
     input->is_text_input_activated = true;
-    sestring_clear(&input->text_input);
-    sestring_append(&input->text_input, initial_text);
+    input->text_input_stream = stream_to;
     SDL_StartTextInput();
 }
 
 SEINLINE void seinput_text_input_deactivate(SE_Input *input) {
     input->is_text_input_activated = false;
+    input->text_input_stream = NULL;
     SDL_StopTextInput();
 }
-
-/// clears the text input buffer
-void seinput_text_input_consume(SE_Input *input, char *dest);
 #endif // SEINPUT_H

@@ -40,6 +40,7 @@ int main() {
     // -- Use Vsync
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
+    SDL_StopTextInput(); // don't take text input by default
     Application *app = new(Application);
     app_init(app, window);
 
@@ -85,11 +86,15 @@ int main() {
                     // }
                     // camera.view = mat4_mul(camera.view, mat4_euler_y(angle));
                 } break;
-                case SDL_TEXTINPUT: {
-                    sestring_append(&app->input.text_input, event.text.text);
-                    printf("WHAT!!! %s\n", event.text.text);
+                case SDL_TEXTINPUT: { // this event happens after SDL_StartTextInput() is called
+                    if (app->input.text_input_stream != NULL) {
+                        sestring_append(app->input.text_input_stream, event.text.text);
+                        printf("WHAT!!! %s\n", event.text.text);
+                    } else {
+                        printf("Warning: tried to append to input text stream but it was null\n");
+                    }
                 } break;
-                case SDL_TEXTEDITING: {
+                case SDL_TEXTEDITING: {// this event happens after SDL_StartTextInput() is called
                 } break;
             }
         }
