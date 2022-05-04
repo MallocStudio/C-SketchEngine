@@ -149,16 +149,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
         seui_panel_row(panel_data, 1);
         Rect top_bar = panel_put(panel_data, panel_data->rect.w, minimise_button_size, false);
 
-        /* if we're minimised, reduce panel min size */
-        if (is_minimised) {
-            // panel_data->min_size.x = top_bar.w;
-            // panel_data->min_size.y = top_bar.h;
-            // panel_data->rect.w = panel_data->min_size.x;
-            // panel_data->rect.h = panel_data->min_size.y;
-            // panel_data->rect.x = top_bar.x;
-            // panel_data->rect.y = top_bar.y;
-        }
-
         minimise_button_size = top_bar.h;
 
         Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {panel_data->rect.x, panel_data->rect.y});
@@ -223,9 +213,8 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                     seui_render_rect(&ctx->renderer, expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT), dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
-                    printf("docked\n");
-                    normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT);
-                    panel_data->rect = normalised_rect;
+                    printf("docked\n"); // @remove these prints
+                    panel_data->docked_dir = 2;
                 }
             } else
             if (rect_overlaps_point(SEUI_VIEW_REGION_COLLISION_LEFT, normalised_cursor)) { // left
@@ -233,8 +222,25 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                     seui_render_rect(&ctx->renderer, expand_view_region(ctx, SEUI_VIEW_REGION_LEFT), dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
-                    printf("docked\n");
+                    printf("docked\n"); // @remove these prints
+                    panel_data->docked_dir = 1;
+                }
+            } else { // NOT IN DOCKING BAY
+                if (panel_data->docked_dir > 0 && drag_state == UI_STATE_HOT) { // mouse is pressing so undock
+                    printf("undocked\n"); // @remove these prints
+                    panel_data->docked_dir = 0;
+                    // panel_data->rect.w = panel_data->min_size.x;
+                    // panel_data->rect.h = panel_data->min_size.y;
+                }
+            }
+
+            if (panel_data->docked_dir > 0) {
+                if (panel_data->docked_dir == 1) { // left
                     normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_LEFT);
+                    panel_data->rect = normalised_rect;
+                } else
+                if (panel_data->docked_dir == 2) { // right
+                    normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT);
                     panel_data->rect = normalised_rect;
                 }
             }

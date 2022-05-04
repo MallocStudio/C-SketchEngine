@@ -56,6 +56,8 @@ typedef struct SEUI_Panel {
     Vec2 cursor; // the relative cursor used to position the placement of the items
     u32 columns; // number of columns -> calculate by panel_row(number_of_columns)
     bool is_embedded; // is inside of another panel
+
+    u32 docked_dir; // 0 means not docked, 1 means left, 2 means right
 } SEUI_Panel;
 
 SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height) {
@@ -64,6 +66,7 @@ SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool mi
     panel->columns = 1;
     panel->min_item_height = min_item_height;
     panel->is_embedded = false;
+    panel->docked_dir = 0; // not docked
 }
 
 typedef struct SE_UI {
