@@ -79,9 +79,9 @@ void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint);
 /// render a line
-void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width);
+void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour);
 void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
-void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour);
+void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, f32 width, RGBA colour);
 void seui_render_colour_picker(UI_Renderer *renderer, Rect rect, RGBA hue);
 
 // void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);

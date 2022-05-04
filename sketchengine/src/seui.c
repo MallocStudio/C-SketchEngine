@@ -78,7 +78,7 @@ void seui_panel_row(SEUI_Panel *panel, f32 num_of_columns) {
 
 /// Returns a rectangle that's suppose to be the rect
 /// of the new item inside of the current panel.
-static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height) {
+static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand) {
     if (panel == NULL) {
         printf("ERROR: panel_put but panel was null\n");
         return (Rect) {0, 0, 32, 32};
@@ -101,7 +101,11 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height) {
         }
 
         result.w = panel_rect.w / panel->columns;
-        result.h = panel->item_height;
+        if (expand) {
+            result.h = panel->item_height;
+        } else {
+            result.h = min_height;
+        }
         result.x = cursor.x;
         result.y = cursor.y - result.h;
     }
@@ -115,8 +119,8 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height) {
     panel->cursor.x += result.w;
     if (panel->cursor.x > panel_rect.w - 1) { // -1 gets rid of floating point error while comparing
         seui_panel_row(panel, panel->columns);
-        panel->cursor.y -= panel->item_height;
-        panel->min_size.y += panel->item_height;
+        panel->cursor.y -= result.h;
+        panel->min_size.y += result.h;
     }
 
     panel->item_count++;
@@ -127,7 +131,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     Rect *initial_rect = &panel_data->initial_rect; // ! note that initial rect gets updated as we add widgets to this panel
     bool *minimised    = &panel_data->minimised;
 
-    Rect rect = *initial_rect; // the panel's dimensions of this frame
+    Rect rect = *initial_rect; // the panel's dimensions at this frame
     bool is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
 
@@ -140,26 +144,48 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->item_height = panel_data->min_item_height;
 
     // draw a rectangle that represents the panel's dimensions
-    if (!is_minimised) seui_render_rect(&ctx->renderer, rect, colour);
+    if (!is_minimised && !panel_data->is_embedded) seui_render_rect(&ctx->renderer, rect, colour);
 
     { // panel widgets
         f32 minimise_button_size = 16;
+        seui_panel_row(panel_data, 1);
+        Rect top_bar = panel_put(panel_data, rect.w, minimise_button_size, false);
+
+        /* if we're minimised, reduce panel min size */
+        if (is_minimised) {
+            panel_data->min_size.x = top_bar.w;
+            panel_data->min_size.y = top_bar.h;
+            panel_data->rect.w = panel_data->min_size.x;
+            panel_data->rect.h = panel_data->min_size.y;
+            panel_data->rect.x = top_bar.x;
+            panel_data->rect.y = top_bar.y;
+        }
+
+        minimise_button_size = top_bar.h;
+
         Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {rect.x, rect.y});
 
-        Rect drag_button_rect = (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size};
+        UI_STATES drag_state = UI_STATE_DISABLED;
+        if (panel_data->is_embedded == false) {
+            /* drag button */
+            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, rect.w - minimise_button_size, minimise_button_size};
+            Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
+            initial_rect->x += drag.x;
+            initial_rect->y += drag.y;
+        }
+
+        /* minimise button */
         Rect minimise_button_rect = (Rect) {cursor.x + rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
-
-        UI_STATES drag_state;
-        Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
-        initial_rect->x += drag.x;
-        initial_rect->y += drag.y;
-
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
 
+        /* panel outline */
+        seui_render_rect_outline(&ctx->renderer, panel_data->rect, 1, RGBA_BLACK);
+
         /* resizeing */
-        if (!is_minimised) {
+        if (!is_minimised && !panel_data->is_embedded) {
+
             Vec2 min_size = panel_data->min_size;
             Rect resize_button = {
                 rect.x + rect.w- 16, rect.y, 16, 16
@@ -176,12 +202,17 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             if (initial_rect->w < min_size.x) initial_rect->w = min_size.x;
             if (initial_rect->h < min_size.y) initial_rect->h = min_size.y;
         }
+        Vec2 min_size = panel_data->min_size;
+
+        // clamp to min size
+        if (initial_rect->w < min_size.x) initial_rect->w = min_size.x;
+        if (initial_rect->h < min_size.y) initial_rect->h = min_size.y;
 
         // minimise button
         Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
         seui_render_texture(&ctx->renderer, minimise_button_rect, index, RGBA_WHITE);
 
-        { // -- docking
+        if (!panel_data->is_embedded) { // -- docking
             RGBA dock_colour = {150, 0, 0, 100};
             Rect normalised_rect = *initial_rect;
             normalised_rect.x /= ctx->renderer.view_width;
@@ -225,12 +256,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     return !is_minimised;
 }
 
-
 bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
-
+    panel_data->is_embedded = true;
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, panel_data->initial_rect.w, panel_data->initial_rect.h);
+        rect = panel_put(ctx->current_panel, panel_data->initial_rect.w, panel_data->initial_rect.h, true);
         panel_data->initial_rect = rect;
     }
     return seui_panel_at(ctx, title, panel_data);
@@ -240,7 +270,7 @@ bool seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, text_size.x, text_size.y);
+        rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
     }
     return seui_button_at(ctx, text, rect);
 }
@@ -249,7 +279,7 @@ void seui_label(SE_UI *ctx, const char *text) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
         Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
-        rect = panel_put(ctx->current_panel, text_size.x, text_size.y);
+        rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
     }
     seui_label_at(ctx, text, rect);
 }
@@ -257,7 +287,7 @@ void seui_label(SE_UI *ctx, const char *text) {
 void seui_slider(SE_UI *ctx, f32 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, 24, 24);
+        rect = panel_put(ctx->current_panel, 24, 24, true);
     }
     Vec2 pos1 = {rect.x, (rect.y + rect.y + rect.h) * 0.5f};
     Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
@@ -267,7 +297,7 @@ void seui_slider(SE_UI *ctx, f32 *value) {
 void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, 32, 32);
+        rect = panel_put(ctx->current_panel, 32, 32, true);
     }
     Vec2 center = {
         (rect.x + rect.x + rect.w) * 0.5f,
@@ -280,7 +310,7 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
 void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, 32, 32);
+        rect = panel_put(ctx->current_panel, 32, 32, true);
     }
     seui_colour_picker_at(ctx, rect, hue, value);
 }
@@ -288,7 +318,7 @@ void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value) {
 void seui_input_text(SE_UI *ctx, SE_String *text) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, 32, 32);
+        rect = panel_put(ctx->current_panel, 32, 32, true);
     }
     seui_input_text_at(ctx, text, rect);
 }
@@ -387,7 +417,7 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     Vec2 button_pos = vec2_add(vec2_add(vec2_mul_scalar(vec2_average(pos_rel1, pos_rel2), *value * 2), pos1), pos_offset);
 
     /* draw the line */
-    seui_render_line(&ctx->renderer, pos1, pos2, 3);
+    seui_render_line(&ctx->renderer, pos1, pos2, 3, RGBA_BLACK);
 
     /* draw the slider button */
     Rect button_rect = rect_create(button_pos, button_size);

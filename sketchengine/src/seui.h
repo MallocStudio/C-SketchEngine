@@ -55,14 +55,15 @@ typedef struct SEUI_Panel {
     Vec2 min_size;
     Vec2 cursor; // the relative cursor used to position the placement of the items
     u32 columns; // number of columns -> calculate by panel_row(number_of_columns)
+    bool is_embedded; // is inside of another panel
 } SEUI_Panel;
 
-SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, u32 columns, f32 min_item_height) {
+SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height) {
     panel->initial_rect = initial_rect;
     panel->minimised = minimised;
-    if (columns == 0) columns = 1;
-    panel->columns = columns;
+    panel->columns = 1;
     panel->min_item_height = min_item_height;
+    panel->is_embedded = false;
 }
 
 typedef struct SE_UI {

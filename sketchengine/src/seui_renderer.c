@@ -386,8 +386,7 @@ static void seui_shape_circle(UI_Shape *shape, Vec2 center, f32 radius, RGBA col
     SDL_assert_always(shape->index_count == 6);
 }
 
-void static seui_shape_line(UI_Shape *shape, Vec2 pos1, Vec2 pos2, f32 width) {
-    RGBA colour = RGBA_WHITE;
+void static seui_shape_line(UI_Shape *shape, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour) {
     /* vertices */
     shape->vertex_count = 0;
 
@@ -418,8 +417,8 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index, RGBA
     renderer->shape_count++;
 }
 
-void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width) {
-    seui_shape_line(&renderer->shapes[renderer->shape_count], pos1, pos2, width);
+void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour) {
+    seui_shape_line(&renderer->shapes[renderer->shape_count], pos1, pos2, width, colour);
     renderer->shape_count++;
 }
 
@@ -436,17 +435,16 @@ void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA col
     renderer->shape_count++;
 }
 
-void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, RGBA colour) {
-    f32 width = 1;
+void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, f32 width, RGBA colour) {
     Vec2 pos1, pos2, pos3, pos4;
     pos1.x = rect.x;          pos1.y = rect.y;
     pos2.x = rect.x;          pos2.y = rect.y + rect.h;
     pos3.x = rect.x + rect.w; pos3.y = rect.y + rect.h;
     pos4.x = rect.x + rect.w; pos4.y = rect.y;
-    seui_render_line(renderer, pos1, pos2, width);
-    seui_render_line(renderer, pos2, pos3, width);
-    seui_render_line(renderer, pos3, pos4, width);
-    seui_render_line(renderer, pos4, pos1, width);
+    seui_render_line(renderer, pos1, pos2, width, colour);
+    seui_render_line(renderer, pos2, pos3, width, colour);
+    seui_render_line(renderer, pos3, pos4, width, colour);
+    seui_render_line(renderer, pos4, pos1, width, colour);
 }
 
 void seui_render_colour_picker(UI_Renderer *renderer, Rect rect, RGBA hue) {

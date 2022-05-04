@@ -76,8 +76,8 @@ void app_init(Application *app, SDL_Window *window) {
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
 
-        seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 2, 32);
-        seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 3, 32);
+        seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 32);
+        seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 32);
 
         panel_init(&app_panel);
     }
@@ -130,23 +130,25 @@ void app_update(Application *app) {
             seui_label(ctx, "test input:");
             seui_input_text(ctx, &app_panel.input_text);
 
-            seui_panel_row(&panel, 2);
+            seui_panel_row(&panel, 3);
             seui_label(ctx, "p1");
             seui_label(ctx, "p2");
 
             if (seui_button(ctx, "file open")) {
             }
 
+            seui_panel_row(&panel, 1);
+            if (seui_panel(ctx, "panel2", &panel2)) {
+                seui_panel_row(&panel2, 2);
+                seui_label(ctx, "rot x:");
+                seui_slider(ctx, &app->entities[player].oriantation.x);
+                seui_label(ctx, "rot y:");
+                seui_slider(ctx, &app->entities[player].oriantation.y);
+                seui_label(ctx, "rot z:");
+                seui_slider(ctx, &app->entities[player].oriantation.z);
+            }
         }
 
-        if (seui_panel_at(ctx, "panel2", &panel2)) {
-            seui_label(ctx, "rot x:");
-            seui_slider(ctx, &app->entities[player].oriantation.x);
-            seui_label(ctx, "rot y:");
-            seui_slider(ctx, &app->entities[player].oriantation.y);
-            seui_label(ctx, "rot z:");
-            seui_slider(ctx, &app->entities[player].oriantation.z);
-        }
     }
 
     { // -- calculate world aabb
