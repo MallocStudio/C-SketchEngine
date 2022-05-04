@@ -145,7 +145,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     if (!is_minimised && !panel_data->is_embedded) seui_render_rect(&ctx->renderer, panel_data->final_rect, colour);
 
     { // panel widgets
-        f32 minimise_button_size = 16;
+        f32 minimise_button_size = 32;
         seui_panel_row(panel_data, 1);
         Rect top_bar = panel_put(panel_data, panel_data->rect.w, minimise_button_size, false);
 
@@ -158,6 +158,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             /* drag button */
             Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->rect.w - minimise_button_size, minimise_button_size};
             Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
+            setext_render_text_rect(&ctx->txt_renderer, title, drag_button_rect, v3f(1, 1, 1), true);
             panel_data->rect.x += drag.x;
             panel_data->rect.y += drag.y;
         }
