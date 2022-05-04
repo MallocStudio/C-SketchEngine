@@ -58,6 +58,13 @@ static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, b
 
     if (ctx->active == id) result = UI_STATE_ACTIVE;
 
+    // if remain_active and when clicking outside or inside of this ui set active to false
+    // so for example when a ui is a text input and we press somewhere deactivate the text input
+    if (remain_active && result == UI_STATE_ACTIVE) {
+        if (ctx->input->is_mouse_left_down && ctx->active == id) {
+            ctx->active = SEUI_ID_NULL;
+        }
+    }
     return result;
 }
 

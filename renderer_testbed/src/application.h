@@ -9,6 +9,7 @@ typedef struct Application_Panel {
     RGBA colour_test;
     Vec2 light_direction;
     SE_String input_text;
+    SE_String input_text2;
     f32 left, right, bottom, top, near, far;
 } Application_Panel;
 
@@ -17,6 +18,7 @@ SEINLINE panel_init(Application_Panel *panel) {
     panel->colour_test = RGBA_RED;
     panel->light_direction = (Vec2) {0, -1};
     sestring_init(&panel->input_text, "enter text"); // @leak
+    sestring_init(&panel->input_text2, "enter text2"); // @leak
     panel->left   = 0;
     panel->right  = 1;
     panel->bottom = 0;

@@ -24,3 +24,7 @@ f32 semath_acos(f32 x) {
 f32 semath_sqrt(f32 x) {
     return sqrtf(x);
 }
+
+f32 semath_power(f32 base, f32 p) {
+    return powf(base, p);
+}

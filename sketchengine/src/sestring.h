@@ -28,4 +28,8 @@ u32 sestring_lastof(SE_String *string, const char letter);
 void sestring_clear(SE_String *string);
 /// Deletes from the end of the buffer. Does not modify memory capacity
 void sestring_delete_from_end(SE_String *string, u32 amount);
+/// Tries to parse out a floating point out of the given string.
+/// Decimal place is used to determine how to convert a number (say 1234) to
+/// a floating point number (in the case of decimal_place = 100 -> 1234 / 100 = 12.34)
+f32 sestring_as_f32(SE_String *string);
 #endif // SESTRING_H

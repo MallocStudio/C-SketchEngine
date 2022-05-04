@@ -127,8 +127,10 @@ void app_update(Application *app) {
             seui_label(ctx, "colour:");
             seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
 
-            seui_label(ctx, "test input:");
+            seui_label(ctx, "test input1:");
             seui_input_text(ctx, &app_panel.input_text);
+            seui_label(ctx, "test input2:");
+            seui_input_text(ctx, &app_panel.input_text2);
 
             seui_panel_row(&panel, 3);
             seui_label(ctx, "p1");

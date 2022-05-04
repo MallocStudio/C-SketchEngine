@@ -1,5 +1,7 @@
 #include "sestring.h"
 #include "memory.h"
+// #include "stdio.h"
+#include "semath.h"
 void sestring_init(SE_String *string, const char *buffer) {
     if (buffer != NULL) {
         string->size = SDL_strlen(buffer);
@@ -84,4 +86,42 @@ void sestring_delete_from_end(SE_String *string, u32 amount) {
         string->size -= amount;
         string->buffer[string->size] = '\0';
     }
+}
+
+f32 sestring_as_f32(SE_String *string) {
+    f32 result = 0; // default
+    if (string->buffer == NULL || string->size == 0) return result;
+
+    u32 decimal_place = 1;
+    bool decimal_place_set = false;
+
+    i32 digits[100] = {0}; // up to 100 digits are supported lolz
+    i32 digits_count = 0;
+
+    for (u32 i = string->size; i > 0 ; --i) {
+        char potential_number = string->buffer[i];
+        // printf("%c is %i\n", potential_number, (i32) potential_number);
+
+        // '0' is 48 and '9' is 57
+        if (potential_number >= '0' && potential_number <= '9') {
+            digits[digits_count] = (i32) potential_number - (i32) '0';
+            digits_count++;
+        }
+
+        if (potential_number == '.' && decimal_place_set == false) {
+            decimal_place_set = true;
+            decimal_place = semath_power(10, digits_count);
+        }
+    }
+
+    for (u32 i = 0; i < digits_count; ++i) {
+        i32 power = (i32)semath_power(10, i);
+        // if (i == 0) result += digits[i];
+        // else result += digits[i] * ();
+        result += digits[i] * power;
+        // printf ("result step %i = %f\n", i, result);
+    }
+
+    result /= (f32)decimal_place;
+    return result;
 }

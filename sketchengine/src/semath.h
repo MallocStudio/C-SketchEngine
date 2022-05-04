@@ -49,6 +49,7 @@ f32 semath_tan(f32 x);
 f32 semath_acos(f32 x);
 f32 semath_sqrt(f32 x);
 f32 semath_abs(f32 x);
+f32 semath_power(f32 base, f32 power);
 
 /// Indicates if the value is a power of 2. 0 is considered _not_ a power of 2
 /// 'value' is the value to be interpreted
