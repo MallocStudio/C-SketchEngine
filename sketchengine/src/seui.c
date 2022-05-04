@@ -137,7 +137,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     ctx->current_panel = panel_data;
     panel_data->cursor = (Vec2) {
         0, // start from the top left
-        panel_data->final_rect.h
+        panel_data->rect.h
     };
     panel_data->item_height = panel_data->min_item_height;
 
@@ -147,33 +147,33 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     { // panel widgets
         f32 minimise_button_size = 16;
         seui_panel_row(panel_data, 1);
-        Rect top_bar = panel_put(panel_data, panel_data->final_rect.w, minimise_button_size, false);
+        Rect top_bar = panel_put(panel_data, panel_data->rect.w, minimise_button_size, false);
 
         /* if we're minimised, reduce panel min size */
         if (is_minimised) {
             // panel_data->min_size.x = top_bar.w;
             // panel_data->min_size.y = top_bar.h;
-            // panel_data->final_rect.w = panel_data->min_size.x;
-            // panel_data->final_rect.h = panel_data->min_size.y;
-            // panel_data->final_rect.x = top_bar.x;
-            // panel_data->final_rect.y = top_bar.y;
+            // panel_data->rect.w = panel_data->min_size.x;
+            // panel_data->rect.h = panel_data->min_size.y;
+            // panel_data->rect.x = top_bar.x;
+            // panel_data->rect.y = top_bar.y;
         }
 
         minimise_button_size = top_bar.h;
 
-        Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {panel_data->final_rect.x, panel_data->final_rect.y});
+        Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {panel_data->rect.x, panel_data->rect.y});
 
         UI_STATES drag_state = UI_STATE_DISABLED;
         if (panel_data->is_embedded == false) {
             /* drag button */
-            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->final_rect.w - minimise_button_size, minimise_button_size};
+            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->rect.w - minimise_button_size, minimise_button_size};
             Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
             panel_data->rect.x += drag.x;
             panel_data->rect.y += drag.y;
         }
 
         /* minimise button */
-        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->final_rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
+        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
