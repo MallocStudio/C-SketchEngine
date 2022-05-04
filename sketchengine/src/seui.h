@@ -33,15 +33,37 @@ typedef enum UI_STATES {
 // #define SEUI_VIEW_REGION_PADDING 0.1f
 #define SEUI_VIEW_REGION_SIZE_X 0.25f
 #define SEUI_VIEW_REGION_SIZE_Y 0.75f
+#define SEUI_VIEW_REGION_COLLISION_SIZE_X 0.01f
+#define SEUI_VIEW_REGION_COLLISION_SIZE_Y SEUI_VIEW_REGION_SIZE_Y
 // #define SEUI_VIEW_REGION_CENTER (Rect) {SEUI_VIEW_REGION_PADDING, SEUI_VIEW_REGION_PADDING, 1 - SEUI_VIEW_REGION_SIZE, SEUI_VIEW_REGION_PADDING * 2}
 #define SEUI_VIEW_REGION_RIGHT  (Rect) {1 - SEUI_VIEW_REGION_SIZE_X, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
 #define SEUI_VIEW_REGION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
 
+#define SEUI_VIEW_REGION_COLLISION_RIGHT  (Rect) {1 - SEUI_VIEW_REGION_COLLISION_SIZE_X, (1 - SEUI_VIEW_REGION_COLLISION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_COLLISION_SIZE_X, SEUI_VIEW_REGION_COLLISION_SIZE_Y}
+#define SEUI_VIEW_REGION_COLLISION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_COLLISION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_COLLISION_SIZE_X, SEUI_VIEW_REGION_COLLISION_SIZE_Y}
+
 typedef struct SEUI_Panel {
+    /* settings */
     Rect initial_rect;
     bool minimised;
+    f32 min_item_height;
+
+    /* auto calculated */
+    Rect rect;   // the rect of the panel
+    f32 item_height;
+    i32 item_count;
     Vec2 min_size;
+    Vec2 cursor; // the relative cursor used to position the placement of the items
+    u32 columns; // number of columns -> calculate by panel_row(number_of_columns)
 } SEUI_Panel;
+
+SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, u32 columns, f32 min_item_height) {
+    panel->initial_rect = initial_rect;
+    panel->minimised = minimised;
+    if (columns == 0) columns = 1;
+    panel->columns = columns;
+    panel->min_item_height = min_item_height;
+}
 
 typedef struct SE_UI {
     /* UI Widgets */
@@ -57,24 +79,13 @@ typedef struct SE_UI {
     SE_Theme theme;
 
     /* Panels */
-    u32 current_panel;         // the panel id
-    Rect current_panel_rect;   // the rect of the panel
-    u32 current_panel_columns; // number of columns
-    Vec2 current_panel_cursor; // the relative cursor used to position the placement of the items
-    f32 current_panel_item_height;
-    i32 current_panel_item_count;
-    SEUI_Panel *current_panel_data;
+    SEUI_Panel *current_panel;         // the panel we put the widgets on
 } SE_UI;
 
 /// call this at the beginning of every frame before creating other widgets
 SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->max_id = SEUI_ID_NULL;
-    ctx->current_panel = SEUI_ID_NULL;
-    ctx->current_panel_rect = (Rect) {0};
-    ctx->current_panel_columns = 0;
-    ctx->current_panel_cursor = (Vec2) {0};
-    ctx->current_panel_item_height = 0;
-    ctx->current_panel_item_count = 0;
+    ctx->current_panel = NULL;
 }
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
@@ -107,7 +118,10 @@ SEINLINE void seui_render(SE_UI *ctx) {
 /// Start a panel at the given position. Aligns the items inside of the panel
 /// based on the given number of columns.
 /// Returns true if the panel is not minimised.
-bool seui_panel_at(SE_UI *ctx, const char *title, u32 columns, f32 item_height, SEUI_Panel *panel_data);
+bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
+bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
+
+void seui_panel_row(SEUI_Panel *panel, f32 num_of_columns);
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 void seui_label(SE_UI *ctx, const char *text);

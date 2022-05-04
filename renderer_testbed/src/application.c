@@ -5,6 +5,7 @@
 /* ui */
 SE_UI *ctx;
 SEUI_Panel panel;
+SEUI_Panel panel2;
 
 Application_Panel app_panel;
 
@@ -12,13 +13,16 @@ Application_Panel app_panel;
 // u32 cheat_vbo;
 // Mat4 cheat_transform;
 
+/* entities */
 u32 player = -1;
 u32 player2 = -1;
 u32 plane = -1;
-// u32 player3      = -1;
+
+/* meshes */
 u32 line_mesh = -1;
 u32 proj_lines = -1;
 u32 proj_box   = -1;
+u32 current_obj_aabb = -1;
 AABB3D world_aabb;
 void app_init(Application *app, SDL_Window *window) {
     memset(app, 0, sizeof(Application));
@@ -58,20 +62,23 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player2].scale = vec3_one();
         app->entities[plane].scale = vec3_one();
 
-        app->entities[player].oriantation      = vec3_zero();
-        app->entities[player2].oriantation      = vec3_zero();
-        app->entities[plane].oriantation       = vec3_zero();
+        app->entities[player].oriantation = vec3_zero();
+        app->entities[player2].oriantation = vec3_zero();
+        app->entities[plane].oriantation = vec3_zero();
 
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
         proj_box = serender3d_add_mesh_empty(&app->renderer);
+        current_obj_aabb = serender3d_add_mesh_empty(&app->renderer);
     }
 
     { // -- init UI
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
-        panel.initial_rect = (Rect) {0, 0, 300, 400};
-        panel.minimised = false;
+
+        seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 2, 32);
+        seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 3, 32);
+
         panel_init(&app_panel);
     }
 
@@ -103,7 +110,8 @@ void app_update(Application *app) {
     { // -- ui
         seui_reset(ctx);
 
-        if (seui_panel_at(ctx, "panel", 2, 100, &panel)) {
+        if (seui_panel_at(ctx, "panel", &panel)) {
+            seui_panel_row(&panel, 2);
             seui_label(ctx, "light direction:");
             seui_slider2d(ctx, &app_panel.light_direction);
             seui_label(ctx, "light intensity:");
@@ -121,6 +129,23 @@ void app_update(Application *app) {
 
             seui_label(ctx, "test input:");
             seui_input_text(ctx, &app_panel.input_text);
+
+            seui_panel_row(&panel, 2);
+            seui_label(ctx, "p1");
+            seui_label(ctx, "p2");
+
+            if (seui_button(ctx, "file open")) {
+            }
+
+        }
+
+        if (seui_panel_at(ctx, "panel2", &panel2)) {
+            seui_label(ctx, "rot x:");
+            seui_slider(ctx, &app->entities[player].oriantation.x);
+            seui_label(ctx, "rot y:");
+            seui_slider(ctx, &app->entities[player].oriantation.y);
+            seui_label(ctx, "rot z:");
+            seui_slider(ctx, &app->entities[player].oriantation.z);
         }
     }
 
@@ -318,6 +343,7 @@ void app_render(Application *app) {
         // serender3d_render_mesh(&app->renderer, line_mesh, mat4_identity());
         serender3d_render_mesh(&app->renderer, proj_lines, mat4_identity());
         serender3d_render_mesh(&app->renderer, proj_box, mat4_identity());
+        serender3d_render_mesh(&app->renderer, current_obj_aabb, mat4_identity());
     }
     { // -- ui
         seui_render(ctx);

@@ -25,6 +25,7 @@
         "gb_string.h": "c",
         "semath_defines.h": "c",
         "cstring": "c",
-        "sestring.h": "c"
+        "sestring.h": "c",
+        "nfd.h": "c"
     }
 }
