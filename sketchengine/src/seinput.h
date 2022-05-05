@@ -62,9 +62,9 @@ typedef struct SE_Input {
     // use SDL_SCANCODE_... to get the state of a key
     // eg: keyboard[SDL_SCANCODE_LEFT] returns true if the left arrow
     // key is down
-    Uint8 *keyboard;
 
     #define SEINPUT_NUMKEYS_MAX SDL_NUM_SCANCODES
+    Uint8 keyboard[SEINPUT_NUMKEYS_MAX];
     Uint8 keyboard_previous_frame[SEINPUT_NUMKEYS_MAX];
 
 } SE_Input;
@@ -84,12 +84,11 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
 
     { // -- keyboard
         if (input->keyboard != NULL) {
-            for (i32 i = 0; i < SEINPUT_NUMKEYS_MAX; ++i) {
-                input->keyboard_previous_frame[i] = input->keyboard[i];
-            }
+            SDL_memcpy(input->keyboard_previous_frame, input->keyboard, sizeof(Uint8) * SEINPUT_NUMKEYS_MAX);
         }
         i32 numkeys;
-        input->keyboard = (Uint8*)SDL_GetKeyboardState(&numkeys);
+        Uint8 *current_keyboard_state = (Uint8*)SDL_GetKeyboardState(&numkeys);
+        SDL_memcpy(input->keyboard, current_keyboard_state, sizeof(Uint8) * SEINPUT_NUMKEYS_MAX);
         SDL_assert(numkeys == SEINPUT_NUMKEYS_MAX); // we assert this, because we need to allocate this much memory for input->keyboard_previous_frame
     }
 
@@ -202,17 +201,19 @@ SEINLINE bool seinput_is_mouse_right_released (const SE_Input *input) {
 }
 
 SEINLINE bool seinput_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode) {
-    return (input->keyboard[sdl_scancode] == true && input->keyboard_previous_frame[sdl_scancode] == false);
+    return (input->keyboard[sdl_scancode] == 1 && input->keyboard_previous_frame[sdl_scancode] == 0);
 }
 
 SEINLINE bool seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode) {
-    return input->keyboard[sdl_scancode];
+    return input->keyboard[sdl_scancode] == 1;
 }
 
 SEINLINE void seinput_text_input_activate(SE_Input *input, SE_String *stream_to) {
-    input->is_text_input_activated = true;
-    input->text_input_stream = stream_to;
-    SDL_StartTextInput();
+    if (stream_to != NULL) {
+        input->is_text_input_activated = true;
+        input->text_input_stream = stream_to;
+        SDL_StartTextInput();
+    }
 }
 
 SEINLINE void seinput_text_input_deactivate(SE_Input *input) {

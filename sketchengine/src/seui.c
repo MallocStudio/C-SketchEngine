@@ -459,9 +459,8 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     RGBA colour_bg = (RGBA) {50, 60, 120, 255};
     RGBA colour_highlight = (RGBA) {80, 90, 150, 255};
     Vec3 colour_text = (Vec3) {255, 255, 255};
+    Vec3 colour_text_hint = (Vec3) {100, 100, 100};
     RGBA colour = colour_bg;
-
-    SE_String *displayed_text = text;
 
     UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
     switch (ui_state) {
@@ -491,11 +490,14 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         /* deactivate */
         if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM) {
             ctx->active = SEUI_ID_NULL;
-
             seinput_text_input_deactivate(input);
         }
     }
 
     seui_render_rect(renderer, rect, colour);
-    setext_render_text_rect(&ctx->txt_renderer, text->buffer, rect, colour_text, true);
+    if (text->size > 0) {
+        setext_render_text_rect(&ctx->txt_renderer, text->buffer, rect, colour_text, true);
+    } else {
+        setext_render_text_rect(&ctx->txt_renderer, "press to type", rect, colour_text_hint, true);
+    }
 }
