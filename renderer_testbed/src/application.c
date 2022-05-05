@@ -179,9 +179,11 @@ void app_update(Application *app) {
             // SE_String entity_info;
             // sestring_init(&entity_info,
             /* pos, rot, scale */
+            Vec3 rot_in_degrees = vec3_mul_scalar(*panel_entity.entity_rot, SEMATH_RAD2DEG_MULTIPLIER);
             seui_label_vec3(ctx, "position", panel_entity.entity_pos, true);
-            seui_label_vec3(ctx, "rotation", panel_entity.entity_rot, true);
+            seui_label_vec3(ctx, "rotation", &rot_in_degrees, true);
             seui_label_vec3(ctx, "scale", panel_entity.entity_scale, false);
+            *panel_entity.entity_rot = vec3_mul_scalar(rot_in_degrees, SEMATH_DEG2RAD_MULTIPLIER);
         }
     }
 

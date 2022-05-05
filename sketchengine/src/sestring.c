@@ -95,7 +95,7 @@ f32 sestring_as_f32(SE_String *string) {
     u32 decimal_place = 1;
     bool decimal_place_set = false;
 
-    i32 digits[100] = {0}; // up to 100 digits are supported lolz
+    i32 digits[SESTRING_MAX_NUM_OF_DIGITS] = {0};
     i32 digits_count = 0;
     i32 sign = 1;
 
@@ -107,6 +107,11 @@ f32 sestring_as_f32(SE_String *string) {
         if (potential_number >= '0' && potential_number <= '9') {
             digits[digits_count] = (i32) potential_number - (i32) '0';
             digits_count++;
+
+            if (digits_count > SESTRING_MAX_NUM_OF_DIGITS) {
+                digits_count = SESTRING_MAX_NUM_OF_DIGITS;
+                break;
+            }
         }
 
         if (potential_number == '.' && decimal_place_set == false) {

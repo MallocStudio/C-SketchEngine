@@ -32,10 +32,10 @@ typedef struct SE_Input {
     Vec2 previous_mouse_screen_pos;
     /* delta */
     Vec2 mouse_screen_pos_delta;
+    f32 mouse_wheel; // set through SDL_MOUSEWHEEL event system. Also note that it gets set to zero before polling events at the beginning of every frame
     // the position the mouse was initially pressed
     Vec2 mouse_world_pressed_pos;
     Vec2 mouse_screen_pressed_pos;
-    // Vec2 mouse_grab_offset;
     // information from the current frame
     bool is_mouse_left_down;
     bool is_mouse_right_down;
@@ -73,8 +73,6 @@ typedef struct SE_Input {
 SEINLINE void seinput_init(SE_Input *input) {
     // set all values to zero to begin with
     memset(input, 0, sizeof(SE_Input));
-
-    // sestring_init(&input->text_input, ""); // @leak
 }
 
 /// note that mouse pos will be relative to top left position of window
@@ -92,14 +90,6 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
         SDL_memcpy(input->keyboard, current_keyboard_state, sizeof(Uint8) * SEINPUT_NUMKEYS_MAX);
         SDL_assert(numkeys == SEINPUT_NUMKEYS_MAX); // we assert this, because we need to allocate this much memory for input->keyboard_previous_frame
     }
-
-    // ! don't try this right now, because we update mouse_grab_offset in seui.c "ui_update_mouse_grab_pos()"
-    // { // -- update mouse grab pos
-    //     if (input->is_mouse_left_down && !input->was_mouse_left_down) { // we just pressed
-    //         input->mouse_grab_offset.x = input->mouse_pressed_pos.x;
-    //         input->mouse_grab_offset.y = input->mouse_pressed_pos.y;
-    //     }
-    // }
 
     { // -- remember what happened the previous frame
         // pos

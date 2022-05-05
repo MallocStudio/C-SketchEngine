@@ -460,7 +460,12 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     /* draw the slider button */
     Rect button_rect = rect_create(button_pos, button_size);
 
-    Vec2 drag = seui_drag_button_textured_at(ctx, button_rect, UI_ICON_INDEX_SLIDER, NULL);
+    UI_STATES ui_state = UI_STATE_IDLE;
+    Vec2 drag = seui_drag_button_textured_at(ctx, button_rect, UI_ICON_INDEX_SLIDER, &ui_state);
+
+    if (ui_state == UI_STATE_WARM) {
+        *value += ctx->input->mouse_wheel * 0.01f;
+    }
 
     // clamp before concluding
     *value += drag.x * 0.01f;
@@ -519,6 +524,19 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         } break;
         case UI_STATE_WARM: {
             colour = colour_highlight;
+
+            // allow for increasing and decreasing numerical values while hovering
+            if (ctx->text_input_only_numerical) {
+                f32 numerical_value = sestring_as_f32(text);
+                if (ctx->input->mouse_wheel != 0) {
+                    char value_as_string[SESTRING_MAX_NUM_OF_DIGITS];
+                    numerical_value += ctx->input->mouse_wheel;
+                    sprintf(value_as_string, "%.2f", numerical_value);
+                    sestring_clear(text);
+                    sestring_append(text, value_as_string);
+                }
+            }
+
         } break;
         case UI_STATE_ACTIVE: {
             if (ctx->active != id) {
@@ -537,6 +555,11 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         // allow for deleting characters
         if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
             sestring_delete_from_end(&ctx->text_input, 1);
+        }
+
+        // clear when double clicked on
+        if (ctx->input->is_mouse_left_down && rect_overlaps_point(rect, ctx->input->mouse_screen_pos)) {
+            sestring_clear(&ctx->text_input);
         }
 
         /* deactivate accept */
@@ -559,7 +582,9 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     seui_render_rect(renderer, rect, colour);
     if (display_text->size > 0) {
         setext_render_text_rect(&ctx->txt_renderer, display_text->buffer, rect, colour_text, true);
-    } else {
+    } else if (!ctx->text_input_only_numerical) {
         setext_render_text_rect(&ctx->txt_renderer, "press to type", rect, colour_text_hint, true);
+    } else {
+        setext_render_text_rect(&ctx->txt_renderer, "...", rect, colour_text_hint, true);
     }
 }

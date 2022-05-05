@@ -53,6 +53,7 @@ int main() {
         SDL_Event event;
         bool keyboard_down = false;
         bool keyboard_pressed = false;
+        app->input.mouse_wheel = 0; // reset this to zero
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT: { // -- wanting to quit
@@ -70,21 +71,7 @@ int main() {
                     // keyboard_down = true;
                 } break;
                 case SDL_MOUSEWHEEL: {
-                    // f32 zoom_factor = 1.2f;
-                    // if(event.wheel.y > 0) { // scroll up
-                    //     segl_camera_zoom(game->camera, zoom_factor);
-                    // }
-                    // else if(event.wheel.y < 0) { // scroll down
-                    //     segl_camera_zoom(game->camera, 1 / zoom_factor);
-                    // }
-
-                    // f32 angle = 0.0f;
-                    // if (event.wheel.y > 0) { // scroll up
-                    //     angle = 0.01f;
-                    // } else if (event.wheel.y < 0) {
-                    //     angle = -0.01f;
-                    // }
-                    // camera.view = mat4_mul(camera.view, mat4_euler_y(angle));
+                    app->input.mouse_wheel = event.wheel.preciseY;
                 } break;
                 case SDL_TEXTINPUT: { // this event happens after SDL_StartTextInput() is called
                     if (app->input.text_input_stream != NULL) {
