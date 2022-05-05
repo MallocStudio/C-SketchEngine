@@ -73,14 +73,6 @@ typedef struct SE_UI {
     /* UI Widgets */
     u32 warm; // hover / selection
     u32 hot;  // pressed / active
-
-    // if some widget is constantly active, we set active to their id
-    // this is to allow certain widgets hold the attention of input.
-    // For example this is used for text input. If we press on text input,
-    // active will be set to that ID, and until the user clicks somewhere else
-    // the active ID will remain the same. (This case is handled inside of seui_input_text_at())
-    u32 active; // being used (used for text input)
-
     u32 max_id; // the maximum generated id
 
     /* Renderes and Inputs */
@@ -91,6 +83,17 @@ typedef struct SE_UI {
 
     /* Panels */
     SEUI_Panel *current_panel;         // the panel we put the widgets on
+
+    /* text input */
+    // if some widget is constantly active, we set active to their id
+    // this is to allow certain widgets hold the attention of input.
+    // For example this is used for text input. If we press on text input,
+    // active will be set to that ID, and until the user clicks somewhere else
+    // the active ID will remain the same. (This case is handled inside of seui_input_text_at())
+    u32 active; // being used (used for text input)
+    SE_String text_input_cache;   // used for all sorts of stuff. For example editing floating point values
+    SE_String text_input; // store a copy of what's being typed into the active text input
+    bool text_input_only_numerical;
 } SE_UI;
 
 /// call this at the beginning of every frame before creating other widgets
@@ -113,11 +116,16 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);
     setext_init (&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
     seui_theme_default(&ctx->theme);
+
+    sestring_init(&ctx->text_input_cache, "");
+    sestring_init(&ctx->text_input, "");
 }
 
 SEINLINE void seui_deinit(SE_UI *ctx) {
     seui_renderer_deinit(&ctx->renderer);
     setext_deinit(&ctx->txt_renderer);
+    sestring_deinit(&ctx->text_input_cache);
+    sestring_deinit(&ctx->text_input);
 }
 
 SEINLINE void seui_render(SE_UI *ctx) {
@@ -125,6 +133,12 @@ SEINLINE void seui_render(SE_UI *ctx) {
     seui_renderer_draw  (&ctx->renderer);
     seui_renderer_clear (&ctx->renderer);
     setext_render(&ctx->txt_renderer);
+}
+
+/// Set text input configurations to default values. It's good practice to
+/// do call this procedure after modifying the configuration for a usecase.
+SEINLINE void seui_configure_text_input_reset(SE_UI *ctx) {
+    ctx->text_input_only_numerical = false;
 }
 
 /// Start a panel at the given position. Aligns the items inside of the panel
@@ -137,6 +151,7 @@ void seui_panel_row(SEUI_Panel *panel, f32 num_of_columns);
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 void seui_label(SE_UI *ctx, const char *text);
+void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable);
 
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.

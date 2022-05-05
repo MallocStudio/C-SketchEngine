@@ -52,6 +52,7 @@ typedef struct SE_Input {
     /* text input */
     bool is_text_input_activated; // use seinput_text_input_activate()
     SE_String *text_input_stream; // not owned. When this is not null and text_input is activated, stream to this string
+    bool is_text_input_only_numeric;
     // u32 text_input_selection_index;
     // u32 text_input_selection_length;
     // u32 text_input_cursor;
@@ -195,10 +196,11 @@ SEINLINE bool seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scanco
     return input->keyboard[sdl_scancode] == 1;
 }
 
-SEINLINE void seinput_text_input_activate(SE_Input *input, SE_String *stream_to) {
+SEINLINE void seinput_text_input_activate(SE_Input *input, SE_String *stream_to, bool only_numeric) {
     if (stream_to != NULL) {
         input->is_text_input_activated = true;
         input->text_input_stream = stream_to;
+        input->is_text_input_only_numeric = only_numeric;
         SDL_StartTextInput();
     }
 }

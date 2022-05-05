@@ -1,11 +1,24 @@
 #include "application.h"
 #include "stdio.h" // @remove
 #include "seui.h"
+#include "panels.h"
 
 /* ui */
 SE_UI *ctx;
 SEUI_Panel panel;
 SEUI_Panel panel2;
+SEUI_Panel panel_entity_info;
+
+Panel_Entity panel_entity;
+
+static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
+    Entity *entity  = &app->entities[entity_index];
+    p->entity_id    = entity_index;
+    p->entity_mesh  = &entity->mesh_index;
+    p->entity_pos   = &entity->position;
+    p->entity_rot   = &entity->oriantation;
+    p->entity_scale = &entity->scale;
+}
 
 Application_Panel app_panel;
 
@@ -70,6 +83,11 @@ void app_init(Application *app, SDL_Window *window) {
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
         proj_box = serender3d_add_mesh_empty(&app->renderer);
         current_obj_aabb = serender3d_add_mesh_empty(&app->renderer);
+
+        /* meshes */
+        app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
     }
 
     { // -- init UI
@@ -78,14 +96,11 @@ void app_init(Application *app, SDL_Window *window) {
 
         seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 32);
         seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 32);
+        seui_panel_configure(&panel_entity_info, (Rect) {0, 400, 64, 64}, false, 32);
 
         panel_init(&app_panel);
-    }
 
-    { // -- load mesh
-        app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
-        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
-        app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
+        panel_entity_init(app, &panel_entity, player2);
     }
 }
 
@@ -101,9 +116,6 @@ void app_update(Application *app) {
     secamera3d_update_projection(&app->camera, window_w, window_h);
     seinput_update(&app->input, app->camera.projection, app->window);
     seui_resize(ctx, window_w, window_h);
-
-    const u8 *keyboard = app->input.keyboard;
-    if (keyboard[SDL_SCANCODE_ESCAPE]) app->should_quit = true;
 
     secamera3d_input(&app->camera, &app->input);
 
@@ -151,6 +163,26 @@ void app_update(Application *app) {
             }
         }
 
+        if (seui_panel_at(ctx, "entity", &panel_entity_info)) {
+            char label_buffer[255];
+            seui_panel_row(&panel_entity_info, 2);
+
+            /* id */
+            sprintf(label_buffer, "%i", panel_entity.entity_id);
+            seui_label(ctx, "id:");
+            seui_label(ctx, label_buffer);
+            /* mesh */
+            sprintf(label_buffer, "%i", *panel_entity.entity_mesh);
+            seui_label(ctx, "mesh:");
+            seui_label(ctx, label_buffer);
+
+            // SE_String entity_info;
+            // sestring_init(&entity_info,
+            /* pos, rot, scale */
+            seui_label_vec3(ctx, "position", panel_entity.entity_pos, true);
+            seui_label_vec3(ctx, "rotation", panel_entity.entity_rot, true);
+            seui_label_vec3(ctx, "scale", panel_entity.entity_scale, false);
+        }
     }
 
     { // -- calculate world aabb

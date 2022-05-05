@@ -97,8 +97,9 @@ f32 sestring_as_f32(SE_String *string) {
 
     i32 digits[100] = {0}; // up to 100 digits are supported lolz
     i32 digits_count = 0;
+    i32 sign = 1;
 
-    for (u32 i = string->size; i > 0 ; --i) {
+    for (i32 i = string->size; i >= 0 ; --i) {
         char potential_number = string->buffer[i];
         // printf("%c is %i\n", potential_number, (i32) potential_number);
 
@@ -112,16 +113,18 @@ f32 sestring_as_f32(SE_String *string) {
             decimal_place_set = true;
             decimal_place = semath_power(10, digits_count);
         }
+
+        if (potential_number == '-' && i == 0) {
+            sign = -1;
+        }
     }
 
     for (u32 i = 0; i < digits_count; ++i) {
         i32 power = (i32)semath_power(10, i);
-        // if (i == 0) result += digits[i];
-        // else result += digits[i] * ();
         result += digits[i] * power;
-        // printf ("result step %i = %f\n", i, result);
     }
 
     result /= (f32)decimal_place;
+    result *= sign;
     return result;
 }

@@ -274,6 +274,54 @@ void seui_label(SE_UI *ctx, const char *text) {
     seui_label_at(ctx, text, rect);
 }
 
+void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
+    char label_buffer[255];
+    seui_panel_row(ctx->current_panel, 1);
+    seui_label(ctx, title);
+
+    if (!editable) {
+        seui_panel_row(ctx->current_panel, 3);
+        sprintf(label_buffer, "x: %.2f", value->x);
+        seui_label(ctx, label_buffer);
+        sprintf(label_buffer, "y: %.2f", value->y);
+        seui_label(ctx, label_buffer);
+        sprintf(label_buffer, "z: %.2f", value->z);
+        seui_label(ctx, label_buffer);
+    } else {
+        ctx->text_input_only_numerical = true;
+        seui_panel_row(ctx->current_panel, 6);
+
+        sprintf(label_buffer, "x:");
+        seui_label(ctx, label_buffer);
+
+        sprintf(label_buffer, "%.2f", value->x);
+        sestring_clear(&ctx->text_input_cache);
+        sestring_append(&ctx->text_input_cache, label_buffer);
+        seui_input_text(ctx, &ctx->text_input_cache);
+        value->x = sestring_as_f32(&ctx->text_input_cache);
+
+        sprintf(label_buffer, "y:");
+        seui_label(ctx, label_buffer);
+
+        sprintf(label_buffer, "%.2f", value->y);
+        sestring_clear(&ctx->text_input_cache);
+        sestring_append(&ctx->text_input_cache, label_buffer);
+        seui_input_text(ctx, &ctx->text_input_cache);
+        value->y = sestring_as_f32(&ctx->text_input_cache);
+
+        sprintf(label_buffer, "z:");
+        seui_label(ctx, label_buffer);
+
+        sprintf(label_buffer, "%.2f", value->z);
+        sestring_clear(&ctx->text_input_cache);
+        sestring_append(&ctx->text_input_cache, label_buffer);
+        seui_input_text(ctx, &ctx->text_input_cache);
+        value->z = sestring_as_f32(&ctx->text_input_cache);
+
+        seui_configure_text_input_reset(ctx); // reset configurations
+    }
+}
+
 void seui_slider(SE_UI *ctx, f32 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
@@ -462,6 +510,8 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     Vec3 colour_text_hint = (Vec3) {100, 100, 100};
     RGBA colour = colour_bg;
 
+    SE_String *display_text = text;
+
     UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
@@ -474,29 +524,41 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             if (ctx->active != id) {
                 // make this the current active widget
                 ctx->active = id;
-                seinput_text_input_activate(input, text);
+                sestring_duplicate(text, &ctx->text_input); // prepare the cache for new data
+                seinput_text_input_activate(input, &ctx->text_input, ctx->text_input_only_numerical);
             }
         } break;
     }
 
     if (ctx->active == id) {
+        display_text = &ctx->text_input;
         colour = RGBA_BLACK;
 
         // allow for deleting characters
         if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
-            sestring_delete_from_end(text, 1);
+            sestring_delete_from_end(&ctx->text_input, 1);
         }
 
-        /* deactivate */
-        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM) {
+        /* deactivate accept */
+        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM
+            || seinput_is_key_pressed(ctx->input, SDL_SCANCODE_RETURN)) {
+            // copy the input text data over to text
+            sestring_clear(text); // get rid of what was there and put in the new edited text
+            sestring_duplicate(&ctx->text_input, text);
+            ctx->active = SEUI_ID_NULL;
+            seinput_text_input_deactivate(input);
+        } else
+        /* deactivate cancel */
+        if (seinput_is_key_pressed(ctx->input, SDL_SCANCODE_ESCAPE)) {
+            // DON'T copy the input text data over to text
             ctx->active = SEUI_ID_NULL;
             seinput_text_input_deactivate(input);
         }
     }
 
     seui_render_rect(renderer, rect, colour);
-    if (text->size > 0) {
-        setext_render_text_rect(&ctx->txt_renderer, text->buffer, rect, colour_text, true);
+    if (display_text->size > 0) {
+        setext_render_text_rect(&ctx->txt_renderer, display_text->buffer, rect, colour_text, true);
     } else {
         setext_render_text_rect(&ctx->txt_renderer, "press to type", rect, colour_text_hint, true);
     }
