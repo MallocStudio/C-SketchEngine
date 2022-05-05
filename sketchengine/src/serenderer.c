@@ -54,13 +54,12 @@ void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h) 
 
 void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
     { // movement
-        const u8 *keyboard = seinput->keyboard;
-        i32 r = keyboard[SDL_SCANCODE_D] == true       ? 1 : 0;
-        i32 l = keyboard[SDL_SCANCODE_A] == true       ? 1 : 0;
-        i32 d = keyboard[SDL_SCANCODE_S] == true       ? 1 : 0;
-        i32 u = keyboard[SDL_SCANCODE_W] == true       ? 1 : 0;
-        i32 elevate = keyboard[SDL_SCANCODE_E] == true ? 1 : 0;
-        i32 dive = keyboard[SDL_SCANCODE_Q] == true    ? 1 : 0;
+        i32 r       = seinput_is_key_down(seinput, SDL_SCANCODE_D) == true ? 1 : 0;
+        i32 l       = seinput_is_key_down(seinput, SDL_SCANCODE_A) == true ? 1 : 0;
+        i32 d       = seinput_is_key_down(seinput, SDL_SCANCODE_S) == true ? 1 : 0;
+        i32 u       = seinput_is_key_down(seinput, SDL_SCANCODE_W) == true ? 1 : 0;
+        i32 elevate = seinput_is_key_down(seinput, SDL_SCANCODE_E) == true ? 1 : 0;
+        i32 dive    = seinput_is_key_down(seinput, SDL_SCANCODE_Q) == true ? 1 : 0;
 
         Vec3 input = vec3_create(r - l, d - u, elevate - dive);
 
@@ -89,7 +88,8 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
     { // -- rotate camera
         u8 mouse_state = SDL_GetMouseState(NULL, NULL);
         if (mouse_state & SDL_BUTTON_RMASK) {
-            f32 sensitivity = 0.1f;
+            seui_mouse_fps_activate(seinput);
+            f32 sensitivity = 0.15f;
             f32 xoffset = seinput->mouse_screen_pos_delta.x * sensitivity;
             f32 yoffset = seinput->mouse_screen_pos_delta.y * sensitivity;
 
@@ -97,6 +97,8 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
             if (semath_abs(yoffset) > sensitivity) camera->pitch += yoffset;
             if(camera->pitch > +89.0f) camera->pitch = +89.0f;
             if(camera->pitch < -89.0f) camera->pitch = -89.0f;
+        } else {
+            seui_mouse_fps_deactivate(seinput);
         }
     }
 }

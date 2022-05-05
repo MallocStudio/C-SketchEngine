@@ -31,8 +31,6 @@ typedef struct SE_Input {
     Vec2 previous_mouse_world_pos;
     Vec2 previous_mouse_screen_pos;
     /* delta */
-    // @unsupported // @incomplete
-    // Vec2 mouse_world_pos_delta;
     Vec2 mouse_screen_pos_delta;
     // the position the mouse was initially pressed
     Vec2 mouse_world_pressed_pos;
@@ -48,7 +46,8 @@ typedef struct SE_Input {
     bool is_mouse_left_handled;
     bool is_mouse_right_handled;
     // warp mouse around window
-    bool should_mouse_warp; // @incomplete
+    SDL_Window *window; // not owned
+    bool is_mouse_fps_activated;
 
     /* text input */
     bool is_text_input_activated; // use seinput_text_input_activate()
@@ -81,6 +80,7 @@ SEINLINE void seinput_init(SE_Input *input) {
 SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Window *window) {
     Vec2i window_size;
     SDL_GetWindowSize(window, &window_size.x, &window_size.y);
+    input->window = window;
 
     { // -- keyboard
         if (input->keyboard != NULL) {
@@ -159,24 +159,11 @@ SEINLINE void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Wi
         }
     }
 
-    { // -- mouse warping // @incomplete
-        if (input->should_mouse_warp) {
-            // Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
-
-            // if (cursor_pos.x > window_size.x) cursor_pos.x = 0;
-            // else if (cursor_pos.x < 0) cursor_pos.x = window_size.x;
-            // if (cursor_pos.y > window_size.y) cursor_pos.y = 0;
-            // else if (cursor_pos.y < 0) cursor_pos.y = window_size.y;
-
-            // SDL_WarpMouseInWindow(window, cursor_pos.x, cursor_pos.y);
-        }
-
-        // SDL_SetWindowMouseGrab(window, input->should_mouse_warp);
-    }
-
     { // -- delta
-        input->mouse_screen_pos_delta.x = input->mouse_screen_pos.x - input->previous_mouse_screen_pos.x;
-        input->mouse_screen_pos_delta.y = input->mouse_screen_pos.y - input->previous_mouse_screen_pos.y;
+        Vec2i delta;
+        SDL_GetRelativeMouseState(&delta.x, &delta.y);
+        input->mouse_screen_pos_delta.x = delta.x;
+        input->mouse_screen_pos_delta.y = -delta.y; // in sketchengine up is positive y
     }
 }
 
@@ -220,5 +207,23 @@ SEINLINE void seinput_text_input_deactivate(SE_Input *input) {
     input->is_text_input_activated = false;
     input->text_input_stream = NULL;
     SDL_StopTextInput();
+}
+
+SEINLINE void seui_mouse_fps_activate(SE_Input *input) {
+    if (input->is_mouse_fps_activated) return;
+
+    input->is_mouse_fps_activated = true;
+    // SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1"); // for some reason this causes jitters sometimes when used instead of below:
+    SDL_SetRelativeMouseMode(true);
+    // and by below I mean this:
+    Vec2i window_size;
+    SDL_GetWindowSize(input->window, &window_size.x, &window_size.y);
+    SDL_WarpMouseInWindow(input->window, window_size.x * 0.5f, window_size.y * 0.5f);
+}
+
+SEINLINE void seui_mouse_fps_deactivate(SE_Input *input) {
+    if (!input->is_mouse_fps_activated) return;
+    input->is_mouse_fps_activated = false;
+    SDL_SetRelativeMouseMode(false);
 }
 #endif // SEINPUT_H
