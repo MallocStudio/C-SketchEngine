@@ -7,9 +7,9 @@ static u32 generate_ui_id(SE_UI *ctx) {
 }
 
 /// note that stay_active_on_mouse_leave is used for dragging ui items
-static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, SE_Input *input, bool stay_active_on_mouse_leave /* = false */) {
+static UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse_leave /* = false */) {
     UI_STATES result = UI_STATE_IDLE;
-
+    SE_Input *input = ctx->input;
     bool mouse_down   = input->is_mouse_left_down;
     bool mouse_up     = !mouse_down;
     bool mouse_inside = rect_overlaps_point(rect, input->mouse_screen_pos);
@@ -258,7 +258,7 @@ bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
 bool seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
-    Rect rect = {0, 0, 16, 16}; // default label size
+    Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
     }
@@ -266,7 +266,7 @@ bool seui_button(SE_UI *ctx, const char *text) {
 }
 
 void seui_label(SE_UI *ctx, const char *text) {
-    Rect rect = {0, 0, 16, 16}; // default label size
+    Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
         rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
@@ -372,7 +372,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour_pressed = ctx->theme.colour_pressed;
     RGBA colour = colour_normal;
 
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_normal;
@@ -391,6 +391,40 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     return ui_state == UI_STATE_ACTIVE;
 }
 
+bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
+    SE_Input *input = ctx->input;
+    UI_Renderer *renderer = &ctx->renderer;
+
+    u32 id = generate_ui_id(ctx);
+
+    RGBA colour_normal  = ctx->theme.colour_normal;
+    RGBA colour_hover   = ctx->theme.colour_hover;
+    RGBA colour_pressed = ctx->theme.colour_pressed;
+    RGBA colour = colour_normal;
+
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, false);
+
+    switch (ui_state) {
+        case UI_STATE_IDLE: {
+            colour = colour_normal;
+        } break;
+        case UI_STATE_WARM: {
+            colour = colour_hover;
+        } break;
+        case UI_STATE_HOT: {
+            colour = colour_pressed;
+        } break;
+    }
+
+    if (texture_index.x == 0 && texture_index.y == 0) {
+        seui_render_rect(renderer, rect, colour);
+    } else {
+        seui_render_texture(renderer, rect, texture_index, colour);
+    }
+
+    return ui_state == UI_STATE_ACTIVE;
+}
+
 Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_STATES *state) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
@@ -403,7 +437,7 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
     RGBA colour = colour_normal;
 
     Vec2 drag = {0};
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, true);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, true);
 
     switch (ui_state) {
         case UI_STATE_IDLE: {
@@ -503,6 +537,73 @@ void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value) {
     seui_render_colour_picker(&ctx->renderer, rect, hue);
 }
 
+bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
+    u32 id = generate_ui_id(ctx);
+
+    RGBA colour_bg = (RGBA) {10, 10, 10, 100}; // same colour as label bg
+    RGBA colour_highlight = (RGBA) {80, 90, 150, 255};
+    Vec3 colour_text = (Vec3) {255, 255, 255};
+    RGBA colour = colour_bg;
+
+    f32 button_size = rect.h;
+    Rect label = {
+        rect.x + button_size,
+        rect.y,
+        rect.w - button_size * 2,
+        rect.h
+    };
+    UI_STATES ui_state = get_ui_state(ctx, id, label, false);
+    switch (ui_state) {
+        case UI_STATE_IDLE: {
+        } break;
+        case UI_STATE_WARM: {
+        } break;
+        case UI_STATE_ACTIVE: {
+        } break;
+    }
+
+    /* background */
+    seui_render_rect(&ctx->renderer, rect, colour_bg);
+    /* left button */
+    Rect button = {
+        rect.x,
+        rect.y,
+        button_size,
+        button_size
+    };
+    bool decrease = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_LEFT, button);
+    /* right button */
+    button = (Rect) {
+        rect.x + rect.w - button_size,
+        rect.y + rect.h - button_size,
+        button_size,
+        button_size
+    };
+    bool increase = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_RIGHT, button);
+
+    /* value change */
+    bool changed = false;
+    if (increase) {
+        (*value)++;
+        changed = true;
+    }
+    if (decrease) {
+        (*value)--;
+        changed = true;
+    }
+    if (min != 0 || max != 0) {
+        if (*value > max) *value = max;
+        if (*value < min) *value = min;
+    }
+
+    /* display value */
+    char buffer[SESTRING_MAX_NUM_OF_DIGITS];
+    sprintf(buffer, "%i", *value);
+    setext_render_text_rect(&ctx->txt_renderer, buffer, label, colour_text, true);
+
+    return changed;
+}
+
 void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     SE_Input *input = ctx->input;
     UI_Renderer *renderer = &ctx->renderer;
@@ -517,7 +618,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 
     SE_String *display_text = text;
 
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, input, false);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, false);
     switch (ui_state) {
         case UI_STATE_IDLE: {
             colour = colour_bg;
@@ -587,4 +688,20 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     } else {
         setext_render_text_rect(&ctx->txt_renderer, "...", rect, colour_text_hint, true);
     }
+}
+
+bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
+    Rect rect = {0, 0, 16, 16}; // default
+    if (ctx->current_panel != NULL) {
+        rect = panel_put(ctx->current_panel, rect.x, rect.y, true);
+    }
+    return seui_button_textured_at(ctx, texture_index, rect);
+}
+
+bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
+    Rect rect = {0, 0, 100, 32}; // default
+    if (ctx->current_panel != NULL) {
+        rect = panel_put(ctx->current_panel, rect.x, rect.y, true);
+    }
+    return seui_selector_at(ctx, rect, value, min, max);
 }

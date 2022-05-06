@@ -159,6 +159,9 @@ bool seui_button(SE_UI *ctx, const char *text);
 /// Draws a button at the given rectangle.
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
 
+bool seui_button_textured(SE_UI *ctx, Vec2 texture_index);
+bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect);
+
 /// Draws a button that returns the drag if the mouse is trying to drag it.
 /// That means is the mouse is hovering over the button and pressing down.
 Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state);
@@ -181,4 +184,10 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value);
 
 void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect);
 void seui_input_text(SE_UI *ctx, SE_String *text);
+
+/// A horizontal slider with buttons on its sides.
+/// Within the range of [min, max]
+/// If min AND max are zero, the limits will be ignored
+bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
+bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max);
 #endif // SEUI_H

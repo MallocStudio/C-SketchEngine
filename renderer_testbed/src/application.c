@@ -22,6 +22,8 @@ static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_inde
 
 Application_Panel app_panel;
 
+i32 temp_val = 0;
+
 /* to render any texture on the screen */
 // u32 cheat_vbo;
 // Mat4 cheat_transform;
@@ -129,13 +131,6 @@ void app_update(Application *app) {
             seui_label(ctx, "light intensity:");
             seui_slider(ctx, &app_panel.light_intensity);
 
-            seui_label(ctx, "rot x:");
-            seui_slider(ctx, &app->entities[player].oriantation.x);
-            seui_label(ctx, "rot y:");
-            seui_slider(ctx, &app->entities[player].oriantation.y);
-            seui_label(ctx, "rot z:");
-            seui_slider(ctx, &app->entities[player].oriantation.z);
-
             seui_label(ctx, "colour:");
             seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
 
@@ -149,6 +144,7 @@ void app_update(Application *app) {
             seui_label(ctx, "p2");
 
             if (seui_button(ctx, "file open")) {
+                printf("haha got ya\n");
             }
 
             seui_panel_row(&panel, 1);
@@ -165,12 +161,13 @@ void app_update(Application *app) {
 
         if (seui_panel_at(ctx, "entity", &panel_entity_info)) {
             char label_buffer[255];
-            seui_panel_row(&panel_entity_info, 2);
+            seui_panel_row(&panel_entity_info, 4);
 
             /* id */
-            sprintf(label_buffer, "%i", panel_entity.entity_id);
-            seui_label(ctx, "id:");
-            seui_label(ctx, label_buffer);
+            seui_label(ctx, "entity:");
+            if (seui_selector(ctx, &panel_entity.entity_id, 0, app->entity_count-1)) {
+                panel_entity_init(app, &panel_entity, panel_entity.entity_id);
+            }
             /* mesh */
             sprintf(label_buffer, "%i", *panel_entity.entity_mesh);
             seui_label(ctx, "mesh:");

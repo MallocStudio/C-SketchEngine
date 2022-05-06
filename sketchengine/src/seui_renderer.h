@@ -32,7 +32,9 @@ typedef struct UI_Shape {
 #define UI_ICON_INDEX_UNCOLLAPSE (Vec2) {2, 0}
 #define UI_ICON_INDEX_CLOSE      (Vec2) {0, 1}
 #define UI_ICON_INDEX_SLIDER     (Vec2) {3, 0}
-#define UI_ICON_INDEX_CIRCLE_FILLED (Vec2) {1, 1};
+#define UI_ICON_INDEX_CIRCLE_FILLED (Vec2) {1, 1}
+#define UI_ICON_INDEX_ARROW_RIGHT (Vec2) {2, 1}
+#define UI_ICON_INDEX_ARROW_LEFT (Vec2) {3, 1}
 
 typedef struct UI_Renderer {
     u32 vertex_count; // calculated when data is uploaded to the GPU
