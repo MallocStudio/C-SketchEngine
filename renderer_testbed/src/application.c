@@ -22,8 +22,6 @@ static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_inde
 
 Application_Panel app_panel;
 
-i32 temp_val = 0;
-
 /* to render any texture on the screen */
 // u32 cheat_vbo;
 // Mat4 cheat_transform;
