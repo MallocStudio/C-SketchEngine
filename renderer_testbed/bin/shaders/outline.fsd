@@ -1,0 +1,10 @@
+#version 450
+
+out vec4 frag_out;
+uniform vec3 _outline_colour;
+uniform float _time;
+
+void main () {
+    // https://alexanderameye.github.io/notes/rendering-outlines/
+    frag_out = vec4(mix(_outline_colour, vec3(0, 0, 0), sin(_time) + 0.5), 1.0);
+}

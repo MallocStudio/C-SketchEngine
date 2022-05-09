@@ -84,7 +84,8 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour);
 void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, f32 width, RGBA colour);
-void seui_render_colour_picker(UI_Renderer *renderer, Rect rect, RGBA hue);
+/// colour is the most saturated and bright colour the box will display
+void seui_render_colour_box(UI_Renderer *renderer, Rect rect, i32 hue);
 
 // void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 

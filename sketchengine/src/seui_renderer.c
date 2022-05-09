@@ -224,7 +224,6 @@ void seui_renderer_upload(UI_Renderer *renderer) {
 
 void seui_renderer_draw(UI_Renderer *renderer) {
     glDisable(GL_DEPTH_TEST);
-
     glEnable(GL_BLEND);
     seshader_use(&renderer->shader);
     seshader_set_uniform_mat4(&renderer->shader, "projection_view", renderer->view_projection);
@@ -447,15 +446,18 @@ void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, f32 width, RGBA 
     seui_render_line(renderer, pos4, pos1, width, colour);
 }
 
-void seui_render_colour_picker(UI_Renderer *renderer, Rect rect, RGBA hue) {
+void seui_render_colour_box(UI_Renderer *renderer, Rect rect, i32 hue) {
     UI_Shape *shape = &renderer->shapes[renderer->shape_count];
     renderer->shape_count++;
+
+    RGB colour;
+    hsv_to_rgb(hue, 1, 1, &colour);
 
     /* add the vertices */
     shape->vertex_count = 0;
     seui_shape_add_vertex(shape, (Vec2) {rect.x         , rect.y         }, RGBA_BLACK);
     seui_shape_add_vertex(shape, (Vec2) {rect.x         , rect.y + rect.h}, RGBA_WHITE);
-    seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y + rect.h}, hue);
+    seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y + rect.h}, (RGBA) {colour.r, colour.g, colour.b, 255});
     seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y         }, RGBA_BLACK);
     SDL_assert_always(shape->vertex_count == 4);
 

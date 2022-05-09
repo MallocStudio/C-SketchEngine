@@ -147,6 +147,7 @@ typedef struct SE_Renderer3D {
     u32 shader_lit;
     u32 shader_shadow_calc;
     u32 shader_lines;
+    u32 shader_outline;
 
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
@@ -186,6 +187,7 @@ u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *
 u32 serender3d_add_material(SE_Renderer3D *renderer);
 /// Render all of the meshes the renderer contains
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 
 
 ///

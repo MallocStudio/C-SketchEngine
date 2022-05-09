@@ -96,7 +96,7 @@ void app_init(Application *app, SDL_Window *window) {
 
         seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 32);
         seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 32);
-        seui_panel_configure(&panel_entity_info, (Rect) {0, 400, 64, 64}, false, 32);
+        seui_panel_configure(&panel_entity_info, (Rect) {0, 450, 64, 64}, false, 32);
 
         panel_init(&app_panel);
 
@@ -122,6 +122,7 @@ void app_update(Application *app) {
     { // -- ui
         seui_reset(ctx);
 
+        // seui_colour_picker_at(ctx, (Rect) {400, 400, 64, 64}, &app_panel.colour_test);
         if (seui_panel_at(ctx, "panel", &panel)) {
             seui_panel_row(&panel, 2);
             seui_label(ctx, "light direction:");
@@ -130,7 +131,7 @@ void app_update(Application *app) {
             seui_slider(ctx, &app_panel.light_intensity);
 
             seui_label(ctx, "colour:");
-            seui_colour_picker(ctx, RGBA_RED, &app_panel.colour_test);
+            seui_colour_picker(ctx, &app_panel.colour_test);
 
             seui_label(ctx, "test input1:");
             seui_input_text(ctx, &app_panel.input_text);
@@ -327,6 +328,7 @@ void app_render(Application *app) {
                 semesh_generate(app->renderer.meshes[proj_box], 8, verts, 24, indices);
             }
 
+            glDisable(GL_CULL_FACE); // @TODO what the f investigate
             { /* render the scene from the light's point of view */
                 glCullFace(GL_FRONT);
                 /* configure shadow shader */
@@ -353,6 +355,7 @@ void app_render(Application *app) {
                 glBindVertexArray(0);
 
                 glCullFace(GL_BACK);
+                glEnable(GL_CULL_FACE); // @remove after fixing whatever this is
             }
 
             serender_target_use(NULL);
@@ -368,6 +371,9 @@ void app_render(Application *app) {
         // glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window_w, window_h);
+
+        u32 selected = panel_entity.entity_id;
+        serender3d_render_mesh_outline(&app->renderer, app->entities[selected].mesh_index, entity_get_transform(&app->entities[selected]));
 
         for (u32 i = 0; i < app->entity_count; ++i) {
             entity_render(&app->entities[i], &app->renderer);

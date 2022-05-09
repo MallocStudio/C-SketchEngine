@@ -73,9 +73,13 @@ SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
     return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
 }
 
+void rgb_to_hsv(RGB rgb, f32 *hue, f32 *saturation, f32 *value);
+void hsv_to_rgb(f32 hue, f32 saturation, f32 value, RGB *rgb);
+void hsv_to_rgba(f32 hue, f32 saturation, f32 value, RGBA *rgb);
+
 #define RGBA_RED   (RGBA){255, 0, 0, 255}
-#define RGBA_BLUE  (RGBA){0, 255, 0, 255}
-#define RGBA_GREEN (RGBA){0, 0, 255, 255}
+#define RGBA_BLUE  (RGBA){0, 0, 255, 255}
+#define RGBA_GREEN (RGBA){0, 255, 0, 255}
 #define RGBA_WHITE (RGBA){255, 255, 255, 255}
 #define RGBA_BLACK (RGBA){0, 0, 0, 255}
 

@@ -829,7 +829,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
 
 static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     u32 shader = renderer->shader_lit;
-    seshader_use(renderer->shaders[shader]); // use the default shader
+    seshader_use(renderer->shaders[shader]);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
@@ -897,7 +897,7 @@ static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *r
 void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
 
-    // take the quad (world space) and project it to view space
+    // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
 
@@ -927,6 +927,46 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     glBindVertexArray(0);
 }
 
+void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+    SE_Mesh *mesh = renderer->meshes[mesh_index];
+    if (mesh->is_line) return;
+    // take the mesh (world space) and project it to view space
+    // then take that and project it to the clip space
+    // then pass that final projection matrix and give it to the shader
+
+    i32 primitive = GL_TRIANGLES;
+
+    { // setup the shader
+        u32 shader = renderer->shader_outline;
+        seshader_use(renderer->shaders[shader]); // use the outline shader
+
+        Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+        pvm = mat4_mul(pvm, renderer->current_camera->projection);
+
+        seshader_set_uniform_mat4(renderer->shaders[shader], "_pvm", pvm);
+        seshader_set_uniform_f32(renderer->shaders[shader], "_outline_width", 0.02f);
+        seshader_set_uniform_rgb(renderer->shaders[shader], "_outline_colour", (RGB) {255, 255, 255});
+        static f32 time = 0;
+        time += 0.167;
+        seshader_set_uniform_f32(renderer->shaders[shader], "_time", time);
+    }
+
+    glBindVertexArray(mesh->vao);
+    glCullFace(GL_FRONT);
+    if (mesh->indexed) {
+        glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(primitive, 0, mesh->vert_count);
+    }
+    glCullFace(GL_BACK);
+
+    if (mesh->is_line) {
+        glLineWidth(1); // reset
+    }
+
+    glBindVertexArray(0);
+}
+
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
     // add a default shader
     u32 shader = renderer->shaders_count;
@@ -944,6 +984,7 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit.fsd");
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
     renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
+    renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);

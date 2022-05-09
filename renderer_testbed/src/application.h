@@ -15,7 +15,7 @@ typedef struct Application_Panel {
 
 SEINLINE panel_init(Application_Panel *panel) {
     panel->light_intensity = 1.0f;
-    panel->colour_test = RGBA_RED;
+    panel->colour_test = RGBA_BLUE;
     panel->light_direction = (Vec2) {0, -1};
     sestring_init(&panel->input_text, "enter text"); // @leak
     sestring_init(&panel->input_text2, ""); // @leak

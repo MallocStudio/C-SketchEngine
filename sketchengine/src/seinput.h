@@ -21,6 +21,23 @@ SEINLINE Vec2 get_mouse_pos(bool *lpressed, bool *rpressed) {
     return (Vec2){x, y};
 }
 
+/// get the mouse position (relative to the window's top left position). Optionally pass bools to get mouse state
+SEINLINE Vec2 get_mouse_pos_normalised(SDL_Window *window, bool *lpressed, bool *rpressed) {
+    i32 x, y;
+    u32 state = SDL_GetMouseState(&x, &y);
+    if (lpressed != NULL) {
+        *lpressed = false;
+        if (state & SDL_BUTTON_LMASK) *lpressed = true;
+    }
+    if (rpressed != NULL) {
+        *rpressed = false;
+        if (state & SDL_BUTTON_RMASK) *rpressed = true;
+    }
+    i32 w = 1, h = 1;
+    SDL_GetWindowSize(window, &w, &h);
+    return (Vec2){x / w, y / h};
+}
+
 typedef struct SE_Input {
     // -- mouse
 

@@ -130,9 +130,11 @@ SEINLINE void seui_deinit(SE_UI *ctx) {
 
 SEINLINE void seui_render(SE_UI *ctx) {
     seui_renderer_upload(&ctx->renderer);
-    seui_renderer_draw  (&ctx->renderer);
-    seui_renderer_clear (&ctx->renderer);
+    glDisable(GL_CULL_FACE);
+    seui_renderer_draw(&ctx->renderer);
     setext_render(&ctx->txt_renderer);
+    glEnable(GL_CULL_FACE);
+    seui_renderer_clear (&ctx->renderer);
 }
 
 /// Set text input configurations to default values. It's good practice to
@@ -175,8 +177,8 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value);
 void seui_slider(SE_UI *ctx, f32 *value);
 
-void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value);
-void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value);
+void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *value);
+void seui_colour_picker(SE_UI *ctx, RGBA *value);
 
 /// a 2d slider that returns a normalised vec2
 void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);

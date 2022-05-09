@@ -30,6 +30,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     // glDepthFunc(GL_LEQUAL);
     glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE); // Face Culling is enabled by default.
 
     // -- Init GLEW
     GLenum glew_error = glewInit();

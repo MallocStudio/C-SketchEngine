@@ -90,7 +90,11 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
             panel->item_height = min_height; // update panel item height so other widgets in the same row will have expanded size
         }
 
-        result.w = panel_rect.w / panel->columns;
+        if (expand) {
+            result.w = panel_rect.w / panel->columns;
+        } else {
+            result.w = min_width;
+        }
         if (expand) {
             result.h = panel->item_height;
         } else {
@@ -118,7 +122,7 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
 }
 
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
-    bool *minimised    = &panel_data->minimised;
+    bool *minimised   = &panel_data->minimised;
     bool is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
 
@@ -345,12 +349,12 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     seui_slider2d_at(ctx, center, radius, value);
 }
 
-void seui_colour_picker(SE_UI *ctx, RGBA hue, RGBA *value) {
-    Rect rect = {0, 0, 16, 16}; // default label size
+void seui_colour_picker(SE_UI *ctx, RGBA *value) {
+    Rect rect = {0, 0, 64, 64}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, 32, 32, true);
+        rect = panel_put(ctx->current_panel, rect.w, rect.h, false);
     }
-    seui_colour_picker_at(ctx, rect, hue, value);
+    seui_colour_picker_at(ctx, rect, value);
 }
 
 void seui_input_text(SE_UI *ctx, SE_String *text) {
@@ -533,8 +537,62 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     vec2_normalise(value);
 }
 
-void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA hue, RGBA *value) {
-    seui_render_colour_picker(&ctx->renderer, rect, hue);
+void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *colour) {
+    // colour box
+    f32 hue;
+    f32 saturation;
+    f32 value;
+    rgb_to_hsv((RGB) {colour->r, colour->g, colour->b}, &hue, &saturation, &value);
+
+    // cursor
+    Vec2 cursor_pos_on_colour;
+    cursor_pos_on_colour.x = saturation;
+    cursor_pos_on_colour.y = value;
+
+    Rect cursor = {0};
+    cursor.w = 16;
+    cursor.h = 16;
+    cursor.x = (saturation * rect.w) / 1;
+    cursor.y = (value      * rect.h) / 1;
+
+    cursor.x += rect.x - cursor.w * 0.5f;
+    cursor.y += rect.y - cursor.h * 0.5f;
+
+    u32 id = generate_ui_id(ctx);
+    UI_STATES ui_state = get_ui_state(ctx, id, rect, false);
+
+    if (ui_state == UI_STATE_WARM) {
+        // select hue
+        if (ctx->input->mouse_wheel != 0) {
+            hue += ctx->input->mouse_wheel;
+            if (hue > 359) hue = 0;
+            if (hue < 0) hue = 359;
+            printf("hue: %f\n", hue);
+        }
+    }
+
+    if (ui_state == UI_STATE_HOT) { // select saturation and value
+        Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+        i32 window_w;
+        i32 window_h;
+        SDL_GetWindowSize(ctx->input->window, &window_w, &window_h);
+        mouse_pos.y = window_h - mouse_pos.y;
+        mouse_pos.x -= rect.x;
+        mouse_pos.y -= rect.y;
+        mouse_pos.x /= rect.w;
+        mouse_pos.y /= rect.h;
+
+        saturation = mouse_pos.x;
+        value = mouse_pos.y;
+        printf("sat : %f\n", saturation);
+        printf("value : %f\n", value);
+        printf("mouse_pos : %f, %f\n", mouse_pos.x, mouse_pos.y);
+
+        hsv_to_rgba(hue, saturation, value, colour);
+    }
+
+    seui_render_colour_box(&ctx->renderer, rect, hue);
+    seui_drag_button_textured_at(ctx, cursor, UI_ICON_INDEX_CIRCLE_FILLED, NULL);
 }
 
 bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
