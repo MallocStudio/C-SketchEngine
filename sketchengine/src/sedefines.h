@@ -39,15 +39,9 @@ typedef struct RGBA {
 } RGBA;
 #define TYPEOF_RGBA_OPENGL GL_UNSIGNED_BYTE
 typedef struct RGB {
-    f32 r, g, b; // 0 - 255
+    ubyte r, g, b; // 0 - 255
 } RGB;
-#define TYPEOF_RGB_OPENGL GL_FLOAT
-
-SEINLINE void rgb_normalise(RGB *rgb) {
-    rgb->r = rgb->r / 255;
-    rgb->g = rgb->g / 255;
-    rgb->b = rgb->b / 255;
-}
+#define TYPEOF_RGB_OPENGL GL_UNSIGNED_BYTE
 
 SEINLINE void rgba_normalise(RGBA *rgb) {
     rgb->r = rgb->r / 255;
@@ -73,9 +67,9 @@ SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
     return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
 }
 
-void rgb_to_hsv(RGB rgb, f32 *hue, f32 *saturation, f32 *value);
-void hsv_to_rgb(f32 hue, f32 saturation, f32 value, RGB *rgb);
-void hsv_to_rgba(f32 hue, f32 saturation, f32 value, RGBA *rgb);
+void rgb_to_hsv(RGB rgb, i32 *hue, i32 *saturation, i32 *value);
+void hsv_to_rgb(i32 hue, i32 saturation, i32 value, RGB *rgb);
+void hsv_to_rgba(i32 hue, i32 saturation, i32 value, RGBA *rgb);
 
 #define RGBA_RED   (RGBA){255, 0, 0, 255}
 #define RGBA_BLUE  (RGBA){0, 0, 255, 255}

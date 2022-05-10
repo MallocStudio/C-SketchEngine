@@ -10,17 +10,18 @@ void print_sdl_error() {
     printf("ERROR: %s\n", error);
 }
 
-void rgb_to_hsv(RGB rgb, f32 *hue, f32 *saturation, f32 *value) {
-    f32 r = rgb.r / 255;
-    f32 g = rgb.g / 255;
-    f32 b = rgb.b / 255;
+void rgb_to_hsv(RGB rgb, i32 *hue, i32 *saturation, i32 *value) {
+    f32 r = ((f32)rgb.r) / (f32)255;
+    f32 g = ((f32)rgb.g) / (f32)255;
+    f32 b = ((f32)rgb.b) / (f32)255;
+
     f32 cmax = semath_max(r, g);
     cmax = semath_max(cmax, b);
     f32 cmin = semath_min(r, g);
     cmin = semath_min(cmin, b);
     f32 delta = cmax - cmin;
 
-    f32 h;
+    i32 h;
     if (delta == 0) {
         h = 0;
     } else
@@ -38,11 +39,11 @@ void rgb_to_hsv(RGB rgb, f32 *hue, f32 *saturation, f32 *value) {
         *hue = h;
     }
 
-    f32 s;
+    i32 s;
     if (cmax == 0) {
         s = 0;
     } else {
-        s = delta / cmax;
+        s = (delta / cmax) * 100;
     }
 
     if (saturation != NULL) {
@@ -50,15 +51,15 @@ void rgb_to_hsv(RGB rgb, f32 *hue, f32 *saturation, f32 *value) {
     }
 
     if (value != NULL) {
-        *value = cmax;
+        *value = cmax * 100;
     }
 }
 
-void hsv_to_rgb(f32 hue, f32 saturation, f32 value, RGB *rgb) {
+void hsv_to_rgb(i32 hue, i32 saturation, i32 value, RGB *rgb) {
     if (rgb == NULL) return;
-    f32 rr, r, gg, g, bb, b;
+    ubyte rr, r, gg, g, bb, b;
     f32 c = value * saturation;
-    f32 x = c * (1 - semath_abs(((i32)hue / 60) % 2 - 1));
+    f32 x = c * (1 - semath_abs((hue / 60) % 2 - 1));
     f32 m = value - c;
     if ( 0 <= hue && hue < 60 ) {
         rr = c;
@@ -100,7 +101,7 @@ void hsv_to_rgb(f32 hue, f32 saturation, f32 value, RGB *rgb) {
     rgb->b = b;
 }
 
-void hsv_to_rgba(f32 hue, f32 saturation, f32 value, RGBA *rgba) {
+void hsv_to_rgba(i32 hue, i32 saturation, i32 value, RGBA *rgba) {
     RGB rgb;
     hsv_to_rgb(hue, saturation, value, &rgb);
     rgba->r = rgb.r;

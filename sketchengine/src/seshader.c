@@ -118,8 +118,7 @@ void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec
 void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value) {
     GLuint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     seshader_use(shader);
-    rgb_normalise(&value);
-    glUniform3f(var_loc, value.r, value.g, value.b);
+    glUniform3f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f);
 }
 
 void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {

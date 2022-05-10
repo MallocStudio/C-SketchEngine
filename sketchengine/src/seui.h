@@ -51,10 +51,13 @@ typedef struct SEUI_Panel {
     /* auto calculated */
     Rect final_rect;   // the rect of the panel
     f32 item_height;
-    i32 item_count;
+    i32 row_item_count; // reset to zero each time we make a new row
+    i32 row_columns;
+    i32 row_expanded_item_width; // the width of an expanded item. We have this here so we can modify it when items appear that are not expanded
+    i32 row_width;
+    i32 row_height;
     Vec2 min_size;
     Vec2 cursor; // the relative cursor used to position the placement of the items
-    u32 columns; // number of columns -> calculate by panel_row(number_of_columns)
     bool is_embedded; // is inside of another panel
 
     u32 docked_dir; // 0 means not docked, 1 means left, 2 means right
@@ -63,7 +66,7 @@ typedef struct SEUI_Panel {
 SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height) {
     panel->rect = initial_rect;
     panel->minimised = minimised;
-    panel->columns = 1;
+    panel->row_columns = 1;
     panel->min_item_height = min_item_height;
     panel->is_embedded = false;
     panel->docked_dir = 0; // not docked

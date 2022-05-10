@@ -366,8 +366,7 @@ void app_render(Application *app) {
         // 2. render normally with the shadow map
         app->renderer.light_directional.intensity = app_panel.light_intensity;
         RGB ambient = app->renderer.light_directional.ambient;
-        rgb_normalise(&ambient);
-        glClearColor(ambient.r, ambient.g, ambient.b, 1.0f);
+        glClearColor(ambient.r / 255.0f, ambient.g / 255.0f, ambient.b / 255.0f, 1.0f);
         // glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window_w, window_h);
