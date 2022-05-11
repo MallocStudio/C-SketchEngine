@@ -1,5 +1,3 @@
-#define LIT_BETTER
-
 #include "serenderer.h"
 #include "stb_image.h"
 
@@ -838,27 +836,6 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
 
     // the good old days when debugging:
     // material->texture_diffuse.width = 100;
-#ifndef LIT_BETTER // old version of lit
-    /* vertex */
-    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
-    seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
-
-    /* material uniforms */
-    seshader_set_uniform_f32 (renderer->shaders[shader], "light_intensity", renderer->light_directional.intensity);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "specular_power", 0.1f);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "texture_diffuse", 0);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "texture_specular", 1);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "texture_normal", 2);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
-    seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
-
-    // light uniforms
-    seshader_set_uniform_vec3(renderer->shaders[shader], "L", renderer->light_directional.direction);
-    seshader_set_uniform_rgb(renderer->shaders[shader], "iA", renderer->light_directional.ambient);
-    seshader_set_uniform_rgb(renderer->shaders[shader], "iD", renderer->light_directional.diffuse);
-#else // lit better
     /* vertex */
     seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
     seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
@@ -872,14 +849,25 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     seshader_set_uniform_i32 (renderer->shaders[shader], "material.normal", 2);
     seshader_set_uniform_vec4(renderer->shaders[shader], "material.base_diffuse", material->base_diffuse);
 
-    // light uniforms
+    // directional light uniforms
     seshader_set_uniform_vec3(renderer->shaders[shader], "dir_light.direction", renderer->light_directional.direction);
     seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.ambient", renderer->light_directional.ambient);
     seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.diffuse", renderer->light_directional.diffuse);
     seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.specular", (RGB) {0, 0, 0});
+    seshader_set_uniform_f32 (renderer->shaders[shader], "dir_light.intensity", renderer->light_directional.intensity);
     seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
 
-#endif
+    // point light uniforms
+    seshader_set_uniform_vec3(renderer->shaders[shader], "point_lights[0].position",  renderer->point_lights[0].position);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].ambient",   renderer->point_lights[0].ambient);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].diffuse",   renderer->point_lights[0].diffuse);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].specular",  renderer->point_lights[0].specular);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].constant" , renderer->point_lights[0].constant);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].linear"   , renderer->point_lights[0].linear);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].quadratic", renderer->point_lights[0].quadratic);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].far_plane", 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
+    seshader_set_uniform_i32 (renderer->shaders[shader], "point_lights[0].shadow_map", 4); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
+
     if (material->texture_diffuse.loaded) {
         setexture_bind(&material->texture_diffuse, 0);
     } else {
@@ -900,6 +888,10 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
     glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
+
+    /* omnidirectional shadow map */
+    glActiveTexture(GL_TEXTURE0 + 4); // shadow map
+    glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[0].depth_cube_map);
 }
 
 static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
@@ -990,6 +982,15 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     glBindVertexArray(0);
 }
 
+static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const char *vsd, const char *fsd, const char *gsd) {
+    // add a default shader
+    u32 shader = renderer->shaders_count;
+    renderer->shaders[shader] = new (SE_Shader);
+    seshader_init_from_with_geometry(renderer->shaders[shader], vsd, fsd, gsd);
+    renderer->shaders_count++;
+    return shader;
+}
+
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
     // add a default shader
     u32 shader = renderer->shaders_count;
@@ -1003,12 +1004,19 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
-#ifdef LIT_BETTER
+    // point lights
+    renderer->point_lights_count = 1;
+    renderer->point_lights[0].position = v3f(2, 1, 1);
+    renderer->point_lights[0].ambient   = (RGB) {100, 100, 100};
+    renderer->point_lights[0].diffuse   = (RGB) {255, 255, 255};
+    renderer->point_lights[0].specular  = (RGB) {0, 0, 0};
+    renderer->point_lights[0].constant  = 1.0f;
+    renderer->point_lights[0].linear    = 0.22f;
+    renderer->point_lights[0].quadratic = 0.20f;
+
     renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
-#else
-    renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit.fsd");
-#endif
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
+    renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "shaders/shadow_omni_calc.vsd", "shaders/shadow_omni_calc.fsd", "shaders/shadow_omni_calc.gsd");
     renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
     renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
 
@@ -1024,6 +1032,32 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     f32 shadow_w = 1024;
     f32 shadow_h = 1024;
     serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true, true);
+
+    { /* omnidirectional shadow mapping */
+        SE_Light_Point *point_light = &renderer->point_lights[0];
+        glGenTextures(1, &point_light->depth_cube_map); // @leak
+        glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
+        for (u32 i = 0; i < 6; ++i) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        }
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        // ! note: Normally we'd attach a single face of a cubemap texture to the framebuffer object and render the scene 6 times,
+        // ! each time swiching the depth buffer target of the framebuffer to a different cubemap face. Since we're going to
+        // ! use a geometry shader, that allows us to render to all faces in a single pass, we can directly attach the cubemap
+        // ! as a framebuffer's depth attachment with glFramebufferTexture (- from learnopengl.com)
+        glGenFramebuffers(1, &point_light->depth_map_fbo); // @leak
+        glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, point_light->depth_cube_map, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    }
 }
 
 void serender3d_deinit(SE_Renderer3D *renderer) {

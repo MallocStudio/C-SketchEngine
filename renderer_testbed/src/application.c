@@ -36,13 +36,17 @@ Application_Panel app_panel;
 u32 player = -1;
 u32 player2 = -1;
 u32 plane = -1;
-
+Vec3 point_light_pos;
 /* meshes */
 u32 line_mesh = -1;
 u32 proj_lines = -1;
 u32 proj_box   = -1;
 u32 current_obj_aabb = -1;
 AABB3D world_aabb;
+
+static void app_render_directional_shadow_map(Application *app);
+static void app_render_omnidirectional_shadow_map(Application *app);
+
 void app_init(Application *app, SDL_Window *window) {
     memset(app, 0, sizeof(Application));
 
@@ -76,6 +80,7 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player].position = vec3_zero();
         app->entities[player2].position = vec3_create(-5, 2, -1);
         app->entities[plane].position = (Vec3) {0, -1.2f, 0};
+
 
         app->entities[player].scale = vec3_one();
         app->entities[player2].scale = vec3_one();
@@ -164,6 +169,8 @@ void app_update(Application *app) {
                 seui_label(ctx, "rot z:");
                 seui_slider(ctx, &app->entities[player].oriantation.z);
             }
+
+            seui_label_vec3(ctx, "light position", &point_light_pos, true);
         }
 
         if (seui_panel_at(ctx, "entity", &panel_entity_info)) {
@@ -226,157 +233,17 @@ void app_render(Application *app) {
         };
         vec3_normalise(&light_direction);
         app->renderer.light_directional.direction = light_direction; //vec3_right();
-
-        { // -- shadow mapping
-            /* calculate the matrices */
-#if 1
-            // manually
-            f32 left   =-10 + 20 * app_panel.left;   //world_aabb.min.x;
-            f32 right  =-10 + 20 * app_panel.right;  //world_aabb.max.x;
-            f32 bottom =-10 + 20 * app_panel.bottom; //world_aabb.min.y;
-            f32 top    =-10 + 20 * app_panel.top;    //world_aabb.max.y;
-            f32 near   =-10 + 20 * app_panel.near;   //world_aabb.min.z;
-            f32 far    =-10 + 20 * app_panel.far;    //world_aabb.max.z;
-            Vec3 light_pos = v3f(0, 0, 0);
-
-            // ! the following is a bit messed up. the problem is that we calculate world aabb fine, but when light
-            // ! rotation changes, we rotate that aabb and it does not cover everything
-#else
-            // automatically
-            f32 left   = world_aabb.min.x;
-            f32 right  = world_aabb.max.x;
-            f32 bottom = world_aabb.min.y;
-            f32 top    = world_aabb.max.y;
-            f32 near   = world_aabb.min.z;
-            f32 far    = world_aabb.max.z;
-            Vec3 light_pos = (Vec3) {
-                -light_direction.x,
-                -light_direction.y,
-                0,
-            };
-            light_pos = vec3_mul_scalar(light_pos, (far + near) * 0.5f);
-#endif
-            Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
-            Vec3 light_target = vec3_add(app->renderer.light_directional.direction, light_pos);
-            Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
-            Mat4 light_space_mat = mat4_mul(light_view, light_proj);
-
-            { // -- visualise the orhto projection
-                f32 left    = -1;
-                f32 right   = +1;
-                f32 bottom  = -1;
-                f32 top     = +1;
-                f32 near    = -1;
-                f32 far     = +1;
-
-                Vec4 poss_4d[8] = {
-                    {.x = left,  .y = bottom, .z = near, 1.0}, // 0
-                    {.x = right, .y = bottom, .z = near, 1.0}, // 1
-                    {.x = right, .y = top,    .z = near, 1.0}, // 2
-                    {.x = left,  .y = top,    .z = near, 1.0}, // 3
-                    {.x = left,  .y = bottom, .z = far , 1.0}, // 4
-                    {.x = right, .y = bottom, .z = far , 1.0}, // 5
-                    {.x = right, .y = top,    .z = far , 1.0}, // 6
-                    {.x = left,  .y = top,    .z = far , 1.0}  // 7
-                };
-
-                Mat4 inv_light_space_mat = mat4_inverse(light_space_mat);
-                poss_4d[0] = mat4_mul_vec4(inv_light_space_mat, poss_4d[0]);
-                poss_4d[1] = mat4_mul_vec4(inv_light_space_mat, poss_4d[1]);
-                poss_4d[2] = mat4_mul_vec4(inv_light_space_mat, poss_4d[2]);
-                poss_4d[3] = mat4_mul_vec4(inv_light_space_mat, poss_4d[3]);
-                poss_4d[4] = mat4_mul_vec4(inv_light_space_mat, poss_4d[4]);
-                poss_4d[5] = mat4_mul_vec4(inv_light_space_mat, poss_4d[5]);
-                poss_4d[6] = mat4_mul_vec4(inv_light_space_mat, poss_4d[6]);
-                poss_4d[7] = mat4_mul_vec4(inv_light_space_mat, poss_4d[7]);
-
-                Vec3 poss[8] = {
-                    {poss_4d[0].x, poss_4d[0].y, poss_4d[0].z},
-                    {poss_4d[1].x, poss_4d[1].y, poss_4d[1].z},
-                    {poss_4d[2].x, poss_4d[2].y, poss_4d[2].z},
-                    {poss_4d[3].x, poss_4d[3].y, poss_4d[3].z},
-                    {poss_4d[4].x, poss_4d[4].y, poss_4d[4].z},
-                    {poss_4d[5].x, poss_4d[5].y, poss_4d[5].z},
-                    {poss_4d[6].x, poss_4d[6].y, poss_4d[6].z},
-                    {poss_4d[7].x, poss_4d[7].y, poss_4d[7].z}
-                };
-
-                SE_Vertex3D verts[8] = {
-                    {.position = poss[0]},
-                    {.position = poss[1]},
-                    {.position = poss[2]},
-                    {.position = poss[3]},
-                    {.position = poss[4]},
-                    {.position = poss[5]},
-                    {.position = poss[6]},
-                    {.position = poss[7]}
-                };
-
-                u32 indices[24] = {
-                    0, 1,
-                    0, 3,
-                    0, 4,
-                    5, 1,
-                    5, 6,
-                    5, 4,
-                    2, 6,
-                    2, 3,
-                    2, 1,
-                    7, 3,
-                    7, 6,
-                    7, 4
-                };
-
-                app->renderer.meshes[proj_lines]->is_line    = true;
-                app->renderer.meshes[proj_lines]->line_width = 4;
-                semesh_generate_line_fan(app->renderer.meshes[proj_lines], light_pos, poss, 8, 3);
-
-                app->renderer.meshes[proj_box]->is_line    = true;
-                app->renderer.meshes[proj_box]->line_width = 4;
-                semesh_generate(app->renderer.meshes[proj_box], 8, verts, 24, indices);
-            }
-
-            glDisable(GL_CULL_FACE); // @TODO what the f investigate
-            { /* render the scene from the light's point of view */
-                glCullFace(GL_FRONT);
-                /* configure shadow shader */
-                serender_target_use(&app->renderer.shadow_render_target);
-                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-                seshader_use(app->renderer.shaders[app->renderer.shader_shadow_calc]);
-
-                seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_calc], "light_space_matrix", light_space_mat);
-
-                for (u32 i = 0; i < app->entity_count; ++i) {
-                    Entity *entity = &app->entities[i];
-                    SE_Mesh *mesh = app->renderer.meshes[entity->mesh_index];
-                    Mat4 model_mat = entity_get_transform(entity);
-
-                    seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_calc], "model", model_mat);
-
-                    glBindVertexArray(mesh->vao);
-                    if (mesh->indexed) {
-                        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
-                    } else {
-                        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
-                    }
-                }
-                glBindVertexArray(0);
-
-                glCullFace(GL_BACK);
-                glEnable(GL_CULL_FACE); // @remove after fixing whatever this is
-            }
-
-            serender_target_use(NULL);
-
-            app->renderer.light_space_matrix = light_space_mat;
-        }
-
-        // 2. render normally with the shadow map
+        // 1. render directioanl shadow map
+        app_render_directional_shadow_map(app);
+        // 2. render point light shadow maps
+        app->renderer.point_lights[0].position = point_light_pos;
+        app_render_omnidirectional_shadow_map(app);
+        // 3. render normally with the shadow map
         app->renderer.light_directional.intensity = app_panel.light_intensity;
-        // RGB ambient = app->renderer.light_directional.ambient;
-        RGB ambient = {
-            color.r, color.g, color.b
-        };
+        RGB ambient = app->renderer.light_directional.ambient;
+        // RGB ambient = {
+        //     color.r, color.g, color.b
+        // };
         glClearColor(ambient.r / 255.0f, ambient.g / 255.0f, ambient.b / 255.0f, 1.0f);
         // glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -403,4 +270,220 @@ u32 app_add_entity(Application *app) {
     u32 result = app->entity_count;
     app->entity_count++;
     return result;
+}
+
+/// ---------------------------------------------------
+///            DIRECTIONAL SHADOW MAPPING
+/// ---------------------------------------------------
+
+static void app_render_directional_shadow_map(Application *app) {
+    // -- shadow mapping
+    /* calculate the matrices */
+#if 1
+    // manually
+    f32 left   =-10 + 20 * app_panel.left;   //world_aabb.min.x;
+    f32 right  =-10 + 20 * app_panel.right;  //world_aabb.max.x;
+    f32 bottom =-10 + 20 * app_panel.bottom; //world_aabb.min.y;
+    f32 top    =-10 + 20 * app_panel.top;    //world_aabb.max.y;
+    f32 near   =-10 + 20 * app_panel.near;   //world_aabb.min.z;
+    f32 far    =-10 + 20 * app_panel.far;    //world_aabb.max.z;
+    Vec3 light_pos = v3f(0, 0, 0);
+
+    // ! the following is a bit messed up. the problem is that we calculate world aabb fine, but when light
+    // ! rotation changes, we rotate that aabb and it does not cover everything
+#else
+    // automatically
+    f32 left   = world_aabb.min.x;
+    f32 right  = world_aabb.max.x;
+    f32 bottom = world_aabb.min.y;
+    f32 top    = world_aabb.max.y;
+    f32 near   = world_aabb.min.z;
+    f32 far    = world_aabb.max.z;
+    Vec3 light_pos = (Vec3) {
+        -light_direction.x,
+        -light_direction.y,
+        0,
+    };
+    light_pos = vec3_mul_scalar(light_pos, (far + near) * 0.5f);
+#endif
+    Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
+    Vec3 light_target = vec3_add(app->renderer.light_directional.direction, light_pos);
+    Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
+    Mat4 light_space_mat = mat4_mul(light_view, light_proj);
+
+    { // -- visualise the orhto projection
+        f32 left    = -1;
+        f32 right   = +1;
+        f32 bottom  = -1;
+        f32 top     = +1;
+        f32 near    = -1;
+        f32 far     = +1;
+
+        Vec4 poss_4d[8] = {
+            {.x = left,  .y = bottom, .z = near, 1.0}, // 0
+            {.x = right, .y = bottom, .z = near, 1.0}, // 1
+            {.x = right, .y = top,    .z = near, 1.0}, // 2
+            {.x = left,  .y = top,    .z = near, 1.0}, // 3
+            {.x = left,  .y = bottom, .z = far , 1.0}, // 4
+            {.x = right, .y = bottom, .z = far , 1.0}, // 5
+            {.x = right, .y = top,    .z = far , 1.0}, // 6
+            {.x = left,  .y = top,    .z = far , 1.0}  // 7
+        };
+
+        Mat4 inv_light_space_mat = mat4_inverse(light_space_mat);
+        poss_4d[0] = mat4_mul_vec4(inv_light_space_mat, poss_4d[0]);
+        poss_4d[1] = mat4_mul_vec4(inv_light_space_mat, poss_4d[1]);
+        poss_4d[2] = mat4_mul_vec4(inv_light_space_mat, poss_4d[2]);
+        poss_4d[3] = mat4_mul_vec4(inv_light_space_mat, poss_4d[3]);
+        poss_4d[4] = mat4_mul_vec4(inv_light_space_mat, poss_4d[4]);
+        poss_4d[5] = mat4_mul_vec4(inv_light_space_mat, poss_4d[5]);
+        poss_4d[6] = mat4_mul_vec4(inv_light_space_mat, poss_4d[6]);
+        poss_4d[7] = mat4_mul_vec4(inv_light_space_mat, poss_4d[7]);
+
+        Vec3 poss[8] = {
+            {poss_4d[0].x, poss_4d[0].y, poss_4d[0].z},
+            {poss_4d[1].x, poss_4d[1].y, poss_4d[1].z},
+            {poss_4d[2].x, poss_4d[2].y, poss_4d[2].z},
+            {poss_4d[3].x, poss_4d[3].y, poss_4d[3].z},
+            {poss_4d[4].x, poss_4d[4].y, poss_4d[4].z},
+            {poss_4d[5].x, poss_4d[5].y, poss_4d[5].z},
+            {poss_4d[6].x, poss_4d[6].y, poss_4d[6].z},
+            {poss_4d[7].x, poss_4d[7].y, poss_4d[7].z}
+        };
+
+        SE_Vertex3D verts[8] = {
+            {.position = poss[0]},
+            {.position = poss[1]},
+            {.position = poss[2]},
+            {.position = poss[3]},
+            {.position = poss[4]},
+            {.position = poss[5]},
+            {.position = poss[6]},
+            {.position = poss[7]}
+        };
+
+        u32 indices[24] = {
+            0, 1,
+            0, 3,
+            0, 4,
+            5, 1,
+            5, 6,
+            5, 4,
+            2, 6,
+            2, 3,
+            2, 1,
+            7, 3,
+            7, 6,
+            7, 4
+        };
+
+        app->renderer.meshes[proj_lines]->is_line    = true;
+        app->renderer.meshes[proj_lines]->line_width = 4;
+        semesh_generate_line_fan(app->renderer.meshes[proj_lines], light_pos, poss, 8, 3);
+
+        app->renderer.meshes[proj_box]->is_line    = true;
+        app->renderer.meshes[proj_box]->line_width = 4;
+        semesh_generate(app->renderer.meshes[proj_box], 8, verts, 24, indices);
+    }
+
+    glDisable(GL_CULL_FACE); // @TODO what the f investigate
+    { /* render the scene from the light's point of view */
+        glCullFace(GL_FRONT);
+        /* configure shadow shader */
+        serender_target_use(&app->renderer.shadow_render_target);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        seshader_use(app->renderer.shaders[app->renderer.shader_shadow_calc]);
+
+        seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_calc], "light_space_matrix", light_space_mat);
+
+        for (u32 i = 0; i < app->entity_count; ++i) {
+            Entity *entity = &app->entities[i];
+            SE_Mesh *mesh = app->renderer.meshes[entity->mesh_index];
+            Mat4 model_mat = entity_get_transform(entity);
+
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_calc], "model", model_mat);
+
+            glBindVertexArray(mesh->vao);
+            if (mesh->indexed) {
+                glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+            } else {
+                glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+            }
+        }
+        glBindVertexArray(0);
+
+        glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE); // @remove after fixing whatever this is
+    }
+
+    serender_target_use(NULL);
+
+    app->renderer.light_space_matrix = light_space_mat;
+}
+
+
+/// ---------------------------------------------------
+///         OMNIDIRECTIONAL SHADOW MAPPING
+/// ---------------------------------------------------
+static void app_render_omnidirectional_shadow_map(Application *app) {
+    SE_Light_Point *point_light = &app->renderer.point_lights[0];
+    glViewport(0, 0, 1024, 1024);
+    glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        { // configure shader and matrices
+            // projection
+            f32 aspect = 1024 / (f32) 1024;
+            f32 near = 1.0f;
+            f32 far  = 25.0f;
+            Mat4 shadow_proj = mat4_perspective(SEMATH_DEG2RAD_MULTIPLIER * 90.0f, aspect, near, far);
+            // views for each face
+            Mat4 shadow_transforms[6];
+            shadow_transforms[0] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(1, 0, 0)), vec3_down()),
+                shadow_proj);
+            shadow_transforms[1] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(-1, 0, 0)), vec3_down()),
+                shadow_proj);
+            shadow_transforms[2] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()),
+                shadow_proj);
+            shadow_transforms[3] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()), // ! this may need to be vec3_forward()
+                shadow_proj);
+            shadow_transforms[4] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, 1)), vec3_down()),
+                shadow_proj);
+            shadow_transforms[5] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, -1)), vec3_down()),
+                shadow_proj);
+
+            // configure shader
+            seshader_use(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
+            seshader_set_uniform_f32(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "far_plane", far);
+            seshader_set_uniform_vec3(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "light_pos", point_light->position);
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "shadow_matrices[0]", shadow_transforms[0]);
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "shadow_matrices[1]", shadow_transforms[1]);
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "shadow_matrices[2]", shadow_transforms[2]);
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "shadow_matrices[3]", shadow_transforms[3]);
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "shadow_matrices[4]", shadow_transforms[4]);
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "shadow_matrices[5]", shadow_transforms[5]);
+        }
+        // render scene
+        for (u32 i = 0; i < app->entity_count; ++i) {
+            Entity *entity = &app->entities[i];
+            SE_Mesh *mesh = app->renderer.meshes[entity->mesh_index];
+            Mat4 model_mat = entity_get_transform(entity);
+
+            seshader_set_uniform_mat4(app->renderer.shaders[app->renderer.shader_shadow_omnidir_calc], "model", model_mat);
+
+            glBindVertexArray(mesh->vao);
+            if (mesh->indexed) {
+                glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+            } else {
+                glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+            }
+        }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

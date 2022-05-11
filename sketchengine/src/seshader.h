@@ -13,12 +13,15 @@ typedef struct SE_Shader {
     // Remember, OpenGL manages its resources itself and gives you handles to them.
     GLuint vertex_shader;
     GLuint fragment_shader;
+    GLuint geometry_shader;
     GLuint shader_program;
     bool loaded_successfully;
+    bool has_geometry;
 } SE_Shader;
 
 /// Creates GL resources and compiles & links the given shaders
 void seshader_init_from(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename);
+void seshader_init_from_with_geometry(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename, const char *geometry);
 /// Unloads GL resources used by the shader program
 void seshader_deinit(SE_Shader *shader);
 /// Binds the given shader for the GPU to use

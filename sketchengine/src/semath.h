@@ -262,7 +262,7 @@ SEINLINE Vec3 vec3_forward() {
 }
 
 /// returns a Vec3 pointing back (right handed coord system) (0, 0, +1)
-SEINLINE Vec3 vec3_back() {
+SEINLINE Vec3 vec3_backward() {
     return (Vec3) {0.0f, 0.0f, 1.0f};
 }
 

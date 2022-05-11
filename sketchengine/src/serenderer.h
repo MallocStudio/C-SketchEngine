@@ -107,6 +107,21 @@ typedef struct SE_Light {
     f32 intensity;
 } SE_Light;
 
+typedef struct SE_Light_Point {
+    /* light properties */
+    Vec3 position;
+    RGB ambient;
+    RGB diffuse;
+    RGB specular;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
+
+    /* shadow render target */
+    GLuint depth_cube_map; // a cube map
+    GLuint depth_map_fbo;
+} SE_Light_Point;
+
 ///
 /// Camera
 ///
@@ -146,6 +161,7 @@ typedef struct SE_Renderer3D {
 
     u32 shader_lit;
     u32 shader_shadow_calc;
+    u32 shader_shadow_omnidir_calc;
     u32 shader_lines;
     u32 shader_outline;
 
@@ -159,6 +175,9 @@ typedef struct SE_Renderer3D {
 
     SE_Camera3D *current_camera;
     SE_Light light_directional;
+
+    u32 point_lights_count;
+    SE_Light_Point point_lights[4];
 
     /* shadow mapping */
     // u32 shadow_depth_map_fbo;
