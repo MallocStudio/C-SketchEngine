@@ -1,0 +1,153 @@
+#version 450
+
+///
+/// prototypes
+///
+
+struct Dir_Light {
+    vec3 direction;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+struct Point_Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+struct Material {
+    sampler2D diffuse;
+    sampler2D specular;
+    sampler2D normal;
+    float shininess; // is it the same as 'specular_power'?
+    vec4 base_diffuse;
+};
+
+vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir);
+vec3 calc_point_light(Point_Light light, vec3 normal, vec3 frag_pos, vec3 view_dir);
+float calc_shadows(vec4 param_frag_pos_light_space);
+
+///
+/// main
+///
+
+in vec2 _TexCoord;
+in vec3 _Normal;
+in mat3 _TBN;
+in vec3 _Position;
+in vec3 _Tangent;
+in vec3 _Bitangent;
+in vec3 _Frag_Pos;
+in vec4 frag_pos_light_space;
+
+uniform Dir_Light dir_light;
+// #define NUM_POINT_LIGHTS 4
+// uniform Point_Light point_lights[NUM_POINT_LIGHTS];
+
+uniform sampler2D shadow_map;   	// shadow map
+// uniform mat4 model_matrix;
+uniform vec3 camera_pos;
+uniform Material material;
+
+out vec4 FragColour;
+void main () {
+    // properties
+    vec3 norm = normalize(_Normal);
+    vec3 view_dir = normalize(camera_pos - _Frag_Pos);
+
+    // directional light
+    vec3 result = calc_dir_light(dir_light, norm, view_dir);
+    // point light
+    // for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+    //     result += calc_point_light(point_lights[i], norm, frag_pos, view_dir);
+    // }
+    FragColour = vec4(result, 1.0);
+}
+
+///
+/// lighting calculations
+///
+
+vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir) {
+    vec3 light_dir = normalize(-light.direction);
+    // diffuse shading
+    float diff = max(dot(normal, light_dir), 0.0);
+
+    // specular shading
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+
+    // combine results
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, _TexCoord));
+    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, _TexCoord));
+    vec3 specular = light.specular * spec * vec3(texture(material.specular, _TexCoord));
+
+    // ambient *= light_intensity;
+	// diffuse *= light_intensity;
+	// specular *= light_intensity;
+
+    // shadows
+    float shadow = calc_shadows(frag_pos_light_space);
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * material.base_diffuse.xyz;
+
+    // return ambient + diffuse + specular;
+    return lighting;
+}
+
+vec3 calc_point_light(Point_Light light, vec3 normal, vec3 frag_pos, vec3 view_dir) {
+    vec3 light_dir = normalize(light.position - frag_pos);
+    // diffuse shading
+    float diff = max(dot(normal, light_dir), 0.0);
+
+    // specular shading
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+
+    // attenuation
+    float distance = length(light.position - frag_pos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
+    // combine results
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, _TexCoord));
+    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, _TexCoord));
+    vec3 specular = light.specular * spec * vec3(texture(material.specular, _TexCoord));
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+    return ambient + diffuse + specular;
+}
+
+float calc_shadows(vec4 param_frag_pos_light_space) {
+	// perform perspective divide
+	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
+	// transform to [0,1] range
+	proj_coords = proj_coords * 0.5 + 0.5;
+	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
+	float closest_depth = texture(shadow_map, proj_coords.xy).r;
+	// get depth of current fragment from light's perspective
+	float current_depth = proj_coords.z;
+	// check whether current frag pos is in shadow
+
+	float bias = max(0.005 * (1.0 - dot(_Normal, dir_light.direction)), 0.005);
+	// float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+	float shadow = 0.0;
+	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r;
+			shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
+		}
+	}
+	shadow /= 9.0;
+
+	if (proj_coords.z > 1.0) shadow = 0.0;
+	return shadow;
+}

@@ -825,3 +825,61 @@ bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     }
     return seui_selector_at(ctx, rect, value, min, max);
 }
+
+/// Colour picker
+
+RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v) {
+    Rect h_rect = {
+        rect.x, rect.y, rect.w, 16
+    };
+    Rect sv_rect = {
+        rect.x, rect.y + h_rect.h, rect.w, rect.h - h_rect.h
+    };
+
+    u32 id = generate_ui_id(ctx);
+    UI_STATES ui_state = get_ui_state(ctx, id, sv_rect, false);
+    if (ui_state == UI_STATE_HOT) {
+        Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+        i32 window_w, window_h;
+        SDL_GetWindowSize(ctx->input->window, &window_w, &window_h);
+
+        // mouse_pos.y = window_h - mouse_pos.y;
+        // mouse_pos.x = remapf(mouse_pos.x, window_w, sv_rect.w + sv_rect.x) - sv_rect.x;
+        // mouse_pos.y = remapf(mouse_pos.y, window_h, sv_rect.h + sv_rect.y) - sv_rect.y;
+
+        // *s = remapf(mouse_pos.x, sv_rect.w, 100);
+        // *v = remapf(mouse_pos.y, sv_rect.h, 100);
+        mouse_pos.y = window_h - mouse_pos.y;
+        mouse_pos.x -= sv_rect.x;
+        mouse_pos.y -= sv_rect.y;
+        mouse_pos.x /= sv_rect.w;
+        mouse_pos.y /= sv_rect.h;
+
+        (*s) = (i32)(mouse_pos.x * 100);
+        (*v) = (i32)(mouse_pos.y * 100);
+    }
+
+    // draw the saturation value rect
+    seui_render_colour_box(&ctx->renderer, sv_rect, *h);
+    // draw the cursor on sv rect
+    Vec2 cursor;
+    cursor.x = remapf(*s, 100, sv_rect.w) + sv_rect.x;
+    cursor.y = remapf(*v, 100, sv_rect.h) + sv_rect.y;
+    seui_render_texture(&ctx->renderer, (Rect) {cursor.x - 4, cursor.y - 4, 8, 8}, UI_ICON_INDEX_CIRCLE_EMPTY, RGBA_WHITE);
+    // draw the hue slider
+    static f32 slider_value = 0.5f;
+    seui_slider_at(ctx, v2f(h_rect.x, h_rect.y + h_rect.h / 2), v2f(h_rect.x + h_rect.w, h_rect.y + h_rect.h / 2), &slider_value);
+    *h = remapf(slider_value, 1, 360);
+
+    RGBA result;
+    hsv_to_rgba(*h, *s, *v, &result);
+    return result;
+}
+
+RGBA seui_colour_picker_hsv(SE_UI *ctx, i32 *h, i32 *s, i32 *v) {
+    Rect rect = {0, 0, 128, 128}; // default label size
+    if (ctx->current_panel != NULL) {
+        rect = panel_put(ctx->current_panel, rect.w, rect.h, true);
+    }
+    return seui_colour_picker_at_hsv(ctx, rect, h, s, v);
+}

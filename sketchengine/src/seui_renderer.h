@@ -33,6 +33,9 @@ typedef struct UI_Shape {
 #define UI_ICON_INDEX_CLOSE      (Vec2) {0, 1}
 #define UI_ICON_INDEX_SLIDER     (Vec2) {3, 0}
 #define UI_ICON_INDEX_CIRCLE_FILLED (Vec2) {1, 1}
+#define UI_ICON_INDEX_CIRCLE_EMPTY (Vec2) {1, 2}
+#define UI_ICON_INDEX_CHECKBOX_FILLED (Vec2) {3, 2}
+#define UI_ICON_INDEX_CHECKBOX_EMPTY (Vec2) {2, 2}
 #define UI_ICON_INDEX_ARROW_RIGHT (Vec2) {2, 1}
 #define UI_ICON_INDEX_ARROW_LEFT (Vec2) {3, 1}
 
@@ -85,7 +88,7 @@ void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RG
 void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 void seui_render_rect_outline(UI_Renderer *renderer, Rect rect, f32 width, RGBA colour);
 /// colour is the most saturated and bright colour the box will display
-void seui_render_colour_box(UI_Renderer *renderer, Rect rect, i32 hue);
+void seui_render_colour_box(UI_Renderer *renderer, Rect rect, i32 hue); // rename to seui_render_hsv_rect
 
 // void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
 

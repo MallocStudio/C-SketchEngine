@@ -183,6 +183,9 @@ void seui_slider(SE_UI *ctx, f32 *value);
 void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *value);
 void seui_colour_picker(SE_UI *ctx, RGBA *value);
 
+RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v);
+RGBA seui_colour_picker_hsv(SE_UI *ctx, i32 *h, i32 *s, i32 *v);
+
 /// a 2d slider that returns a normalised vec2
 void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);
 void seui_slider2d(SE_UI *ctx, Vec2 *value);

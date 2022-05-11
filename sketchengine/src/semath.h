@@ -1201,4 +1201,15 @@ SEINLINE Vec2 vec2i_to_vec2(Vec2i v) {
     return (Vec2) {(f32)v.x, (f32)v.y};
 }
 
+//.      value    |  result
+//.    ---------- | --------
+//.    range_from | range_to
+//.
+SEINLINE f32 remapf(f32 value, f32 range_from, f32 range_to) {
+    return (value * range_to) / range_from;
+}
+SEINLINE i32 remap(i32 value, i32 range_from, i32 range_to) {
+    return (value * range_to) / range_from;
+}
+
 #endif // SEMATH_H

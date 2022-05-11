@@ -1,3 +1,5 @@
+#define LIT_BETTER
+
 #include "serenderer.h"
 #include "stb_image.h"
 
@@ -836,7 +838,7 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
 
     // the good old days when debugging:
     // material->texture_diffuse.width = 100;
-
+#ifndef LIT_BETTER // old version of lit
     /* vertex */
     seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
     seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
@@ -856,7 +858,28 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     seshader_set_uniform_vec3(renderer->shaders[shader], "L", renderer->light_directional.direction);
     seshader_set_uniform_rgb(renderer->shaders[shader], "iA", renderer->light_directional.ambient);
     seshader_set_uniform_rgb(renderer->shaders[shader], "iD", renderer->light_directional.diffuse);
+#else // lit better
+    /* vertex */
+    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
+    seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
 
+    /* material uniforms */
+    seshader_set_uniform_f32 (renderer->shaders[shader], "material.shininess", 0.1f);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "material.diffuse", 0);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "material.specular", 1);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "material.normal", 2);
+    seshader_set_uniform_vec4(renderer->shaders[shader], "material.base_diffuse", material->base_diffuse);
+
+    // light uniforms
+    seshader_set_uniform_vec3(renderer->shaders[shader], "dir_light.direction", renderer->light_directional.direction);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.ambient", renderer->light_directional.ambient);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.diffuse", renderer->light_directional.diffuse);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.specular", (RGB) {0, 0, 0});
+    seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
+
+#endif
     if (material->texture_diffuse.loaded) {
         setexture_bind(&material->texture_diffuse, 0);
     } else {
@@ -980,8 +1003,11 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     memset(renderer, 0, sizeof(SE_Renderer3D));
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
-
+#ifdef LIT_BETTER
+    renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
+#else
     renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit.fsd");
+#endif
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
     renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
     renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");

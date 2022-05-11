@@ -3,6 +3,12 @@
 #include "seui.h"
 #include "panels.h"
 
+/* @temp */
+i32 hue = 90;
+i32 saturation = 80;
+i32 value = 50;
+RGBA color;
+
 /* ui */
 SE_UI *ctx;
 SEUI_Panel panel;
@@ -96,7 +102,7 @@ void app_init(Application *app, SDL_Window *window) {
 
         seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 32);
         seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 32);
-        seui_panel_configure(&panel_entity_info, (Rect) {0, 450, 64, 64}, false, 32);
+        seui_panel_configure(&panel_entity_info, (Rect) {0, 500, 64, 64}, false, 32);
 
         panel_init(&app_panel);
 
@@ -119,10 +125,12 @@ void app_update(Application *app) {
 
     secamera3d_input(&app->camera, &app->input);
 
+/// ---------------------------------------------------------
+///                    UI ARRANGEMENT
+/// ---------------------------------------------------------
     { // -- ui
         seui_reset(ctx);
 
-        // seui_colour_picker_at(ctx, (Rect) {400, 400, 64, 64}, &app_panel.colour_test);
         if (seui_panel_at(ctx, "panel", &panel)) {
             seui_panel_row(&panel, 2);
             seui_label(ctx, "light direction:");
@@ -131,7 +139,7 @@ void app_update(Application *app) {
             seui_slider(ctx, &app_panel.light_intensity);
 
             seui_label(ctx, "colour:");
-            seui_colour_picker(ctx, &app_panel.colour_test);
+            color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
 
             seui_label(ctx, "test input1:");
             seui_input_text(ctx, &app_panel.input_text);
@@ -365,7 +373,10 @@ void app_render(Application *app) {
 
         // 2. render normally with the shadow map
         app->renderer.light_directional.intensity = app_panel.light_intensity;
-        RGB ambient = app->renderer.light_directional.ambient;
+        // RGB ambient = app->renderer.light_directional.ambient;
+        RGB ambient = {
+            color.r, color.g, color.b
+        };
         glClearColor(ambient.r / 255.0f, ambient.g / 255.0f, ambient.b / 255.0f, 1.0f);
         // glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

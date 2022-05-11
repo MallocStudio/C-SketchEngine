@@ -17,6 +17,7 @@ out vec3 _Position;
 out vec3 _Tangent;
 out vec3 _Bitangent;
 out vec4 frag_pos_light_space;
+out vec3 _Frag_Pos;
 
 void main() {
 	_Position = (model_matrix * vec4(Position, 1.0)).xyz;
@@ -24,14 +25,9 @@ void main() {
 	_TexCoord = TexCoord;
 	_Tangent = Tangent;
 	_Bitangent = Bitangent;
-
-	// vs_shadow_out.frag_pos = vec3(model_matrix * vec4(Position, 1.0));
-    // vs_shadow_out.normal = transpose(inverse(mat3(model_matrix))) * Normal;
-    // vs_shadow_out.tex_coords = TexCoord;
-    // vs_shadow_out.frag_pos_light_space = light_space_matrix * vec4(vs_shadow_out.frag_pos, 1.0);
+	_Frag_Pos = (model_matrix * vec4(Position, 1.0)).xyz;
 
     frag_pos_light_space = light_space_matrix * vec4(_Position, 1.0);
 
-    // gl_Position = projection_view_model * vec4(vs_shadow_out.frag_pos, 1.0);
 	gl_Position = projection_view_model * vec4(Position, 1.0); // the correct one
 }
