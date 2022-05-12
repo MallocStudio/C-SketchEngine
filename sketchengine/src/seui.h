@@ -48,6 +48,10 @@ typedef struct SEUI_Panel {
     bool minimised;
     f32 min_item_height;
 
+    /* configurations */
+    f32 config_row_left_margin;
+    f32 config_row_right_margin;
+
     /* auto calculated */
     Rect final_rect;   // the rect of the panel
     f32 item_height;
@@ -63,14 +67,7 @@ typedef struct SEUI_Panel {
     u32 docked_dir; // 0 means not docked, 1 means left, 2 means right
 } SEUI_Panel;
 
-SEINLINE void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height) {
-    panel->rect = initial_rect;
-    panel->minimised = minimised;
-    panel->row_columns = 1;
-    panel->min_item_height = min_item_height;
-    panel->is_embedded = false;
-    panel->docked_dir = 0; // not docked
-}
+void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
 
 typedef struct SE_UI {
     /* UI Widgets */
@@ -144,6 +141,14 @@ SEINLINE void seui_render(SE_UI *ctx) {
 /// do call this procedure after modifying the configuration for a usecase.
 SEINLINE void seui_configure_text_input_reset(SE_UI *ctx) {
     ctx->text_input_only_numerical = false;
+}
+
+/// Reset the panel configurations to their default values.
+/// These are the values that the user can manually set before each widget call
+/// to customise their appearance.
+SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
+    panel->config_row_left_margin = 0;
+    panel->config_row_right_margin = 0;
 }
 
 /// Start a panel at the given position. Aligns the items inside of the panel

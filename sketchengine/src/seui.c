@@ -1,5 +1,9 @@
 #include "seui.h"
 
+/// -----------------------------------------
+///               UTILITIES
+/// -----------------------------------------
+
 static u32 generate_ui_id(SE_UI *ctx) {
     ctx->max_id++; // we start with zero. So we increase first.
     u32 id = ctx->max_id;
@@ -60,12 +64,28 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
     return result;
 }
 
+/// -----------------------------------------
+///                 PANEL
+/// -----------------------------------------
+
+/// Make a row
 void seui_panel_row(SEUI_Panel *panel, f32 num_of_columns) {
-    panel->cursor.x = 0;
+    panel->cursor.x = panel->config_row_left_margin;
     panel->item_height = panel->min_item_height; // reset row height
     panel->row_columns = num_of_columns;
     panel->row_item_count = 0;
-    panel->row_expanded_item_width = panel->rect.w / num_of_columns;
+    panel->row_expanded_item_width = (panel->rect.w - panel->config_row_left_margin - panel->config_row_right_margin) / num_of_columns;
+}
+
+void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
+    seui_configure_panel_reset(panel);
+    panel->rect = initial_rect;
+    panel->minimised = minimised;
+    panel->row_columns = 1;
+    panel->min_item_height = min_item_height;
+    panel->is_embedded = false;
+
+    if (docked_dir != 1 && docked_dir != 2) panel->docked_dir = 0; else panel->docked_dir = docked_dir;
 }
 
 /// Returns a rectangle that's suppose to be the rect
@@ -96,6 +116,7 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
             result.w = min_width;
         } else {
             result.w = panel_rect.w / panel->row_columns;
+            // result.w = panel->row_expanded_item_width;
         }
         if (expand) {
             result.h = panel->item_height;
@@ -107,8 +128,12 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
     }
 
     // increment min width
-    if (panel->cursor.x > min_width) {
-        panel->min_size.x += min_width;
+    // @incomplete panel->config_row_right_margin is not taken into account here.
+    // if (panel->cursor.x > min_width) {
+    //     panel->min_size.x += min_width;
+    // }
+    if (panel->cursor.x > panel->min_size.x) {
+        panel->min_size.x = panel->cursor.x;
     }
 
     // Increment the cursor
@@ -271,6 +296,10 @@ bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     }
     return seui_panel_at(ctx, title, panel_data);
 }
+
+/// -----------------------------------------
+///                WIDGETS
+/// -----------------------------------------
 
 bool seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);

@@ -105,9 +105,9 @@ void app_init(Application *app, SDL_Window *window) {
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
 
-        seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 32);
-        seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 32);
-        seui_panel_configure(&panel_entity_info, (Rect) {0, 500, 64, 64}, false, 32);
+        seui_panel_configure(&panel, (Rect) {0, 0, 300, 400}, false, 32, 1);
+        seui_panel_configure(&panel2, (Rect) {300, 0, 64, 64}, false, 32, 0);
+        seui_panel_configure(&panel_entity_info, (Rect) {0, 500, 64, 64}, false, 32, 2);
 
         panel_init(&app_panel);
 
@@ -160,6 +160,9 @@ void app_update(Application *app) {
             }
 
             seui_panel_row(&panel, 1);
+
+            panel2.config_row_left_margin = 16;
+            panel2.config_row_right_margin = 16;
             if (seui_panel(ctx, "panel2", &panel2)) {
                 seui_panel_row(&panel2, 2);
                 seui_label(ctx, "rot x:");
