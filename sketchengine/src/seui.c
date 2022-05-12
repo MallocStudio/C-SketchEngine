@@ -69,23 +69,34 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
 /// -----------------------------------------
 
 /// Make a row
-void seui_panel_row(SEUI_Panel *panel, f32 num_of_columns) {
-    panel->cursor.x = panel->config_row_left_margin;
-    panel->item_height = panel->min_item_height; // reset row height
-    panel->row_columns = num_of_columns;
-    panel->row_item_count = 0;
-    panel->row_expanded_item_width = (panel->rect.w - panel->config_row_left_margin - panel->config_row_right_margin) / num_of_columns;
+void seui_panel_row(SEUI_Panel *panel) {
+    /* reset for the new row */
+    panel->cursor.x = 0;
+    panel->cursor.y -= panel->row_height;
+
+    panel->fit_cursor.x = 0;
+    panel->fit_cursor.y -= panel->row_height; // sense row_height is shrunk to min height
+    panel->fit_size.y += panel->row_height;
+
+    // panel->row_width = panel->row_width;     // keep the same width as the previous row
+    panel->row_height = panel->min_item_height; // reset row height
+
+    panel->next_item_height = panel->row_height;
 }
 
-void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
     seui_configure_panel_reset(panel);
     panel->rect = initial_rect;
+    panel->cached_rect = initial_rect;
     panel->minimised = minimised;
-    panel->row_columns = 1;
     panel->min_item_height = min_item_height;
     panel->is_embedded = false;
 
     if (docked_dir != 1 && docked_dir != 2) panel->docked_dir = 0; else panel->docked_dir = docked_dir;
+
+    panel->row_height = panel->min_item_height; // default row height
+    panel->row_width  = panel->min_item_height; // default row width
+    panel->min_size = min_size;
 }
 
 /// Returns a rectangle that's suppose to be the rect
@@ -95,94 +106,70 @@ static Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool exp
         printf("ERROR: panel_put but panel was null\n");
         return (Rect) {0, 0, 32, 32};
     }
+    /* calculate the item rect based on panel cursor */
+    f32 margin = 16;
+    min_width += margin;
 
-    Rect panel_rect = panel->final_rect;
-    Vec2 cursor = panel->cursor; // relative space
-    cursor = vec2_add(cursor, (Vec2) {panel_rect.x, panel_rect.y}); // global space
+    Rect item;
+    item.x = panel->cursor.x + panel->cached_rect.x; // it's ok if we lag behind one frame
+    item.y = panel->cursor.y + panel->cached_rect.y; // it's ok if we lag behind one frame
+    item.h = panel->next_item_height;
+    item.w = min_width;
 
-    Rect result = {0};
-    {
-        f32 height = min_height; // this item's height
-
-        if (height <= 0) {
-            height = panel->item_height;
-        }
-
-        if (min_height > panel->item_height) {
-            panel->item_height = min_height; // update panel item height so other widgets in the same row will have expanded size
-        }
-
-        if (!expand && panel->row_item_count == 0) { // if this is the first item of the panel make it min width
-            result.w = min_width;
-        } else {
-            result.w = panel_rect.w / panel->row_columns;
-            // result.w = panel->row_expanded_item_width;
-        }
-        if (expand) {
-            result.h = panel->item_height;
-        } else {
-            result.h = min_height;
-        }
-        result.x = cursor.x;
-        result.y = cursor.y - result.h;
+    /* advance cursor based on layout */
+    panel->cursor.x += item.w;
+    if (panel->cursor.x > panel->row_width) {
+        panel->row_width = panel->cursor.x; // expand row width
     }
 
-    // increment min width
-    // @incomplete panel->config_row_right_margin is not taken into account here.
-    // if (panel->cursor.x > min_width) {
-    //     panel->min_size.x += min_width;
-    // }
-    if (panel->cursor.x > panel->min_size.x) {
-        panel->min_size.x = panel->cursor.x;
+    if (min_height > panel->row_height) {
+        // if we suddenly get an item whose height is larger than the current row height,
+        // increase row height and min_size.y because we increase min_size.y based on the last row's height
+        f32 difference = min_height - panel->row_height;
+        panel->row_height += difference;     // expand row height
+        panel->fit_size.y += difference;
     }
 
-    // Increment the cursor
-    panel->cursor.x += result.w;
-    if (panel->cursor.x > panel_rect.w - 1) { // -1 gets rid of floating point error while comparing
-        seui_panel_row(panel, panel->row_columns);
-        panel->cursor.y -= result.h;
-        panel->min_size.y += result.h;
+    /* update panel fit size */
+    panel->fit_cursor.x += min_width;
+    if (panel->fit_size.x < panel->fit_cursor.x) {
+        panel->fit_size.x = panel->fit_cursor.x;
     }
-
-    // ! note that this is just a remind to redo how we figure out the min size of a panel or figure out if
-    // ! the current method is good enough
-    // if (panel->cursor.x > panel->min_size.x) {
-    //     panel->min_size.x = panel->cursor.x;
-    // }
-
-    // if (panel->cursor.y > panel->min_size.y) {
-    //     panel->min_size.y = panel->cursor.y;
-    // }
-
-    panel->row_item_count++;
-    return result;
+    return item;
 }
 
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
+    ctx->current_panel = panel_data;
     bool *minimised   = &panel_data->minimised;
     bool is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
 
-    panel_data->final_rect = panel_data->rect; // record previous frame's rect
-
-    ctx->current_panel = panel_data;
+    /* record previous frame's data */
+    panel_data->cached_rect = panel_data->rect; // record previous frame's rect
+    /* reset panel for calculation again */
     panel_data->cursor = (Vec2) {
         0, // start from the top left
         panel_data->rect.h
     };
-    panel_data->item_height = panel_data->min_item_height;
+    panel_data->fit_size = v2f(0, 0);
+    panel_data->fit_cursor = panel_data->cursor;
+    panel_data->next_item_height = panel_data->min_item_height;
 
     // draw a rectangle that represents the panel's dimensions
-    if (!is_minimised && !panel_data->is_embedded) seui_render_rect(&ctx->renderer, panel_data->final_rect, colour);
+    if (!is_minimised && !panel_data->is_embedded) seui_render_rect(&ctx->renderer, panel_data->cached_rect, colour);
 
     { // panel widgets
-        f32 minimise_button_size = 32;
-        seui_panel_row(panel_data, 1);
+        f32 minimise_button_size = panel_data->row_height;
+
+        seui_panel_row(panel_data); // make space for top bar
+
         Rect top_bar = panel_put(panel_data, panel_data->rect.w, minimise_button_size, false);
 
         minimise_button_size = top_bar.h;
 
-        Vec2 cursor = vec2_add(panel_data->cursor, (Vec2) {panel_data->rect.x, panel_data->rect.y});
+        Vec2 cursor = {
+            top_bar.x, top_bar.y
+        };
 
         UI_STATES drag_state = UI_STATE_DISABLED;
         if (panel_data->is_embedded == false) {
@@ -201,14 +188,14 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
         }
 
         /* panel outline */
-        seui_render_rect_outline(&ctx->renderer, panel_data->final_rect, 1, RGBA_BLACK);
+        seui_render_rect_outline(&ctx->renderer, panel_data->cached_rect, 1, RGBA_BLACK);
 
         /* resizeing */
         Vec2 min_size = panel_data->min_size;
         if (!is_minimised && !panel_data->is_embedded) {
 
             Rect resize_button = {
-                panel_data->final_rect.x + panel_data->final_rect.w- 16, panel_data->final_rect.y, 16, 16
+                panel_data->cached_rect.x + panel_data->cached_rect.w- 16, panel_data->cached_rect.y, 16, 16
             };
             Vec2 resize = seui_drag_button_at(ctx, resize_button, NULL);
 
@@ -245,7 +232,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                     seui_render_rect(&ctx->renderer, expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT), dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
-                    // printf("docked\n");
                     panel_data->docked_dir = 2;
                 }
             } else
@@ -254,15 +240,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
                     seui_render_rect(&ctx->renderer, expand_view_region(ctx, SEUI_VIEW_REGION_LEFT), dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
-                    // printf("docked\n");
                     panel_data->docked_dir = 1;
                 }
             } else { // NOT IN DOCKING BAY
                 if (panel_data->docked_dir > 0 && drag_state == UI_STATE_HOT) { // mouse is pressing so undock
-                    // printf("undocked\n");
                     panel_data->docked_dir = 0;
-                    // panel_data->rect.w = panel_data->min_size.x;
-                    // panel_data->rect.h = panel_data->min_size.y;
                 }
             }
 
@@ -278,11 +260,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             }
         }
     }
-
-    // reset min size
-    panel_data->min_size = (Vec2) {0};
-    panel_data->min_size.x = panel_data->row_columns * 64; // 64 is default item width
-    panel_data->min_size.y = panel_data->item_height;
 
     return !is_minimised;
 }
@@ -315,18 +292,17 @@ void seui_label(SE_UI *ctx, const char *text) {
     if (ctx->current_panel != NULL) {
         Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
         rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
-        // rect = panel_put(ctx->current_panel, 100, 32, true);
     }
     seui_label_at(ctx, text, rect);
 }
 
 void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
     char label_buffer[255];
-    seui_panel_row(ctx->current_panel, 1);
+    seui_panel_row(ctx->current_panel);
     seui_label(ctx, title);
 
     if (!editable) {
-        seui_panel_row(ctx->current_panel, 3);
+        seui_panel_row(ctx->current_panel);
         sprintf(label_buffer, "x: %.2f", value->x);
         seui_label(ctx, label_buffer);
         sprintf(label_buffer, "y: %.2f", value->y);
@@ -335,7 +311,7 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_label(ctx, label_buffer);
     } else {
         ctx->text_input_only_numerical = true;
-        seui_panel_row(ctx->current_panel, 6);
+        seui_panel_row(ctx->current_panel);
 
         sprintf(label_buffer, "x:");
         seui_label(ctx, label_buffer);
@@ -842,7 +818,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, rect.x, rect.y, true);
+        rect = panel_put(ctx->current_panel, rect.w, rect.h, true);
     }
     return seui_button_textured_at(ctx, texture_index, rect);
 }
@@ -850,7 +826,7 @@ bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
 bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     Rect rect = {0, 0, 100, 32}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, rect.x, rect.y, true);
+        rect = panel_put(ctx->current_panel, rect.w, rect.h, true);
     }
     return seui_selector_at(ctx, rect, value, min, max);
 }

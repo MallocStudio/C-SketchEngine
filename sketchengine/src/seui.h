@@ -43,31 +43,45 @@ typedef enum UI_STATES {
 #define SEUI_VIEW_REGION_COLLISION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_COLLISION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_COLLISION_SIZE_X, SEUI_VIEW_REGION_COLLISION_SIZE_Y}
 
 typedef struct SEUI_Panel {
-    /* settings */
-    Rect rect;
-    bool minimised;
-    f32 min_item_height;
+    /* CAN BE SET DIRECTLY ---------------------------------------------------- */
+        /* positioning of panel */
+        Rect rect;
+        bool minimised;
+        f32 min_item_height;
+        // 0 means not docked, 1 means left, 2 means right
+        u32 docked_dir;
+        // this is the minimum size the user can resize the panel to.
+        // note that this is not automatically calculated, so this can be set
+        // by the user at any point.
+        Vec2 min_size;
 
-    /* configurations */
-    f32 config_row_left_margin;
-    f32 config_row_right_margin;
+        /* layouting configuration */
+        f32 config_row_left_margin;
+        f32 config_row_right_margin;
 
-    /* auto calculated */
-    Rect final_rect;   // the rect of the panel
-    f32 item_height;
-    i32 row_item_count; // reset to zero each time we make a new row
-    i32 row_columns;
-    i32 row_expanded_item_width; // the width of an expanded item. We have this here so we can modify it when items appear that are not expanded
-    i32 row_width;
-    i32 row_height;
-    Vec2 min_size;
-    Vec2 cursor; // the relative cursor used to position the placement of the items
-    bool is_embedded; // is inside of another panel
+    /* auto calculated ------------------------------------------------------- */
+        /* next item: (calculated based on layout) */
+        // sense some items can be bigger than min row height in the same row,
+        // we want all the items on that row to be of the same height
+        f32 next_item_height;
+        // the relative cursor used to position the placement of the items
+        Vec2 cursor;
 
-    u32 docked_dir; // 0 means not docked, 1 means left, 2 means right
+        /* layouting */
+        i32 row_width;
+        i32 row_height;
+
+        /* positioning of panel */
+        // this size is calculated based on the widgets that populate the panel.
+        // this is the minimum size that it takes to fit everything inside of the
+        // panel without clipping or scissoring.
+        Vec2 fit_size;
+        Vec2 fit_cursor;
+        Rect cached_rect; // the rect of the panel from the previous frame
+        bool is_embedded; // is inside of another panel
 } SEUI_Panel;
 
-void seui_panel_configure(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
 
 typedef struct SE_UI {
     /* UI Widgets */
@@ -157,7 +171,7 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 
-void seui_panel_row(SEUI_Panel *panel, f32 num_of_columns);
+void seui_panel_row(SEUI_Panel *panel);
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 void seui_label(SE_UI *ctx, const char *text);
