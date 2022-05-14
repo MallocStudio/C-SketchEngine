@@ -28,6 +28,7 @@ void seui_panel_row(SEUI_Panel *panel, u32 columns) {
     // panel->row_width = panel->row_width;     // keep the same width as the previous row
     panel->row_height = panel->min_item_height; // reset row height
     panel->row_width  = panel->cached_rect.w;
+    panel->row_columns = columns;
 
     panel->next_item_height = panel->row_height;
 }
@@ -89,8 +90,8 @@ Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand) { 
     item.y = panel->cursor.y + panel->cached_rect.y;
     item.h = panel->next_item_height;
 
-    item.w = panel->row_columns / panel->row_width;
-    if (item.w < min_width) item.w = min_width;
+    item.w = panel->row_width / panel->row_columns;
+    // if (item.w < min_width) item.w = min_width;
 
     /* advance the cursor based on row layout */
     // assuming default layout (to be changed)
@@ -161,6 +162,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
         /* resizeing */
         Vec2 min_size = panel_data->min_size;
+        // Vec2 min_size = panel_data->fit_size; // @TODO fix this situation and // @remove  panel->min_size
         if (!is_minimised && !panel_data->is_embedded) {
 
             Rect resize_button = {
