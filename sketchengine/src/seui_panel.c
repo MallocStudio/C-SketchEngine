@@ -16,7 +16,7 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
 /// -----------------------------------------
 
 /// Make a row
-void seui_panel_row(SEUI_Panel *panel) {
+void seui_panel_row(SEUI_Panel *panel, u32 columns) {
     /* reset for the new row */
     panel->cursor.x = 0;
     panel->cursor.y -= panel->row_height;
@@ -27,6 +27,7 @@ void seui_panel_row(SEUI_Panel *panel) {
 
     // panel->row_width = panel->row_width;     // keep the same width as the previous row
     panel->row_height = panel->min_item_height; // reset row height
+    panel->row_width  = panel->cached_rect.w;
 
     panel->next_item_height = panel->row_height;
 }
@@ -48,33 +49,54 @@ void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool 
 
 /// Returns a rectangle that's suppose to be the rect
 /// of the new item inside of the current panel.
-Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand) {
+Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand) { // @remove expand parameter
     if (panel == NULL) {
         printf("ERROR: panel_put but panel was null\n");
         return (Rect) {0, 0, 32, 32};
     }
-    /* calculate the item rect based on panel cursor */
-    f32 margin = 16;
-    min_width += margin;
+    // /* calculate the item rect based on panel cursor */
+    // f32 margin = 16;
+    // min_width += margin;
 
+    // Rect item;
+    // item.x = panel->cursor.x + panel->cached_rect.x; // it's ok if we lag behind one frame
+    // item.y = panel->cursor.y + panel->cached_rect.y; // it's ok if we lag behind one frame
+    // item.h = panel->next_item_height;
+    // item.w = min_width;
+
+    // /* advance cursor based on layout */
+    // panel->cursor.x += item.w;
+    // if (panel->cursor.x > panel->row_width) {
+    //     panel->row_width = panel->cursor.x; // expand row width
+    // }
+
+    // if (min_height > panel->row_height) {
+    //     // if we suddenly get an item whose height is larger than the current row height,
+    //     // increase row height and min_size.y because we increase min_size.y based on the last row's height
+    //     f32 difference = min_height - panel->row_height;
+    //     panel->row_height += difference;     // expand row height
+    //     panel->fit_size.y += difference;
+    // }
+
+    // /* update panel fit size */
+    // panel->fit_cursor.x += min_width;
+    // if (panel->fit_size.x < panel->fit_cursor.x) {
+    //     panel->fit_size.x = panel->fit_cursor.x;
+    // }
+    // return item;
     Rect item;
-    item.x = panel->cursor.x + panel->cached_rect.x; // it's ok if we lag behind one frame
-    item.y = panel->cursor.y + panel->cached_rect.y; // it's ok if we lag behind one frame
+    item.x = panel->cursor.x + panel->cached_rect.x;
+    item.y = panel->cursor.y + panel->cached_rect.y;
     item.h = panel->next_item_height;
-    item.w = min_width;
 
-    /* advance cursor based on layout */
+    item.w = panel->row_columns / panel->row_width;
+    if (item.w < min_width) item.w = min_width;
+
+    /* advance the cursor based on row layout */
+    // assuming default layout (to be changed)
     panel->cursor.x += item.w;
     if (panel->cursor.x > panel->row_width) {
-        panel->row_width = panel->cursor.x; // expand row width
-    }
-
-    if (min_height > panel->row_height) {
-        // if we suddenly get an item whose height is larger than the current row height,
-        // increase row height and min_size.y because we increase min_size.y based on the last row's height
-        f32 difference = min_height - panel->row_height;
-        panel->row_height += difference;     // expand row height
-        panel->fit_size.y += difference;
+        seui_panel_row(panel, panel->row_columns); // make a new row
     }
 
     /* update panel fit size */
@@ -108,7 +130,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     { // panel widgets
         f32 minimise_button_size = panel_data->row_height;
 
-        seui_panel_row(panel_data); // make space for top bar
+        seui_panel_row(panel_data, 1); // make space for top bar
 
         Rect top_bar = panel_put(panel_data, panel_data->rect.w, minimise_button_size, false);
 

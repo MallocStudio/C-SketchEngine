@@ -41,8 +41,9 @@ typedef struct SEUI_Panel {
         Vec2 cursor;
 
         /* layouting */
-        i32 row_width;
-        i32 row_height;
+        i32 row_width;   // the width of the current row
+        i32 row_height;  // the height of the current row
+        i32 row_columns; // number of the columns in the current row
 
         /* positioning of panel */
         // this size is calculated based on the widgets that populate the panel.
@@ -70,7 +71,7 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 
-void seui_panel_row(SEUI_Panel *panel);
+void seui_panel_row(SEUI_Panel *panel, u32 columns);
 Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand);
 
 #endif // SEUI_PANEL_H
