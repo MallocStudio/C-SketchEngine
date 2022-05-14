@@ -105,9 +105,9 @@ void app_init(Application *app, SDL_Window *window) {
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
 
-        seui_panel_setup(&panel,             (Rect) {0, 0, 300, 400}, v2f(128 * 2, 128 * 2), false, 32, 0);
+        seui_panel_setup(&panel,             (Rect) {0, 0, 300, 400}, v2f(128 * 2, 128 * 2), false, 32, 1);
         seui_panel_setup(&panel2,            (Rect) {300, 0, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 0);
-        seui_panel_setup(&panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 0);
+        seui_panel_setup(&panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
 
         panel_init(&app_panel);
 
