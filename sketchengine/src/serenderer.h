@@ -24,15 +24,28 @@ typedef struct SE_Vertex3D {
 ///
 /// MATERIAL
 /// (think of material as a bunch of parameters)
+typedef enum SE_MATERIAL_TYPES {
+    SE_MATERIAL_TYPE_LIT,
+    SE_MATERIAL_TYPE_LINE,
+    SE_MATERIAL_TYPE_SPRITE,
+
+    SE_MATERIAL_TYPES_COUNT
+} SE_MATERIAL_TYPES;
 
 typedef struct SE_Material {
+    // note that based on the material type, different shaders will be used
+    SE_MATERIAL_TYPES type;
+    /* lit, line, sprite */
     Vec4 base_diffuse; // ! [0, 1] range !
+    /* lit */
     SE_Texture texture_diffuse;
     SE_Texture texture_specular;
     SE_Texture texture_normal;
+    /* sprite */
+    SE_Sprite sprite;
 } SE_Material;
 
-/// Deallocates memory and uninitialises the textures
+/// Deallocates memory and frees resources (textures ...)
 void sematerial_deinit(SE_Material *material);
 
 ///
@@ -50,7 +63,7 @@ typedef struct SE_Mesh {
     u32 material_index;
 
     /* line */
-    bool is_line; // whether this mesh describes a line (use glLines)
+    bool is_line; // whether this mesh describes a line (use glLines), note that the material must also be of type line
     f32 line_width;
 } SE_Mesh;
 
@@ -136,7 +149,7 @@ typedef struct SE_Renderer3D {
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
-    u32 material_lines;
+    u32 material_lines; // load this once not per obj
     SE_Texture texture_default_diffuse;
     SE_Texture texture_default_normal;
     SE_Texture texture_default_specular;

@@ -39,16 +39,21 @@ void setexture_atlas_unbind();
 
 
 typedef struct SE_Sprite {
-    /* image data */
-    Vec2 size;
-    /* rendering data */
-    u32 vao;
-    u32 vbo;
-    bool loaded;
+    /* texture data */
+    SE_Texture texture;
+
+    /* animation data */
+    u32 frame;   // current frame index
+    u32 columns; // go through the columns first then
+    u32 rows;    // go to the next row
 } SE_Sprite;
 
-/// returns true on success, false on failure.
+/// Loads the texture of the sprite from the given filepath,
+/// and resets animation data. In order to render a sprite it,
+/// must be assigned to a material and the material must be
+/// assigned to a mesh (perhaps a quad mesh)
 bool sesprite_load(SE_Sprite *sprite, const char *filepath);
 /// must be called if sesprite_load is called to clean up opengl resources.
-void sesprite_deinit(SE_Sprite *sprite);
+void sesprite_unload(SE_Sprite *sprite);
+void sesprite_bind(SE_Sprite *sprite);
 #endif // SE_SPRITE_H

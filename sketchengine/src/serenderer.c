@@ -638,7 +638,7 @@ static void semesh_construct
     if (scene->mNumMaterials > 0) { // -- materials
         // add a material to the renderer
         u32 material_index = serender3d_add_material(renderer);
-
+        // renderer->materials[material_index]->type = SE_MATERIAL_TYPE_LIT; // @TODO change this and above line to not adding a material, but selecting a pre loaded material (renderer->material_lit)
         mesh->material_index = material_index;
 
         // find the directory part of filepath
@@ -822,6 +822,10 @@ static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *r
 
     /* material */
     seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
+}
+
+static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+
 }
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
