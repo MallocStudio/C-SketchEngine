@@ -113,28 +113,85 @@ void semesh_deinit(SE_Mesh *mesh) {
     mesh->material_index = 0;
 }
 
-void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) {
-    mesh->is_line = false;
+void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
+    mesh->type = SE_MESH_TYPE_NORMAL;
     SE_Vertex3D verts[4];
 
     scale = vec2_mul_scalar(scale, 0.5f);
-    verts[0].position = (Vec3) {-scale.x, 0, +scale.y};
-    verts[1].position = (Vec3) {+scale.x, 0, +scale.y};
-    verts[2].position = (Vec3) {-scale.x, 0, -scale.y};
-    verts[3].position = (Vec3) {+scale.x, 0, -scale.y};
+    verts[0].position = (Vec3) {-scale.x, -scale.y, 0.0f}; // no z
+    verts[1].position = (Vec3) {-scale.x, +scale.y, 0.0f}; // no z
+    verts[2].position = (Vec3) {+scale.x, +scale.y, 0.0f}; // no z
+    verts[3].position = (Vec3) {+scale.x, -scale.y, 0.0f}; // no z
 
-    verts[0].normal = (Vec3) {0, 1, 0};
-    verts[1].normal = (Vec3) {0, 1, 0};
-    verts[2].normal = (Vec3) {0, 1, 0};
-    verts[3].normal = (Vec3) {0, 1, 0};
+    verts[0].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[1].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[2].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[3].normal = (Vec3) {0.0f, 1.0f, 0.0f};
 
-    u32 indices[6] = {0, 1, 2, 2, 1, 3};
+    verts[0].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[1].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[2].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[3].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+
+    verts[0].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[1].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[2].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[3].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+
+    verts[0].texture_coord = (Vec2) {0, 0};
+    verts[1].texture_coord = (Vec2) {0, 1};
+    verts[2].texture_coord = (Vec2) {1, 1};
+    verts[3].texture_coord = (Vec2) {1, 0};
+
+    u32 indices[6] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    semesh_generate(mesh, 4, verts, 6, indices);
+}
+
+void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
+    mesh->type = SE_MESH_TYPE_SPRITE;
+    SE_Vertex3D verts[4];
+
+    scale = vec2_mul_scalar(scale, 0.5f);
+    verts[0].position = (Vec3) {-scale.x, -scale.y, 0.0f}; // no z
+    verts[1].position = (Vec3) {-scale.x, +scale.y, 0.0f}; // no z
+    verts[2].position = (Vec3) {+scale.x, +scale.y, 0.0f}; // no z
+    verts[3].position = (Vec3) {+scale.x, -scale.y, 0.0f}; // no z
+
+    verts[0].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[1].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[2].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[3].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+
+    verts[0].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[1].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[2].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+    verts[3].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
+
+    verts[0].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[1].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[2].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[3].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+
+    verts[0].texture_coord = (Vec2) {0, 0};
+    verts[1].texture_coord = (Vec2) {0, 1};
+    verts[2].texture_coord = (Vec2) {1, 1};
+    verts[3].texture_coord = (Vec2) {1, 0};
+
+    u32 indices[6] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
     semesh_generate(mesh, 4, verts, 6, indices);
 }
 
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
 #if 1
-    mesh->is_line = false;
+    mesh->type = SE_MESH_TYPE_NORMAL;
     SE_Vertex3D verts[8] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
@@ -174,7 +231,7 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     };
     semesh_generate(mesh, 8, verts, 12 * 3, indices);
 #else
-    mesh->is_line = false;
+    mesh->type = SE_MESH_TYPE_NORMAL;
     SE_Vertex3D verts[24] = {0};
     scale = vec3_mul_scalar(scale, 0.5f);
     RGBA colour = RGBA_WHITE;
@@ -288,7 +345,7 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
 }
 
 void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
-    mesh->is_line = false;
+    mesh->type = SE_MESH_TYPE_NORMAL;
     SE_Vertex3D verts[4] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
@@ -326,7 +383,7 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
 }
 
 void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
-    mesh->is_line = true;
+    mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
 
     SE_Vertex3D verts[2] = {
@@ -341,7 +398,7 @@ void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
 }
 
 void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 positions_count, f32 line_width) {
-    mesh->is_line = true;
+    mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = line_width;
 
     SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * (positions_count + 1));
@@ -365,7 +422,7 @@ void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 p
 }
 
 void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width) {
-    mesh->is_line = true;
+    mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = line_width;
 
     SE_Vertex3D verts[8] = {
@@ -398,7 +455,7 @@ void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_wid
 }
 
 void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width) {
-    mesh->is_line = true;
+    mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
 
     Vec3 pos_o = vec3_zero();
@@ -440,21 +497,31 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
 
-    // -- enable position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-    // -- enable normal
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
-    // -- enable uv
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
-    // -- enable tangent
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
-    // -- enable bitangent
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
+    if (mesh->type == SE_MESH_TYPE_NORMAL || mesh->type == SE_MESH_TYPE_LINE) {
+        // -- enable position
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+        // -- enable normal
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
+        // -- enable uv
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+        // -- enable tangent
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
+        // -- enable bitangent
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
+    } else
+    if (mesh->type == SE_MESH_TYPE_SPRITE) {
+        // -- enable position
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+        // -- enable uv
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+    }
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
@@ -632,13 +699,13 @@ static void semesh_construct
         index_count += 3;
     }
 
+    mesh->type = SE_MESH_TYPE_NORMAL;
     semesh_generate(mesh, verts_count, verts, index_count, indices);
 
 
     if (scene->mNumMaterials > 0) { // -- materials
         // add a material to the renderer
         u32 material_index = serender3d_add_material(renderer);
-        // renderer->materials[material_index]->type = SE_MATERIAL_TYPE_LIT; // @TODO change this and above line to not adding a material, but selecting a pre loaded material (renderer->material_lit)
         mesh->material_index = material_index;
 
         // find the directory part of filepath
@@ -784,6 +851,7 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].far_plane", 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
     seshader_set_uniform_i32 (renderer->shaders[shader], "point_lights[0].shadow_map", 4); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
 
+    /* textures */
     if (material->texture_diffuse.loaded) {
         setexture_bind(&material->texture_diffuse, 0);
     } else {
@@ -825,7 +893,25 @@ static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *r
 }
 
 static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+    u32 shader = renderer->shader_sprite;
+    seshader_use(renderer->shaders[shader]);
 
+    Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+    pvm = mat4_mul(pvm, renderer->current_camera->projection);
+
+    /* vertex */
+    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+
+    /* material */
+    seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
+    seshader_set_uniform_i32(renderer->shaders[shader], "sprite_texture", 0);
+
+    /* textures */
+    if (material->sprite.texture.loaded) {
+        setexture_bind(&material->sprite.texture, 0);
+    } else {
+        setexture_bind(&renderer->texture_default_diffuse, 0);
+    }
 }
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
@@ -837,14 +923,17 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     // then pass that final projection matrix and give it to the shader
 
     i32 primitive = GL_TRIANGLES;
-    if (mesh->is_line) {
+    SE_Material *material = renderer->materials[mesh->material_index];
+    if (mesh->type == SE_MESH_TYPE_LINE) {
         primitive = GL_LINES;
         glLineWidth(mesh->line_width);
-        SE_Material *material = renderer->materials[renderer->material_lines];
         serender3d_render_set_material_uniforms_lines(renderer, material, transform);
-    } else {
-        SE_Material *material = renderer->materials[mesh->material_index];
+    } else
+    if (mesh->type == SE_MESH_TYPE_NORMAL) {
         serender3d_render_set_material_uniforms_lit(renderer, material, transform);
+    }
+    if (mesh->type == SE_MESH_TYPE_SPRITE) {
+        serender3d_render_set_material_uniforms_sprite(renderer, material, transform);
     }
 
     glBindVertexArray(mesh->vao);
@@ -855,7 +944,7 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
         glDrawArrays(primitive, 0, mesh->vert_count);
     }
 
-    if (mesh->is_line) {
+    if (mesh->type == SE_MESH_TYPE_LINE) {
         glLineWidth(1); // reset
     }
 
@@ -864,7 +953,7 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
 
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
-    if (mesh->is_line) return;
+    if (mesh->type == SE_MESH_TYPE_LINE) return;
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
@@ -894,10 +983,6 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
         glDrawArrays(primitive, 0, mesh->vert_count);
     }
     glCullFace(GL_BACK);
-
-    if (mesh->is_line) {
-        glLineWidth(1); // reset
-    }
 
     glBindVertexArray(0);
 }
@@ -939,6 +1024,7 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "shaders/shadow_omni_calc.vsd", "shaders/shadow_omni_calc.fsd", "shaders/shadow_omni_calc.gsd");
     renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
     renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
+    renderer->shader_sprite = serender3d_add_shader(renderer, "shaders/sprite.vsd", "shaders/sprite.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);
@@ -1030,6 +1116,17 @@ u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_plane(renderer->meshes[renderer->meshes_count], scale);
+
+    renderer->meshes_count++;
+    return result;
+}
+
+u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
+    u32 result = renderer->meshes_count;
+
+    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_sprite(renderer->meshes[renderer->meshes_count], scale);
 
     renderer->meshes_count++;
     return result;

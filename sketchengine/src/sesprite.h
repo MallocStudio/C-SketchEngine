@@ -55,5 +55,4 @@ typedef struct SE_Sprite {
 bool sesprite_load(SE_Sprite *sprite, const char *filepath);
 /// must be called if sesprite_load is called to clean up opengl resources.
 void sesprite_unload(SE_Sprite *sprite);
-void sesprite_bind(SE_Sprite *sprite);
 #endif // SE_SPRITE_H

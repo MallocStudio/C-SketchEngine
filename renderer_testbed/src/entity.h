@@ -7,10 +7,6 @@ typedef struct Entity {
     bool has_mesh;
     u32 mesh_index;
 
-    /* sprite */
-    bool has_sprite;
-    SE_Sprite sprite;
-
     Vec3 oriantation;
     Vec3 position;
     Vec3 scale;

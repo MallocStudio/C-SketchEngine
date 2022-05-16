@@ -24,17 +24,8 @@ typedef struct SE_Vertex3D {
 ///
 /// MATERIAL
 /// (think of material as a bunch of parameters)
-typedef enum SE_MATERIAL_TYPES {
-    SE_MATERIAL_TYPE_LIT,
-    SE_MATERIAL_TYPE_LINE,
-    SE_MATERIAL_TYPE_SPRITE,
-
-    SE_MATERIAL_TYPES_COUNT
-} SE_MATERIAL_TYPES;
 
 typedef struct SE_Material {
-    // note that based on the material type, different shaders will be used
-    SE_MATERIAL_TYPES type;
     /* lit, line, sprite */
     Vec4 base_diffuse; // ! [0, 1] range !
     /* lit */
@@ -52,6 +43,14 @@ void sematerial_deinit(SE_Material *material);
 /// MESH
 ///
 
+typedef enum SE_MESH_TYPES {
+    SE_MESH_TYPE_NORMAL, // normal mesh
+    SE_MESH_TYPE_LINE,   // line mesh
+    SE_MESH_TYPE_SPRITE, // meant for sprite (a quad)
+
+    SE_MESH_TYPES_COUNT
+} SE_MESH_TYPES;
+
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
     u32 vert_count;
@@ -62,15 +61,18 @@ typedef struct SE_Mesh {
     AABB3D aabb;  // bounding box, calculated on load
     u32 material_index;
 
+    // note that based on the material type, different shaders will be used
+    SE_MESH_TYPES type;
+
     /* line */
-    bool is_line; // whether this mesh describes a line (use glLines), note that the material must also be of type line
     f32 line_width;
 } SE_Mesh;
 
 /// delete vao, vbo, ibo
 void semesh_deinit(SE_Mesh *mesh);
 /// generate a quad. The mesh better be uninitialised because this function assumes there are no previous data stored on the mesh
-void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale);
+void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale); // 2D plane
+void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale);
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale);
 void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width);
 void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 positions_count, f32 line_width);
@@ -145,11 +147,12 @@ typedef struct SE_Renderer3D {
     u32 shader_shadow_omnidir_calc;
     u32 shader_lines;
     u32 shader_outline;
+    u32 shader_sprite;
 
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
-    u32 material_lines; // load this once not per obj
+    u32 material_lines;  // load this once not per obj
     SE_Texture texture_default_diffuse;
     SE_Texture texture_default_normal;
     SE_Texture texture_default_specular;
@@ -173,6 +176,7 @@ void serender3d_deinit(SE_Renderer3D *renderer);
 u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
 u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale);
+u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale);
 u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width);
 
 /// Create one of those 3D coordinate gizmos that show the directions

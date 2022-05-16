@@ -36,6 +36,8 @@ Application_Panel app_panel;
 u32 player = -1;
 u32 player2 = -1;
 u32 plane = -1;
+u32 bulb_mesh = -1;
+u32 bulb_material = -1;
 Vec3 point_light_pos;
 /* meshes */
 u32 line_mesh = -1;
@@ -97,8 +99,15 @@ void app_init(Application *app, SDL_Window *window) {
 
         /* meshes */
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player].has_mesh = true;
         app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player2].has_mesh = true;
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
+        app->entities[plane].has_mesh = true;
+
+        bulb_mesh = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
+        bulb_material = serender3d_add_material(&app->renderer);
+        sesprite_load(&app->renderer.materials[bulb_material]->sprite, "assets/textures/light_bulb.png");
     }
 
     { // -- init UI
@@ -264,9 +273,10 @@ void app_render(Application *app) {
         }
 
         // serender3d_render_mesh(&app->renderer, line_mesh, mat4_identity());
-        serender3d_render_mesh(&app->renderer, proj_lines, mat4_identity());
-        serender3d_render_mesh(&app->renderer, proj_box, mat4_identity());
+        serender3d_render_mesh(&app->renderer, proj_lines,       mat4_identity());
+        serender3d_render_mesh(&app->renderer, proj_box,         mat4_identity());
         serender3d_render_mesh(&app->renderer, current_obj_aabb, mat4_identity());
+        serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }
     { // -- ui
         seui_render(ctx);
@@ -384,11 +394,11 @@ static void app_render_directional_shadow_map(Application *app) {
             7, 4
         };
 
-        app->renderer.meshes[proj_lines]->is_line    = true;
+        app->renderer.meshes[proj_lines]->type       = SE_MESH_TYPE_LINE;
         app->renderer.meshes[proj_lines]->line_width = 4;
         semesh_generate_line_fan(app->renderer.meshes[proj_lines], light_pos, poss, 8, 3);
 
-        app->renderer.meshes[proj_box]->is_line    = true;
+        app->renderer.meshes[proj_box]->type       = SE_MESH_TYPE_LINE;
         app->renderer.meshes[proj_box]->line_width = 4;
         semesh_generate(app->renderer.meshes[proj_box], 8, verts, 24, indices);
     }

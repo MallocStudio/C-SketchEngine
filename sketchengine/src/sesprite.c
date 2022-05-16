@@ -98,7 +98,3 @@ bool sesprite_load(SE_Sprite *sprite, const char *filepath) {
 void sesprite_unload(SE_Sprite *sprite) {
     setexture_unload(&sprite->texture);
 }
-
-void sesprite_bind(SE_Sprite *sprite) {
-    setexture_bind(&sprite->texture, 0);
-}
