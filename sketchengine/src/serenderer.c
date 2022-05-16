@@ -157,29 +157,29 @@ void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
 
     scale = vec2_mul_scalar(scale, 0.5f);
     verts[0].position = (Vec3) {-scale.x, -scale.y, 0.0f}; // no z
-    verts[1].position = (Vec3) {-scale.x, +scale.y, 0.0f}; // no z
+    verts[1].position = (Vec3) {+scale.x, -scale.y, 0.0f}; // no z
     verts[2].position = (Vec3) {+scale.x, +scale.y, 0.0f}; // no z
-    verts[3].position = (Vec3) {+scale.x, -scale.y, 0.0f}; // no z
+    verts[3].position = (Vec3) {-scale.x, +scale.y, 0.0f}; // no z
 
-    verts[0].normal = (Vec3) {0.0f, 1.0f, 0.0f};
-    verts[1].normal = (Vec3) {0.0f, 1.0f, 0.0f};
-    verts[2].normal = (Vec3) {0.0f, 1.0f, 0.0f};
-    verts[3].normal = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[0].normal = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[1].normal = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[2].normal = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[3].normal = (Vec3) {0.0f, 0.0f, 1.0f};
 
     verts[0].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
     verts[1].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
     verts[2].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
     verts[3].tangent = (Vec3) {1.0f, 0.0f, 0.0f};
 
-    verts[0].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
-    verts[1].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
-    verts[2].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
-    verts[3].bitangent = (Vec3) {0.0f, 0.0f, 1.0f};
+    verts[0].bitangent = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[1].bitangent = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[2].bitangent = (Vec3) {0.0f, 1.0f, 0.0f};
+    verts[3].bitangent = (Vec3) {0.0f, 1.0f, 0.0f};
 
-    verts[0].texture_coord = (Vec2) {0, 0};
-    verts[1].texture_coord = (Vec2) {0, 1};
-    verts[2].texture_coord = (Vec2) {1, 1};
-    verts[3].texture_coord = (Vec2) {1, 0};
+    verts[0].texture_coord = (Vec2) {0, 1};
+    verts[1].texture_coord = (Vec2) {1, 1};
+    verts[2].texture_coord = (Vec2) {1, 0};
+    verts[3].texture_coord = (Vec2) {0, 0};
 
     u32 indices[6] = {
         0, 1, 2,
@@ -519,8 +519,8 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
         // -- enable uv
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
     }
 
     mesh->vert_count = index_count;
@@ -914,10 +914,7 @@ static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *
     }
 }
 
-// make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
-void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
-    SE_Mesh *mesh = renderer->meshes[mesh_index];
-
+static void render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
@@ -934,10 +931,11 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     }
     if (mesh->type == SE_MESH_TYPE_SPRITE) {
         serender3d_render_set_material_uniforms_sprite(renderer, material, transform);
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
     }
 
     glBindVertexArray(mesh->vao);
-
     if (mesh->indexed) {
         glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
     } else {
@@ -947,8 +945,18 @@ void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 
     if (mesh->type == SE_MESH_TYPE_LINE) {
         glLineWidth(1); // reset
     }
+    if (mesh->type == SE_MESH_TYPE_SPRITE) {
+        glEnable(GL_CULL_FACE);
+        glDisable(GL_BLEND);
+    }
 
     glBindVertexArray(0);
+}
+
+// make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
+void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+    SE_Mesh *mesh = renderer->meshes[mesh_index];
+    render_mesh(renderer, mesh, transform);
 }
 
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
@@ -958,7 +966,10 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
 
-    i32 primitive = GL_TRIANGLES;
+    SE_Mesh outline_mesh;
+    outline_mesh.material_index = renderer->material_lines;
+    semesh_generate_gizmos_aabb(&outline_mesh, mesh->aabb.min, mesh->aabb.max, 2);
+    render_mesh(renderer, &outline_mesh, transform);
 
     { // setup the shader
         u32 shader = renderer->shader_outline;
@@ -978,13 +989,15 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     glBindVertexArray(mesh->vao);
     glCullFace(GL_FRONT);
     if (mesh->indexed) {
-        glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(primitive, 0, mesh->vert_count);
+        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
     }
     glCullFace(GL_BACK);
 
     glBindVertexArray(0);
+
+    semesh_deinit(&outline_mesh);
 }
 
 static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const char *vsd, const char *fsd, const char *gsd) {

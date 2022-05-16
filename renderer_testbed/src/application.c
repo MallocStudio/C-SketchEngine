@@ -36,8 +36,7 @@ Application_Panel app_panel;
 u32 player = -1;
 u32 player2 = -1;
 u32 plane = -1;
-u32 bulb_mesh = -1;
-u32 bulb_material = -1;
+u32 bulb = -1; // bulb entity
 Vec3 point_light_pos;
 /* meshes */
 u32 line_mesh = -1;
@@ -77,20 +76,23 @@ void app_init(Application *app, SDL_Window *window) {
         player  = app_add_entity(app);
         player2  = app_add_entity(app);
         plane = app_add_entity(app);
+        bulb = app_add_entity(app);
         // player3 = app_add_entity(app);
 
         app->entities[player].position = vec3_zero();
         app->entities[player2].position = vec3_create(-5, 2, -1);
         app->entities[plane].position = (Vec3) {0, -1.2f, 0};
-
+        app->entities[bulb].position = vec3_zero();
 
         app->entities[player].scale = vec3_one();
         app->entities[player2].scale = vec3_one();
         app->entities[plane].scale = vec3_one();
+        app->entities[bulb].scale = vec3_one();
 
         app->entities[player].oriantation = vec3_zero();
         app->entities[player2].oriantation = vec3_zero();
         app->entities[plane].oriantation = vec3_zero();
+        app->entities[bulb].oriantation = vec3_zero();
 
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
@@ -105,9 +107,11 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
         app->entities[plane].has_mesh = true;
 
-        bulb_mesh = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
-        bulb_material = serender3d_add_material(&app->renderer);
+        app->entities[bulb].mesh_index = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
+        app->entities[bulb].has_mesh = true;
+        u32 bulb_material = serender3d_add_material(&app->renderer);
         sesprite_load(&app->renderer.materials[bulb_material]->sprite, "assets/textures/light_bulb.png");
+        app->renderer.meshes[app->entities[bulb].mesh_index]->material_index = bulb_material;
     }
 
     { // -- init UI
@@ -252,7 +256,7 @@ void app_render(Application *app) {
         // 1. render directioanl shadow map
         app_render_directional_shadow_map(app);
         // 2. render point light shadow maps
-        app->renderer.point_lights[0].position = point_light_pos;
+        app->renderer.point_lights[0].position = app->entities[bulb].position;//point_light_pos;
         app_render_omnidirectional_shadow_map(app);
         // 3. render normally with the shadow map
         app->renderer.light_directional.intensity = app_panel.light_intensity;
@@ -276,7 +280,7 @@ void app_render(Application *app) {
         serender3d_render_mesh(&app->renderer, proj_lines,       mat4_identity());
         serender3d_render_mesh(&app->renderer, proj_box,         mat4_identity());
         serender3d_render_mesh(&app->renderer, current_obj_aabb, mat4_identity());
-        serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
+        // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }
     { // -- ui
         seui_render(ctx);

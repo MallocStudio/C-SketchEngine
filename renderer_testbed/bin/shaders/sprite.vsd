@@ -8,5 +8,6 @@ uniform mat4 projection_view_model;
 out vec2 _TexCoord;
 
 void main () {
+    _TexCoord = TexCoord;
     gl_Position = projection_view_model * vec4(Position, 1.0);
 }
