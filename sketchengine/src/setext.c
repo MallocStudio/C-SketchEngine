@@ -67,6 +67,75 @@ void setext_set_viewport(SE_Text_Renderer *txt, Rect viewport) {
     txt->shader_projection_matrix = viewport_to_ortho_projection_matrix(viewport);
 }
 
+static i32 setext_load_font_to_one_texture(SE_Text_Renderer *txt, const char *fontpath, i32 width, i32 height) {
+    /* load font */
+    if (FT_New_Face(txt->library, fontpath, 0, &txt->face)) {
+        printf("ERROR:FREETYPE: Failed to load font %s\n", fontpath);
+        return SETEXT_ERROR;
+    }
+    FT_Set_Pixel_Sizes(txt->face, width, height);
+
+    /* update txt generated_texture */
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
+
+    glGenTextures(1, &txt->generated_texture);
+    glBindTexture(GL_TEXTURE_2D, txt->generated_texture);
+    // set texture options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    Vec2 texture_size = {
+        1024, 1024
+    };
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RED,
+        texture_size.x, texture_size.y,
+        0, GL_RED, GL_UNSIGNED_BYTE, txt->face->glyph->bitmap.buffer);
+
+    Vec2 cursor = {0, 0};
+
+     for (i32 i = 0; i < SE_TEXT_NUM_OF_GLYPHS; ++i) {
+        unsigned char c = i;
+        // load character glyph
+        if (FT_Load_Char(txt->face, c, FT_LOAD_RENDER)) {
+            printf("ERROR:FREETYPE: Failed to load Glyph %c\n", c);
+            return SETEXT_ERROR;
+            // continue;
+        }
+
+        Vec2 bitmap_size = {
+            txt->face->glyph->bitmap.width,
+            txt->face->glyph->bitmap.rows
+        };
+
+        // now store character for later use
+        SE_Text_Character character = {
+            c,
+            txt->generated_texture,
+            txt->face->glyph->bitmap.width,
+            txt->face->glyph->bitmap.rows,
+            txt->face->glyph->bitmap_left,
+            txt->face->glyph->bitmap_top,
+            txt->face->glyph->advance.x / 64, // @check why 64?
+            .uv_top_left = cursor,
+            .uv_bottom_right = vec2_add(cursor, bitmap_size)
+        };
+        txt->characters[(i32)c] = character;
+
+        cursor.x += bitmap_size.x;
+        if (cursor.x >= texture_size.x) {
+            cursor.x = 0,
+            cursor.y = 32 // horizontal offset // @TODO chagne to a better value
+        };
+    }
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // set the alignment back to default (4)
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return SETEXT_SUCCESS;
+}
+
 // @TODO https://stackoverflow.com/questions/43272946/how-to-get-text-width-in-freetype
 // Take a look at the link above and see how they load their font.
 i32 setext_load_font(SE_Text_Renderer *txt, const char *font_path, i32 width, i32 height) {

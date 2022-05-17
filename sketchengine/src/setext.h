@@ -22,6 +22,9 @@ typedef struct SE_Text_Character {
     i32 bearing_x;  // offset from baseline to the left of glyph
     i32 bearing_y;  // offset from baseline to the top of glyph
     u32 advance;    // offset to advance to next glyph
+
+    Vec2 uv_top_left;
+    Vec2 uv_bottom_right;
 } SE_Text_Character;
 
 typedef struct SE_Text_Stored_Letter {
@@ -51,6 +54,8 @@ typedef struct SE_Text_Renderer {
 
     i32 strings_count;
     SE_Text_Stored_Letter generated_letters[SE_TEXT_RENDERER_MAX_STRINGS]; // the generated glyphs along with their data
+
+    u32 generated_texture; // we render all the loaded glyphs to one texture
 } SE_Text_Renderer;
 
 /// Initialises freetype.
