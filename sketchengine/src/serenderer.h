@@ -189,8 +189,10 @@ void serender3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, 
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 /// Add an empty material to the renderer
 u32 serender3d_add_material(SE_Renderer3D *renderer);
-/// Render all of the meshes the renderer contains
-void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+/// Setup renderer for rendering (set the configurations to their default values)
+void serender3d_reset_render_config();
+void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 
 

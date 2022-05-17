@@ -14,6 +14,6 @@ Mat4 entity_get_transform(const Entity *entity) {
 
 void entity_render(const Entity *entity, const SE_Renderer3D *renderer) {
     if (entity->has_mesh) {
-        serender3d_render_mesh(renderer, entity->mesh_index, entity_get_transform(entity));
+        serender_mesh_index(renderer, entity->mesh_index, entity_get_transform(entity));
     }
 }

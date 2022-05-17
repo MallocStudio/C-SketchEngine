@@ -18,7 +18,7 @@
 typedef struct SEUI_Panel {
     /* CAN BE SET DIRECTLY ---------------------------------------------------- */
         /* positioning of panel */
-        Rect rect;
+        Rect calc_rect;
         bool minimised;
         f32 min_item_height;
         // 0 means not docked, 1 means left, 2 means right

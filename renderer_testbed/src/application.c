@@ -277,9 +277,9 @@ void app_render(Application *app) {
         }
 
         // serender3d_render_mesh(&app->renderer, line_mesh, mat4_identity());
-        serender3d_render_mesh(&app->renderer, proj_lines,       mat4_identity());
-        serender3d_render_mesh(&app->renderer, proj_box,         mat4_identity());
-        serender3d_render_mesh(&app->renderer, current_obj_aabb, mat4_identity());
+        serender_mesh_index(&app->renderer, proj_lines,       mat4_identity());
+        serender_mesh_index(&app->renderer, proj_box,         mat4_identity());
+        serender_mesh_index(&app->renderer, current_obj_aabb, mat4_identity());
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }
     { // -- ui

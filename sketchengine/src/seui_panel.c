@@ -35,7 +35,7 @@ void seui_panel_row(SEUI_Panel *panel, u32 columns) {
 
 void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
     seui_configure_panel_reset(panel);
-    panel->rect = initial_rect;
+    panel->calc_rect = initial_rect;
     panel->cached_rect = initial_rect;
     panel->minimised = minimised;
     panel->min_item_height = min_item_height;
@@ -115,11 +115,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     RGBA colour = ctx->theme.colour_bg;
 
     /* record previous frame's data */
-    panel_data->cached_rect = panel_data->rect; // record previous frame's rect
+    panel_data->cached_rect = panel_data->calc_rect; // record previous frame's rect
     /* reset panel for calculation again */
     panel_data->cursor = (Vec2) {
         0, // start from the top left
-        panel_data->rect.h
+        panel_data->calc_rect.h
     };
     panel_data->fit_size = v2f(0, 0);
     panel_data->fit_cursor = panel_data->cursor;
@@ -133,7 +133,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
         seui_panel_row(panel_data, 1); // make space for top bar
 
-        Rect top_bar = panel_put(panel_data, panel_data->rect.w, minimise_button_size, false);
+        Rect top_bar = panel_put(panel_data, panel_data->calc_rect.w, minimise_button_size, false);
 
         minimise_button_size = top_bar.h;
 
@@ -144,15 +144,15 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
         UI_STATES drag_state = UI_STATE_DISABLED;
         if (panel_data->is_embedded == false) {
             /* drag button */
-            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->rect.w - minimise_button_size, minimise_button_size};
+            Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->calc_rect.w - minimise_button_size, minimise_button_size};
             Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
             setext_render_text_rect(&ctx->txt_renderer, title, drag_button_rect, v3f(1, 1, 1), true);
-            panel_data->rect.x += drag.x;
-            panel_data->rect.y += drag.y;
+            panel_data->calc_rect.x += drag.x;
+            panel_data->calc_rect.y += drag.y;
         }
 
         /* minimise button */
-        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
+        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - minimise_button_size, cursor.y, minimise_button_size, minimise_button_size};
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
@@ -170,16 +170,16 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             };
             Vec2 resize = seui_drag_button_at(ctx, resize_button, NULL);
 
-            panel_data->rect.w += resize.x;
+            panel_data->calc_rect.w += resize.x;
 
-            if (panel_data->rect.h - resize.y > min_size.y) {
-                panel_data->rect.h -= resize.y;
-                panel_data->rect.y += resize.y;
+            if (panel_data->calc_rect.h - resize.y > min_size.y) {
+                panel_data->calc_rect.h -= resize.y;
+                panel_data->calc_rect.y += resize.y;
             }
         }
         // clamp to min size
-        if (panel_data->rect.w < min_size.x) panel_data->rect.w = min_size.x;
-        if (panel_data->rect.h < min_size.y) panel_data->rect.h = min_size.y;
+        if (panel_data->calc_rect.w < min_size.x) panel_data->calc_rect.w = min_size.x;
+        if (panel_data->calc_rect.h < min_size.y) panel_data->calc_rect.h = min_size.y;
 
         // minimise button
         Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
@@ -187,7 +187,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
         if (!panel_data->is_embedded) { // -- docking
             RGBA dock_colour = {150, 0, 0, 100};
-            Rect normalised_rect = panel_data->rect;
+            Rect normalised_rect = panel_data->calc_rect;
             normalised_rect.x /= ctx->renderer.view_width;
             normalised_rect.w /= ctx->renderer.view_width;
             normalised_rect.y /= ctx->renderer.view_height;
@@ -222,11 +222,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             if (panel_data->docked_dir > 0) {
                 if (panel_data->docked_dir == 1) { // left
                     normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_LEFT);
-                    panel_data->rect = normalised_rect;
+                    panel_data->calc_rect = normalised_rect;
                 } else
                 if (panel_data->docked_dir == 2) { // right
                     normalised_rect = expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT);
-                    panel_data->rect = normalised_rect;
+                    panel_data->calc_rect = normalised_rect;
                 }
             }
         }
@@ -239,8 +239,8 @@ bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->is_embedded = true;
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, panel_data->rect.w, panel_data->rect.h, true);
-        panel_data->rect = rect;
+        rect = panel_put(ctx->current_panel, panel_data->calc_rect.w, panel_data->calc_rect.h, true);
+        panel_data->calc_rect = rect;
     }
     return seui_panel_at(ctx, title, panel_data);
 }

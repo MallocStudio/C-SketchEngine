@@ -90,11 +90,26 @@ SEINLINE void seui_deinit(SE_UI *ctx) {
 }
 
 SEINLINE void seui_render(SE_UI *ctx) {
+    /* upload data */
     seui_renderer_upload(&ctx->renderer);
+
+    /* configure */
     glDisable(GL_CULL_FACE);
+    glEnable(GL_SCISSOR_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+
+    /* draw call */
     seui_renderer_draw(&ctx->renderer);
     setext_render(&ctx->txt_renderer);
+
+    /* reset configuration */
     glEnable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
+    glDisable(GL_SCISSOR_TEST);
+    glEnable(GL_DEPTH_TEST);
+
+    /* clear data */
     seui_renderer_clear (&ctx->renderer);
 }
 

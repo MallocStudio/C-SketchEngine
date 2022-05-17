@@ -896,6 +896,10 @@ static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *
     u32 shader = renderer->shader_sprite;
     seshader_use(renderer->shaders[shader]);
 
+    /* always look at the camera */
+    // Mat4 look_at_camera = mat4_lookat(mat4_get_translation(transform), renderer->current_camera->position, renderer->current_camera->up);
+    // // transform = mat4_mul(transform, look_at_camera);
+    // transform = mat4_mul(mat4_translation(mat4_get_translation(transform)), look_at_camera);
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
@@ -914,22 +918,25 @@ static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *
     }
 }
 
-static void render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
+void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
+    serender3d_reset_render_config(); // Reset configs to their default values
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
 
     i32 primitive = GL_TRIANGLES;
     SE_Material *material = renderer->materials[mesh->material_index];
-    if (mesh->type == SE_MESH_TYPE_LINE) {
+
+    /* configs for this mesh */
+    if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
         primitive = GL_LINES;
         glLineWidth(mesh->line_width);
         serender3d_render_set_material_uniforms_lines(renderer, material, transform);
     } else
-    if (mesh->type == SE_MESH_TYPE_NORMAL) {
+    if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         serender3d_render_set_material_uniforms_lit(renderer, material, transform);
     }
-    if (mesh->type == SE_MESH_TYPE_SPRITE) {
+    if (mesh->type == SE_MESH_TYPE_SPRITE) { // SPRITE
         serender3d_render_set_material_uniforms_sprite(renderer, material, transform);
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
@@ -942,21 +949,13 @@ static void render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 trans
         glDrawArrays(primitive, 0, mesh->vert_count);
     }
 
-    if (mesh->type == SE_MESH_TYPE_LINE) {
-        glLineWidth(1); // reset
-    }
-    if (mesh->type == SE_MESH_TYPE_SPRITE) {
-        glEnable(GL_CULL_FACE);
-        glDisable(GL_BLEND);
-    }
-
     glBindVertexArray(0);
 }
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
-void serender3d_render_mesh(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
-    render_mesh(renderer, mesh, transform);
+    serender_mesh(renderer, mesh, transform);
 }
 
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
@@ -969,7 +968,7 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     SE_Mesh outline_mesh;
     outline_mesh.material_index = renderer->material_lines;
     semesh_generate_gizmos_aabb(&outline_mesh, mesh->aabb.min, mesh->aabb.max, 2);
-    render_mesh(renderer, &outline_mesh, transform);
+    serender_mesh(renderer, &outline_mesh, transform);
 
     { // setup the shader
         u32 shader = renderer->shader_outline;
@@ -998,6 +997,14 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     glBindVertexArray(0);
 
     semesh_deinit(&outline_mesh);
+}
+
+void serender3d_reset_render_config() {
+    /* default */
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glLineWidth(1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
 }
 
 static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const char *vsd, const char *fsd, const char *gsd) {

@@ -34,7 +34,7 @@ i32 setext_init_from (SE_Text_Renderer *txt, Rect viewport, const char *font_pat
     glBindVertexArray(txt->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, txt->VBO);
 
-    // * the 2D quad requires 5 vertices of 4 floats each
+    // * the 2D quad requires 6 vertices of 4 floats each
     glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), 0);
@@ -260,10 +260,6 @@ i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect
 }
 
 i32 setext_render(SE_Text_Renderer *txt) {
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND); // @check // @question // @incomplete maybe move this out to the main loop? ask finn if it's a good idea to have this here or not
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     seshader_set_uniform_mat4(txt->shader_program, "projection", txt->shader_projection_matrix);
 
     // -- loop through all the strings
@@ -318,8 +314,6 @@ i32 setext_render(SE_Text_Renderer *txt) {
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
 
     // -- "clear" the strings array
     txt->strings_count = 0;
