@@ -29,6 +29,8 @@
         "nfd.h": "c",
         "panels.h": "c",
         "seui_panel.h": "c",
-        "seui_ctx.h": "c"
+        "seui_ctx.h": "c",
+        "serender_target.h": "c",
+        "sesprite.h": "c"
     }
 }

@@ -56,6 +56,7 @@ typedef struct SE_Text_Renderer {
     SE_Text_Stored_Letter generated_letters[SE_TEXT_RENDERER_MAX_STRINGS]; // the generated glyphs along with their data
 
     u32 generated_texture; // we render all the loaded glyphs to one texture
+    // SE_Render_Target generated_texture_target;
 } SE_Text_Renderer;
 
 /// Initialises freetype.

@@ -60,6 +60,8 @@ void setext_deinit(SE_Text_Renderer *txt) {
 
         seshader_deinit(txt->shader_program);
         free(txt->shader_program);
+
+        // serender_target_deinit(&txt->generated_texture_target); // @leak uncomment this after implementing render targets for txt
     }
 }
 
@@ -78,21 +80,27 @@ static i32 setext_load_font_to_one_texture(SE_Text_Renderer *txt, const char *fo
     /* update txt generated_texture */
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
 
-    glGenTextures(1, &txt->generated_texture);
-    glBindTexture(GL_TEXTURE_2D, txt->generated_texture);
-    // set texture options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     Vec2 texture_size = {
         1024, 1024
     };
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RED,
-        texture_size.x, texture_size.y,
-        0, GL_RED, GL_UNSIGNED_BYTE, txt->face->glyph->bitmap.buffer);
+
+    SE_Image image;
+    seimage_load_empty(&image, texture_size.x, texture_size.y, 1);
+
+    // SE_Render_Target_Config config;
+    // config.size = texture_size;
+    // config.has_colour = true;
+    // config.has_depth = false;
+    // config.internal_format = GL_RED;
+    // config.format = GL_RED;
+    // config.type = GL_UNSIGNED_BYTE;
+    // config.wrap_s = GL_CLAMP_TO_EDGE;
+    // config.wrap_t = GL_CLAMP_TO_EDGE;
+    // config.min_filter = GL_LINEAR;
+    // config.mag_filter = GL_LINEAR;
+    // serender_target_init_ext(&txt->generated_texture_target, config);
+
+    /* setup vbo */
 
     Vec2 cursor = {0, 0};
 
@@ -110,6 +118,8 @@ static i32 setext_load_font_to_one_texture(SE_Text_Renderer *txt, const char *fo
             txt->face->glyph->bitmap.rows
         };
 
+        seimage_blit_data(&image, txt->face->glyph->bitmap.buffer, bitmap_size.x, bitmap_size.y, cursor.x, cursor.y);
+
         // now store character for later use
         SE_Text_Character character = {
             c,
@@ -126,13 +136,15 @@ static i32 setext_load_font_to_one_texture(SE_Text_Renderer *txt, const char *fo
 
         cursor.x += bitmap_size.x;
         if (cursor.x >= texture_size.x) {
-            cursor.x = 0,
-            cursor.y = 32 // horizontal offset // @TODO chagne to a better value
-        };
+            cursor.x = 0;
+            cursor.y = 32; // horizontal offset // @TODO chagne to a better value
+        }
     }
 
+    /* clear vbo */
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // set the alignment back to default (4)
-    glBindTexture(GL_TEXTURE_2D, 0);
+    seimage_unload(&image);
     return SETEXT_SUCCESS;
 }
 

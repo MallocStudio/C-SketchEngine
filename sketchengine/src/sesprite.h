@@ -22,6 +22,25 @@ void setexture_unload(SE_Texture *texture);
 void setexture_bind(const SE_Texture *texture, u32 index);
 void setexture_unbind();
 
+typedef struct SE_Image {
+    ubyte *data; // image data
+    i32 width;
+    i32 height;
+    i32 channel_count;
+    bool loaded;
+} SE_Image;
+
+void seimage_load(SE_Image *image, const char *filepath);
+void seimage_unload(SE_Image *image);
+void seimage_to_texture(const SE_Image *image, SE_Texture *texture);
+/// src and destination must be loaded
+void seimage_blit(SE_Image *dst, const SE_Image *src, i32 x, i32 y);
+void seimage_blit_data(SE_Image *dst, ubyte *data, i32 data_width, i32 data_height, i32 x, i32 y);
+void seimage_load_empty(SE_Image *image, i32 width, i32 height, i32 channel_count);
+
+// /// save an image to disk
+// void seimage_to_disk(const SE_Image *image, const char *filepath);
+
 ///
 /// TEXTURE ATLAS
 ///
