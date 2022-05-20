@@ -4,10 +4,12 @@
 
 #include "sedefines.h"
 #include "FreeType/freetype.h"
+// #include "serenderer.h"
 #include "serenderer.h"
 
 // #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
-#define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
+// #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
+#define DEFAULT_FONT_PATH "assets/fonts/Nunito/static/Nunito-Medium.ttf"
 #define SETEXT_SUCCESS 0 // must be zero
 #define SETEXT_ERROR 1
 
@@ -20,23 +22,37 @@ typedef struct SE_Text_Character {
     i32 bearing_x;  // offset from baseline to the left of glyph
     i32 bearing_y;  // offset from baseline to the top of glyph
     u32 advance;    // offset to advance to next glyph
+
+    Vec2 uv_min;
+    Vec2 uv_max;
 } SE_Text_Character;
 
+typedef struct SE_Text_Letter_Vertex {
+    Vec2 pos;
+    Vec2 uv;
+} SE_Text_Letter_Vertex;
+
 typedef struct SE_Text_Stored_Letter {
-    f32 vertices[6][4];
+    // f32 vertices[6][4];
+    SE_Text_Letter_Vertex vertices[4];
+    u32 indices[6];
     f32 x, y, scale;
-    Vec3 color;
+    Vec3 color; // @TODO change to rgb
 
     GLuint texture_ids;
 } SE_Text_Stored_Letter;
+
+typedef enum SETEXT_FLAGS {
+    SETEXT_FLAG_CENTER = 0,
+} SETEXT_FLAGS;
 
 #define SE_TEXT_RENDERER_MAX_STRINGS 1024
 typedef struct SE_Text_Renderer {
     FT_Library library;
     FT_Face face; // the font
-    SEGL_Shader_Program *shader_program;
+    SE_Shader *shader_program;
 
-    u32 VAO, VBO;
+    u32 VAO, VBO, IBO;
     bool initialised;
 
     SE_Text_Character characters[SE_TEXT_NUM_OF_GLYPHS];
@@ -45,6 +61,9 @@ typedef struct SE_Text_Renderer {
 
     i32 strings_count;
     SE_Text_Stored_Letter generated_letters[SE_TEXT_RENDERER_MAX_STRINGS]; // the generated glyphs along with their data
+
+    u32 generated_texture; // we render all the loaded glyphs to one texture
+    // SE_Render_Target generated_texture_target;
 } SE_Text_Renderer;
 
 /// Initialises freetype.
@@ -78,6 +97,8 @@ i32 setext_print_loaded_characters(SE_Text_Renderer *txt);
 /// add the given string at the given position with colour and scale to txt. use setext_render() to render the texts.
 /// REMEMBER TO CALL SETEXT_RENDER() at the end, otherwise, we will corrupt memory because we increment txt->strings_count each time we call this procedure
 i32 setext_render_text(SE_Text_Renderer *txt, const char *string, f32 x, f32 y, f32 scale, Vec3 color);
+
+i32 setext_render_text_rect(SE_Text_Renderer *txt, const char *string, Rect rect, Vec3 color, bool centered);
 
 /// render all the stored glyphs at once and "clear" the stored array of glyphs.
 /// Note that it does not actually draw an array of vertices at once yet. We go through each "String"
