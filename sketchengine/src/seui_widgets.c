@@ -10,7 +10,7 @@
 /// -----------------------------------------
 
 bool seui_button(SE_UI *ctx, const char *text) {
-    Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
+    Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
@@ -21,7 +21,7 @@ bool seui_button(SE_UI *ctx, const char *text) {
 void seui_label(SE_UI *ctx, const char *text) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        Vec2 text_size = setext_size_string(&ctx->txt_renderer, text);
+        Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
         rect = panel_put(ctx->current_panel, text_size.x, text_size.y, true);
     }
     seui_label_at(ctx, text, rect);

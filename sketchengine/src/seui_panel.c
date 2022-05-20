@@ -146,7 +146,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             /* drag button */
             Rect drag_button_rect = (Rect) {cursor.x, cursor.y, panel_data->calc_rect.w - minimise_button_size, minimise_button_size};
             Vec2 drag = seui_drag_button_at(ctx, drag_button_rect, &drag_state);
-            setext_render_text_rect(&ctx->txt_renderer, title, drag_button_rect, v3f(1, 1, 1), true);
+            se_add_text_rect(&ctx->txt_renderer, title, drag_button_rect);
             panel_data->calc_rect.x += drag.x;
             panel_data->calc_rect.y += drag.y;
         }

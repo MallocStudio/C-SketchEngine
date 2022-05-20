@@ -1,0 +1,262 @@
+#include "setext.h"
+#include "sesprite.h"
+
+/* default fonts */
+// #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
+// #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
+#define DEFAULT_FONT_PATH "assets/fonts/Nunito/static/Nunito-Medium.ttf"
+
+/// create the vertex buffers
+static void setup_text_opengl_data(SE_Text *text) {
+    // we only have one quad (6 vertices and each vertex has 4 floats to represent pos and uv)
+    glGenVertexArrays(1, &text->vao);
+    glGenBuffers(1, &text->vbo);
+    glBindVertexArray(text->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, text->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+static bool load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsize) {
+    Vec2 texture_size = {1024, 1024}; // must be a multiple of 4
+    SE_Image image;
+    seimage_load_empty(&image, texture_size.x, texture_size.y, 1);
+
+    glGenTextures(1, &text->glyph_atlas);
+    glBindTexture(GL_TEXTURE_2D, text->glyph_atlas);
+
+    // set texture options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    /* load font */
+    if (FT_New_Face(text->library, fontpath, 0, &text->face)) {
+        printf("ERROR:FREETYPE: Failed to load font %s\n", fontpath);
+        return false;
+    }
+    FT_Set_Pixel_Sizes(text->face, 0, fontsize);
+
+    Vec2 cursor = {0, 0};
+    for (i32 i = 0; i < SE_TEXT_NUM_OF_GLYPHS; ++i) {
+        unsigned char c = i;
+        // load character glyph
+        if (FT_Load_Char(text->face, c, FT_LOAD_RENDER)) {
+            printf("ERROR:FREETYPE: Failed to load Glyph %c\n", c);
+            return false;
+        }
+
+        i32 buffer_between_glyphs = 4; // to avoid them bleeding into each other while filtering
+        Vec2 bitmap_size = {
+            text->face->glyph->bitmap.width,
+            text->face->glyph->bitmap.rows
+        };
+
+        // slap the bitmap on top of the image
+        seimage_blit_data(&image, text->face->glyph->bitmap.buffer, bitmap_size.x, bitmap_size.y, cursor.x, cursor.y);
+
+        // now store glyph for later use
+        SE_Text_Glyph *glyph = &text->glyphs[(i32)c];
+
+        glyph->character  = c;
+        glyph->width      = text->face->glyph->bitmap.width;
+        glyph->height     = text->face->glyph->bitmap.rows;
+        glyph->bearing_x  = text->face->glyph->bitmap_left;
+        glyph->bearing_y  = text->face->glyph->bitmap_top;
+        glyph->advance    = text->face->glyph->advance.x / 64; // @check why 64?
+
+        glyph->uv_min.x   = cursor.x;
+        glyph->uv_min.y   = cursor.y;
+        glyph->uv_max.x   = cursor.x + bitmap_size.x;
+        glyph->uv_max.y   = cursor.y + bitmap_size.y;
+
+        glyph->uv_min = vec2_mul_scalar(glyph->uv_min, 1 / texture_size.x);
+        glyph->uv_max = vec2_mul_scalar(glyph->uv_max, 1 / texture_size.x);
+
+        cursor.x += bitmap_size.x + buffer_between_glyphs;
+        if (cursor.x >= texture_size.x - bitmap_size.x) {
+            cursor.x = 0;
+            cursor.y += 32; // horizontal offset // @TODO chagne to a better value
+        }
+    }
+
+    /* upload the atlas texture to gpu */
+    glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RED,
+            image.width, image.height,
+            0, GL_RED, GL_UNSIGNED_BYTE, image.data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    seimage_unload(&image);
+    return true;
+}
+
+void se_set_text_viewport(SE_Text *text, Rect viewport) {
+    text->shader_projection_matrix = viewport_to_ortho_projection_matrix(viewport);
+}
+
+Vec2 se_size_text(SE_Text *text, const char *string) {
+    Vec2 size = {0};
+    for (i32 i = 0; i < strlen(string); ++i) {
+        SE_Text_Glyph glyph = text->glyphs[(i32)string[i]];
+        // increase x
+        size.x += glyph.advance;
+        // increase y IF a letter has a larger height
+        if (glyph.height > size.y) size.y = glyph.height;
+    }
+    return size;
+}
+
+bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport) {
+    text->initialised = false;
+    if (FT_Init_FreeType(&text->library)) {
+        printf("ERROR:FREETYPE: Could not init freetype library\n");
+        return false;
+    }
+
+    /* shader */
+    seshader_init_from(&text->shader_program, "shaders/Text.vsd", "shaders/Text.fsd");
+
+    /* load glyphs to atlas */
+    load_glyphs_to_atlas(text, fontpath, fontsize);
+
+    /* projection matrix */
+    se_set_text_viewport(text, viewport);
+
+    /* opengl */
+    setup_text_opengl_data(text);
+
+    /* default config */
+    se_text_reset_config(text);
+
+    text->initialised = true;
+    return text->initialised;
+}
+
+bool se_init_text_default(SE_Text *text, Rect viewport) {
+    return se_init_text(text, DEFAULT_FONT_PATH, 18, viewport);
+}
+
+void se_deinit_text(SE_Text *text) {
+    if (text->initialised) {
+        /* shader */
+        seshader_deinit(&text->shader_program);
+
+        /* opengl */
+        glDeleteBuffers(1, &text->vbo);
+        glDeleteVertexArrays(1, &text->vao);
+
+        /* ft library */
+        FT_Done_Face(text->face); // use this to free faces after using them
+        FT_Done_FreeType(text->library);
+    }
+}
+
+/// Render to the screen
+void se_render_text(SE_Text *text) {
+    /* shader */
+    seshader_use(&text->shader_program);
+    seshader_set_uniform_mat4(&text->shader_program, "projection", text->shader_projection_matrix);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(text->vao);
+
+    glBindTexture(GL_TEXTURE_2D, text->glyph_atlas);
+    seshader_set_uniform_i32(&text->shader_program, "atlas", 0);
+
+    for (u32 i = 0; i < text->render_queue_size; ++i) {
+        SE_Text_Render_Queue queue = text->render_queue[i];
+        SE_Text_Glyph glyph = text->glyphs[queue.glyph_index];
+
+        seshader_set_uniform_vec3(&text->shader_program, "textColor", queue.colour);
+
+        const f32 scale = 1;
+        f32 x = queue.pos.x;
+        f32 y = queue.pos.y;
+
+        float xpos = x + glyph.bearing_x * scale;
+        float ypos = y - (glyph.height - glyph.bearing_y) * scale;
+
+        float w = glyph.width  * scale;
+        float h = glyph.height * scale;
+        Vec2 uv_min = glyph.uv_min;
+        Vec2 uv_max = glyph.uv_max;
+
+        // update VBO for each character
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   uv_min.x, uv_min.y },
+            { xpos,     ypos,       uv_min.x, uv_max.y },
+            { xpos + w, ypos,       uv_max.x, uv_max.y },
+
+            { xpos,     ypos + h,   uv_min.x, uv_min.y },
+            { xpos + w, ypos,       uv_max.x, uv_max.y },
+            { xpos + w, ypos + h,   uv_max.x, uv_min.y }
+        };
+
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, text->vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        x += (glyph.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void se_text_reset_config(SE_Text *text) {
+    text->config_centered = true;
+    text->config_colour = v3f(1, 1, 1);
+}
+
+void se_add_text(SE_Text *text, const char *string, Vec2 pos) {
+    Vec2 cursor = pos;
+    for (u32 i = 0; i < SDL_strlen(string); ++i) {
+        /* save glyph to be rendered later */
+        SE_Text_Render_Queue queue_item;
+        queue_item.glyph_index = (i32)string[i];
+        queue_item.pos = cursor;
+        queue_item.colour = text->config_colour;
+        text->render_queue[text->render_queue_size] = queue_item;
+        text->render_queue_size++;
+
+        /* advance cursor */
+        SE_Text_Glyph glyph = text->glyphs[queue_item.glyph_index];
+        cursor.x += glyph.advance;
+    }
+}
+
+void se_add_text_rect(SE_Text *text, const char *string, Rect rect) {
+    Vec2 cursor = v2f(rect.x, rect.y);
+    Vec2 string_size = se_size_text(text, string);
+    if (text->config_centered) {
+        cursor.x += (rect.w - string_size.x) * 0.5f;
+        cursor.y += (rect.h - string_size.y) * 0.5f;
+    }
+
+    for (u32 i = 0; i < SDL_strlen(string); ++i) {
+        /* save glyph to be rendered later */
+        SE_Text_Render_Queue queue_item;
+        queue_item.glyph_index = (i32)string[i];
+        queue_item.pos = cursor;
+        queue_item.colour = text->config_colour;
+        text->render_queue[text->render_queue_size] = queue_item;
+        text->render_queue_size++;
+
+        /* advance cursor */
+        SE_Text_Glyph glyph = text->glyphs[queue_item.glyph_index];
+        cursor.x += glyph.advance;
+        // @TODO increase cursor.y so that the text wraps
+    }
+}
+
+void se_clear_text_render_queue(SE_Text *text) {
+    text->render_queue_size = 0;
+}

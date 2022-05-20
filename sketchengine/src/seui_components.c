@@ -81,7 +81,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
    }
 
     seui_render_rect(renderer, rect, colour);
-    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1), true);
+    se_add_text_rect(&ctx->txt_renderer, text, rect);
 
     return ui_state == UI_STATE_ACTIVE;
 }
@@ -163,7 +163,7 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state) {
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour = RGBA_WHITE;
-    setext_render_text_rect(&ctx->txt_renderer, text, rect, vec3_create(1, 1, 1), true);
+    se_add_text_rect(&ctx->txt_renderer, text, rect);
     seui_render_rect(&ctx->renderer, rect, (RGBA) {10, 10, 10, 100});
 }
 
@@ -397,7 +397,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     /* display value */
     char buffer[SESTRING_MAX_NUM_OF_DIGITS];
     sprintf(buffer, "%i", *value);
-    setext_render_text_rect(&ctx->txt_renderer, buffer, label, colour_text, true);
+    se_add_text_rect(&ctx->txt_renderer, buffer, label);
 
     return changed;
 }
@@ -480,12 +480,16 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 
     seui_render_rect(renderer, rect, colour);
     if (display_text->size > 0) {
-        setext_render_text_rect(&ctx->txt_renderer, display_text->buffer, rect, colour_text, true);
+        ctx->txt_renderer.config_colour = colour_text;
+        se_add_text_rect(&ctx->txt_renderer, display_text->buffer, rect);
     } else if (!ctx->text_input_only_numerical) {
-        setext_render_text_rect(&ctx->txt_renderer, "press to type", rect, colour_text_hint, true);
+        ctx->txt_renderer.config_colour = colour_text_hint;
+        se_add_text_rect(&ctx->txt_renderer, "press to type", rect);
     } else {
-        setext_render_text_rect(&ctx->txt_renderer, "...", rect, colour_text_hint, true);
+        ctx->txt_renderer.config_colour = colour_text_hint;
+        se_add_text_rect(&ctx->txt_renderer, "...", rect);
     }
+    se_text_reset_config(&ctx->txt_renderer);
 }
 
 bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {

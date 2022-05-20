@@ -38,7 +38,7 @@ typedef struct SE_UI {
 
     /* Renderes and Inputs */
     struct UI_Renderer renderer;
-    SE_Text_Renderer txt_renderer;
+    SE_Text txt_renderer;
     struct SE_Input *input; // ! not owned
     SE_Theme theme;
 
@@ -65,7 +65,7 @@ SEINLINE void seui_reset(SE_UI *ctx) {
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
     seui_renderer_resize(&ctx->renderer, window_w, window_h);
-    setext_set_viewport(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+    se_set_text_viewport(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
 }
 
 SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
@@ -75,7 +75,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     seui_reset(ctx);
     ctx->input = input;
     seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);
-    setext_init (&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+    se_init_text_default(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
     seui_theme_default(&ctx->theme);
 
     sestring_init(&ctx->text_input_cache, "");
@@ -84,7 +84,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
 
 SEINLINE void seui_deinit(SE_UI *ctx) {
     seui_renderer_deinit(&ctx->renderer);
-    setext_deinit(&ctx->txt_renderer);
+    se_deinit_text(&ctx->txt_renderer);
     sestring_deinit(&ctx->text_input_cache);
     sestring_deinit(&ctx->text_input);
 }
@@ -101,7 +101,8 @@ SEINLINE void seui_render(SE_UI *ctx) {
 
     /* draw call */
     seui_renderer_draw(&ctx->renderer);
-    setext_render(&ctx->txt_renderer);
+    se_render_text(&ctx->txt_renderer);
+    se_clear_text_render_queue(&ctx->txt_renderer); // sense we're gonna recreate the queue next frame
 
     /* reset configuration */
     glEnable(GL_CULL_FACE);
