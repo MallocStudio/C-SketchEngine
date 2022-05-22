@@ -96,6 +96,7 @@ static bool load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsi
 }
 
 void se_set_text_viewport(SE_Text *text, Rect viewport) {
+    text->viewport = viewport;
     text->shader_projection_matrix = viewport_to_ortho_projection_matrix(viewport);
 }
 
@@ -168,45 +169,61 @@ void se_render_text(SE_Text *text) {
     glBindTexture(GL_TEXTURE_2D, text->glyph_atlas);
     seshader_set_uniform_i32(&text->shader_program, "atlas", 0);
 
-    for (u32 i = 0; i < text->render_queue_size; ++i) {
-        SE_Text_Render_Queue queue = text->render_queue[i];
-        SE_Text_Glyph glyph = text->glyphs[queue.glyph_index];
+    glEnable(GL_SCISSOR_TEST);
 
+    for (u32 q = 0; q < text->render_queue_size; ++q) { // go through every queue item
+        SE_Text_Render_Queue queue = text->render_queue[q];
         seshader_set_uniform_vec3(&text->shader_program, "textColor", queue.colour);
-
         const f32 scale = 1;
-        f32 x = queue.pos.x;
-        f32 y = queue.pos.y;
+        f32 x = queue.rect.x;
+        f32 y = queue.rect.y;
 
-        float xpos = x + glyph.bearing_x * scale;
-        float ypos = y - (glyph.height - glyph.bearing_y) * scale;
+        if (queue.rect.w > 0 && queue.rect.h > 0) {
+            glScissor(queue.rect.x, queue.rect.y, queue.rect.w, queue.rect.h);
+        } else {
+            glScissor(text->viewport.x, text->viewport.y, text->viewport.w, text->viewport.h);
+        }
 
-        float w = glyph.width  * scale;
-        float h = glyph.height * scale;
-        Vec2 uv_min = glyph.uv_min;
-        Vec2 uv_max = glyph.uv_max;
+        if (queue.centered) {
+            x += (queue.rect.w - queue.string_size.x) * 0.5f;
+            y += (queue.rect.h - queue.string_size.y) * 0.5f;
+        }
 
-        // update VBO for each character
-        float vertices[6][4] = {
-            { xpos,     ypos + h,   uv_min.x, uv_min.y },
-            { xpos,     ypos,       uv_min.x, uv_max.y },
-            { xpos + w, ypos,       uv_max.x, uv_max.y },
+        for (u32 i = 0; i < queue.glyph_count; ++i) { // go through every glyph of that queue item
+            SE_Text_Glyph glyph = text->glyphs[queue.glyph_indices[i]];
 
-            { xpos,     ypos + h,   uv_min.x, uv_min.y },
-            { xpos + w, ypos,       uv_max.x, uv_max.y },
-            { xpos + w, ypos + h,   uv_max.x, uv_min.y }
-        };
 
-        // update content of VBO memory
-        glBindBuffer(GL_ARRAY_BUFFER, text->vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        // render quad
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-        x += (glyph.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+            float xpos = x + glyph.bearing_x * scale;
+            float ypos = y - (glyph.height - glyph.bearing_y) * scale;
+
+            float w = glyph.width  * scale;
+            float h = glyph.height * scale;
+            Vec2 uv_min = glyph.uv_min;
+            Vec2 uv_max = glyph.uv_max;
+
+            // update VBO for each character
+            float vertices[6][4] = {
+                { xpos,     ypos + h,   uv_min.x, uv_min.y },
+                { xpos,     ypos,       uv_min.x, uv_max.y },
+                { xpos + w, ypos,       uv_max.x, uv_max.y },
+
+                { xpos,     ypos + h,   uv_min.x, uv_min.y },
+                { xpos + w, ypos,       uv_max.x, uv_max.y },
+                { xpos + w, ypos + h,   uv_max.x, uv_min.y }
+            };
+
+            // update content of VBO memory
+            glBindBuffer(GL_ARRAY_BUFFER, text->vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            // render quad
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+            x += glyph.advance * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+        }
     }
 
+    glDisable(GL_SCISSOR_TEST);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -217,44 +234,34 @@ void se_text_reset_config(SE_Text *text) {
 }
 
 void se_add_text(SE_Text *text, const char *string, Vec2 pos) {
-    Vec2 cursor = pos;
+    SE_Text_Render_Queue queue_item;
+    queue_item.glyph_count = 0;
+    queue_item.rect = (Rect) {pos.x, pos.y, 0, 0};
+    queue_item.colour = text->config_colour;
+    queue_item.string_size = se_size_text(text, string);
     for (u32 i = 0; i < SDL_strlen(string); ++i) {
         /* save glyph to be rendered later */
-        SE_Text_Render_Queue queue_item;
-        queue_item.glyph_index = (i32)string[i];
-        queue_item.pos = cursor;
-        queue_item.colour = text->config_colour;
-        text->render_queue[text->render_queue_size] = queue_item;
-        text->render_queue_size++;
-
-        /* advance cursor */
-        SE_Text_Glyph glyph = text->glyphs[queue_item.glyph_index];
-        cursor.x += glyph.advance;
+        queue_item.glyph_indices[queue_item.glyph_count] = (i32)string[i];
+        queue_item.glyph_count++;
     }
+    text->render_queue[text->render_queue_size] = queue_item;
+    text->render_queue_size++;
 }
 
 void se_add_text_rect(SE_Text *text, const char *string, Rect rect) {
-    Vec2 cursor = v2f(rect.x, rect.y);
-    Vec2 string_size = se_size_text(text, string);
-    if (text->config_centered) {
-        cursor.x += (rect.w - string_size.x) * 0.5f;
-        cursor.y += (rect.h - string_size.y) * 0.5f;
-    }
-
+    SE_Text_Render_Queue queue_item;
+    queue_item.glyph_count = 0;
+    queue_item.rect = rect;
+    queue_item.colour = text->config_colour;
+    queue_item.centered = text->config_centered;
+    queue_item.string_size = se_size_text(text, string);
     for (u32 i = 0; i < SDL_strlen(string); ++i) {
         /* save glyph to be rendered later */
-        SE_Text_Render_Queue queue_item;
-        queue_item.glyph_index = (i32)string[i];
-        queue_item.pos = cursor;
-        queue_item.colour = text->config_colour;
-        text->render_queue[text->render_queue_size] = queue_item;
-        text->render_queue_size++;
-
-        /* advance cursor */
-        SE_Text_Glyph glyph = text->glyphs[queue_item.glyph_index];
-        cursor.x += glyph.advance;
-        // @TODO increase cursor.y so that the text wraps
+        queue_item.glyph_indices[queue_item.glyph_count] = (i32)string[i];
+        queue_item.glyph_count++;
     }
+    text->render_queue[text->render_queue_size] = queue_item;
+    text->render_queue_size++;
 }
 
 void se_clear_text_render_queue(SE_Text *text) {

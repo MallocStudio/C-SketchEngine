@@ -20,9 +20,12 @@ typedef struct SE_Text_Glyph {
 
 #define SE_TEXT_RENDER_QUEUE_CAPACITY 1024
 typedef struct SE_Text_Render_Queue {
-    u32 glyph_index;
-    Vec2 pos;
+    u32 glyph_count;
+    u32 glyph_indices[255]; // update this number
+    Rect rect;
     Vec3 colour;
+    bool centered;
+    Vec2 string_size;
 } SE_Text_Render_Queue;
 
 typedef struct SE_Text {
@@ -42,6 +45,7 @@ typedef struct SE_Text {
     Mat4 shader_projection_matrix;
     u32 glyph_atlas;
     SE_Text_Glyph glyphs[SE_TEXT_NUM_OF_GLYPHS];
+    Rect viewport;
 
     u32 render_queue_size;
     SE_Text_Render_Queue render_queue[SE_TEXT_RENDER_QUEUE_CAPACITY];

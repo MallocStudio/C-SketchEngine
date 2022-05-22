@@ -95,7 +95,6 @@ SEINLINE void seui_render(SE_UI *ctx) {
 
     /* configure */
     glDisable(GL_CULL_FACE);
-    glEnable(GL_SCISSOR_TEST);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
@@ -107,7 +106,6 @@ SEINLINE void seui_render(SE_UI *ctx) {
     /* reset configuration */
     glEnable(GL_CULL_FACE);
     glDisable(GL_BLEND);
-    glDisable(GL_SCISSOR_TEST);
     glEnable(GL_DEPTH_TEST);
 
     /* clear data */
