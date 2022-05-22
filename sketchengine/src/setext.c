@@ -187,6 +187,9 @@ void se_render_text(SE_Text *text) {
         if (queue.centered) {
             x += (queue.rect.w - queue.string_size.x) * 0.5f;
             y += (queue.rect.h - queue.string_size.y) * 0.5f;
+        } else
+        if (queue.rect.h > 0) {
+            y += (queue.rect.h - queue.string_size.y) * 0.5f;
         }
 
         for (u32 i = 0; i < queue.glyph_count; ++i) { // go through every glyph of that queue item

@@ -72,6 +72,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 
 void seui_panel_row(SEUI_Panel *panel, u32 columns);
-Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand);
+Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height, bool expand);
 
 #endif // SEUI_PANEL_H

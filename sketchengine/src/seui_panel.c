@@ -50,7 +50,8 @@ void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool 
 
 /// Returns a rectangle that's suppose to be the rect
 /// of the new item inside of the current panel.
-Rect panel_put(SEUI_Panel *panel, f32 min_width, f32 min_height, bool expand) { // @remove expand parameter
+Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height, bool expand) { // @remove expand parameter
+    SEUI_Panel *panel = ctx->current_panel;
     if (panel == NULL) {
         printf("ERROR: panel_put but panel was null\n");
         return (Rect) {0, 0, 32, 32};
@@ -133,7 +134,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
         seui_panel_row(panel_data, 1); // make space for top bar
 
-        Rect top_bar = panel_put(panel_data, panel_data->calc_rect.w, minimise_button_size, false);
+        Rect top_bar = panel_put(ctx, panel_data->calc_rect.w, minimise_button_size, false);
 
         minimise_button_size = top_bar.h;
 
@@ -239,7 +240,7 @@ bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->is_embedded = true;
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, panel_data->calc_rect.w, panel_data->calc_rect.h, true);
+        rect = panel_put(ctx, panel_data->calc_rect.w, panel_data->calc_rect.h, true);
         panel_data->calc_rect = rect;
     }
     return seui_panel_at(ctx, title, panel_data);

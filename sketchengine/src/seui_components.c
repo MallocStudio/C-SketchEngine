@@ -4,6 +4,15 @@
 ///               UTILITIES
 /// -----------------------------------------
 
+static Rect apply_margin(Rect rect, Vec2 margin) {
+    return (Rect) {
+        rect.x + margin.x,
+        rect.y + margin.y,
+        rect.w - margin.x,
+        rect.h - margin.y,
+    };
+}
+
 u32 generate_ui_id(SE_UI *ctx) {
     ctx->max_id++; // we start with zero. So we increase first.
     u32 id = ctx->max_id;
@@ -163,7 +172,11 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state) {
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour = RGBA_WHITE;
-    se_add_text_rect(&ctx->txt_renderer, text, rect);
+    ctx->txt_renderer.config_centered = false;
+
+    se_add_text_rect(&ctx->txt_renderer, text, apply_margin(rect, ctx->theme.margin));
+
+    ctx->txt_renderer.config_centered = true;
     seui_render_rect(&ctx->renderer, rect, (RGBA) {10, 10, 10, 100});
 }
 
@@ -495,7 +508,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, rect.w, rect.h, true);
+        rect = panel_put(ctx, rect.w, rect.h, true);
     }
     return seui_button_textured_at(ctx, texture_index, rect);
 }
@@ -503,7 +516,7 @@ bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
 bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     Rect rect = {0, 0, 100, 32}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx->current_panel, rect.w, rect.h, true);
+        rect = panel_put(ctx, rect.w, rect.h, true);
     }
     return seui_selector_at(ctx, rect, value, min, max);
 }

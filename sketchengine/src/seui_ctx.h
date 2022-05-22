@@ -6,11 +6,15 @@
 #include "setext.h"
 
 typedef struct SE_Theme {
+    /* colours */
     RGBA colour_normal;
     RGBA colour_hover;
     RGBA colour_pressed;
     RGBA colour_bg; // background
     RGBA colour_fg; // foreground
+
+    /* positioning */
+    Vec2 margin; // x for horizontal margin, y for vertical margin
 } SE_Theme;
 SEINLINE void seui_theme_default(SE_Theme *theme) {
     theme->colour_normal  = (RGBA) {65, 84, 105, 255};
@@ -18,6 +22,7 @@ SEINLINE void seui_theme_default(SE_Theme *theme) {
     theme->colour_pressed = (RGBA) {43, 56, 71, 255};
     theme->colour_bg      = (RGBA) {33, 39, 43, 200};
     theme->colour_fg      = (RGBA) {56, 95, 161, 255};
+    theme->margin = v2f(8, 0);
 }
 
 typedef enum UI_STATES {
