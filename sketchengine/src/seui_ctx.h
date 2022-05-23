@@ -107,6 +107,10 @@ typedef struct SE_UI {
     struct SEUI_Panel *panels;
     struct SEUI_Panel *current_panel;         // the panel we put the widgets on
 
+    /* data */
+    // data slots are places where widgets can store user data to, such as text input, colour, etc.
+    HSV data_hsv; // stored hsv (this is used by colour pickers to store their value to)
+
     /* text input */
     // if some widget is constantly active, we set active to their id
     // this is to allow certain widgets hold the attention of input.
@@ -141,8 +145,8 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
 
-void seui_panel_row(SE_UI *ctx, u32 columns);
-Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height, bool expand);
+void seui_panel_row(SE_UI *ctx, f32 height, u32 columns);
+Rect panel_put(SE_UI *ctx, f32 min_width, bool expand);
 
 /// call this at the beginning of every frame before creating other widgets
 SEINLINE void seui_reset(SE_UI *ctx) {

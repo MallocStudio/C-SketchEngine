@@ -13,7 +13,8 @@ RGBA color;
 SE_UI *ctx;
 SEUI_Panel *panel;
 SEUI_Panel *panel_entity_info;
-
+SEUI_Panel *test_colour_picker;
+HSV hsv;
 Panel_Entity panel_entity;
 
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
@@ -122,6 +123,7 @@ void app_init(Application *app, SDL_Window *window) {
         panel_entity_info = seui_add_panel(ctx);
         seui_panel_setup(panel,             (Rect) {0, 0, 300, 400}, v2f(128 * 2, 128 * 2), false, 32, 1);
         seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
+        test_colour_picker = seui_add_panel(ctx);
 
         panel_init(&app_panel);
 
@@ -159,26 +161,28 @@ void app_update(Application *app) {
             // seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
         }
 
+        seui_hsv_picker_at(ctx, test_colour_picker, &hsv);
+
         if (seui_panel_at(ctx, "panel", panel)) {
             if (!panel->minimised) {
-                seui_panel_row(ctx, 2);
+                seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "light direction:");
                 seui_slider2d(ctx, &app_panel.light_direction);
-                seui_panel_row(ctx, 2);
+                seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "light intensity:");
                 seui_slider(ctx, &app_panel.light_intensity);
 
-                seui_panel_row(ctx, 2);
+                seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "colour:");
                 color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
 
-                seui_panel_row(ctx, 4);
+                seui_panel_row(ctx, 32, 4);
                 seui_label(ctx, "test input1:");
                 seui_input_text(ctx, &app_panel.input_text);
                 seui_label(ctx, "test input2:");
                 seui_input_text(ctx, &app_panel.input_text2);
 
-                seui_panel_row(ctx, 3);
+                seui_panel_row(ctx, 32, 3);
                 seui_label(ctx, "p1");
                 seui_label(ctx, "p2");
 
@@ -186,7 +190,7 @@ void app_update(Application *app) {
                     printf("haha got ya\n");
                 }
 
-                seui_panel_row(ctx, 1);
+                seui_panel_row(ctx, 32, 1);
 
                 // panel2.config_row_left_margin = 16;
                 // panel2.config_row_right_margin = 16;
@@ -210,7 +214,7 @@ void app_update(Application *app) {
         if (seui_panel_at(ctx, "entity", panel_entity_info)) {
             if (!panel_entity_info->minimised) {
                 char label_buffer[255];
-                seui_panel_row(ctx, 4);
+                seui_panel_row(ctx, 32, 4);
 
                 /* id */
                 seui_label(ctx, "entity:");

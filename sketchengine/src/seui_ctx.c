@@ -16,7 +16,7 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
 /// -----------------------------------------
 
 /// Make a row
-void seui_panel_row(SE_UI *ctx, u32 columns) {
+void seui_panel_row(SE_UI *ctx, f32 height, u32 columns) {
     SEUI_Panel *panel = ctx->current_panel;
     /* reset for the new row */
     panel->cursor.x = 0;
@@ -27,7 +27,8 @@ void seui_panel_row(SE_UI *ctx, u32 columns) {
     panel->fit_size.y += panel->row_height;
 
     // panel->row_width = panel->row_width;     // keep the same width as the previous row
-    panel->row_height = panel->min_item_height; // reset row height
+    // panel->row_height = panel->min_item_height; // reset row height
+    panel->row_height = height; // reset row height
     panel->row_width  = panel->cached_rect.w;
     panel->row_columns = columns;
 
@@ -51,12 +52,19 @@ void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool 
 
 /// Returns a rectangle that's suppose to be the rect
 /// of the new item inside of the current panel.
-Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height, bool expand) { // @remove expand parameter
+Rect panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand parameter
     SEUI_Panel *panel = ctx->current_panel;
     if (panel == NULL) {
         printf("ERROR: panel_put but panel was null\n");
         return (Rect) {0, 0, 32, 32};
     }
+
+    // if (panel->next_item_height < min_height) {
+    //     panel->next_item_height = min_height;
+    // }
+    // if (panel->row_height < min_height) {
+    //     panel->row_height = min_height;
+    // }
 
     Rect item;
     item.x = panel->cursor.x + panel->cached_rect.x;
@@ -70,7 +78,7 @@ Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height, bool expand) { // @rem
     // assuming default layout (to be changed)
     panel->cursor.x += item.w;
     if (panel->cursor.x > panel->row_width) {
-        seui_panel_row(ctx, panel->row_columns); // make a new row
+        seui_panel_row(ctx, panel->row_height, panel->row_columns); // make a new row
     }
 
     /* update panel fit size */
@@ -107,9 +115,9 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     { // panel widgets
         f32 minimise_button_size = panel_data->row_height;
 
-        seui_panel_row(ctx, 1); // make space for top bar
+        seui_panel_row(ctx, 32, 1); // make space for top bar
 
-        Rect top_bar = panel_put(ctx, 0, minimise_button_size, false);
+        Rect top_bar = panel_put(ctx, 0, false);
 
         minimise_button_size = top_bar.h;
 
@@ -223,7 +231,7 @@ bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->is_embedded = true;
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, panel_data->calc_rect.w, panel_data->calc_rect.h, true);
+        rect = panel_put(ctx, panel_data->calc_rect.w, true);
         panel_data->calc_rect = rect;
     }
     return seui_panel_at(ctx, title, panel_data);

@@ -2,7 +2,7 @@
 // - seui_panel (panel functionalities and layouts)
 // - seui_components (basic widgets such as buttons, labels, text inputs)
 // - seui_widgets (complex forms of widgets made out of other widgets)
-#include "seui_widgets.h"
+#include "seui_components.h"
 
 
 /// -----------------------------------------
@@ -13,7 +13,7 @@ bool seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, text_size.x, text_size.y, true);
+        rect = panel_put(ctx, text_size.x, true);
     }
     return seui_button_at(ctx, text, rect);
 }
@@ -22,18 +22,18 @@ void seui_label(SE_UI *ctx, const char *text) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
-        rect = panel_put(ctx, text_size.x, text_size.y, true);
+        rect = panel_put(ctx, text_size.x, true);
     }
     seui_label_at(ctx, text, rect);
 }
 
 void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
     char label_buffer[255];
-    seui_panel_row(ctx, 1);
+    seui_panel_row(ctx, 32, 1);
     seui_label(ctx, title);
 
     if (!editable) {
-        seui_panel_row(ctx, 3);
+        seui_panel_row(ctx, 32, 3);
         sprintf(label_buffer, "x: %.2f", value->x);
         seui_label(ctx, label_buffer);
         sprintf(label_buffer, "y: %.2f", value->y);
@@ -42,7 +42,7 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_label(ctx, label_buffer);
     } else {
         ctx->text_input_only_numerical = true;
-        seui_panel_row(ctx, 6);
+        seui_panel_row(ctx, 32, 6);
 
         sprintf(label_buffer, "x:");
         seui_label(ctx, label_buffer);
@@ -78,7 +78,7 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
 void seui_slider(SE_UI *ctx, f32 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, 24, 24, true);
+        rect = panel_put(ctx, 24, true);
     }
     Vec2 pos1 = {rect.x, (rect.y + rect.y + rect.h) * 0.5f};
     Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
@@ -88,7 +88,7 @@ void seui_slider(SE_UI *ctx, f32 *value) {
 void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, 32, 32, true);
+        rect = panel_put(ctx, 32, true);
     }
     Vec2 center = {
         (rect.x + rect.x + rect.w) * 0.5f,
@@ -101,7 +101,7 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
 void seui_colour_picker(SE_UI *ctx, RGBA *value) {
     Rect rect = {0, 0, 128, 128}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, rect.w, rect.h, true);
+        rect = panel_put(ctx, rect.w, true);
     }
     seui_colour_picker_at(ctx, rect, value);
 }
@@ -109,7 +109,7 @@ void seui_colour_picker(SE_UI *ctx, RGBA *value) {
 void seui_input_text(SE_UI *ctx, SE_String *text) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, 32, 32, true);
+        rect = panel_put(ctx, 32, true);
     }
     seui_input_text_at(ctx, text, rect);
 }
@@ -117,7 +117,7 @@ void seui_input_text(SE_UI *ctx, SE_String *text) {
 RGBA seui_colour_picker_hsv(SE_UI *ctx, i32 *h, i32 *s, i32 *v) {
     Rect rect = {0, 0, 128, 128}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, rect.w, rect.h, true);
+        rect = panel_put(ctx, rect.w, true);
     }
     return seui_colour_picker_at_hsv(ctx, rect, h, s, v);
 }

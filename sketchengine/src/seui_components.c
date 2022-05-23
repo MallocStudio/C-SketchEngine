@@ -508,7 +508,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, rect.w, rect.h, true);
+        rect = panel_put(ctx, rect.w, true);
     }
     return seui_button_textured_at(ctx, texture_index, rect);
 }
@@ -516,7 +516,7 @@ bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
 bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     Rect rect = {0, 0, 100, 32}; // default
     if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, rect.w, rect.h, true);
+        rect = panel_put(ctx, rect.w, true);
     }
     return seui_selector_at(ctx, rect, value, min, max);
 }
@@ -569,4 +569,12 @@ RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v) {
     RGBA result;
     hsv_to_rgba(*h, *s, *v, &result);
     return result;
+}
+
+void seui_hsv_picker_at(SE_UI *ctx, SEUI_Panel *panel, HSV *hsv) {
+    if (panel == NULL) return;
+    if (seui_panel_at(ctx, "hsv picker", panel)) {
+        seui_panel_row(ctx, 32, 1);
+        seui_label(ctx, "test colour picker");
+    }
 }

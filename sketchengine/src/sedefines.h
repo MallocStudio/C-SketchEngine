@@ -42,6 +42,9 @@ typedef struct RGB {
     ubyte r, g, b; // 0 - 255
 } RGB;
 #define TYPEOF_RGB_OPENGL GL_UNSIGNED_BYTE
+typedef struct HSV {
+    i32 h, s, v;
+} HSV;
 
 SEINLINE void rgba_normalise(RGBA *rgb) {
     rgb->r = rgb->r / 255;
