@@ -5,6 +5,60 @@
 #include "seinput.h"
 #include "setext.h"
 
+// #define SEUI_VIEW_REGION_PADDING 0.1f
+#define SEUI_VIEW_REGION_SIZE_X 0.2f
+#define SEUI_VIEW_REGION_SIZE_Y 0.9f
+#define SEUI_VIEW_REGION_COLLISION_SIZE_X 0.01f
+#define SEUI_VIEW_REGION_COLLISION_SIZE_Y SEUI_VIEW_REGION_SIZE_Y
+// #define SEUI_VIEW_REGION_CENTER (Rect) {SEUI_VIEW_REGION_PADDING, SEUI_VIEW_REGION_PADDING, 1 - SEUI_VIEW_REGION_SIZE, SEUI_VIEW_REGION_PADDING * 2}
+#define SEUI_VIEW_REGION_RIGHT  (Rect) {1 - SEUI_VIEW_REGION_SIZE_X, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
+#define SEUI_VIEW_REGION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_SIZE_X, SEUI_VIEW_REGION_SIZE_Y}
+
+#define SEUI_VIEW_REGION_COLLISION_RIGHT  (Rect) {1 - SEUI_VIEW_REGION_COLLISION_SIZE_X, (1 - SEUI_VIEW_REGION_COLLISION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_COLLISION_SIZE_X, SEUI_VIEW_REGION_COLLISION_SIZE_Y}
+#define SEUI_VIEW_REGION_COLLISION_LEFT   (Rect) {0, (1 - SEUI_VIEW_REGION_COLLISION_SIZE_Y) *0.5f, SEUI_VIEW_REGION_COLLISION_SIZE_X, SEUI_VIEW_REGION_COLLISION_SIZE_Y}
+
+typedef struct SEUI_Panel {
+    /* CAN BE SET DIRECTLY ---------------------------------------------------- */
+        /* positioning of panel */
+        Rect calc_rect;
+        bool minimised;
+        f32 min_item_height;
+        // 0 means not docked, 1 means left, 2 means right
+        u32 docked_dir;
+        // this is the minimum size the user can resize the panel to.
+        // note that this is not automatically calculated, so this can be set
+        // by the user at any point.
+        Vec2 min_size;
+
+        /* layouting configuration */
+        f32 config_row_left_margin;
+        f32 config_row_right_margin;
+
+    /* auto calculated ------------------------------------------------------- */
+        u32 index; // the index identifier of the panel tracked by SE_UI
+        bool is_closed;
+        /* next item: (calculated based on layout) */
+        // sense some items can be bigger than min row height in the same row,
+        // we want all the items on that row to be of the same height
+        f32 next_item_height;
+        // the relative cursor used to position the placement of the items
+        Vec2 cursor;
+
+        /* layouting */
+        i32 row_width;   // the width of the current row
+        i32 row_height;  // the height of the current row
+        i32 row_columns; // number of the columns in the current row
+
+        /* positioning of panel */
+        // this size is calculated based on the widgets that populate the panel.
+        // this is the minimum size that it takes to fit everything inside of the
+        // panel without clipping or scissoring.
+        Vec2 fit_size;
+        Vec2 fit_cursor;
+        Rect cached_rect; // the rect of the panel from the previous frame
+        bool is_embedded; // is inside of another panel
+} SEUI_Panel;
+
 typedef struct SE_Theme {
     /* colours */
     RGBA colour_normal;
@@ -48,6 +102,9 @@ typedef struct SE_UI {
     SE_Theme theme;
 
     /* Panels */
+    u32 panel_capacity;
+    u32 panel_count;
+    struct SEUI_Panel *panels;
     struct SEUI_Panel *current_panel;         // the panel we put the widgets on
 
     /* text input */
@@ -61,6 +118,31 @@ typedef struct SE_UI {
     SE_String text_input; // store a copy of what's being typed into the active text input
     bool text_input_only_numerical;
 } SE_UI;
+
+/// Set text input configurations to default values. It's good practice to
+/// do call this procedure after modifying the configuration for a usecase.
+SEINLINE void seui_configure_text_input_reset(SE_UI *ctx) {
+    ctx->text_input_only_numerical = false;
+}
+
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
+
+/// Reset the panel configurations to their default values.
+/// These are the values that the user can manually set before each widget call
+/// to customise their appearance.
+SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
+    panel->config_row_left_margin = 0;
+    panel->config_row_right_margin = 0;
+}
+
+/// Start a panel at the given position. Aligns the items inside of the panel
+/// based on the given number of columns.
+/// Returns true if the panel is not closed.
+bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
+bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
+
+void seui_panel_row(SE_UI *ctx, u32 columns);
+Rect panel_put(SE_UI *ctx, f32 min_width, f32 min_height, bool expand);
 
 /// call this at the beginning of every frame before creating other widgets
 SEINLINE void seui_reset(SE_UI *ctx) {
@@ -83,6 +165,12 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     se_init_text_default(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
     seui_theme_default(&ctx->theme);
 
+    /* panels */
+    ctx->current_panel = NULL;
+    ctx->panel_capacity = 100;
+    ctx->panel_count = 0;
+    ctx->panels = (SEUI_Panel*) malloc(sizeof(SEUI_Panel) * ctx->panel_capacity);
+
     sestring_init(&ctx->text_input_cache, "");
     sestring_init(&ctx->text_input, "");
 }
@@ -92,6 +180,44 @@ SEINLINE void seui_deinit(SE_UI *ctx) {
     se_deinit_text(&ctx->txt_renderer);
     sestring_deinit(&ctx->text_input_cache);
     sestring_deinit(&ctx->text_input);
+
+    free(ctx->panels);
+    ctx->panel_count = 0;
+}
+
+SEINLINE SEUI_Panel* seui_add_panel(SE_UI *ctx) {
+    Rect init_rect = {
+        ctx->txt_renderer.viewport.w / 2 - 128, // the hackiest way to get the viewport
+        ctx->txt_renderer.viewport.h / 2 - 128, // the hackiest way to get the viewport
+        128 * 2,
+        128 * 2
+    };
+    Vec2 min_size = v2f(124, 124);
+    /* loop through every panel to see if they are closed */
+    for (u32 i = 0; i < ctx->panel_count; ++i) {
+        if (ctx->panels[i].is_closed) {
+            ctx->panels[i].is_closed = false; // reopen
+            seui_panel_setup(&ctx->panels[i], init_rect, min_size, false, 32, 0);
+            ctx->panels[i].index = i;
+            printf("found a closed panel so we're reopenning it\n");
+            return &ctx->panels[i];
+        }
+    }
+    /* if none were closed add another panel to the list */
+    if (ctx->panel_count >= ctx->panel_capacity) {
+        ctx->panel_capacity += (ctx->panel_capacity+1) * 0.5f;
+        ctx->panels = realloc(ctx->panels, sizeof(SEUI_Panel) * ctx->panel_capacity);
+    }
+    u32 panel = ctx->panel_count;
+    seui_panel_setup(&ctx->panels[panel], init_rect, min_size, false, 32, 0);
+    ctx->panels[panel].index = panel;
+    ctx->panels[panel].is_closed = false;
+    ctx->panel_count++;
+    return &ctx->panels[panel];
+}
+
+SEINLINE void seui_close_panel(SE_UI *ctx, u32 panel_index) {
+    if (panel_index < ctx->panel_count) ctx->panels[panel_index].is_closed = true;
 }
 
 SEINLINE void seui_render(SE_UI *ctx) {
@@ -116,11 +242,4 @@ SEINLINE void seui_render(SE_UI *ctx) {
     /* clear data */
     seui_renderer_clear (&ctx->renderer);
 }
-
-/// Set text input configurations to default values. It's good practice to
-/// do call this procedure after modifying the configuration for a usecase.
-SEINLINE void seui_configure_text_input_reset(SE_UI *ctx) {
-    ctx->text_input_only_numerical = false;
-}
-
 #endif // SEUI_H_CTX

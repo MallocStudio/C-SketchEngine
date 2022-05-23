@@ -27,10 +27,11 @@
         "cstring": "c",
         "sestring.h": "c",
         "nfd.h": "c",
-        "panels.h": "c",
-        "seui_panel.h": "c",
         "seui_ctx.h": "c",
         "serender_target.h": "c",
-        "sesprite.h": "c"
+        "sesprite.h": "c",
+        "seui_components.h": "c",
+        "algorithm": "c",
+        "xutility": "c"
     }
 }

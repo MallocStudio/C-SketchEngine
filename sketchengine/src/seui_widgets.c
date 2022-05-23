@@ -29,11 +29,11 @@ void seui_label(SE_UI *ctx, const char *text) {
 
 void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
     char label_buffer[255];
-    seui_panel_row(ctx->current_panel, 1);
+    seui_panel_row(ctx, 1);
     seui_label(ctx, title);
 
     if (!editable) {
-        seui_panel_row(ctx->current_panel, 3);
+        seui_panel_row(ctx, 3);
         sprintf(label_buffer, "x: %.2f", value->x);
         seui_label(ctx, label_buffer);
         sprintf(label_buffer, "y: %.2f", value->y);
@@ -42,7 +42,7 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_label(ctx, label_buffer);
     } else {
         ctx->text_input_only_numerical = true;
-        seui_panel_row(ctx->current_panel, 6);
+        seui_panel_row(ctx, 6);
 
         sprintf(label_buffer, "x:");
         seui_label(ctx, label_buffer);

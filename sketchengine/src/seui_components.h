@@ -1,7 +1,7 @@
 #ifndef SEUI_COMPONENETS_H
 #define SEUI_COMPONENETS_H
 
-#include "seui_panel.h"
+#include "seui_ctx.h"
 
 u32 generate_ui_id(SE_UI *ctx);
 UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse_leave /* = false */);
