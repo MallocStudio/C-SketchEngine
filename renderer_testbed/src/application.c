@@ -102,7 +102,8 @@ void app_init(Application *app, SDL_Window *window) {
         /* meshes */
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
         app->entities[player].has_mesh = true;
-        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
+        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx");
+        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj");
         app->entities[player2].has_mesh = true;
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
         app->entities[plane].has_mesh = true;

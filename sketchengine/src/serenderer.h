@@ -21,6 +21,14 @@ typedef struct SE_Vertex3D {
     Vec2 texture_coord;
 } SE_Vertex3D;
 
+#define SE_SKINNED_VERTEX_NUM_OF_BONES 4
+typedef struct SE_Skinned_Vertex {
+    SE_Vertex3D vert;
+    /* the bones that manipulate this vertex */
+    i32     bone_ids[SE_SKINNED_VERTEX_NUM_OF_BONES];
+    f32 bone_weights[SE_SKINNED_VERTEX_NUM_OF_BONES];
+} SE_Skinned_Vertex;
+
 ///
 /// MATERIAL
 /// (think of material as a bunch of parameters)
@@ -66,6 +74,9 @@ typedef struct SE_Mesh {
 
     /* line */
     f32 line_width;
+
+    /* skinned */
+    bool is_skinned; // whether to use SE_Skinned_Vertex over SE_Vertex3D
 } SE_Mesh;
 
 /// delete vao, vbo, ibo
@@ -142,12 +153,13 @@ typedef struct SE_Renderer3D {
     u32 shaders_count;
     SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
 
-    u32 shader_lit;
-    u32 shader_shadow_calc;
-    u32 shader_shadow_omnidir_calc;
-    u32 shader_lines;
-    u32 shader_outline;
-    u32 shader_sprite;
+    u32 shader_lit;                 // handles static meshes affected by light and the material system
+    u32 shader_skinned_mesh;        // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
+    u32 shader_shadow_calc;         // handles directional light shadow calulation
+    u32 shader_shadow_omnidir_calc; // handls point light shadow calculation
+    u32 shader_lines;               // handles rendering lines
+    u32 shader_outline;             // handles rendering outlines of static meshes
+    u32 shader_sprite;              // handles rendering sprites
 
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];

@@ -106,6 +106,11 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
 /// MESH
 ///
 
+static void sedefault_mesh(SE_Mesh *mesh) {
+    mesh->type = SE_MESH_TYPE_NORMAL;
+    mesh->is_skinned = false;
+}
+
 void semesh_deinit(SE_Mesh *mesh) {
     glDeleteVertexArrays(1, &mesh->vao);
     glDeleteBuffers(1, &mesh->vbo);
@@ -114,7 +119,7 @@ void semesh_deinit(SE_Mesh *mesh) {
 }
 
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
-    mesh->type = SE_MESH_TYPE_NORMAL;
+    sedefault_mesh(mesh);
     SE_Vertex3D verts[4];
 
     scale = vec2_mul_scalar(scale, 0.5f);
@@ -152,6 +157,7 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
 }
 
 void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
+    sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_SPRITE;
     SE_Vertex3D verts[4];
 
@@ -190,8 +196,7 @@ void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
 }
 
 void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
-#if 1
-    mesh->type = SE_MESH_TYPE_NORMAL;
+    sedefault_mesh(mesh);
     SE_Vertex3D verts[8] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
@@ -230,122 +235,10 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
         3, 7, 4
     };
     semesh_generate(mesh, 8, verts, 12 * 3, indices);
-#else
-    mesh->type = SE_MESH_TYPE_NORMAL;
-    SE_Vertex3D verts[24] = {0};
-    scale = vec3_mul_scalar(scale, 0.5f);
-    RGBA colour = RGBA_WHITE;
-
-    verts[0+0].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // negative y
-    verts[1+0].position = (Vec3) {+scale.x, -scale.y, +scale.z};
-    verts[2+0].position = (Vec3) {+scale.x, -scale.y, -scale.z};
-    verts[3+0].position = (Vec3) {-scale.x, -scale.y, -scale.z};
-
-    verts[0+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
-    verts[1+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
-    verts[2+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
-    verts[3+0].normal = (Vec3) {0.0f, -1.0f, 0.0f};
-
-    verts[0+0].texture_coord = (Vec2) {0, 0};
-    verts[1+0].texture_coord = (Vec2) {0, 1};
-    verts[2+0].texture_coord = (Vec2) {1, 1};
-    verts[3+0].texture_coord = (Vec2) {1, 0};
-
-    verts[0+1].position = (Vec3) {-scale.x, +scale.y, +scale.z}; // positive y
-    verts[1+1].position = (Vec3) {-scale.x, +scale.y, -scale.z};
-    verts[2+1].position = (Vec3) {+scale.x, +scale.y, -scale.z};
-    verts[3+1].position = (Vec3) {+scale.x, +scale.y, +scale.z};
-
-    verts[0+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
-    verts[1+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
-    verts[2+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
-    verts[3+1].normal = (Vec3) {0.0f, +1.0f, 0.0f};
-
-    verts[0+1].texture_coord = (Vec2) {0, 0};
-    verts[1+1].texture_coord = (Vec2) {0, 1};
-    verts[2+1].texture_coord = (Vec2) {1, 1};
-    verts[3+1].texture_coord = (Vec2) {1, 0};
-
-    verts[0+2].position = (Vec3) {+scale.x, -scale.y, +scale.z}; // positive x
-    verts[1+2].position = (Vec3) {+scale.x, +scale.y, +scale.z};
-    verts[2+2].position = (Vec3) {+scale.x, +scale.y, -scale.z};
-    verts[3+2].position = (Vec3) {+scale.x, -scale.y, -scale.z};
-
-    verts[0+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
-    verts[1+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
-    verts[2+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
-    verts[3+2].normal = (Vec3) {+1.0f, 0.0f, 0.0f};
-
-    verts[0+2].texture_coord = (Vec2) {0, 0};
-    verts[1+2].texture_coord = (Vec2) {0, 1};
-    verts[2+2].texture_coord = (Vec2) {1, 1};
-    verts[3+2].texture_coord = (Vec2) {1, 0};
-
-    verts[0+3].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // negative x
-    verts[1+3].position = (Vec3) {-scale.x, -scale.y, -scale.z};
-    verts[2+3].position = (Vec3) {-scale.x, +scale.y, -scale.z};
-    verts[3+3].position = (Vec3) {-scale.x, +scale.y, +scale.z};
-
-    verts[0+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
-    verts[1+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
-    verts[2+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
-    verts[3+3].normal = (Vec3) {-1.0f, 0.0f, 0.0f};
-
-    verts[0+3].texture_coord = (Vec2) {0, 0};
-    verts[1+3].texture_coord = (Vec2) {0, 1};
-    verts[2+3].texture_coord = (Vec2) {1, 1};
-    verts[3+3].texture_coord = (Vec2) {1, 0};
-
-    verts[0+4].position = (Vec3) {-scale.x, -scale.y, +scale.z}; // positive z
-    verts[1+4].position = (Vec3) {-scale.x, +scale.y, +scale.z};
-    verts[2+4].position = (Vec3) {+scale.x, +scale.y, +scale.z};
-    verts[3+4].position = (Vec3) {+scale.x, -scale.y, +scale.z};
-
-    verts[0+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
-    verts[1+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
-    verts[2+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
-    verts[3+4].normal = (Vec3) {0.0f, 0.0f, +1.0f};
-
-    verts[0+4].texture_coord = (Vec2) {0, 0};
-    verts[1+4].texture_coord = (Vec2) {0, 1};
-    verts[2+4].texture_coord = (Vec2) {1, 1};
-    verts[3+4].texture_coord = (Vec2) {1, 0};
-
-    verts[0+5].position = (Vec3) {-scale.x, -scale.y, -scale.z}; // negative z
-    verts[1+5].position = (Vec3) {+scale.x, -scale.y, -scale.z};
-    verts[2+5].position = (Vec3) {-scale.x, +scale.y, -scale.z};
-    verts[3+5].position = (Vec3) {+scale.x, +scale.y, -scale.z};
-
-    verts[0+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
-    verts[1+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
-    verts[2+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
-    verts[3+5].normal = (Vec3) {0.0f, 0.0f, -1.0f};
-
-    verts[0+5].texture_coord = (Vec2) {0, 0};
-    verts[1+5].texture_coord = (Vec2) {0, 1};
-    verts[2+5].texture_coord = (Vec2) {1, 1};
-    verts[3+5].texture_coord = (Vec2) {1, 0};
-
-    u32 indices[36] = {
-        0+0, 1+0, 2+0, // negative y
-        2+0, 3+0, 0+0,
-        0+1, 1+1, 2+1, // positive y
-        2+1, 3+1, 0+1,
-        0+2, 1+2, 2+2, // positive x
-        2+2, 3+2, 0+2,
-        0+3, 1+3, 2+3, // negative x
-        2+3, 3+3, 0+3,
-        0+4, 1+4, 2+4, // positive z
-        2+4, 3+4, 0+4,
-        0+5, 1+5, 2+5, // negative z
-        2+5, 3+5, 0+5,
-    };
-    semesh_generate(mesh, 36, verts, 24, indices);
-#endif
 }
 
 void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
-    mesh->type = SE_MESH_TYPE_NORMAL;
+    sedefault_mesh(mesh);
     SE_Vertex3D verts[4] = {0};
 
     scale = vec3_mul_scalar(scale, 0.5f);
@@ -383,6 +276,7 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
 }
 
 void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
+    sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
 
@@ -398,6 +292,7 @@ void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
 }
 
 void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 positions_count, f32 line_width) {
+    sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = line_width;
 
@@ -422,6 +317,7 @@ void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 p
 }
 
 void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width) {
+    sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = line_width;
 
@@ -455,6 +351,7 @@ void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_wid
 }
 
 void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width) {
+    sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
 
@@ -649,6 +546,7 @@ AABB3D aabb3d_calc(const AABB3D *aabbs, u32 aabb_count) {
 
 static void semesh_construct
 (SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+    sedefault_mesh(mesh);
     u32 verts_count = 0;
     u32 index_count = 0;
     SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
