@@ -61,6 +61,7 @@ typedef enum SE_MESH_TYPES {
 
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
+    i32 next_mesh_index; // a link to the next mesh (a mesh can consist of multiple meshes) if set to -1, then there is no other mesh
     u32 vert_count;
     u32 vao;      // vertex array object
     u32 vbo;      // vertex buffer object

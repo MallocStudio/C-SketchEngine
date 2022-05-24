@@ -107,6 +107,7 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
 ///
 
 static void sedefault_mesh(SE_Mesh *mesh) {
+    mesh->next_mesh_index = -1;
     mesh->type = SE_MESH_TYPE_NORMAL;
     mesh->is_skinned = false;
 }
@@ -694,6 +695,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
         return result;
     }
 
+    result = renderer->meshes_count; // the first mesh in the chain
     for (u32 i = 0; i < scene->mNumMeshes; ++i) {
         struct aiMesh *ai_mesh = scene->mMeshes[i];
 
@@ -702,9 +704,12 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
         memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
         semesh_construct(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
-        result = renderer->meshes_count;
+        if (i > 0) {
+            renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
+        }
         renderer->meshes_count++;
     }
+    renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
     return result;
 }
 
@@ -854,6 +859,10 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
 void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
     serender_mesh(renderer, mesh, transform);
+
+    if (mesh->next_mesh_index > -1) {
+        serender_mesh_index(renderer, mesh->next_mesh_index, transform);
+    }
 }
 
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
@@ -1065,6 +1074,7 @@ u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
     renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+    sedefault_mesh(renderer->meshes[renderer->meshes_count]);
     renderer->meshes_count++;
     return result;
 }

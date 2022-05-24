@@ -578,3 +578,7 @@ void seui_hsv_picker_at(SE_UI *ctx, SEUI_Panel *panel, HSV *hsv) {
         seui_label(ctx, "test colour picker");
     }
 }
+
+void seui_texture_viewer(SE_UI *ctx, Rect rect, u32 texture_index) {
+    seui_render_texture_raw(&ctx->renderer, rect, texture_index);
+}

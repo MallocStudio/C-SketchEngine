@@ -19,17 +19,35 @@ static void debug_print_indices(u32 *indices, u32 count) {
     printf ("==end==\n");
 }
 
-void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd, u32 window_w, u32 window_h) {
+void seui_renderer_init(UI_Renderer *renderer, u32 window_w, u32 window_h) {
     renderer->initialised = true;
+    memset(renderer->shapes, 0, sizeof(renderer->shapes));
     renderer->shape_count = 0;
     renderer->vertex_count = 0;
     renderer->index_count = 0;
-    seshader_init_from(&renderer->shader, vsd, fsd);
-    if (renderer->shader.loaded_successfully) {
+    seshader_init_from(&renderer->shader, "shaders/UI.vsd", "shaders/UI.fsd");
+    seshader_init_from(&renderer->shader_texture, "shaders/UI_Textured.vsd", "shaders/UI_Textured.fsd");
+    if (renderer->shader.loaded_successfully && renderer->shader_texture.loaded_successfully) {
         /* filled shapes */
         glGenBuffers(1, &renderer->vbo);
         glGenBuffers(1, &renderer->ibo);
         glGenVertexArrays(1, &renderer->vao);
+
+        /* dynamic shapes */
+        glGenBuffers(1,      &renderer->vbo_dynamic);
+        glGenVertexArrays(1, &renderer->vao_dynamic);
+
+        { // -- generate the dynamic array buffer
+            glGenVertexArrays(1, &renderer->vao_dynamic);
+            glGenBuffers(1, &renderer->vbo_dynamic);
+            glBindVertexArray(renderer->vao_dynamic);
+            glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo_dynamic);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+        }
 
         /* lines */
         glGenBuffers(1, &renderer->vbo_lines);
@@ -53,11 +71,16 @@ void seui_renderer_resize(UI_Renderer *renderer, u32 window_w, u32 window_h) {
 void seui_renderer_deinit(UI_Renderer *renderer) {
     if (renderer->initialised) {
         seshader_deinit(&renderer->shader);
+        seshader_deinit(&renderer->shader_texture);
 
         /* filled shapes */
         glDeleteVertexArrays(1, &renderer->vao);
         glDeleteBuffers     (1, &renderer->vbo);
         glDeleteBuffers     (1, &renderer->ibo);
+
+        /* dynamic shapes */
+        glDeleteVertexArrays(1, &renderer->vao_dynamic);
+        glDeleteBuffers     (1, &renderer->vbo_dynamic);
 
         /* lines */
         glDeleteVertexArrays(1, &renderer->vao_lines);
@@ -72,6 +95,7 @@ void seui_renderer_deinit(UI_Renderer *renderer) {
 
 void seui_renderer_clear(UI_Renderer *renderer) {
     renderer->shape_count = 0;
+    renderer->shape_textured_count = 0;
 }
 
 void seui_renderer_upload(UI_Renderer *renderer) {
@@ -222,11 +246,15 @@ void seui_renderer_upload(UI_Renderer *renderer) {
     free(indices_lines);
 }
 
+/// ------------------------------------------------------------
+///                 THE DRAWING HAPPENS HERE
+/// ------------------------------------------------------------
+
 void seui_renderer_draw(UI_Renderer *renderer) {
     seshader_use(&renderer->shader);
     seshader_set_uniform_mat4(&renderer->shader, "projection_view", renderer->view_projection);
 
-    seshader_set_uniform_i32(&renderer->shader, "icons_texture", 0);
+    seshader_set_uniform_i32(&renderer->shader, "diffuse", 0);
     setexture_atlas_bind(&renderer->icons);
 
     { // -- filled shapes
@@ -243,6 +271,40 @@ void seui_renderer_draw(UI_Renderer *renderer) {
     }
 
     setexture_atlas_unbind();
+
+    /* textured shapes */
+    seshader_use(&renderer->shader_texture);
+    seshader_set_uniform_mat4(&renderer->shader_texture, "projection_view", renderer->view_projection);
+    seshader_set_uniform_i32(&renderer->shader_texture, "diffuse", 0);
+    glBindVertexArray(renderer->vao_dynamic);
+    for (u32 i = 0; i < renderer->shape_textured_count; ++i) {
+        UI_Shape_Textured shape = renderer->shapes_textured[i];
+        f32 xpos = shape.rect.x;
+        f32 ypos = shape.rect.y;
+        f32 w = shape.rect.w;
+        f32 h = shape.rect.h;
+        setexture_bind(&renderer->textures[shape.texture_index], 0);
+        Vec2 uv_min = v2f(0, 0);
+        Vec2 uv_max = v2f(1, 1);
+        // update VBO for each character
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   uv_min.x, uv_min.y },
+            { xpos,     ypos,       uv_min.x, uv_max.y },
+            { xpos + w, ypos,       uv_max.x, uv_max.y },
+
+            { xpos,     ypos + h,   uv_min.x, uv_min.y },
+            { xpos + w, ypos,       uv_max.x, uv_max.y },
+            { xpos + w, ypos + h,   uv_max.x, uv_min.y }
+        };
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo_dynamic);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 static bool vertex_equals(UI_Vertex v1, UI_Vertex v2) {
@@ -409,6 +471,13 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index, RGBA
     };
     seui_shape_rect_textured(&renderer->shapes[renderer->shape_count], rect, cell_index, cell_size, texture_size, tint);
     renderer->shape_count++;
+}
+
+void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 texture_index) {
+    UI_Shape_Textured *shape = &renderer->shapes_textured[renderer->shape_textured_count];
+    shape->rect = rect;
+    shape->texture_index = texture_index;
+    renderer->shape_textured_count++;
 }
 
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour) {

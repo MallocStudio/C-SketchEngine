@@ -26,7 +26,13 @@ typedef struct UI_Shape {
     u32 indices[UI_SHAPE_INDEX_MAX_SIZE];
 } UI_Shape;
 
+typedef struct UI_Shape_Textured{
+    Rect rect;
+    u32 texture_index;
+} UI_Shape_Textured;
+
 #define UI_RENDERER_SHAPE_MAX_SIZE 1024
+#define UI_RENDERER_SHAPE_TEXTURED_MAX_SIZE 10
 #define UI_ICON_INDEX_NULL       (Vec2) {0, 0}
 #define UI_ICON_INDEX_COLLAPSE   (Vec2) {1, 0}
 #define UI_ICON_INDEX_UNCOLLAPSE (Vec2) {2, 0}
@@ -46,26 +52,34 @@ typedef struct UI_Renderer {
     u32 index_count_lines; // calculated when data is uploaded to the GPU
     u32 shape_count;
     UI_Shape shapes[UI_RENDERER_SHAPE_MAX_SIZE];
+    u32 shape_textured_count;
+    UI_Shape_Textured shapes_textured[UI_RENDERER_SHAPE_TEXTURED_MAX_SIZE];
 
     u32 vao; // vertex array object
     u32 vbo; // vertex buffer object
     u32 ibo; // index  buffer object
+
+    u32 vao_dynamic; // vertex array object
+    u32 vbo_dynamic; // vertex buffer object
 
     u32 vao_lines;
     u32 vbo_lines;
     u32 ibo_lines;
 
     SE_Shader shader; // the shader used to render the UI
+    SE_Shader shader_texture; // the shader used to render textured ui elements
     bool initialised; // is the renderer initialised
 
     SE_Texture_Atlas icons;
+    u32 texture_count;
+    SE_Texture textures[100];
 
     Mat4 view_projection;
     f32 view_width;
     f32 view_height;
 } UI_Renderer;
 
-void seui_renderer_init(UI_Renderer *renderer, const char *vsd, const char *fsd, u32 window_w, u32 window_h);
+void seui_renderer_init(UI_Renderer *renderer, u32 window_w, u32 window_h);
 void seui_renderer_resize(UI_Renderer *renderer, u32 window_w, u32 window_h);
 void seui_renderer_deinit(UI_Renderer *renderer);
 /// Upload the renderer's data to the GPU so we can draw it
@@ -83,6 +97,7 @@ void seui_renderer_draw(UI_Renderer *renderer);
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint);
+void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 texture_index);
 /// render a line
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour);
 void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);

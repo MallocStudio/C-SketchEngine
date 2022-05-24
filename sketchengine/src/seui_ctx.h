@@ -165,7 +165,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     ctx->active = SEUI_ID_NULL;
     seui_reset(ctx);
     ctx->input = input;
-    seui_renderer_init(&ctx->renderer, "shaders/UI.vsd", "shaders/UI.fsd", window_w, window_h);
+    seui_renderer_init(&ctx->renderer, window_w, window_h);
     se_init_text_default(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
     seui_theme_default(&ctx->theme);
 
@@ -245,5 +245,11 @@ SEINLINE void seui_render(SE_UI *ctx) {
 
     /* clear data */
     seui_renderer_clear (&ctx->renderer);
+}
+
+SEINLINE u32 seui_add_texture(SE_UI *ctx, SE_Texture texture) {
+    ctx->renderer.textures[ctx->renderer.texture_count] = texture;
+    ctx->renderer.texture_count++;
+    return ctx->renderer.texture_count - 1;
 }
 #endif // SEUI_H_CTX

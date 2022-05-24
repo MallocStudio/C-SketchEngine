@@ -14,7 +14,8 @@ SE_UI *ctx;
 SEUI_Panel *panel;
 SEUI_Panel *panel_entity_info;
 SEUI_Panel *test_colour_picker;
-HSV hsv;
+HSV hsv; // @temp
+u32 test_texture; // @temp
 Panel_Entity panel_entity;
 
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
@@ -129,6 +130,10 @@ void app_init(Application *app, SDL_Window *window) {
         panel_init(&app_panel);
 
         panel_entity_init(app, &panel_entity, player2);
+
+        SE_Texture soulspear_texture = app->renderer.materials[app->renderer.meshes[app->entities[player].mesh_index]->material_index]->texture_diffuse;
+        // test_texture = seui_add_texture(ctx, app->renderer.texture_default_diffuse);
+        test_texture = seui_add_texture(ctx, soulspear_texture);
     }
 }
 
@@ -154,16 +159,14 @@ void app_update(Application *app) {
         seui_reset(ctx);
         if (seui_button_at(ctx, "entity", (Rect) {0,0, 128, 64})) {
             if (panel_entity_info == NULL) panel_entity_info = seui_add_panel(ctx);
-            // seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
         }
 
         if (seui_button_at(ctx, "light", (Rect) {128,0, 128, 64})) {
             if (panel == NULL) panel = seui_add_panel(ctx);
-            // seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
         }
 
         seui_hsv_picker_at(ctx, test_colour_picker, &hsv);
-
+        seui_texture_viewer(ctx, (Rect) {100, 100, 100, 100}, test_texture);
         if (seui_panel_at(ctx, "panel", panel)) {
             if (!panel->minimised) {
                 seui_panel_row(ctx, 32, 2);

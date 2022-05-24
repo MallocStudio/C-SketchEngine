@@ -43,6 +43,9 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect);
 /// If min AND max are zero, the limits will be ignored
 bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
 
+void seui_texture_viewer(SE_UI *ctx, Rect rect, u32 texture_index); // texture_index refers to the texture added to the renderer
+// void seui_image_viewer(SE_UI *ctx, Rect rect, const SE_Texture *texture);
+
 ///
 /// WIDGETS INSIDE OF PANELS
 ///
