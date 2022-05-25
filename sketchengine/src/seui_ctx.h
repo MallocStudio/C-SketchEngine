@@ -59,6 +59,24 @@ typedef struct SEUI_Panel {
         bool is_embedded; // is inside of another panel
 } SEUI_Panel;
 
+// typedef struct {
+//     i32 id; // dummy
+// } SE_Constructed;
+
+// typedef struct SE_Constructed_Panel {
+//     /* configs set by user */
+//     bool config_centered; // the alignment of the children
+//     Vec2 config_pos; // initial position
+//     u32 children_count;
+//     SE_Constructed children[100];
+//     /* internal private data */
+// } SE_Constructed_Panel;
+
+// typedef struct SE_Constructed_Button {
+//     SE_Constructed basic;
+//     const char *text;
+// } SE_Constructed_Button;
+
 typedef struct SE_Theme {
     /* colours */
     RGBA colour_normal;

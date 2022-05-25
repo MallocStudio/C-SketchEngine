@@ -135,6 +135,18 @@ void app_init(Application *app, SDL_Window *window) {
         // test_texture = seui_add_texture(ctx, app->renderer.texture_default_diffuse);
         test_texture = seui_add_texture(ctx, soulspear_texture);
     }
+    // { // -- constructed UI
+    //     SE_Constructed_Panel root = {
+    //         .config_centered = true,
+    //         .config_pos = v2f(300, 300),
+
+    //         .children = {
+    //             (SE_Constructed) (SE_Constructed_Button) {
+    //                 .text = "test button"
+    //             }
+    //         }
+    //     };
+    // }
 }
 
 void app_deinit(Application *app) {
