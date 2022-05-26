@@ -18,6 +18,14 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
 /// Make a row
 void seui_panel_row(SE_UI *ctx, f32 height, u32 columns) {
     SEUI_Panel *panel = ctx->current_panel;
+    // panel->row_width = panel->row_width;     // keep the same width as the previous row
+    // panel->row_height = panel->min_item_height; // reset row height
+    panel->row_height = height; // reset row height
+    panel->row_width  = panel->cached_rect.w;
+    panel->row_columns = columns;
+
+    panel->next_item_height = panel->row_height;
+
     /* reset for the new row */
     panel->cursor.x = 0;
     panel->cursor.y -= panel->row_height;
@@ -26,13 +34,6 @@ void seui_panel_row(SE_UI *ctx, f32 height, u32 columns) {
     panel->fit_cursor.y -= panel->row_height; // sense row_height is shrunk to min height
     panel->fit_size.y += panel->row_height;
 
-    // panel->row_width = panel->row_width;     // keep the same width as the previous row
-    // panel->row_height = panel->min_item_height; // reset row height
-    panel->row_height = height; // reset row height
-    panel->row_width  = panel->cached_rect.w;
-    panel->row_columns = columns;
-
-    panel->next_item_height = panel->row_height;
 }
 
 void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {

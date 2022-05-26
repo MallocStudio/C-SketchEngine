@@ -573,10 +573,12 @@ RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v) {
 
 void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
     if (seui_panel_at(ctx, "hsv picker")) {
-        seui_panel_row(ctx, 32, 2);
+        seui_panel_row(ctx, 128, 1);
         // seui_panel
-        seui_label(ctx, "test colour picker");
-        seui_label(ctx, "test colour picker");
+        // seui_label(ctx, "test colour picker");
+        // seui_label(ctx, "test colour picker");
+        Rect rect = seui_panel_put(ctx, 32, false);
+        seui_render_shape_colour_wheel(&ctx->renderer, v2f(rect.x + rect.w / 2, rect.y + rect.h / 2), rect.h / 2, rect.h / 8);
     }
 }
 

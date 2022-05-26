@@ -168,7 +168,6 @@ void app_update(Application *app) {
 /// ---------------------------------------------------------
     { // -- ui
         seui_reset(ctx);
-        seui_render_shape_colour_wheel(&ctx->renderer, v2f(600, 400), 128, 16);
 
         if (seui_panel_at(ctx, "light")) {
             light_panel = ctx->current_panel->index;
