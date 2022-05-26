@@ -35,7 +35,7 @@ void seui_panel_row(SE_UI *ctx, f32 height, u32 columns) {
     panel->next_item_height = panel->row_height;
 }
 
-void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
     seui_configure_panel_reset(panel);
     panel->calc_rect = initial_rect;
     panel->cached_rect = initial_rect;
@@ -47,7 +47,6 @@ void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool 
 
     panel->row_height = panel->min_item_height; // default row height
     panel->row_width  = panel->min_item_height; // default row width
-    panel->min_size = min_size;
 }
 
 /// Returns a rectangle that's suppose to be the rect

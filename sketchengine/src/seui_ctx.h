@@ -28,7 +28,7 @@ typedef struct SEUI_Panel {
         // this is the minimum size the user can resize the panel to.
         // note that this is not automatically calculated, so this can be set
         // by the user at any point.
-        Vec2 min_size;
+        // Vec2 min_size; // not ethat fit_size can be set directly by the user if not putting any widgets inside of the panel
 
         /* layouting configuration */
         f32 config_row_left_margin;
@@ -124,7 +124,6 @@ typedef struct SE_UI {
     /* Panels */
     u32 panel_capacity;
     u32 panel_count;
-    u32 current_panel_index; // the index of the latest panel
     struct SEUI_Panel *panels;
     struct SEUI_Panel *current_panel;         // the panel we put the widgets on
 
@@ -150,7 +149,7 @@ SEINLINE void seui_configure_text_input_reset(SE_UI *ctx) {
     ctx->text_input_only_numerical = false;
 }
 
-void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, Vec2 min_size, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
 
 /// Reset the panel configurations to their default values.
 /// These are the values that the user can manually set before each widget call
@@ -263,8 +262,7 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
             128 * 2,
             128 * 2
         };
-        Vec2 min_size = v2f(124, 124);
-        seui_panel_setup(&ctx->panels[panel], init_rect, min_size, false, 32, 0);
+        seui_panel_setup(&ctx->panels[panel], init_rect, false, 32, 0);
         ctx->panels[panel].index = panel;
         ctx->panels[panel].is_closed = false;
         ctx->panel_count++;

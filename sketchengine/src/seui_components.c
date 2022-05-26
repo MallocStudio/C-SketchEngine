@@ -581,6 +581,15 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
     if (seui_panel_at(ctx, "texture viewer")) {
         Rect rect = ctx->current_panel->cached_rect;
+        rect.h -= 32;
+        ctx->current_panel->fit_size = v2f(128, 128);
+
+        if (rect.h > rect.w) {
+            rect.h = rect.w;
+        }
+        if (rect.w > rect.h) {
+            rect.w = rect.h;
+        }
         seui_render_texture_raw(&ctx->renderer, rect, texture_index);
     }
 }
