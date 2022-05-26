@@ -43,7 +43,9 @@ typedef struct RGB {
 } RGB;
 #define TYPEOF_RGB_OPENGL GL_UNSIGNED_BYTE
 typedef struct HSV {
-    i32 h, s, v;
+    i32 h; // in degrees [0-360]
+    i32 s;
+    i32 v;
 } HSV;
 
 SEINLINE void rgba_normalise(RGBA *rgb) {

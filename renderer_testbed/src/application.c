@@ -168,9 +168,8 @@ void app_update(Application *app) {
 /// ---------------------------------------------------------
     { // -- ui
         seui_reset(ctx);
+        seui_render_shape_colour_wheel(&ctx->renderer, v2f(600, 400), 128, 16);
 
-        // seui_hsv_picker(ctx, test_colour_picker, &hsv);
-        // seui_texture_viewer(ctx, (Rect) {100, 100, 100, 100}, test_texture);
         if (seui_panel_at(ctx, "light")) {
             light_panel = ctx->current_panel->index;
             seui_panel_row(ctx, 32, 2);
@@ -229,6 +228,7 @@ void app_update(Application *app) {
         }
 
         seui_texture_viewer(ctx, test_texture);
+
         if (light_map_texture != 0) {
             seui_texture_viewer(ctx, light_map_texture);
         }
@@ -251,8 +251,6 @@ void app_update(Application *app) {
         if (seui_button_at(ctx, "hsv", (Rect) {252, 0, 128, 64})) {
             show_hsv = !show_hsv;
         }
-        // printf("fit size: %f, %f\n", panel_entity_info.fit_size.x, panel_entity_info.fit_size.y);
-        // seui_render_rect_outline(&ctx->renderer, (Rect) {panel_entity_info.cached_rect.x, panel_entity_info.cached_rect.y, panel_entity_info.fit_size.x, panel_entity_info.fit_size.y}, 1, RGBA_WHITE); // @temp
     }
 
     { // -- calculate world aabb

@@ -18,7 +18,7 @@ typedef struct UI_Vertex {
 } UI_Vertex;
 
 #define UI_SHAPE_VERTEX_MAX_SIZE 64
-#define UI_SHAPE_INDEX_MAX_SIZE 10
+#define UI_SHAPE_INDEX_MAX_SIZE 66
 typedef struct UI_Shape {
     u32 vertex_count;
     UI_Vertex vertices[UI_SHAPE_VERTEX_MAX_SIZE];
@@ -90,7 +90,7 @@ void seui_renderer_draw(UI_Renderer *renderer);
 ///
 /// shapes:
 ///
-
+void seui_render_shape_colour_wheel(UI_Renderer *renderer, Vec2 center, f32 outer_radius, f32 width);
 /// render a filled rectangle
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs

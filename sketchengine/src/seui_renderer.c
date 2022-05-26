@@ -477,7 +477,6 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index, RGBA
 void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 opengl_texture) {
     UI_Shape_Textured *shape = &renderer->shapes_textured[renderer->shape_textured_count];
     shape->rect = rect;
-    // shape->texture_index = texture_index;
     shape->opengl_texture = opengl_texture;
     renderer->shape_textured_count++;
 }
@@ -525,7 +524,6 @@ void seui_render_colour_box(UI_Renderer *renderer, Rect rect, i32 hue) {
     seui_shape_add_vertex(shape, (Vec2) {rect.x         , rect.y + rect.h}, RGBA_WHITE);
     seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y + rect.h}, (RGBA) {colour.r, colour.g, colour.b, 255});
     seui_shape_add_vertex(shape, (Vec2) {rect.x + rect.w, rect.y         }, RGBA_BLACK);
-    SDL_assert_always(shape->vertex_count == 4);
 
     /* add the indices */
     shape->index_count = 0;
@@ -535,4 +533,56 @@ void seui_render_colour_box(UI_Renderer *renderer, Rect rect, i32 hue) {
     seui_shape_add_index(shape, 2);
     seui_shape_add_index(shape, 3);
     seui_shape_add_index(shape, 0);
+}
+
+static void seui_shape_colour_wheel_piece(UI_Renderer *renderer, Vec2 center, f32 outer_radius, f32 width, f32 *angle_ptr, f32 angle_increment_amount) {
+    // ! FOR SOME ODD REASON, A SHAPE CANNOT HAVE MORE THAN 6 INDICES AND/OR 4 VERTICES, SO WE HAVE TO BREAK UP THE WHEEL SHAPE INTO MULTIPLE SHAPES
+    // ! // @TODO DEBUG THIS BS. WHEN WE HAVE MORE THAN THE SPECIFIED AMOUNT, WE GET WEIRD RESULTS EVEN IF WE END OF WITH MULTIPLE QUADS WITHIN THE SAME SHAPE
+    UI_Shape *shape = &renderer->shapes[renderer->shape_count];
+    renderer->shape_count++;
+
+    shape->vertex_count = 0;
+    shape->index_count = 0;
+    f32 angle = *angle_ptr;
+    RGBA colour;
+    colour.a = 255;
+    // outer
+    f32 x = semath_cos(angle) * outer_radius + center.x;
+    f32 y = semath_sin(angle) * outer_radius + center.y;
+    hsv_to_rgba(angle * SEMATH_RAD2DEG_MULTIPLIER, 1, 1, &colour);
+    seui_shape_add_vertex(shape, v2f(x,y), colour);
+    // inner
+    x = semath_cos(angle) * (outer_radius - width) + center.x;
+    y = semath_sin(angle) * (outer_radius - width) + center.y;
+    seui_shape_add_vertex(shape, v2f(x,y), colour);
+
+    angle += angle_increment_amount;
+    // outer
+    x = semath_cos(angle) * outer_radius + center.x;
+    y = semath_sin(angle) * outer_radius + center.y;
+    hsv_to_rgba(angle * SEMATH_RAD2DEG_MULTIPLIER, 1, 1, &colour);
+    seui_shape_add_vertex(shape, v2f(x,y), colour);
+    // inner
+    x = semath_cos(angle) * (outer_radius - width) + center.x;
+    y = semath_sin(angle) * (outer_radius - width) + center.y;
+    seui_shape_add_vertex(shape, v2f(x,y), colour);
+
+
+    seui_shape_add_index(shape, 0);
+    seui_shape_add_index(shape, 1);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 1);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 3);
+
+    *angle_ptr = angle;
+}
+
+void seui_render_shape_colour_wheel(UI_Renderer *renderer, Vec2 center, f32 outer_radius, f32 width) {
+    u32 number_of_edges = 32;
+    f32 angle_increment_amount = SEMATH_PI_2 / number_of_edges;
+    f32 angle = 0;
+    for (u32 i = 0; i < number_of_edges; ++i) {
+        seui_shape_colour_wheel_piece(renderer, center, outer_radius, width, &angle, angle_increment_amount);
+    }
 }

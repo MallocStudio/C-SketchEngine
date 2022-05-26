@@ -165,7 +165,7 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
 bool seui_panel_at(SE_UI *ctx, const char *title);
 
 void seui_panel_row(SE_UI *ctx, f32 height, u32 columns);
-Rect panel_put(SE_UI *ctx, f32 min_width, bool expand);
+Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand);
 
 /// call this at the beginning of every frame before creating other widgets
 SEINLINE void seui_reset(SE_UI *ctx) {
