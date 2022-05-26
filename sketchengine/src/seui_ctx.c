@@ -90,8 +90,26 @@ Rect panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand param
 
 bool seui_panel_at(SE_UI *ctx, const char *title) {
     SEUI_Panel *panel_data = seui_ctx_get_panel(ctx);
-
     if (panel_data == NULL) return false;
+
+    /* move the panel inside of the viewport of any portion of it is outside */
+    // right
+    if (panel_data->calc_rect.x + panel_data->calc_rect.w > ctx->txt_renderer.viewport.w) {
+        panel_data->calc_rect.x = ctx->txt_renderer.viewport.w - panel_data->calc_rect.w;
+    }
+    // left
+    if (panel_data->calc_rect.x < 0) {
+        panel_data->calc_rect.x = 0;
+    }
+    // top
+    if (panel_data->calc_rect.y + panel_data->calc_rect.h > ctx->txt_renderer.viewport.h) {
+        panel_data->calc_rect.y = ctx->txt_renderer.viewport.h - panel_data->calc_rect.h;
+    }
+    // bottom
+    if (panel_data->calc_rect.y < 0) {
+        panel_data->calc_rect.y = 0;
+    }
+
     if (panel_data->is_closed) return false;
     ctx->current_panel = panel_data;
     bool *minimised   = &panel_data->minimised;
