@@ -283,7 +283,8 @@ void seui_renderer_draw(UI_Renderer *renderer) {
         f32 ypos = shape.rect.y;
         f32 w = shape.rect.w;
         f32 h = shape.rect.h;
-        setexture_bind(&renderer->textures[shape.texture_index], 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, shape.opengl_texture);
         Vec2 uv_min = v2f(0, 0);
         Vec2 uv_max = v2f(1, 1);
         // update VBO for each character
@@ -473,10 +474,11 @@ void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 cell_index, RGBA
     renderer->shape_count++;
 }
 
-void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 texture_index) {
+void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 opengl_texture) {
     UI_Shape_Textured *shape = &renderer->shapes_textured[renderer->shape_textured_count];
     shape->rect = rect;
-    shape->texture_index = texture_index;
+    // shape->texture_index = texture_index;
+    shape->opengl_texture = opengl_texture;
     renderer->shape_textured_count++;
 }
 

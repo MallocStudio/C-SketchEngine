@@ -16,6 +16,7 @@ u32 light_panel = -1;
 bool show_hsv = false;
 HSV hsv; // @temp
 u32 test_texture; // @temp
+u32 light_map_texture = 0;
 Panel_Entity panel_entity;
 
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
@@ -71,6 +72,7 @@ void app_init(Application *app, SDL_Window *window) {
         app->renderer.light_directional.diffuse   = (RGB)  {255, 255, 255};
         // light_pos = (Vec3) {0.5f, 1, 0.5f};
         // light_pos_normalised = vec3_normalised(light_pos);
+        light_map_texture = app->renderer.shadow_render_target.texture;
     }
 
     { // -- init entities
@@ -130,8 +132,7 @@ void app_init(Application *app, SDL_Window *window) {
         panel_entity_init(app, &panel_entity, player2);
 
         SE_Texture soulspear_texture = app->renderer.materials[app->renderer.meshes[app->entities[player].mesh_index]->material_index]->texture_diffuse;
-        // test_texture = seui_add_texture(ctx, app->renderer.texture_default_diffuse);
-        test_texture = seui_add_texture(ctx, soulspear_texture);
+        test_texture = soulspear_texture.id;
     }
     // { // -- constructed UI
     //     SE_Constructed_Panel root = {
@@ -228,6 +229,9 @@ void app_update(Application *app) {
         }
 
         seui_texture_viewer(ctx, test_texture);
+        if (light_map_texture != 0) {
+            seui_texture_viewer(ctx, light_map_texture);
+        }
 
         if (show_hsv) {
             seui_hsv_picker(ctx, &hsv);

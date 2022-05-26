@@ -237,11 +237,11 @@ SEINLINE void seui_render(SE_UI *ctx) {
     seui_renderer_clear (&ctx->renderer);
 }
 
-SEINLINE u32 seui_add_texture(SE_UI *ctx, SE_Texture texture) {
-    ctx->renderer.textures[ctx->renderer.texture_count] = texture;
-    ctx->renderer.texture_count++;
-    return ctx->renderer.texture_count - 1;
-}
+// SEINLINE u32 seui_add_texture(SE_UI *ctx, SE_Texture texture) {
+//     ctx->renderer.textures[ctx->renderer.texture_count] = texture;
+//     ctx->renderer.texture_count++;
+//     return ctx->renderer.texture_count - 1;
+// }
 
 SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
     if (ctx->panel_count >= ctx->panel_capacity) {

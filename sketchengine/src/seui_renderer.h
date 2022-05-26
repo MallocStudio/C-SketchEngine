@@ -28,7 +28,7 @@ typedef struct UI_Shape {
 
 typedef struct UI_Shape_Textured{
     Rect rect;
-    u32 texture_index;
+    u32 opengl_texture;
 } UI_Shape_Textured;
 
 #define UI_RENDERER_SHAPE_MAX_SIZE 1024
@@ -71,8 +71,6 @@ typedef struct UI_Renderer {
     bool initialised; // is the renderer initialised
 
     SE_Texture_Atlas icons;
-    u32 texture_count;
-    SE_Texture textures[100];
 
     Mat4 view_projection;
     f32 view_width;
@@ -97,7 +95,7 @@ void seui_renderer_draw(UI_Renderer *renderer);
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs
 void seui_render_texture(UI_Renderer *renderer, Rect rect, Vec2 index, RGBA tint);
-void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 texture_index);
+void seui_render_texture_raw(UI_Renderer *renderer, Rect rect, u32 opengl_texture);
 /// render a line
 void seui_render_line(UI_Renderer *renderer, Vec2 pos1, Vec2 pos2, f32 width, RGBA colour);
 void seui_render_circle(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour);
