@@ -11,9 +11,9 @@ RGBA color;
 
 /* ui */
 SE_UI *ctx;
-SEUI_Panel *panel;
-SEUI_Panel *panel_entity_info;
-SEUI_Panel *test_colour_picker;
+u32 entity_panel = -1;
+u32 light_panel = -1;
+bool show_hsv = false;
 HSV hsv; // @temp
 u32 test_texture; // @temp
 Panel_Entity panel_entity;
@@ -120,15 +120,13 @@ void app_init(Application *app, SDL_Window *window) {
         ctx = new (SE_UI);
         seui_init(ctx, &app->input, window_w, window_h);
 
-        // seui_panel_setup(&panel2,            (Rect) {300, 0, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 0);
-        panel = seui_add_panel(ctx);
-        panel_entity_info = seui_add_panel(ctx);
-        seui_panel_setup(panel,             (Rect) {0, 0, 300, 400}, v2f(128 * 2, 128 * 2), false, 32, 1);
-        seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
-        test_colour_picker = seui_add_panel(ctx);
+        // panel = seui_add_panel(ctx);
+        // panel_entity_info = seui_add_panel(ctx);
+        // seui_panel_setup(panel,             (Rect) {0, 0, 300, 400}, v2f(128 * 2, 128 * 2), false, 32, 1);
+        // seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
+        // test_colour_picker = seui_add_panel(ctx);
 
         panel_init(&app_panel);
-
         panel_entity_init(app, &panel_entity, player2);
 
         SE_Texture soulspear_texture = app->renderer.materials[app->renderer.meshes[app->entities[player].mesh_index]->material_index]->texture_diffuse;
@@ -169,92 +167,86 @@ void app_update(Application *app) {
 /// ---------------------------------------------------------
     { // -- ui
         seui_reset(ctx);
+
+        // seui_hsv_picker(ctx, test_colour_picker, &hsv);
+        // seui_texture_viewer(ctx, (Rect) {100, 100, 100, 100}, test_texture);
+        if (seui_panel_at(ctx, "light")) {
+            light_panel = ctx->current_panel->index;
+            seui_panel_row(ctx, 32, 2);
+            seui_label(ctx, "light direction:");
+            seui_slider2d(ctx, &app_panel.light_direction);
+            seui_panel_row(ctx, 32, 2);
+            seui_label(ctx, "light intensity:");
+            seui_slider(ctx, &app_panel.light_intensity);
+
+            seui_panel_row(ctx, 32, 2);
+            seui_label(ctx, "colour:");
+            color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
+
+            seui_panel_row(ctx, 32, 4);
+            seui_label(ctx, "test input1:");
+            seui_input_text(ctx, &app_panel.input_text);
+            seui_label(ctx, "test input2:");
+            seui_input_text(ctx, &app_panel.input_text2);
+
+            seui_panel_row(ctx, 32, 3);
+            seui_label(ctx, "p1");
+            seui_label(ctx, "p2");
+
+            if (seui_button(ctx, "file open")) {
+                printf("haha got ya\n");
+            }
+
+            seui_panel_row(ctx, 32, 1);
+
+            seui_label_vec3(ctx, "light position", &point_light_pos, true);
+        }
+
+        if (seui_panel_at(ctx, "entity")) {
+            entity_panel = ctx->current_panel->index;
+            char label_buffer[255];
+            seui_panel_row(ctx, 32, 4);
+
+            /* id */
+            seui_label(ctx, "entity:");
+            if (seui_selector(ctx, &panel_entity.entity_id, 0, app->entity_count-1)) {
+                panel_entity_init(app, &panel_entity, panel_entity.entity_id);
+            }
+            /* mesh */
+            sprintf(label_buffer, "%i", *panel_entity.entity_mesh);
+            seui_label(ctx, "mesh:");
+            seui_label(ctx, label_buffer);
+
+            // SE_String entity_info;
+            // sestring_init(&entity_info,
+            /* pos, rot, scale */
+            Vec3 rot_in_degrees = vec3_mul_scalar(*panel_entity.entity_rot, SEMATH_RAD2DEG_MULTIPLIER);
+            seui_label_vec3(ctx, "position", panel_entity.entity_pos, true);
+            seui_label_vec3(ctx, "rotation", &rot_in_degrees, true);
+            seui_label_vec3(ctx, "scale", panel_entity.entity_scale, false);
+            *panel_entity.entity_rot = vec3_mul_scalar(rot_in_degrees, SEMATH_DEG2RAD_MULTIPLIER);
+        }
+
+        seui_texture_viewer(ctx, test_texture);
+
+        if (show_hsv) {
+            seui_hsv_picker(ctx, &hsv);
+            ctx->current_panel->is_closed = false;
+        }
+
         if (seui_button_at(ctx, "entity", (Rect) {0,0, 128, 64})) {
-            if (panel_entity_info == NULL) panel_entity_info = seui_add_panel(ctx);
+            // if (panel_entity_info == NULL) panel_entity_info = seui_add_panel(ctx);
+            ctx->panels[entity_panel].is_closed = false;
         }
 
         if (seui_button_at(ctx, "light", (Rect) {128,0, 128, 64})) {
-            if (panel == NULL) panel = seui_add_panel(ctx);
+            // if (panel == NULL) panel = seui_add_panel(ctx);
+            ctx->panels[light_panel].is_closed = false;
         }
 
-        seui_hsv_picker_at(ctx, test_colour_picker, &hsv);
-        seui_texture_viewer(ctx, (Rect) {100, 100, 100, 100}, test_texture);
-        if (seui_panel_at(ctx, "panel", panel)) {
-            if (!panel->minimised) {
-                seui_panel_row(ctx, 32, 2);
-                seui_label(ctx, "light direction:");
-                seui_slider2d(ctx, &app_panel.light_direction);
-                seui_panel_row(ctx, 32, 2);
-                seui_label(ctx, "light intensity:");
-                seui_slider(ctx, &app_panel.light_intensity);
-
-                seui_panel_row(ctx, 32, 2);
-                seui_label(ctx, "colour:");
-                color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
-
-                seui_panel_row(ctx, 32, 4);
-                seui_label(ctx, "test input1:");
-                seui_input_text(ctx, &app_panel.input_text);
-                seui_label(ctx, "test input2:");
-                seui_input_text(ctx, &app_panel.input_text2);
-
-                seui_panel_row(ctx, 32, 3);
-                seui_label(ctx, "p1");
-                seui_label(ctx, "p2");
-
-                if (seui_button(ctx, "file open")) {
-                    printf("haha got ya\n");
-                }
-
-                seui_panel_row(ctx, 32, 1);
-
-                // panel2.config_row_left_margin = 16;
-                // panel2.config_row_right_margin = 16;
-
-                // if (seui_panel(ctx, "panel2", &panel2)) {
-                //     seui_panel_row(&panel2);
-                //     seui_label(ctx, "rot x:");
-                //     seui_slider(ctx, &app->entities[player].oriantation.x);
-                //     seui_label(ctx, "rot y:");
-                //     seui_slider(ctx, &app->entities[player].oriantation.y);
-                //     seui_label(ctx, "rot z:");
-                //     seui_slider(ctx, &app->entities[player].oriantation.z);
-                // }
-
-                seui_label_vec3(ctx, "light position", &point_light_pos, true);
-            }
-        } else {
-            panel = NULL;
+        if (seui_button_at(ctx, "hsv", (Rect) {252, 0, 128, 64})) {
+            show_hsv = !show_hsv;
         }
-
-        if (seui_panel_at(ctx, "entity", panel_entity_info)) {
-            if (!panel_entity_info->minimised) {
-                char label_buffer[255];
-                seui_panel_row(ctx, 32, 4);
-
-                /* id */
-                seui_label(ctx, "entity:");
-                if (seui_selector(ctx, &panel_entity.entity_id, 0, app->entity_count-1)) {
-                    panel_entity_init(app, &panel_entity, panel_entity.entity_id);
-                }
-                /* mesh */
-                sprintf(label_buffer, "%i", *panel_entity.entity_mesh);
-                seui_label(ctx, "mesh:");
-                seui_label(ctx, label_buffer);
-
-                // SE_String entity_info;
-                // sestring_init(&entity_info,
-                /* pos, rot, scale */
-                Vec3 rot_in_degrees = vec3_mul_scalar(*panel_entity.entity_rot, SEMATH_RAD2DEG_MULTIPLIER);
-                seui_label_vec3(ctx, "position", panel_entity.entity_pos, true);
-                seui_label_vec3(ctx, "rotation", &rot_in_degrees, true);
-                seui_label_vec3(ctx, "scale", panel_entity.entity_scale, false);
-                *panel_entity.entity_rot = vec3_mul_scalar(rot_in_degrees, SEMATH_DEG2RAD_MULTIPLIER);
-            }
-        } else {
-            panel_entity_info = NULL;
-        }
-
         // printf("fit size: %f, %f\n", panel_entity_info.fit_size.x, panel_entity_info.fit_size.y);
         // seui_render_rect_outline(&ctx->renderer, (Rect) {panel_entity_info.cached_rect.x, panel_entity_info.cached_rect.y, panel_entity_info.fit_size.x, panel_entity_info.fit_size.y}, 1, RGBA_WHITE); // @temp
     }

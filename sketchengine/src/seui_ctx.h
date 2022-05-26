@@ -34,6 +34,8 @@ typedef struct SEUI_Panel {
         f32 config_row_left_margin;
         f32 config_row_right_margin;
 
+        const char *title;
+
     /* auto calculated ------------------------------------------------------- */
         u32 index; // the index identifier of the panel tracked by SE_UI
         bool is_closed;
@@ -122,6 +124,7 @@ typedef struct SE_UI {
     /* Panels */
     u32 panel_capacity;
     u32 panel_count;
+    u32 current_panel_index; // the index of the latest panel
     struct SEUI_Panel *panels;
     struct SEUI_Panel *current_panel;         // the panel we put the widgets on
 
@@ -160,8 +163,7 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
 /// Start a panel at the given position. Aligns the items inside of the panel
 /// based on the given number of columns.
 /// Returns true if the panel is not closed.
-bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
-bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data);
+bool seui_panel_at(SE_UI *ctx, const char *title);
 
 void seui_panel_row(SE_UI *ctx, f32 height, u32 columns);
 Rect panel_put(SE_UI *ctx, f32 min_width, bool expand);
@@ -170,6 +172,7 @@ Rect panel_put(SE_UI *ctx, f32 min_width, bool expand);
 SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->max_id = SEUI_ID_NULL;
     ctx->current_panel = NULL;
+    ctx->panel_count = 0;
 }
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
@@ -192,6 +195,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     ctx->panel_capacity = 100;
     ctx->panel_count = 0;
     ctx->panels = (SEUI_Panel*) malloc(sizeof(SEUI_Panel) * ctx->panel_capacity);
+    memset(ctx->panels, 0, sizeof(SEUI_Panel) * ctx->panel_capacity);
 
     sestring_init(&ctx->text_input_cache, "");
     sestring_init(&ctx->text_input, "");
@@ -205,37 +209,6 @@ SEINLINE void seui_deinit(SE_UI *ctx) {
 
     free(ctx->panels);
     ctx->panel_count = 0;
-}
-
-SEINLINE SEUI_Panel* seui_add_panel(SE_UI *ctx) {
-    Rect init_rect = {
-        ctx->txt_renderer.viewport.w / 2 - 128, // the hackiest way to get the viewport
-        ctx->txt_renderer.viewport.h / 2 - 128, // the hackiest way to get the viewport
-        128 * 2,
-        128 * 2
-    };
-    Vec2 min_size = v2f(124, 124);
-    /* loop through every panel to see if they are closed */
-    for (u32 i = 0; i < ctx->panel_count; ++i) {
-        if (ctx->panels[i].is_closed) {
-            ctx->panels[i].is_closed = false; // reopen
-            seui_panel_setup(&ctx->panels[i], init_rect, min_size, false, 32, 0);
-            ctx->panels[i].index = i;
-            printf("found a closed panel so we're reopenning it\n");
-            return &ctx->panels[i];
-        }
-    }
-    /* if none were closed add another panel to the list */
-    if (ctx->panel_count >= ctx->panel_capacity) {
-        ctx->panel_capacity += (ctx->panel_capacity+1) * 0.5f;
-        ctx->panels = realloc(ctx->panels, sizeof(SEUI_Panel) * ctx->panel_capacity);
-    }
-    u32 panel = ctx->panel_count;
-    seui_panel_setup(&ctx->panels[panel], init_rect, min_size, false, 32, 0);
-    ctx->panels[panel].index = panel;
-    ctx->panels[panel].is_closed = false;
-    ctx->panel_count++;
-    return &ctx->panels[panel];
 }
 
 SEINLINE void seui_close_panel(SE_UI *ctx, u32 panel_index) {
@@ -270,4 +243,33 @@ SEINLINE u32 seui_add_texture(SE_UI *ctx, SE_Texture texture) {
     ctx->renderer.texture_count++;
     return ctx->renderer.texture_count - 1;
 }
+
+SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
+    if (ctx->panel_count >= ctx->panel_capacity) {
+        ctx->panel_capacity += (ctx->panel_capacity+1) * 0.5f;
+        ctx->panels = realloc(ctx->panels, sizeof(SEUI_Panel) * ctx->panel_capacity);
+        memset(ctx->panels + ctx->panel_count, 0, sizeof(SEUI_Panel) * (ctx->panel_capacity - ctx->panel_count)); // @TODO test this
+    }
+    u32 panel = ctx->panel_count;
+    if (ctx->panels[panel].index == ctx->panel_count) {
+        // the indices match so we won't reset this panel, because we want to keep the data from the previous frame
+        ctx->panel_count++;
+        return &ctx->panels[panel];
+    } else {
+        // the indices don't match, so this is a different panel and we have to reset it
+        Rect init_rect = {
+            ctx->txt_renderer.viewport.w / 2 - 128, // the hackiest way to get the viewport
+            ctx->txt_renderer.viewport.h / 2 - 128, // the hackiest way to get the viewport
+            128 * 2,
+            128 * 2
+        };
+        Vec2 min_size = v2f(124, 124);
+        seui_panel_setup(&ctx->panels[panel], init_rect, min_size, false, 32, 0);
+        ctx->panels[panel].index = panel;
+        ctx->panels[panel].is_closed = false;
+        ctx->panel_count++;
+        return &ctx->panels[panel];
+    }
+}
+
 #endif // SEUI_H_CTX

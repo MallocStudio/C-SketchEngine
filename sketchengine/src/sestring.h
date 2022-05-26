@@ -34,4 +34,7 @@ void sestring_delete_from_end(SE_String *string, u32 amount);
 /// Decimal place is used to determine how to convert a number (say 1234) to
 /// a floating point number (in the case of decimal_place = 100 -> 1234 / 100 = 12.34)
 f32 sestring_as_f32(SE_String *string);
+
+/// returns true if the strings have the same value stored
+bool sestring_compare(SE_String *string1, SE_String *string2);
 #endif // SESTRING_H

@@ -571,14 +571,16 @@ RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v) {
     return result;
 }
 
-void seui_hsv_picker_at(SE_UI *ctx, SEUI_Panel *panel, HSV *hsv) {
-    if (panel == NULL) return;
-    if (seui_panel_at(ctx, "hsv picker", panel)) {
+void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
+    if (seui_panel_at(ctx, "hsv picker")) {
         seui_panel_row(ctx, 32, 1);
         seui_label(ctx, "test colour picker");
     }
 }
 
-void seui_texture_viewer(SE_UI *ctx, Rect rect, u32 texture_index) {
-    seui_render_texture_raw(&ctx->renderer, rect, texture_index);
+void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
+    if (seui_panel_at(ctx, "texture viewer")) {
+        Rect rect = ctx->current_panel->cached_rect;
+        seui_render_texture_raw(&ctx->renderer, rect, texture_index);
+    }
 }

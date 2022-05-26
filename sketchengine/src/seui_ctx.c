@@ -89,7 +89,9 @@ Rect panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand param
     return item;
 }
 
-bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
+bool seui_panel_at(SE_UI *ctx, const char *title) {
+    SEUI_Panel *panel_data = seui_ctx_get_panel(ctx);
+
     if (panel_data == NULL) return false;
     if (panel_data->is_closed) return false;
     ctx->current_panel = panel_data;
@@ -224,15 +226,5 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
         }
     }
 
-    return !panel_data->is_closed;
-}
-
-bool seui_panel(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
-    panel_data->is_embedded = true;
-    Rect rect = {0, 0, 16, 16}; // default label size
-    if (ctx->current_panel != NULL) {
-        rect = panel_put(ctx, panel_data->calc_rect.w, true);
-        panel_data->calc_rect = rect;
-    }
-    return seui_panel_at(ctx, title, panel_data);
+    return !panel_data->is_closed && !panel_data->minimised;
 }

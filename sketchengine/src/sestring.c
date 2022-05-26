@@ -133,3 +133,17 @@ f32 sestring_as_f32(SE_String *string) {
     result *= sign;
     return result;
 }
+
+bool sestring_compare(SE_String *string1, SE_String *string2) {
+    if (string1->size == 0 && string2->size == 0) return true;
+    if (string1->size == 0 || string2->size == 0) return false;
+    if (string1->size != string2->size) return false;
+
+    for (u32 i = 0; i < string1->size; ++i) {
+        if (string1->buffer[i] != string2->buffer[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}

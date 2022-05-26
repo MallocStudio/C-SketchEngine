@@ -31,7 +31,7 @@ void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *value);
 RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v);
 // meant to replace seui_colour_picker_at_hsv
 // note that panel is added by the user or another button that spawns the colour picker's panel
-void seui_hsv_picker_at(SE_UI *ctx, SEUI_Panel *panel, HSV *hsv);
+void seui_hsv_picker(SE_UI *ctx, HSV *hsv);
 
 /// a 2d slider that returns a normalised vec2
 void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value);
@@ -43,7 +43,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect);
 /// If min AND max are zero, the limits will be ignored
 bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
 
-void seui_texture_viewer(SE_UI *ctx, Rect rect, u32 texture_index); // texture_index refers to the texture added to the renderer
+void seui_texture_viewer(SE_UI *ctx, u32 texture_index); // texture_index refers to the texture added to the renderer
 // void seui_image_viewer(SE_UI *ctx, Rect rect, const SE_Texture *texture);
 
 ///
