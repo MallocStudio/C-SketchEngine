@@ -4,9 +4,6 @@
 #include "panels.h"
 
 /* @temp */
-i32 hue = 90;
-i32 saturation = 80;
-i32 value = 50;
 RGBA color;
 
 /* ui */
@@ -51,6 +48,7 @@ static void app_render_directional_shadow_map(Application *app);
 static void app_render_omnidirectional_shadow_map(Application *app);
 
 void app_init(Application *app, SDL_Window *window) {
+    hsv.h = 45;
     memset(app, 0, sizeof(Application));
 
     app->window = window;
@@ -178,9 +176,9 @@ void app_update(Application *app) {
             seui_label(ctx, "light intensity:");
             seui_slider(ctx, &app_panel.light_intensity);
 
-            seui_panel_row(ctx, 32, 2);
-            seui_label(ctx, "colour:");
-            color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
+            // seui_panel_row(ctx, 32, 2);
+            // seui_label(ctx, "colour:");
+            // color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
 
             seui_panel_row(ctx, 32, 4);
             seui_label(ctx, "test input1:");

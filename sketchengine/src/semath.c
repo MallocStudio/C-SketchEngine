@@ -5,6 +5,10 @@ f32 semath_abs(f32 x) {
     return fabsf(x);
 }
 
+f32 semath_remainder(f32 x, f32 denominator) {
+    return remainderf(x, denominator);
+}
+
 f32 semath_tan(f32 x) {
     return tanf(x);
 }

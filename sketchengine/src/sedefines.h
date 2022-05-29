@@ -44,8 +44,8 @@ typedef struct RGB {
 #define TYPEOF_RGB_OPENGL GL_UNSIGNED_BYTE
 typedef struct HSV {
     i32 h; // in degrees [0-360]
-    i32 s;
-    i32 v;
+    f32 s; // [0-1]
+    f32 v; // [0-1]
 } HSV;
 
 SEINLINE void rgba_normalise(RGBA *rgb) {
@@ -72,9 +72,9 @@ SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
     return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
 }
 
-void rgb_to_hsv(RGB rgb, i32 *hue, i32 *saturation, i32 *value);
-void hsv_to_rgb(i32 hue, i32 saturation, i32 value, RGB *rgb);
-void hsv_to_rgba(i32 hue, i32 saturation, i32 value, RGBA *rgb);
+// void rgb_to_hsv(RGB rgb, i32 *hue, f32 *saturation, f32 *value);
+void hsv_to_rgb(i32 hue, f32 saturation, f32 value, RGB *rgb);
+void hsv_to_rgba(i32 hue, f32 saturation, f32 value, RGBA *rgb);
 
 #define RGBA_RED   (RGBA){255, 0, 0, 255}
 #define RGBA_BLUE  (RGBA){0, 0, 255, 255}

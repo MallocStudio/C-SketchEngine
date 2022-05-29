@@ -544,6 +544,8 @@ static void seui_shape_colour_wheel_piece(UI_Renderer *renderer, Vec2 center, f3
     shape->vertex_count = 0;
     shape->index_count = 0;
     f32 angle = *angle_ptr;
+
+    if (angle * SEMATH_RAD2DEG_MULTIPLIER < 0 || angle * SEMATH_RAD2DEG_MULTIPLIER >= 360) angle = 0;
     RGBA colour;
     colour.a = 255;
     // outer
@@ -557,6 +559,7 @@ static void seui_shape_colour_wheel_piece(UI_Renderer *renderer, Vec2 center, f3
     seui_shape_add_vertex(shape, v2f(x,y), colour);
 
     angle += angle_increment_amount;
+    if (angle * SEMATH_RAD2DEG_MULTIPLIER < 0 || angle * SEMATH_RAD2DEG_MULTIPLIER >= 360) angle = 0;
     // outer
     x = semath_cos(angle) * outer_radius + center.x;
     y = semath_sin(angle) * outer_radius + center.y;
@@ -585,4 +588,42 @@ void seui_render_shape_colour_wheel(UI_Renderer *renderer, Vec2 center, f32 oute
     for (u32 i = 0; i < number_of_edges; ++i) {
         seui_shape_colour_wheel_piece(renderer, center, outer_radius, width, &angle, angle_increment_amount);
     }
+}
+
+void seui_render_shape_colour_triangle(UI_Renderer *renderer, Vec2 center, f32 radius, f32 angle) {
+    UI_Shape *shape = &renderer->shapes[renderer->shape_count];
+    renderer->shape_count++;
+
+    shape->vertex_count = 0;
+    shape->index_count = 0;
+    Vec2 p1 = {
+        semath_cos(angle) * radius + center.x,
+        semath_sin(angle) * radius + center.y,
+    };
+    Vec2 p2 = {
+        semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+        semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+    };
+    Vec2 p3 = {
+        semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+        semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+    };
+
+    RGBA colour_tip;
+    RGBA colour_tip_white = RGBA_WHITE;
+    RGBA colour_tip_black = RGBA_BLACK;
+    colour_tip.a = 255;
+    hsv_to_rgba(angle * SEMATH_RAD2DEG_MULTIPLIER, 1, 1, &colour_tip);
+
+    seui_shape_add_vertex(shape, p1, colour_tip);
+    seui_shape_add_vertex(shape, p2, colour_tip_white);
+    seui_shape_add_vertex(shape, p3, colour_tip_black);
+    seui_shape_add_vertex(shape, p3, colour_tip_black);
+
+    seui_shape_add_index(shape, 0);
+    seui_shape_add_index(shape, 1);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 2);
+    seui_shape_add_index(shape, 0);
 }

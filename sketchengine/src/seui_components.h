@@ -26,9 +26,9 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
 /// value is clamped between 0 - 1
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value);
 
-void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *value);
+// void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *value);
 
-RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v);
+// RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v);
 // meant to replace seui_colour_picker_at_hsv
 // note that panel is added by the user or another button that spawns the colour picker's panel
 void seui_hsv_picker(SE_UI *ctx, HSV *hsv);
@@ -58,8 +58,6 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable);
 bool seui_button(SE_UI *ctx, const char *text);
 bool seui_button_textured(SE_UI *ctx, Vec2 texture_index);
 void seui_slider(SE_UI *ctx, f32 *value);
-void seui_colour_picker(SE_UI *ctx, RGBA *value);
-RGBA seui_colour_picker_hsv(SE_UI *ctx, i32 *h, i32 *s, i32 *v);
 void seui_slider2d(SE_UI *ctx, Vec2 *value);
 void seui_input_text(SE_UI *ctx, SE_String *text);
 bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max);

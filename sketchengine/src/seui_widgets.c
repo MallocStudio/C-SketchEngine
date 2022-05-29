@@ -98,26 +98,10 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     seui_slider2d_at(ctx, center, radius, value);
 }
 
-void seui_colour_picker(SE_UI *ctx, RGBA *value) {
-    Rect rect = {0, 0, 128, 128}; // default label size
-    if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, rect.w, true);
-    }
-    seui_colour_picker_at(ctx, rect, value);
-}
-
 void seui_input_text(SE_UI *ctx, SE_String *text) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
         rect = seui_panel_put(ctx, 32, true);
     }
     seui_input_text_at(ctx, text, rect);
-}
-
-RGBA seui_colour_picker_hsv(SE_UI *ctx, i32 *h, i32 *s, i32 *v) {
-    Rect rect = {0, 0, 128, 128}; // default label size
-    if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, rect.w, true);
-    }
-    return seui_colour_picker_at_hsv(ctx, rect, h, s, v);
 }

@@ -91,6 +91,7 @@ void seui_renderer_draw(UI_Renderer *renderer);
 /// shapes:
 ///
 void seui_render_shape_colour_wheel(UI_Renderer *renderer, Vec2 center, f32 outer_radius, f32 width);
+void seui_render_shape_colour_triangle(UI_Renderer *renderer, Vec2 center, f32 radius, f32 angle);
 /// render a filled rectangle
 void seui_render_rect(UI_Renderer *renderer, Rect rect, RGBA colour);
 /// indexes into the texture atlas and creates vertices with proper UVs

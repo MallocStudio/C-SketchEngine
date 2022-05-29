@@ -241,113 +241,6 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     vec2_normalise(value);
 }
 
-/// Draws the Saturation Value Box that's used to pick those values. Updates saturation and value if the user clicks on the box
-static void colour_picker_saturation_value_box(SE_UI *ctx, Rect rect, i32 hue, i32 *saturation, i32 *value) {
-    Rect cursor = {0};
-    cursor.w = 16;
-    cursor.h = 16;
-    cursor.x = (*saturation) * rect.w;
-    cursor.y = (*value)      * rect.h;
-
-    cursor.x += rect.x - cursor.w * 0.5f;
-    cursor.y += rect.y - cursor.h * 0.5f;
-
-    u32 id = generate_ui_id(ctx);
-    UI_STATES ui_state = get_ui_state(ctx, id, rect, false);
-
-    if (ui_state == UI_STATE_ACTIVE) { // select saturation and value
-        Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
-        i32 window_w;
-        i32 window_h;
-        SDL_GetWindowSize(ctx->input->window, &window_w, &window_h);
-        mouse_pos.y = window_h - mouse_pos.y;
-        mouse_pos.x -= rect.x;
-        mouse_pos.y -= rect.y;
-        mouse_pos.x /= rect.w;
-        mouse_pos.y /= rect.h;
-
-        (*saturation) = (i32)(mouse_pos.x * 100);
-        (*value) = (i32)(mouse_pos.y * 100);
-        printf("sat : %i\n", *saturation);
-        printf("value : %i\n", *value);
-        printf("mouse_pos : %f, %f\n", mouse_pos.x, mouse_pos.y);
-    }
-
-    seui_render_colour_box(&ctx->renderer, rect, hue);
-    seui_drag_button_textured_at(ctx, cursor, UI_ICON_INDEX_CIRCLE_FILLED, NULL);
-}
-
-static colour_picker_hue_box(SE_UI *ctx, Rect rect, i32 *hue) {
-    // Rect cursor = {0};
-    // cursor.w = 16;
-    // cursor.h = 16;
-    // cursor.x = (*hue) *
-    // u32 id = generate_ui_id(ctx);
-    // UI_STATES ui_state = get_ui_state(ctx, id, hue_box, false);
-
-    // if (ui_state == UI_STATE_WARM) {
-    //     // select hue
-    //     if (ctx->input->mouse_wheel != 0) {
-    //         hue += ctx->input->mouse_wheel;
-    //         if (hue > 359) hue = 0;
-    //         if (hue < 0) hue = 359;
-    //         printf("hue: %f\n", hue);
-    //     }
-    // }
-    i32 hue_rounded = *hue;
-    f32 value = hue_rounded / 360.0f;
-    // printf("hue: %f\n", *hue);
-    // printf("value: %f\n", value);
-    seui_slider_at(ctx, v2f(rect.x, rect.y + rect.h / 2), v2f(rect.x + rect.w, rect.y + rect.h / 2), &value);
-    hue_rounded = value * 360;
-    (*hue) = hue_rounded;
-}
-
-void seui_colour_picker_at(SE_UI *ctx, Rect rect, RGBA *colour) {
-#if 1 // the pretty gui way is broken atm
-    // colour box
-    i32 hue;
-    i32 saturation;
-    i32 value;
-    rgb_to_hsv((RGB) {colour->r, colour->g, colour->b}, &hue, &saturation, &value);
-
-    Rect hue_box = {
-        rect.x, rect.y, rect.w, 16
-    };
-    Rect saturation_value_box = {
-        rect.x, rect.y + hue_box.h,
-        rect.w, rect.h - hue_box.h
-    };
-    colour_picker_saturation_value_box(ctx, saturation_value_box, hue, &saturation, &value);
-    colour_picker_hue_box(ctx, hue_box, &hue);
-    hsv_to_rgba(hue, saturation, value, colour);
-#else
-    // f32 r,g,b,a;
-    // r = colour->r / 255;
-    // g = colour->g / 255;
-    // b = colour->b / 255;
-    // a = colour->a / 255;
-
-    // f32 h = rect.h / 6;
-    // f32 y = rect.y + rect.h - h;
-
-    // seui_render_rect(&ctx->renderer, rect, *colour);
-
-    // seui_slider_at(ctx, v2f(rect.x, y), v2f(rect.x + rect.w, y), &r);
-    // y -= h;
-    // seui_slider_at(ctx, v2f(rect.x, y), v2f(rect.x + rect.w, y), &g);
-    // y -= h;
-    // seui_slider_at(ctx, v2f(rect.x, y), v2f(rect.x + rect.w, y), &b);
-    // y -= h;
-    // seui_slider_at(ctx, v2f(rect.x, y), v2f(rect.x + rect.w, y), &a);
-
-    // colour->r = r * 255;
-    // colour->g = g * 255;
-    // colour->b = b * 255;
-    // colour->a = a * 255;
-#endif
-}
-
 bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     u32 id = generate_ui_id(ctx);
 
@@ -521,64 +414,24 @@ bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     return seui_selector_at(ctx, rect, value, min, max);
 }
 
-/// Colour picker
-
-RGBA seui_colour_picker_at_hsv(SE_UI *ctx, Rect rect, i32 *h, i32 *s, i32 *v) {
-    Rect h_rect = {
-        rect.x, rect.y, rect.w, 16
-    };
-    Rect sv_rect = {
-        rect.x, rect.y + h_rect.h, rect.w, rect.h - h_rect.h
-    };
-
-    u32 id = generate_ui_id(ctx);
-    UI_STATES ui_state = get_ui_state(ctx, id, sv_rect, false);
-    if (ui_state == UI_STATE_HOT) {
-        Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
-        i32 window_w, window_h;
-        SDL_GetWindowSize(ctx->input->window, &window_w, &window_h);
-
-        // mouse_pos.y = window_h - mouse_pos.y;
-        // mouse_pos.x = remapf(mouse_pos.x, window_w, sv_rect.w + sv_rect.x) - sv_rect.x;
-        // mouse_pos.y = remapf(mouse_pos.y, window_h, sv_rect.h + sv_rect.y) - sv_rect.y;
-
-        // *s = remapf(mouse_pos.x, sv_rect.w, 100);
-        // *v = remapf(mouse_pos.y, sv_rect.h, 100);
-        mouse_pos.y = window_h - mouse_pos.y;
-        mouse_pos.x -= sv_rect.x;
-        mouse_pos.y -= sv_rect.y;
-        mouse_pos.x /= sv_rect.w;
-        mouse_pos.y /= sv_rect.h;
-
-        (*s) = (i32)(mouse_pos.x * 100);
-        (*v) = (i32)(mouse_pos.y * 100);
-    }
-
-    // draw the saturation value rect
-    seui_render_colour_box(&ctx->renderer, sv_rect, *h);
-    // draw the cursor on sv rect
-    Vec2 cursor;
-    cursor.x = remapf(*s, 100, sv_rect.w) + sv_rect.x;
-    cursor.y = remapf(*v, 100, sv_rect.h) + sv_rect.y;
-    seui_render_texture(&ctx->renderer, (Rect) {cursor.x - 4, cursor.y - 4, 8, 8}, UI_ICON_INDEX_CIRCLE_EMPTY, RGBA_WHITE);
-    // draw the hue slider
-    static f32 slider_value = 0.5f;
-    seui_slider_at(ctx, v2f(h_rect.x, h_rect.y + h_rect.h / 2), v2f(h_rect.x + h_rect.w, h_rect.y + h_rect.h / 2), &slider_value);
-    *h = remapf(slider_value, 1, 360);
-
-    RGBA result;
-    hsv_to_rgba(*h, *s, *v, &result);
-    return result;
-}
-
 void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
+    if (hsv->h < 0) hsv->h = 0;
+    if (hsv->h >= 360) hsv->h = 0;
+
     if (seui_panel_at(ctx, "hsv picker")) {
         seui_panel_row(ctx, 128, 1);
-        // seui_panel
-        // seui_label(ctx, "test colour picker");
-        // seui_label(ctx, "test colour picker");
         Rect rect = seui_panel_put(ctx, 32, false);
-        seui_render_shape_colour_wheel(&ctx->renderer, v2f(rect.x + rect.w / 2, rect.y + rect.h / 2), rect.h / 2, rect.h / 8);
+        Vec2 center = v2f(rect.x + rect.w / 2, rect.y + rect.h / 2);
+        f32 outer_radius = rect.h / 2;
+        f32 thickness = rect.h / 8;
+        /* colour wheel */
+        seui_render_shape_colour_wheel(&ctx->renderer, center, outer_radius, thickness);
+        /* colour triangle */
+        seui_render_shape_colour_triangle(&ctx->renderer, center, outer_radius - thickness, hsv->h * SEMATH_DEG2RAD_MULTIPLIER);
+        if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
+            hsv->h += 5;// * SEMATH_DEG2RAD_MULTIPLIER;
+            printf("h: %i\n", hsv->h);
+        }
     }
 }
 
