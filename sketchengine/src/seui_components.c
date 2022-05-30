@@ -419,18 +419,80 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
     if (hsv->h >= 360) hsv->h = 0;
 
     if (seui_panel_at(ctx, "hsv picker")) {
-        seui_panel_row(ctx, 128, 1);
-        Rect rect = seui_panel_put(ctx, 32, false);
-        Vec2 center = v2f(rect.x + rect.w / 2, rect.y + rect.h / 2);
-        f32 outer_radius = rect.h / 2;
-        f32 thickness = rect.h / 8;
-        /* colour wheel */
-        seui_render_shape_colour_wheel(&ctx->renderer, center, outer_radius, thickness);
-        /* colour triangle */
-        seui_render_shape_colour_triangle(&ctx->renderer, center, outer_radius - thickness, hsv->h * SEMATH_DEG2RAD_MULTIPLIER);
-        if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
-            hsv->h += 5;// * SEMATH_DEG2RAD_MULTIPLIER;
-            printf("h: %i\n", hsv->h);
+        { /* colour picker wheel and triangle and functionality */
+            seui_panel_row(ctx, 128, 1);
+            Rect rect = seui_panel_put(ctx, 128, false);
+            Vec2 center = v2f(rect.x + rect.w / 2, rect.y + rect.h / 2);
+            f32 outer_radius = rect.h / 2;
+            f32 thickness = 16;
+            /* colour wheel */
+            seui_render_shape_colour_wheel(&ctx->renderer, center, outer_radius, thickness);
+
+            f32 angle = hsv->h * SEMATH_DEG2RAD_MULTIPLIER;
+            f32 radius = outer_radius - thickness;
+
+            { /* colour triangle */
+                seui_render_shape_colour_triangle(&ctx->renderer, center, radius, angle);
+                if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
+                    hsv->h += 5;// * SEMATH_DEG2RAD_MULTIPLIER;
+                    printf("h: %i\n", hsv->h);
+                }
+            }
+            { /* the cursor on the triangle */
+                Vec2 colour_tip = {
+                    semath_cos(angle) * radius + center.x,
+                    semath_sin(angle) * radius + center.y,
+                };
+                Vec2 white_tip = {
+                    semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                };
+                Vec2 black_tip = {
+                    semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                };
+                Vec2 hsv_point = colour_tip;
+
+                hsv_point.x = lerp(hsv_point.x, white_tip.x, 1 - hsv->s);
+                hsv_point.y = lerp(hsv_point.y, white_tip.y, 1 - hsv->s);
+
+                hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
+                hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
+
+                seui_render_circle_outline_ext(&ctx->renderer, hsv_point, 4, RGBA_WHITE, 8);
+
+                /* changing the saturation and value based on mouse input */
+                Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+                mouse_pos.y = ctx->txt_renderer.viewport.h - mouse_pos.y;
+
+                if (seinput_is_mouse_left_pressed(ctx->input) && point_overlaps_circle(mouse_pos, center, radius)) {
+                    static i32 i = 0;
+                    printf("pressed %i\n", i++);
+                    Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
+                    if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
+                        hsv->s = result.x - result.y;
+                        hsv->v = result.x - result.z;
+                    }
+                }
+            }
+        }
+        { /* buttons and sliders */
+            seui_panel_row(ctx, 32, 3);
+            Vec3 label_val = {
+                hsv->h,
+                hsv->s * 100,
+                hsv->v * 100
+            };
+            seui_label_vec3(ctx, "hsv", &label_val, true);
+            if (label_val.x >= 360) label_val.x = 0;
+            if (label_val.x < 0) label_val.x = 359;
+            if (label_val.y < 0) label_val.y = 0;
+            if (label_val.y > 100) label_val.y = 100;
+            if (label_val.z < 0) label_val.z = 0;
+            if (label_val.z > 100) label_val.z = 100;
+            hsv->h = label_val.x;
+            hsv->s = label_val.y / 100;
+            hsv->v = label_val.z / 100;
         }
     }
 }

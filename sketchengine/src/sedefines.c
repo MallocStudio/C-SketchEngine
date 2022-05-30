@@ -60,37 +60,38 @@ void hsv_to_rgb(i32 hue, f32 saturation, f32 value, RGB *rgb) {
 
     f32 rr, gg, bb;
     f32 c = value * saturation;
-    f32 h_prime = (hue / 60);
-    f32 x = c * (1 - semath_abs(semath_remainder(h_prime,2) - 1));
+    f32 h_prime = (hue / (f32)60.0f);
+    // f32 x = c * (1 - semath_abs(semath_remainder(h_prime,2) - 1));
+    f32 x = c * (1 - semath_abs((i32)h_prime % 2 - 1));
     // f32 max = value;
     // f32 min = max - c;
     // f32 x = min + h_prime * c;
-    if ( 0 <= h_prime && h_prime < 1 ) {
+    if ( 0 <= hue && hue < 60 ) {
         rr = c;
         gg = x;
         bb = 0;
     } else
-    if ( 1 <= h_prime && h_prime < 2 ) {
+    if ( 60 <= hue && hue < 120 ) {
         rr = x;
         gg = c;
         bb = 0;
     } else
-    if ( 2 <= h_prime && h_prime < 3 ) {
+    if ( 120 <= hue && hue < 180 ) {
         rr = 0;
         gg = c;
         bb = x;
     } else
-    if ( 3 <= h_prime && h_prime < 4 ) {
+    if ( 180 <= hue && hue < 240 ) {
         rr = 0;
         gg = x;
         bb = c;
     } else
-    if ( 4 <= h_prime && h_prime < 5 ) {
+    if ( 240 <= hue && hue < 300 ) {
         rr = x;
         gg = 0;
         bb = c;
     } else
-    if ( 5 <= h_prime && h_prime < 6 ) {
+    if ( 300 <= hue && hue < 360 ) {
         rr = c;
         gg = 0;
         bb = x;

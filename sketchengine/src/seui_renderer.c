@@ -627,3 +627,32 @@ void seui_render_shape_colour_triangle(UI_Renderer *renderer, Vec2 center, f32 r
     seui_shape_add_index(shape, 2);
     seui_shape_add_index(shape, 0);
 }
+
+void seui_render_circle_outline(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour) {
+    u32 number_of_edges = 16;
+    seui_render_circle_outline_ext(renderer, center, radius, colour, number_of_edges);
+}
+
+void seui_render_circle_outline_ext(UI_Renderer *renderer, Vec2 center, f32 radius, RGBA colour, u32 number_of_edges) {
+    f32 angle_increment_amount = SEMATH_PI_2 / number_of_edges;
+    f32 angle = 0;
+    for (u32 i = 0; i < number_of_edges; ++i) {
+        UI_Shape *shape = &renderer->shapes[renderer->shape_count];
+        renderer->shape_count++;
+
+        shape->vertex_count = 0;
+        shape->index_count = 0;
+
+        f32 x = semath_cos(angle) * radius + center.x;
+        f32 y = semath_sin(angle) * radius + center.y;
+        seui_shape_add_vertex(shape, v2f(x,y), colour);
+
+        angle += angle_increment_amount;
+        x = semath_cos(angle) * radius + center.x;
+        y = semath_sin(angle) * radius + center.y;
+        seui_shape_add_vertex(shape, v2f(x,y), colour);
+
+        seui_shape_add_index(shape, 0);
+        seui_shape_add_index(shape, 1);
+    }
+}

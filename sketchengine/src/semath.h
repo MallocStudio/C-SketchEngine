@@ -1145,6 +1145,10 @@ SEINLINE bool rect_overlaps_point(Rect rect, Vec2 point) {
     return (point.x > rect.x && point.x < rect.x + rect.w) && (point.y > rect.y && point.y < rect.y + rect.h);
 }
 
+SEINLINE bool point_overlaps_circle(Vec2 point, Vec2 center, f32 radius) {
+    return vec2_distance(point, center) <= radius;
+}
+
 /// -----
 /// TESTS
 /// -----
@@ -1211,6 +1215,29 @@ SEINLINE f32 remapf(f32 value, f32 range_from, f32 range_to) {
 }
 SEINLINE i32 remap(i32 value, i32 range_from, i32 range_to) {
     return (value * range_to) / range_from;
+}
+
+/// amount is in the range of [0-1]
+SEINLINE f32 lerp(f32 value, f32 target, f32 amount) {
+    return value + amount * (target - value);
+}
+
+/// the result's x, y, z correspond with the barycentric coordinates of the given 'pos'
+SEINLINE Vec3 cartesian_to_barycentric_coordinates(Vec2 cartesian, Vec2 point1, Vec2 point2, Vec2 point3) {
+    Vec3 result;
+    f32 x = cartesian.x;
+    f32 y = cartesian.y;
+    f32 x1 = point1.x;
+    f32 x2 = point2.x;
+    f32 x3 = point3.x;
+    f32 y1 = point1.y;
+    f32 y2 = point2.y;
+    f32 y3 = point3.y;
+
+    result.x = ( (y2 - y3) * (x - x3) + (x3 - x2) * (y - y3) ) / ( (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3) );
+    result.y = ( (y3 - y1) * (x - x3) + (x1 - x3) * (y - y3) ) / ( (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3) );
+    result.z = 1 - result.x - result.y;
+    return result;
 }
 
 #endif // SEMATH_H

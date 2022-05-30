@@ -49,6 +49,8 @@ static void app_render_omnidirectional_shadow_map(Application *app);
 
 void app_init(Application *app, SDL_Window *window) {
     hsv.h = 45;
+    hsv.s = 0.5f;
+    hsv.v = 1.0f;
     memset(app, 0, sizeof(Application));
 
     app->window = window;
@@ -230,10 +232,10 @@ void app_update(Application *app) {
             seui_texture_viewer(ctx, light_map_texture);
         }
 
-        if (show_hsv) {
+        // if (show_hsv) {
             seui_hsv_picker(ctx, &hsv);
             ctx->current_panel->is_closed = false;
-        }
+        // }
 
         if (seui_button_at(ctx, "entity", (Rect) {0,0, 128, 64})) {
             // if (panel_entity_info == NULL) panel_entity_info = seui_add_panel(ctx);
