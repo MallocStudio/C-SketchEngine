@@ -159,6 +159,8 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             se_add_text_rect(&ctx->txt_renderer, title, drag_button_rect);
             panel_data->calc_rect.x += drag.x;
             panel_data->calc_rect.y += drag.y;
+            if (drag_state == UI_STATE_HOT) ctx->current_dragging_panel = panel_data;
+            if (ctx->current_dragging_panel == panel_data && drag_state != UI_STATE_HOT) ctx->current_dragging_panel = NULL;
 
             /* close button */
             Rect close_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size, cursor.y, button_size, button_size};

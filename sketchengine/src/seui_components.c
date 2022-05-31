@@ -524,10 +524,15 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
 void seui_panel_container(SE_UI *ctx) {
     SEUI_Panel *panel = seui_ctx_get_panel_container(ctx);
     if (panel == NULL) {
-        seui_panel_row(ctx, 64, 1);
-        Rect rect = seui_panel_put(ctx, 0, true);
+        // seui_panel_row(ctx, 64, 1);
+        // Rect rect = seui_panel_put(ctx, 0, true);
         // draw a place holder
-        seui_render_rect(&ctx->renderer, rect, RGBA_BLACK);
+        // seui_render_rect(&ctx->renderer, rect, RGBA_BLACK);
+        if (seui_button(ctx, "drag a panel")) {
+            if (ctx->current_dragging_panel != NULL) {
+
+            }
+        }
     } else {
         seui_panel_row(ctx, 240, 1);
         Rect rect = seui_panel_put(ctx, 0, true);

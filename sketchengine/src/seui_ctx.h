@@ -145,6 +145,7 @@ typedef struct SE_UI {
     SEUI_Panel *panels;
 
     SEUI_Panel *current_panel; // the panel we put the widgets on
+    SEUI_Panel *current_dragging_panel; // the panel that the user is dragging
 
     /* data */
     // data slots are places where widgets can store user data to, such as text input, colour, etc.
