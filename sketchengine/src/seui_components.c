@@ -172,12 +172,15 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state) {
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour = RGBA_WHITE;
-    ctx->txt_renderer.config_centered = false;
+    // change config for this item
+    bool previous_setting = ctx->txt_renderer.config_centered;
+    ctx->txt_renderer.config_centered = ctx->current_panel->config_item_centered;
 
     se_add_text_rect(&ctx->txt_renderer, text, apply_margin(rect, ctx->theme.margin));
 
-    ctx->txt_renderer.config_centered = true;
-    seui_render_rect(&ctx->renderer, rect, (RGBA) {10, 10, 10, 100});
+    // reset config
+    ctx->txt_renderer.config_centered = previous_setting;
+    seui_render_rect(&ctx->renderer, rect, ctx->theme.colour_bg_2);
 }
 
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
@@ -314,8 +317,8 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 
     u32 id = generate_ui_id(ctx);
 
-    RGBA colour_bg = (RGBA) {50, 60, 120, 255};
-    RGBA colour_highlight = (RGBA) {80, 90, 150, 255};
+    RGBA colour_bg = ctx->theme.colour_normal;
+    RGBA colour_highlight = ctx->theme.colour_hover;
     Vec3 colour_text = (Vec3) {255, 255, 255};
     Vec3 colour_text_hint = (Vec3) {100, 100, 100};
     RGBA colour = colour_bg;
@@ -336,7 +339,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
                 if (ctx->input->mouse_wheel != 0) {
                     char value_as_string[SESTRING_MAX_NUM_OF_DIGITS];
                     numerical_value += ctx->input->mouse_wheel;
-                    sprintf(value_as_string, "%.2f", numerical_value);
+                    sprintf(value_as_string, "%i", (i32)numerical_value);
                     sestring_clear(text);
                     sestring_append(text, value_as_string);
                 }
@@ -420,11 +423,19 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 
     if (seui_panel_at(ctx, "hsv picker")) {
         { /* colour picker wheel and triangle and functionality */
-            seui_panel_row(ctx, 128, 1);
-            Rect rect = seui_panel_put(ctx, 128, false);
+            {
+                seui_panel_row(ctx, 16, 1);
+                Rect rect = seui_panel_put(ctx, 0, true);
+                seui_render_rect(&ctx->renderer, rect, ctx->theme.colour_bg_2);
+            }
+            seui_panel_row(ctx, 240, 1);
+            Rect rect = seui_panel_put(ctx, 240, true);
             Vec2 center = v2f(rect.x + rect.w / 2, rect.y + rect.h / 2);
             f32 outer_radius = rect.h / 2;
             f32 thickness = 16;
+            /* background */
+            seui_render_rect(&ctx->renderer, rect, ctx->theme.colour_bg_2);
+
             /* colour wheel */
             seui_render_shape_colour_wheel(&ctx->renderer, center, outer_radius, thickness);
 
@@ -463,36 +474,33 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 
                 /* changing the saturation and value based on mouse input */
                 Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
-                mouse_pos.y = ctx->txt_renderer.viewport.h - mouse_pos.y;
+                mouse_pos.y = ctx->viewport.h - mouse_pos.y;
 
-                if (seinput_is_mouse_left_pressed(ctx->input) && point_overlaps_circle(mouse_pos, center, radius)) {
+                // if (seinput_is_mouse_left_pressed(ctx->input) && point_overlaps_circle(mouse_pos, center, radius)) {
+                if (ctx->input->is_mouse_left_down && point_overlaps_circle(mouse_pos, center, radius)) {
                     static i32 i = 0;
                     printf("pressed %i\n", i++);
                     Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
                     if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
-                        hsv->s = result.x - result.y;
-                        hsv->v = result.x - result.z;
+                        // hsv->s = result.x - result.y;
+                        // hsv->v = result.x - result.z;
+                        // RGB rgb = {result.x, result.y, result.z};
+                        // rgb_to_hsv(rgb, NULL, &hsv->s, &hsv->v);
+                        hsv->s = 1 - result.y;
+                        hsv->v = 1 - result.z;
                     }
                 }
             }
         }
         { /* buttons and sliders */
-            seui_panel_row(ctx, 32, 3);
-            Vec3 label_val = {
-                hsv->h,
-                hsv->s * 100,
-                hsv->v * 100
-            };
-            seui_label_vec3(ctx, "hsv", &label_val, true);
-            if (label_val.x >= 360) label_val.x = 0;
-            if (label_val.x < 0) label_val.x = 359;
-            if (label_val.y < 0) label_val.y = 0;
-            if (label_val.y > 100) label_val.y = 100;
-            if (label_val.z < 0) label_val.z = 0;
-            if (label_val.z > 100) label_val.z = 100;
-            hsv->h = label_val.x;
-            hsv->s = label_val.y / 100;
-            hsv->v = label_val.z / 100;
+            seui_label_hsv(ctx, "hsv", hsv, true);
+        }
+        { /* colour preview */
+            seui_panel_row(ctx, 32, 1);
+            Rect preview_rect = seui_panel_put(ctx, 16, true);
+            RGBA c = RGBA_WHITE;
+            hsv_to_rgba(hsv->h, hsv->s, hsv->v, &c);
+            seui_render_rect(&ctx->renderer, preview_rect, c);
         }
     }
 }

@@ -33,6 +33,7 @@ typedef struct SEUI_Panel {
         /* layouting configuration */
         f32 config_row_left_margin;
         f32 config_row_right_margin;
+        bool config_item_centered;
 
         const char *title;
 
@@ -86,16 +87,24 @@ typedef struct SE_Theme {
     RGBA colour_pressed;
     RGBA colour_bg; // background
     RGBA colour_fg; // foreground
+    RGBA colour_bg_2;
 
     /* positioning */
     Vec2 margin; // x for horizontal margin, y for vertical margin
 } SE_Theme;
 SEINLINE void seui_theme_default(SE_Theme *theme) {
-    theme->colour_normal  = (RGBA) {65, 84, 105, 255};
-    theme->colour_hover   = (RGBA) {108, 145, 173, 255};
-    theme->colour_pressed = (RGBA) {43, 56, 71, 255};
-    theme->colour_bg      = (RGBA) {33, 39, 43, 200};
+    // theme->colour_normal  = (RGBA) {65, 84, 105, 255};
+    // theme->colour_hover   = (RGBA) {108, 145, 173, 255};
+    // theme->colour_pressed = (RGBA) {43, 56, 71, 255};
+    // theme->colour_bg      = (RGBA) {33, 39, 43, 200};
+    // theme->colour_fg      = (RGBA) {56, 95, 161, 255};
+    // theme->margin = v2f(8, 0);
+    theme->colour_normal  = (RGBA) {227, 126, 39, 255};
+    theme->colour_hover   = (RGBA) {242, 145, 85, 255};
+    theme->colour_pressed = (RGBA) {156, 67, 12, 255};
+    theme->colour_bg      = (RGBA) {59, 34, 32, 230};
     theme->colour_fg      = (RGBA) {56, 95, 161, 255};
+    theme->colour_bg_2    = (RGBA) {10, 10, 10, 100};
     theme->margin = v2f(8, 0);
 }
 
@@ -114,6 +123,7 @@ typedef struct SE_UI {
     u32 warm; // hover / selection
     u32 hot;  // pressed / active
     u32 max_id; // the maximum generated id
+    Rect viewport;
 
     /* Renderes and Inputs */
     struct UI_Renderer renderer;
@@ -157,6 +167,7 @@ void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 
 SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
     panel->config_row_left_margin = 0;
     panel->config_row_right_margin = 0;
+    panel->config_item_centered = false;
 }
 
 /// Start a panel at the given position. Aligns the items inside of the panel
@@ -175,8 +186,9 @@ SEINLINE void seui_reset(SE_UI *ctx) {
 }
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
+    ctx->viewport = (Rect) {0, 0, window_w, window_h};
     seui_renderer_resize(&ctx->renderer, window_w, window_h);
-    se_set_text_viewport(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+    se_set_text_viewport(&ctx->txt_renderer, ctx->viewport);
 }
 
 SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
@@ -185,8 +197,11 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     ctx->active = SEUI_ID_NULL;
     seui_reset(ctx);
     ctx->input = input;
+
+    ctx->viewport = (Rect) {0, 0, window_w, window_h};
     seui_renderer_init(&ctx->renderer, window_w, window_h);
-    se_init_text_default(&ctx->txt_renderer, (Rect) {0, 0, window_w, window_h});
+    se_init_text_default(&ctx->txt_renderer, ctx->viewport);
+
     seui_theme_default(&ctx->theme);
 
     /* panels */
@@ -257,8 +272,8 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
     } else {
         // the indices don't match, so this is a different panel and we have to reset it
         Rect init_rect = {
-            ctx->txt_renderer.viewport.w / 2 - 128, // the hackiest way to get the viewport
-            ctx->txt_renderer.viewport.h / 2 - 128, // the hackiest way to get the viewport
+            ctx->viewport.w / 2 - 128, // the hackiest way to get the viewport
+            ctx->viewport.h / 2 - 128, // the hackiest way to get the viewport
             128 * 2,
             128 * 2
         };

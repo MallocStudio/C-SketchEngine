@@ -53,6 +53,7 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_index); // texture_index refers
 
 void seui_label(SE_UI *ctx, const char *text);
 void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable);
+void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable);
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.
 bool seui_button(SE_UI *ctx, const char *text);

@@ -30,7 +30,12 @@ void seui_label(SE_UI *ctx, const char *text) {
 void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
     char label_buffer[255];
     seui_panel_row(ctx, 32, 1);
+
+    bool previous_setting = ctx->current_panel->config_item_centered;
+    ctx->current_panel->config_item_centered = true;
     seui_label(ctx, title);
+        // reset setting
+    ctx->current_panel->config_item_centered = previous_setting;
 
     if (!editable) {
         seui_panel_row(ctx, 32, 3);
@@ -75,6 +80,65 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
     }
 }
 
+void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable) {
+    char label_buffer[255];
+    seui_panel_row(ctx, 32, 1);
+
+    bool previous_setting = ctx->current_panel->config_item_centered;
+    ctx->current_panel->config_item_centered = true;
+    seui_label(ctx, title);
+        // reset setting
+    ctx->current_panel->config_item_centered = previous_setting;
+
+    if (!editable) {
+        seui_panel_row(ctx, 32, 3);
+        sprintf(label_buffer, "h: %i", value->h);
+        seui_label(ctx, label_buffer);
+        sprintf(label_buffer, "s: %i", (i32)(value->s * 100));
+        seui_label(ctx, label_buffer);
+        sprintf(label_buffer, "v: %i", (i32)(value->v * 100));
+        seui_label(ctx, label_buffer);
+    } else {
+        ctx->text_input_only_numerical = true;
+        seui_panel_row(ctx, 32, 6);
+
+        sprintf(label_buffer, "h:");
+        seui_label(ctx, label_buffer);
+
+        sprintf(label_buffer, "%i", value->h);
+        sestring_clear(&ctx->text_input_cache);
+        sestring_append(&ctx->text_input_cache, label_buffer);
+        seui_input_text(ctx, &ctx->text_input_cache);
+        value->h = (i32)sestring_as_f32(&ctx->text_input_cache);
+        if (value->h < 0) value->h = 359;
+        if (value->h > 359) value->h = 0;
+
+        sprintf(label_buffer, "s:");
+        seui_label(ctx, label_buffer);
+
+        sprintf(label_buffer, "%i", (i32)(value->s * 100));
+        sestring_clear(&ctx->text_input_cache);
+        sestring_append(&ctx->text_input_cache, label_buffer);
+        seui_input_text(ctx, &ctx->text_input_cache);
+        value->s = sestring_as_f32(&ctx->text_input_cache) / 100.0f;
+        if (value->s < 0) value->s = 0;
+        if (value->s > 1) value->s = 1;
+
+        sprintf(label_buffer, "v:");
+        seui_label(ctx, label_buffer);
+
+        sprintf(label_buffer, "%i", (i32)(value->v * 100));
+        sestring_clear(&ctx->text_input_cache);
+        sestring_append(&ctx->text_input_cache, label_buffer);
+        seui_input_text(ctx, &ctx->text_input_cache);
+        value->v = sestring_as_f32(&ctx->text_input_cache) / 100.0f;
+        if (value->v < 0) value->v = 0;
+        if (value->v > 1) value->v = 1;
+
+        seui_configure_text_input_reset(ctx); // reset configurations
+    }
+}
+
 void seui_slider(SE_UI *ctx, f32 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
@@ -101,7 +165,7 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
 void seui_input_text(SE_UI *ctx, SE_String *text) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, 32, true);
+        rect = seui_panel_put(ctx, 100, true);
     }
     seui_input_text_at(ctx, text, rect);
 }

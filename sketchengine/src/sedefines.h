@@ -72,7 +72,7 @@ SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
     return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
 }
 
-// void rgb_to_hsv(RGB rgb, i32 *hue, f32 *saturation, f32 *value);
+void rgb_to_hsv(RGB rgb, i32 *hue, f32 *saturation, f32 *value);
 void hsv_to_rgb(i32 hue, f32 saturation, f32 value, RGB *rgb);
 void hsv_to_rgba(i32 hue, f32 saturation, f32 value, RGBA *rgb);
 

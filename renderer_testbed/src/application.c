@@ -88,7 +88,7 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[bulb].position = vec3_zero();
 
         app->entities[player].scale = vec3_one();
-        app->entities[player2].scale = vec3_one();
+        app->entities[player2].scale = v3f(0.1f, 0.1f, 0.1f);
         app->entities[plane].scale = vec3_one();
         app->entities[bulb].scale = vec3_one();
 
@@ -199,6 +199,12 @@ void app_update(Application *app) {
             seui_panel_row(ctx, 32, 1);
 
             seui_label_vec3(ctx, "light position", &point_light_pos, true);
+        }
+
+        if (seui_panel_at(ctx, "test bruh")) {
+            seui_panel_row(ctx, 32, 2);
+            seui_label(ctx, "text number 1");
+            seui_label(ctx, "text # 2");
         }
 
         if (seui_panel_at(ctx, "entity")) {

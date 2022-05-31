@@ -139,7 +139,7 @@ bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewpo
 }
 
 bool se_init_text_default(SE_Text *text, Rect viewport) {
-    return se_init_text(text, DEFAULT_FONT_PATH, 18, viewport);
+    return se_init_text(text, DEFAULT_FONT_PATH, 16, viewport);
 }
 
 void se_deinit_text(SE_Text *text) {

@@ -10,50 +10,50 @@ void print_sdl_error() {
     printf("ERROR: %s\n", error);
 }
 
-// void rgb_to_hsv(RGB rgb, i32 *hue, f32 *saturation, f32 *value) {
-//     f32 r = ((f32)rgb.r) / (f32)255; // [0 - 1]
-//     f32 g = ((f32)rgb.g) / (f32)255;
-//     f32 b = ((f32)rgb.b) / (f32)255;
+void rgb_to_hsv(RGB rgb, i32 *hue, f32 *saturation, f32 *value) {
+    f32 r = ((f32)rgb.r) / (f32)255; // [0 - 1]
+    f32 g = ((f32)rgb.g) / (f32)255;
+    f32 b = ((f32)rgb.b) / (f32)255;
 
-//     f32 cmax = semath_max(r, g);
-//     cmax = semath_max(cmax, b);
-//     f32 cmin = semath_min(r, g);
-//     cmin = semath_min(cmin, b);
-//     f32 delta = cmax - cmin;
+    f32 cmax = semath_max(r, g);
+    cmax = semath_max(cmax, b);
+    f32 cmin = semath_min(r, g);
+    cmin = semath_min(cmin, b);
+    f32 delta = cmax - cmin;
 
-//     i32 h;
-//     if (delta == 0) {
-//         h = 0;
-//     } else
-//     if (cmax == r) {
-//         h = 60.0f * ((i32)((g - b) / delta) % 6);
-//     } else
-//     if (cmax == g) {
-//         h = 60.0f * (((b - r) / delta) + 2);
-//     } else
-//     if (cmax == b) {
-//         h = 60.0f * (((r - g) / delta) + 4);
-//     }
+    i32 h;
+    if (delta == 0) {
+        h = 0;
+    } else
+    if (cmax == r) {
+        h = 60.0f * ((i32)((g - b) / delta) % 6);
+    } else
+    if (cmax == g) {
+        h = 60.0f * (((b - r) / delta) + 2);
+    } else
+    if (cmax == b) {
+        h = 60.0f * (((r - g) / delta) + 4);
+    }
 
-//     if (hue != NULL) {
-//         *hue = h;
-//     }
+    if (hue != NULL) {
+        *hue = h;
+    }
 
-//     i32 s;
-//     if (cmax == 0) {
-//         s = 0;
-//     } else {
-//         s = (delta / cmax);// * 100;
-//     }
+    i32 s;
+    if (cmax == 0) {
+        s = 0;
+    } else {
+        s = (delta / cmax);// * 100;
+    }
 
-//     if (saturation != NULL) {
-//         *saturation = s;
-//     }
+    if (saturation != NULL) {
+        *saturation = s;
+    }
 
-//     if (value != NULL) {
-//         *value = cmax;// * 100;
-//     }
-// }
+    if (value != NULL) {
+        *value = cmax;// * 100;
+    }
+}
 
 void hsv_to_rgb(i32 hue, f32 saturation, f32 value, RGB *rgb) {
     if (rgb == NULL) return;
