@@ -9,3 +9,4 @@ build\SketchEngine.exe
 *.exe
 *.pdb
 dep/lib/vc140.pdb
+dep/lib/sketchengine.lib

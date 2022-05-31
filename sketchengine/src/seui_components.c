@@ -421,7 +421,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
     if (hsv->h < 0) hsv->h = 0;
     if (hsv->h >= 360) hsv->h = 0;
 
-    if (seui_panel_at(ctx, "hsv picker")) {
+    if (seui_panel(ctx, "hsv picker")) {
         { /* colour picker wheel and triangle and functionality */
             {
                 seui_panel_row(ctx, 16, 1);
@@ -445,8 +445,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             { /* colour triangle */
                 seui_render_shape_colour_triangle(&ctx->renderer, center, radius, angle);
                 if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
-                    hsv->h += 5;// * SEMATH_DEG2RAD_MULTIPLIER;
-                    printf("h: %i\n", hsv->h);
+                    hsv->h += 5;
                 }
             }
             { /* the cursor on the triangle */
@@ -476,18 +475,18 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
                 Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
                 mouse_pos.y = ctx->viewport.h - mouse_pos.y;
 
-                // if (seinput_is_mouse_left_pressed(ctx->input) && point_overlaps_circle(mouse_pos, center, radius)) {
-                if (ctx->input->is_mouse_left_down && point_overlaps_circle(mouse_pos, center, radius)) {
-                    static i32 i = 0;
-                    printf("pressed %i\n", i++);
-                    Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
-                    if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
-                        // hsv->s = result.x - result.y;
-                        // hsv->v = result.x - result.z;
-                        // RGB rgb = {result.x, result.y, result.z};
-                        // rgb_to_hsv(rgb, NULL, &hsv->s, &hsv->v);
-                        hsv->s = 1 - result.y;
-                        hsv->v = 1 - result.z;
+                if (ctx->input->is_mouse_left_down) {
+                    if (point_overlaps_circle(mouse_pos, center, radius)) {
+                        Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
+                        if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
+                            hsv->s = 1 - result.y;
+                            hsv->v = 1 - result.z;
+                        }
+                    } else
+                    if (point_overlaps_circle(mouse_pos, center, outer_radius)) {
+                        f32 cursor_angle = vec2_angle(vec2_sub(mouse_pos, center));
+                        hsv->h = SEMATH_RAD2DEG(cursor_angle);
+                        hsv_clamp(hsv);
                     }
                 }
             }
@@ -506,7 +505,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 }
 
 void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
-    if (seui_panel_at(ctx, "texture viewer")) {
+    if (seui_panel(ctx, "texture viewer")) {
         Rect rect = ctx->current_panel->cached_rect;
         rect.h -= 48;
         rect.y += 16;
@@ -519,5 +518,24 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
             rect.w = rect.h;
         }
         seui_render_texture_raw(&ctx->renderer, rect, texture_index);
+    }
+}
+
+void seui_panel_container(SE_UI *ctx) {
+    SEUI_Panel *panel = seui_ctx_get_panel_container(ctx);
+    if (panel == NULL) {
+        seui_panel_row(ctx, 64, 1);
+        Rect rect = seui_panel_put(ctx, 0, true);
+        // draw a place holder
+        seui_render_rect(&ctx->renderer, rect, RGBA_BLACK);
+    } else {
+        seui_panel_row(ctx, 240, 1);
+        Rect rect = seui_panel_put(ctx, 0, true);
+        // draw the panel
+        panel->is_embedded = true;
+        panel->calc_rect.x = rect.x;
+        panel->calc_rect.y = rect.y;
+        panel->calc_rect.w = rect.w;
+        panel->calc_rect.h = rect.h;
     }
 }

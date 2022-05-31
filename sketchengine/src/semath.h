@@ -39,6 +39,8 @@
 #define SEMATH_INFINITY 1e30f
 // Smallest positive number where 1.0 + FLOAT_EPSILON != 0
 #define SEMATH_FLOAT_EPSILON 1.192092896e-07f
+#define SEMATH_RAD2DEG(x) x * SEMATH_RAD2DEG_MULTIPLIER
+#define SEMATH_DEG2RAD(x) x * SEMATH_DEG2RAD_MULTIPLIER
 
 /// ----------------------
 /// GENERAL MATH FUNCTIONS
@@ -47,6 +49,7 @@ f32 semath_sin(f32 x);
 f32 semath_cos(f32 x);
 f32 semath_tan(f32 x);
 f32 semath_acos(f32 x);
+f32 semath_asin(f32 x);
 f32 semath_sqrt(f32 x);
 f32 semath_abs(f32 x);
 f32 semath_power(f32 base, f32 power);
@@ -188,6 +191,17 @@ SEINLINE void vec2_normalise(Vec2 *vec) {
 SEINLINE Vec2 vec2_normalised(Vec2 vec) {
     vec2_normalise(&vec);
     return vec;
+}
+
+/// find the angle of the given vec2
+SEINLINE f32 vec2_angle(Vec2 v) {
+    vec2_normalise(&v);
+    return semath_acos(v.x);
+}
+
+SEINLINE f32 vec2_angle_between(Vec2 v1, Vec2 v2) {
+    f32 angle = semath_acos((vec2_dot(v1, v2)) / (vec2_magnitude(v1) * vec2_magnitude(v2)));
+    return angle;
 }
 
 /// compares all elements of v1 and v2 and unsures the difference is less than tolerance

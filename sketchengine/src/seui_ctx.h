@@ -40,6 +40,7 @@ typedef struct SEUI_Panel {
     /* auto calculated ------------------------------------------------------- */
         u32 index; // the index identifier of the panel tracked by SE_UI
         bool is_closed;
+        u32 depth; // the depth that the panel is drawn with
         /* next item: (calculated based on layout) */
         // sense some items can be bigger than min row height in the same row,
         // we want all the items on that row to be of the same height
@@ -117,7 +118,7 @@ typedef enum UI_STATES {
 } UI_STATES;
 
 #define SEUI_ID_NULL 0
-
+#define SEUI_PANEL_CONTAINER_CAPACITY 100
 typedef struct SE_UI {
     /* UI Widgets */
     u32 warm; // hover / selection
@@ -132,10 +133,18 @@ typedef struct SE_UI {
     SE_Theme theme;
 
     /* Panels */
+    u32 panel_container_count;
+        // a list of panel containers that can be used to refer to other existing panels
+        // this list refers to the index of the panels in the @panels of SE_UI
+        // note that a panel_container of value (0) means that this container does not refer to anything
+        // and if the value was (1) it means that the container is refering to panel at index 0
+    u32 panel_containers[SEUI_PANEL_CONTAINER_CAPACITY];
+
     u32 panel_capacity;
     u32 panel_count;
-    struct SEUI_Panel *panels;
-    struct SEUI_Panel *current_panel;         // the panel we put the widgets on
+    SEUI_Panel *panels;
+
+    SEUI_Panel *current_panel; // the panel we put the widgets on
 
     /* data */
     // data slots are places where widgets can store user data to, such as text input, colour, etc.
@@ -173,7 +182,8 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
 /// Start a panel at the given position. Aligns the items inside of the panel
 /// based on the given number of columns.
 /// Returns true if the panel is not closed.
-bool seui_panel_at(SE_UI *ctx, const char *title);
+bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel);
+bool seui_panel(SE_UI *ctx, const char *title);
 
 void seui_panel_row(SE_UI *ctx, f32 height, u32 columns);
 Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand);
@@ -183,6 +193,7 @@ SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->max_id = SEUI_ID_NULL;
     ctx->current_panel = NULL;
     ctx->panel_count = 0;
+    ctx->panel_container_count = 0;
 }
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
@@ -206,10 +217,14 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
 
     /* panels */
     ctx->current_panel = NULL;
+
     ctx->panel_capacity = 100;
     ctx->panel_count = 0;
     ctx->panels = (SEUI_Panel*) malloc(sizeof(SEUI_Panel) * ctx->panel_capacity);
     memset(ctx->panels, 0, sizeof(SEUI_Panel) * ctx->panel_capacity);
+
+    ctx->panel_container_count = 0;
+    memset(ctx->panel_containers, 0, sizeof(u32) * SEUI_PANEL_CONTAINER_CAPACITY);
 
     sestring_init(&ctx->text_input_cache, "");
     sestring_init(&ctx->text_input, "");
@@ -283,6 +298,13 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
         ctx->panel_count++;
         return &ctx->panels[panel];
     }
+}
+
+SEINLINE SEUI_Panel* seui_ctx_get_panel_container(SE_UI *ctx) {
+    u32 panel = ctx->panel_containers[ctx->panel_container_count];
+    ctx->panel_container_count++;
+    if (ctx->panels[panel].is_closed) return NULL;
+    return &ctx->panels[panel];
 }
 
 #endif // SEUI_H_CTX

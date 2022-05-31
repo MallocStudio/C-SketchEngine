@@ -48,6 +48,15 @@ typedef struct HSV {
     f32 v; // [0-1]
 } HSV;
 
+SEINLINE void hsv_clamp(HSV *hsv) {
+    if (hsv->h > 359) hsv->h = 0;
+    if (hsv->h < 0) hsv->h = 359;
+    if (hsv->s > 1) hsv->s = 1;
+    if (hsv->s < 0) hsv->s = 0;
+    if (hsv->v > 1) hsv->v = 1;
+    if (hsv->v < 0) hsv->v = 0;
+}
+
 SEINLINE void rgba_normalise(RGBA *rgb) {
     rgb->r = rgb->r / 255;
     rgb->g = rgb->g / 255;
@@ -56,19 +65,6 @@ SEINLINE void rgba_normalise(RGBA *rgb) {
 }
 
 SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
-    // if (semath_abs(v1.r - v2.r) > tolerance) {
-    //     return false;
-    // }
-    // if (semath_abs(v1.g - v2.g) > tolerance) {
-    //     return false;
-    // }
-    // if (semath_abs(v1.b - v2.b) > tolerance) {
-    //     return false;
-    // }
-    // if (semath_abs(v1.a - v2.a) > tolerance) {
-    //     return false;
-    // }
-    // return true;
     return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
 }
 

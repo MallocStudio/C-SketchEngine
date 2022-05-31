@@ -25,6 +25,10 @@ f32 semath_acos(f32 x) {
     return acosf(x);
 }
 
+f32 semath_asin(f32 x) {
+    return asinf(x);
+}
+
 f32 semath_sqrt(f32 x) {
     return sqrtf(x);
 }

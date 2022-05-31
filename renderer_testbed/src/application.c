@@ -169,7 +169,7 @@ void app_update(Application *app) {
     { // -- ui
         seui_reset(ctx);
 
-        if (seui_panel_at(ctx, "light")) {
+        if (seui_panel(ctx, "light")) {
             light_panel = ctx->current_panel->index;
             seui_panel_row(ctx, 32, 2);
             seui_label(ctx, "light direction:");
@@ -187,27 +187,16 @@ void app_update(Application *app) {
             seui_input_text(ctx, &app_panel.input_text);
             seui_label(ctx, "test input2:");
             seui_input_text(ctx, &app_panel.input_text2);
-
-            seui_panel_row(ctx, 32, 3);
-            seui_label(ctx, "p1");
-            seui_label(ctx, "p2");
-
-            if (seui_button(ctx, "file open")) {
-                printf("haha got ya\n");
-            }
-
-            seui_panel_row(ctx, 32, 1);
-
-            seui_label_vec3(ctx, "light position", &point_light_pos, true);
         }
 
-        if (seui_panel_at(ctx, "test bruh")) {
+        if (seui_panel(ctx, "test bruh")) {
             seui_panel_row(ctx, 32, 2);
             seui_label(ctx, "text number 1");
             seui_label(ctx, "text # 2");
+            seui_panel_container(ctx);
         }
 
-        if (seui_panel_at(ctx, "entity")) {
+        if (seui_panel(ctx, "entity")) {
             entity_panel = ctx->current_panel->index;
             char label_buffer[255];
             seui_panel_row(ctx, 32, 4);
@@ -232,16 +221,16 @@ void app_update(Application *app) {
             *panel_entity.entity_rot = vec3_mul_scalar(rot_in_degrees, SEMATH_DEG2RAD_MULTIPLIER);
         }
 
-        seui_texture_viewer(ctx, test_texture);
+        // seui_texture_viewer(ctx, test_texture);
 
-        if (light_map_texture != 0) {
-            seui_texture_viewer(ctx, light_map_texture);
-        }
+        // if (light_map_texture != 0) {
+        //     seui_texture_viewer(ctx, light_map_texture);
+        // }
 
-        // if (show_hsv) {
+        if (show_hsv) {
             seui_hsv_picker(ctx, &hsv);
             ctx->current_panel->is_closed = false;
-        // }
+        }
 
         if (seui_button_at(ctx, "entity", (Rect) {0,0, 128, 64})) {
             // if (panel_entity_info == NULL) panel_entity_info = seui_add_panel(ctx);

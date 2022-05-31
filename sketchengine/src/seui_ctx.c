@@ -89,8 +89,7 @@ Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand 
     return item;
 }
 
-bool seui_panel_at(SE_UI *ctx, const char *title) {
-    SEUI_Panel *panel_data = seui_ctx_get_panel(ctx);
+bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     if (panel_data == NULL) return false;
 
     /* move the panel inside of the viewport of any portion of it is outside */
@@ -144,6 +143,14 @@ bool seui_panel_at(SE_UI *ctx, const char *title) {
             top_bar.x, top_bar.y
         };
 
+        /* minimise button */
+        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size * 2, cursor.y, button_size, button_size};
+        if (seui_button_at(ctx, "", minimise_button_rect)) {
+            *minimised = !*minimised;
+        }
+        Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
+        seui_render_texture(&ctx->renderer, minimise_button_rect, index, RGBA_WHITE); // @TODO embed this into seui_button_textured_at
+
         UI_STATES drag_state = UI_STATE_DISABLED;
         if (panel_data->is_embedded == false) {
             /* drag button */
@@ -152,18 +159,13 @@ bool seui_panel_at(SE_UI *ctx, const char *title) {
             se_add_text_rect(&ctx->txt_renderer, title, drag_button_rect);
             panel_data->calc_rect.x += drag.x;
             panel_data->calc_rect.y += drag.y;
-        }
 
-        /* minimise button */
-        Rect minimise_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size * 2, cursor.y, button_size, button_size};
-        if (seui_button_at(ctx, "", minimise_button_rect)) {
-            *minimised = !*minimised;
-        }
-
-        /* close button */
-        Rect close_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size, cursor.y, button_size, button_size};
-        if (seui_button_at(ctx, "", close_button_rect)) {
-            seui_close_panel(ctx, panel_data->index);
+            /* close button */
+            Rect close_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size, cursor.y, button_size, button_size};
+            if (seui_button_at(ctx, "", close_button_rect)) {
+                seui_close_panel(ctx, panel_data->index);
+            }
+            seui_render_texture(&ctx->renderer, close_button_rect, UI_ICON_INDEX_CLOSE, RGBA_WHITE);
         }
 
         /* panel outline */
@@ -191,10 +193,6 @@ bool seui_panel_at(SE_UI *ctx, const char *title) {
         if (panel_data->calc_rect.w < min_size.x) panel_data->calc_rect.w = min_size.x;
         if (panel_data->calc_rect.h < min_size.y) panel_data->calc_rect.h = min_size.y;
 
-        // textured buttons (minimise button and close button)
-        Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
-        seui_render_texture(&ctx->renderer, minimise_button_rect, index, RGBA_WHITE); // @TODO embed this into seui_button_textured_at
-        seui_render_texture(&ctx->renderer, close_button_rect, UI_ICON_INDEX_CLOSE, RGBA_WHITE);
 
         if (!panel_data->is_embedded) { // -- docking
             RGBA dock_colour = {150, 0, 0, 100};
@@ -244,4 +242,9 @@ bool seui_panel_at(SE_UI *ctx, const char *title) {
     }
 
     return !panel_data->is_closed && !panel_data->minimised;
+}
+
+bool seui_panel(SE_UI *ctx, const char *title) {
+    SEUI_Panel *panel_data = seui_ctx_get_panel(ctx);
+    return seui_panel_at(ctx, title, panel_data);
 }

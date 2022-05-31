@@ -46,6 +46,10 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
 void seui_texture_viewer(SE_UI *ctx, u32 texture_index); // texture_index refers to the texture added to the renderer
 // void seui_image_viewer(SE_UI *ctx, Rect rect, const SE_Texture *texture);
 
+/// ctx current panel must not be null
+/// creates a place holder for a panel to be dropped on
+void seui_panel_container(SE_UI *ctx);
+
 ///
 /// WIDGETS INSIDE OF PANELS
 ///
