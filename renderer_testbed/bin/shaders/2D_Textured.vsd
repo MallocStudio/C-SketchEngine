@@ -1,0 +1,17 @@
+#version 450
+
+layout ( location = 0 ) in vec2 in_pos;
+layout ( location = 1 ) in float in_depth;
+layout ( location = 2 ) in vec4 in_rgba;
+layout ( location = 3 ) in vec2 in_uv;
+
+uniform mat4 view_projection;
+
+out vec4 _rgba;
+out vec2 _uv;
+
+void main () {
+    gl_Position = view_projection * vec4(in_pos, in_depth, 1);
+    _rgba = in_rgba;
+    _uv = in_uv;
+}

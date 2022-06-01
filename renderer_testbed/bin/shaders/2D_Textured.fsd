@@ -1,0 +1,11 @@
+#version 450
+
+in vec4 _rgba;
+in vec2 _uv;
+out vec4 FragColour;
+
+uniform sampler2D diffuse;
+
+void main () {
+    FragColour = texture(diffuse, _uv) * _rgba;
+}

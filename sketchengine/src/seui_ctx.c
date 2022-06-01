@@ -133,11 +133,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
     { // panel widgets
 
-        seui_panel_row(ctx, 16, 1); // make space for top bar
+        f32 button_size = 32;
+        seui_panel_row(ctx, button_size, 1); // make space for top bar
 
         Rect top_bar = seui_panel_put(ctx, 0, false);
 
-        f32 button_size = 16;
 
         Vec2 cursor = {
             top_bar.x, top_bar.y

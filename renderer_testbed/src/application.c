@@ -2,6 +2,7 @@
 #include "stdio.h" // @remove
 #include "seui.h"
 #include "panels.h"
+#include "serenderer2D.h"
 
 /* @temp */
 RGBA color;
@@ -15,6 +16,8 @@ HSV hsv; // @temp
 u32 test_texture; // @temp
 u32 light_map_texture = 0;
 Panel_Entity panel_entity;
+
+SE_Renderer2D renderer2d;
 
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
     Entity *entity  = &app->entities[entity_index];
@@ -58,6 +61,11 @@ void app_init(Application *app, SDL_Window *window) {
     u32 window_w, window_h;
     SDL_GetWindowSize(window, &window_w, &window_h);
 
+    serender2d_init(&renderer2d, (Rect) {0, 0, window_w, window_h});
+    serender2d_add_rect(&renderer2d, (Rect) {400, 400, 64, 32}, 50, RGBA_RED);
+    serender2d_add_rect(&renderer2d, (Rect) {400, 400, 64, 64}, 49, RGBA_GREEN);
+    serender2d_add_line(&renderer2d, v2f(0, 0), v2f(600, 300), 49, RGBA_GREEN);
+    serender2d_add_circle(&renderer2d, v2f(500, 300), 64, 49, 800, RGBA_BLUE);
     // -- input input
     seinput_init(&app->input);
 
@@ -151,6 +159,7 @@ void app_init(Application *app, SDL_Window *window) {
 void app_deinit(Application *app) {
     serender3d_deinit(&app->renderer);
     seui_deinit(ctx);
+    serender2d_deinit(&renderer2d);
 }
 
 void app_update(Application *app) {
@@ -310,6 +319,7 @@ void app_render(Application *app) {
         serender_mesh_index(&app->renderer, proj_box,         mat4_identity());
         serender_mesh_index(&app->renderer, current_obj_aabb, mat4_identity());
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
+        serender2d_render_uploaded_shapes(&renderer2d);
     }
     { // -- ui
         seui_render(ctx);

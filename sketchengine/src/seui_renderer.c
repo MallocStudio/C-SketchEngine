@@ -33,10 +33,6 @@ void seui_renderer_init(UI_Renderer *renderer, u32 window_w, u32 window_h) {
         glGenBuffers(1, &renderer->ibo);
         glGenVertexArrays(1, &renderer->vao);
 
-        /* dynamic shapes */
-        glGenBuffers(1,      &renderer->vbo_dynamic);
-        glGenVertexArrays(1, &renderer->vao_dynamic);
-
         { // -- generate the dynamic array buffer
             glGenVertexArrays(1, &renderer->vao_dynamic);
             glGenBuffers(1, &renderer->vbo_dynamic);
