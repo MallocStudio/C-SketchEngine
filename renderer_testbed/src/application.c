@@ -18,6 +18,7 @@ u32 light_map_texture = 0;
 Panel_Entity panel_entity;
 
 SE_Renderer2D renderer2d;
+SE_Texture_Atlas icon_atlas;
 
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
     Entity *entity  = &app->entities[entity_index];
@@ -62,10 +63,15 @@ void app_init(Application *app, SDL_Window *window) {
     SDL_GetWindowSize(window, &window_w, &window_h);
 
     serender2d_init(&renderer2d, (Rect) {0, 0, window_w, window_h});
+    setexture_atlas_load(&icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
     serender2d_add_rect(&renderer2d, (Rect) {400, 400, 64, 32}, 50, RGBA_RED);
     serender2d_add_rect(&renderer2d, (Rect) {400, 400, 64, 64}, 49, RGBA_GREEN);
-    serender2d_add_line(&renderer2d, v2f(0, 0), v2f(600, 300), 49, RGBA_GREEN);
+    serender2d_add_line(&renderer2d, v2f(0, 0), v2f(600, 300), 49, RGBA_GREEN, 2);
     serender2d_add_circle(&renderer2d, v2f(500, 300), 64, 49, 800, RGBA_BLUE);
+    serender2d_add_rect_textured_atlas(&renderer2d, (Rect) {600, 400, 32, 32}, 50, RGBA_RED, &icon_atlas, UI_ICON_INDEX_UNCOLLAPSE);
+    serender2d_add_hsv_wheel(&renderer2d, v2f(300, 300), 128, 16, 50);
+    serender2d_add_hsv_triangle(&renderer2d, v2f(300, 300), 128, 50, 0);
+
     // -- input input
     seinput_init(&app->input);
 

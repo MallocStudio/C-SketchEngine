@@ -1,9 +1,21 @@
 #ifndef SEUI_H_CTX
 #define SEUI_H_CTX
 
-#include "seui_renderer.h"
+#include "serenderer2D.h"
 #include "seinput.h"
 #include "setext.h"
+
+#define UI_ICON_INDEX_NULL       (Vec2) {0, 0}
+#define UI_ICON_INDEX_COLLAPSE   (Vec2) {1, 0}
+#define UI_ICON_INDEX_UNCOLLAPSE (Vec2) {2, 0}
+#define UI_ICON_INDEX_CLOSE      (Vec2) {0, 1}
+#define UI_ICON_INDEX_SLIDER     (Vec2) {3, 0}
+#define UI_ICON_INDEX_CIRCLE_FILLED (Vec2) {1, 1}
+#define UI_ICON_INDEX_CIRCLE_EMPTY (Vec2) {1, 2}
+#define UI_ICON_INDEX_CHECKBOX_FILLED (Vec2) {3, 2}
+#define UI_ICON_INDEX_CHECKBOX_EMPTY (Vec2) {2, 2}
+#define UI_ICON_INDEX_ARROW_RIGHT (Vec2) {2, 1}
+#define UI_ICON_INDEX_ARROW_LEFT (Vec2) {3, 1}
 
 // #define SEUI_VIEW_REGION_PADDING 0.1f
 #define SEUI_VIEW_REGION_SIZE_X 0.2f
@@ -63,24 +75,6 @@ typedef struct SEUI_Panel {
         bool is_embedded; // is inside of another panel
 } SEUI_Panel;
 
-// typedef struct {
-//     i32 id; // dummy
-// } SE_Constructed;
-
-// typedef struct SE_Constructed_Panel {
-//     /* configs set by user */
-//     bool config_centered; // the alignment of the children
-//     Vec2 config_pos; // initial position
-//     u32 children_count;
-//     SE_Constructed children[100];
-//     /* internal private data */
-// } SE_Constructed_Panel;
-
-// typedef struct SE_Constructed_Button {
-//     SE_Constructed basic;
-//     const char *text;
-// } SE_Constructed_Button;
-
 typedef struct SE_Theme {
     /* colours */
     RGBA colour_normal;
@@ -105,7 +99,8 @@ SEINLINE void seui_theme_default(SE_Theme *theme) {
     theme->colour_pressed = (RGBA) {156, 67, 12, 255};
     theme->colour_bg      = (RGBA) {59, 34, 32, 230};
     theme->colour_fg      = (RGBA) {56, 95, 161, 255};
-    theme->colour_bg_2    = (RGBA) {10, 10, 10, 100};
+    // theme->colour_bg_2    = (RGBA) {10, 10, 10, 230};
+    theme->colour_bg_2      = (RGBA) {59, 34, 32, 230};
     theme->margin = v2f(8, 0);
 }
 
@@ -127,7 +122,7 @@ typedef struct SE_UI {
     Rect viewport;
 
     /* Renderes and Inputs */
-    struct UI_Renderer renderer;
+    SE_Renderer2D renderer;
     SE_Text txt_renderer;
     struct SE_Input *input; // ! not owned
     SE_Theme theme;
@@ -150,7 +145,7 @@ typedef struct SE_UI {
     /* data */
     // data slots are places where widgets can store user data to, such as text input, colour, etc.
     HSV data_hsv; // stored hsv (this is used by colour pickers to store their value to)
-
+    SE_Texture_Atlas icon_atlas;
     /* text input */
     // if some widget is constantly active, we set active to their id
     // this is to allow certain widgets hold the attention of input.
@@ -211,10 +206,12 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
     ctx->input = input;
 
     ctx->viewport = (Rect) {0, 0, window_w, window_h};
-    seui_renderer_init(&ctx->renderer, window_w, window_h);
+    serender2d_init(&ctx->renderer, ctx->viewport);
     se_init_text_default(&ctx->txt_renderer, ctx->viewport);
 
     seui_theme_default(&ctx->theme);
+
+    setexture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
 
     /* panels */
     ctx->current_panel = NULL;
@@ -232,11 +229,11 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
 }
 
 SEINLINE void seui_deinit(SE_UI *ctx) {
-    seui_renderer_deinit(&ctx->renderer);
+    serender2d_deinit(&ctx->renderer);
     se_deinit_text(&ctx->txt_renderer);
     sestring_deinit(&ctx->text_input_cache);
     sestring_deinit(&ctx->text_input);
-
+    setexture_atlas_unload(&ctx->icon_atlas);
     free(ctx->panels);
     ctx->panel_count = 0;
 }
@@ -247,32 +244,18 @@ SEINLINE void seui_close_panel(SE_UI *ctx, u32 panel_index) {
 
 SEINLINE void seui_render(SE_UI *ctx) {
     /* upload data */
-    seui_renderer_upload(&ctx->renderer);
+    serender2d_upload_to_gpu(&ctx->renderer);
 
     /* configure */
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
 
     /* draw call */
-    seui_renderer_draw(&ctx->renderer);
+    serender2d_render_uploaded_shapes(&ctx->renderer);
+    serender2d_clear_shapes(&ctx->renderer);
+
+    /* text */
     se_render_text(&ctx->txt_renderer);
     se_clear_text_render_queue(&ctx->txt_renderer); // sense we're gonna recreate the queue next frame
-
-    /* reset configuration */
-    glEnable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-
-    /* clear data */
-    seui_renderer_clear (&ctx->renderer);
 }
-
-// SEINLINE u32 seui_add_texture(SE_UI *ctx, SE_Texture texture) {
-//     ctx->renderer.textures[ctx->renderer.texture_count] = texture;
-//     ctx->renderer.texture_count++;
-//     return ctx->renderer.texture_count - 1;
-// }
 
 SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
     if (ctx->panel_count >= ctx->panel_capacity) {

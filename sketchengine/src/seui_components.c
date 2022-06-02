@@ -67,7 +67,7 @@ UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse
 
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
-    UI_Renderer *renderer = &ctx->renderer;
+    SE_Renderer2D *renderer = &ctx->renderer;
 
     u32 id = generate_ui_id(ctx);
 
@@ -89,7 +89,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
         } break;
    }
 
-    seui_render_rect(renderer, rect, colour);
+    serender2d_add_rect(renderer, rect, ctx->current_panel->depth, colour);
     se_add_text_rect(&ctx->txt_renderer, text, rect);
 
     return ui_state == UI_STATE_ACTIVE;
@@ -97,7 +97,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
 
 bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
     SE_Input *input = ctx->input;
-    UI_Renderer *renderer = &ctx->renderer;
+    SE_Renderer2D *renderer = &ctx->renderer;
 
     u32 id = generate_ui_id(ctx);
 
@@ -121,9 +121,9 @@ bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
     }
 
     if (texture_index.x == 0 && texture_index.y == 0) {
-        seui_render_rect(renderer, rect, colour);
+        serender2d_add_rect(renderer, rect, ctx->current_panel->depth, colour);
     } else {
-        seui_render_texture(renderer, rect, texture_index, colour);
+        serender2d_add_rect_textured_atlas(renderer, rect, ctx->current_panel->depth, colour, &ctx->icon_atlas, texture_index);
     }
 
     return ui_state == UI_STATE_ACTIVE;
@@ -131,7 +131,7 @@ bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
 
 Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_STATES *state) {
     SE_Input *input = ctx->input;
-    UI_Renderer *renderer = &ctx->renderer;
+    SE_Renderer2D *renderer = &ctx->renderer;
 
     u32 id = generate_ui_id(ctx);
 
@@ -158,9 +158,9 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
     if (state != NULL) *state = ui_state;
 
     if (texture_index.x == 0 && texture_index.y == 0) {
-        seui_render_rect(renderer, rect, colour);
+        serender2d_add_rect(renderer, rect, ctx->current_panel->depth, colour);
     } else {
-        seui_render_texture(renderer, rect, texture_index, colour);
+        serender2d_add_rect_textured_atlas(renderer, rect, ctx->current_panel->depth, colour, &ctx->icon_atlas, texture_index);
     }
 
     return drag;
@@ -180,7 +180,7 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
 
     // reset config
     ctx->txt_renderer.config_centered = previous_setting;
-    seui_render_rect(&ctx->renderer, rect, ctx->theme.colour_bg_2);
+    serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, ctx->theme.colour_bg_2);
 }
 
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
@@ -200,7 +200,7 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     Vec2 button_pos = vec2_add(vec2_add(vec2_mul_scalar(vec2_average(pos_rel1, pos_rel2), *value * 2), pos1), pos_offset);
 
     /* draw the line */
-    seui_render_line(&ctx->renderer, pos1, pos2, 3, RGBA_BLACK);
+    serender2d_add_line(&ctx->renderer, pos1, pos2, ctx->current_panel->depth, RGBA_BLACK, 3);
 
     /* draw the slider button */
     Rect button_rect = rect_create(button_pos, button_size);
@@ -232,7 +232,7 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     button_pos = vec2_sub(button_pos, vec2_mul_scalar(button_size, 0.5f));
 
     /* draw the border */
-    seui_render_circle(&ctx->renderer, center, radius, (RGBA) {0, 0, 0, 50});
+    serender2d_add_circle(&ctx->renderer, center, radius, ctx->current_panel->depth, 4, (RGBA) {0, 0, 0, 50});
 
     /* draw the button */
     Rect button_rect = rect_create(button_pos, button_size);
@@ -270,7 +270,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     }
 
     /* background */
-    seui_render_rect(&ctx->renderer, rect, colour_bg);
+    serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, colour_bg);
     /* left button */
     Rect button = {
         rect.x,
@@ -313,7 +313,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
 
 void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     SE_Input *input = ctx->input;
-    UI_Renderer *renderer = &ctx->renderer;
+    SE_Renderer2D *renderer = &ctx->renderer;
 
     u32 id = generate_ui_id(ctx);
 
@@ -387,7 +387,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         }
     }
 
-    seui_render_rect(renderer, rect, colour);
+    serender2d_add_rect(renderer, rect, ctx->current_panel->depth, colour);
     if (display_text->size > 0) {
         ctx->txt_renderer.config_colour = colour_text;
         se_add_text_rect(&ctx->txt_renderer, display_text->buffer, rect);
@@ -426,7 +426,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             {
                 seui_panel_row(ctx, 16, 1);
                 Rect rect = seui_panel_put(ctx, 0, true);
-                seui_render_rect(&ctx->renderer, rect, ctx->theme.colour_bg_2);
+                serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, ctx->theme.colour_bg_2);
             }
             seui_panel_row(ctx, 240, 1);
             Rect rect = seui_panel_put(ctx, 240, true);
@@ -434,16 +434,16 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             f32 outer_radius = rect.h / 2;
             f32 thickness = 16;
             /* background */
-            seui_render_rect(&ctx->renderer, rect, ctx->theme.colour_bg_2);
+            serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, ctx->theme.colour_bg_2);
 
             /* colour wheel */
-            seui_render_shape_colour_wheel(&ctx->renderer, center, outer_radius, thickness);
+            serender2d_add_hsv_wheel(&ctx->renderer, center, outer_radius - thickness, thickness, ctx->current_panel->depth);
 
             f32 angle = hsv->h * SEMATH_DEG2RAD_MULTIPLIER;
             f32 radius = outer_radius - thickness;
 
             { /* colour triangle */
-                seui_render_shape_colour_triangle(&ctx->renderer, center, radius, angle);
+                serender2d_add_hsv_triangle(&ctx->renderer, center, radius, ctx->current_panel->depth, angle);
                 if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
                     hsv->h += 5;
                 }
@@ -469,7 +469,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
                 hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
                 hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
 
-                seui_render_circle_outline_ext(&ctx->renderer, hsv_point, 4, RGBA_WHITE, 8);
+                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, ctx->current_panel->depth, 8, RGBA_WHITE, 1);
 
                 /* changing the saturation and value based on mouse input */
                 Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
@@ -499,7 +499,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             Rect preview_rect = seui_panel_put(ctx, 16, true);
             RGBA c = RGBA_WHITE;
             hsv_to_rgba(hsv->h, hsv->s, hsv->v, &c);
-            seui_render_rect(&ctx->renderer, preview_rect, c);
+            serender2d_add_rect(&ctx->renderer, preview_rect, ctx->current_panel->depth, c);
         }
     }
 }
@@ -517,7 +517,8 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
         if (rect.w > rect.h) {
             rect.w = rect.h;
         }
-        seui_render_texture_raw(&ctx->renderer, rect, texture_index);
+        // seui_render_texture_raw(&ctx->renderer, rect, texture_index);
+        // @TODO replace the line above
     }
 }
 

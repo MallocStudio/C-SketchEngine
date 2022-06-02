@@ -159,6 +159,11 @@ void se_deinit_text(SE_Text *text) {
 
 /// Render to the screen
 void se_render_text(SE_Text *text) {
+        // gl config
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+
     /* shader */
     seshader_use(&text->shader_program);
     seshader_set_uniform_mat4(&text->shader_program, "projection", text->shader_projection_matrix);
@@ -225,6 +230,10 @@ void se_render_text(SE_Text *text) {
             x += glyph.advance * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
         }
     }
+        // reset gl config
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
     glDisable(GL_SCISSOR_TEST);
     glBindVertexArray(0);

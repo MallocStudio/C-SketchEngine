@@ -4,7 +4,6 @@
 // - seui_widgets (complex forms of widgets made out of other widgets)
 #include "seui_components.h"
 
-
 /// -----------------------------------------
 ///                WIDGETS
 /// -----------------------------------------
