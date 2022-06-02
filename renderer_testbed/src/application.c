@@ -17,9 +17,6 @@ u32 test_texture; // @temp
 u32 light_map_texture = 0;
 Panel_Entity panel_entity;
 
-SE_Renderer2D renderer2d;
-SE_Texture_Atlas icon_atlas;
-
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
     Entity *entity  = &app->entities[entity_index];
     p->entity_id    = entity_index;
@@ -61,16 +58,6 @@ void app_init(Application *app, SDL_Window *window) {
     app->should_quit = false;
     u32 window_w, window_h;
     SDL_GetWindowSize(window, &window_w, &window_h);
-
-    serender2d_init(&renderer2d, (Rect) {0, 0, window_w, window_h});
-    setexture_atlas_load(&icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
-    serender2d_add_rect(&renderer2d, (Rect) {400, 400, 64, 32}, 50, RGBA_RED);
-    serender2d_add_rect(&renderer2d, (Rect) {400, 400, 64, 64}, 49, RGBA_GREEN);
-    serender2d_add_line(&renderer2d, v2f(0, 0), v2f(600, 300), 49, RGBA_GREEN, 2);
-    serender2d_add_circle(&renderer2d, v2f(500, 300), 64, 49, 800, RGBA_BLUE);
-    serender2d_add_rect_textured_atlas(&renderer2d, (Rect) {600, 400, 32, 32}, 50, RGBA_RED, &icon_atlas, UI_ICON_INDEX_UNCOLLAPSE);
-    serender2d_add_hsv_wheel(&renderer2d, v2f(300, 300), 128, 16, 50);
-    serender2d_add_hsv_triangle(&renderer2d, v2f(300, 300), 128, 50, 0);
 
     // -- input input
     seinput_init(&app->input);
@@ -165,7 +152,6 @@ void app_init(Application *app, SDL_Window *window) {
 void app_deinit(Application *app) {
     serender3d_deinit(&app->renderer);
     seui_deinit(ctx);
-    serender2d_deinit(&renderer2d);
 }
 
 void app_update(Application *app) {
@@ -325,7 +311,6 @@ void app_render(Application *app) {
         serender_mesh_index(&app->renderer, proj_box,         mat4_identity());
         serender_mesh_index(&app->renderer, current_obj_aabb, mat4_identity());
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
-        serender2d_render_uploaded_shapes(&renderer2d);
     }
     { // -- ui
         seui_render(ctx);

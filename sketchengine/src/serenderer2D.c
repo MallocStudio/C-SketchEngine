@@ -72,7 +72,6 @@ void serender2d_clear_shapes (SE_Renderer2D *renderer) {
 void serender2d_render_uploaded_shapes (SE_Renderer2D *renderer) {
         // gl config
     glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
         /// untextured shapes
     seshader_use(&renderer->shader);
     seshader_set_uniform_mat4(&renderer->shader, "view_projection", renderer->view_projection);
@@ -144,6 +143,7 @@ void serender2d_render_uploaded_shapes (SE_Renderer2D *renderer) {
     seshader_use(&renderer->shader_textured);
     seshader_set_uniform_mat4(&renderer->shader_textured, "view_projection", renderer->view_projection);
     seshader_set_uniform_i32(&renderer->shader_textured, "diffuse", 0);
+
     for (u32 i = 0; i < renderer->shape_textured_rect_count; ++i) {
         SE_Shape_Textured_Rect shape = renderer->shape_textured_rects[i];
         f32 x = shape.rect_shape.rect.x;
@@ -195,7 +195,6 @@ void serender2d_render_uploaded_shapes (SE_Renderer2D *renderer) {
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
 }
 
 void serender2d_add_rect (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour) {
@@ -245,7 +244,10 @@ void serender2d_add_rect_textured_atlas (SE_Renderer2D *renderer, Rect rect, f32
 }
 
 void serender2d_add_rect_outline (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour, f32 width) {
-
+    serender2d_add_line(renderer, v2f(rect.x, rect.y), v2f(rect.x + rect.w, rect.y), depth, colour, width);
+    serender2d_add_line(renderer, v2f(rect.x + rect.w, rect.y), v2f(rect.x + rect.w, rect.y + rect.h), depth, colour, width);
+    serender2d_add_line(renderer, v2f(rect.x, rect.y + rect.h), v2f(rect.x + rect.w, rect.y + rect.h), depth, colour, width);
+    serender2d_add_line(renderer, v2f(rect.x, rect.y), v2f(rect.x, rect.y + rect.h), depth, colour, width);
 }
 
 void serender2d_add_circle_outline (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, u32 segment_count, RGBA colour, f32 width) {

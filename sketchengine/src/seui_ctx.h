@@ -194,7 +194,7 @@ SEINLINE void seui_reset(SE_UI *ctx) {
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
     ctx->viewport = (Rect) {0, 0, window_w, window_h};
-    seui_renderer_resize(&ctx->renderer, window_w, window_h);
+    serender2d_resize(&ctx->renderer, ctx->viewport);
     se_set_text_viewport(&ctx->txt_renderer, ctx->viewport);
 }
 
@@ -279,6 +279,7 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
         seui_panel_setup(&ctx->panels[panel], init_rect, false, 32, 0);
         ctx->panels[panel].index = panel;
         ctx->panels[panel].is_closed = false;
+        ctx->panels[panel].depth = 50;
         ctx->panel_count++;
         return &ctx->panels[panel];
     }

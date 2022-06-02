@@ -129,7 +129,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->next_item_height = panel_data->min_item_height;
 
     // draw a rectangle that represents the panel's dimensions
-    if (!is_minimised && !panel_data->is_embedded) serender2d_add_rect(&ctx->renderer, panel_data->cached_rect, panel_data->depth - 0.5f, colour);
+    if (!is_minimised && !panel_data->is_embedded) serender2d_add_rect(&ctx->renderer, panel_data->cached_rect, panel_data->depth-1, colour);
 
     { // panel widgets
 
@@ -145,11 +145,11 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
         /* minimise button */
         Rect minimise_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size * 2, cursor.y, button_size, button_size};
+        Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
+        serender2d_add_rect_textured_atlas(&ctx->renderer, minimise_button_rect, panel_data->depth+1, RGBA_WHITE, &ctx->icon_atlas, index);
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
-        Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
-        serender2d_add_rect_textured_atlas(&ctx->renderer, minimise_button_rect, panel_data->depth, RGBA_WHITE, &ctx->icon_atlas, index);
 
         UI_STATES drag_state = UI_STATE_DISABLED;
         if (panel_data->is_embedded == false) {
@@ -164,14 +164,14 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
             /* close button */
             Rect close_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size, cursor.y, button_size, button_size};
+            serender2d_add_rect_textured_atlas(&ctx->renderer, close_button_rect, panel_data->depth+1, RGBA_WHITE, &ctx->icon_atlas, UI_ICON_INDEX_CLOSE);
             if (seui_button_at(ctx, "", close_button_rect)) {
                 seui_close_panel(ctx, panel_data->index);
             }
-            serender2d_add_rect_textured_atlas(&ctx->renderer, close_button_rect, panel_data->depth, RGBA_WHITE, &ctx->icon_atlas, UI_ICON_INDEX_CLOSE);
         }
 
         /* panel outline */
-        serender2d_add_rect_outline(&ctx->renderer, panel_data->cached_rect, panel_data->depth + 1, RGBA_BLACK, 2);
+        serender2d_add_rect_outline(&ctx->renderer, panel_data->cached_rect, panel_data->depth+1, RGBA_BLACK, 2);
 
         /* resizeing */
         // Vec2 min_size = panel_data->min_size;

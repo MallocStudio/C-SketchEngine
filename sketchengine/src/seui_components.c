@@ -270,7 +270,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     }
 
     /* background */
-    serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, colour_bg);
+    serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth-1, colour_bg);
     /* left button */
     Rect button = {
         rect.x,
@@ -426,7 +426,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             {
                 seui_panel_row(ctx, 16, 1);
                 Rect rect = seui_panel_put(ctx, 0, true);
-                serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, ctx->theme.colour_bg_2);
+                serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth-1, ctx->theme.colour_bg_2);
             }
             seui_panel_row(ctx, 240, 1);
             Rect rect = seui_panel_put(ctx, 240, true);
@@ -434,7 +434,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             f32 outer_radius = rect.h / 2;
             f32 thickness = 16;
             /* background */
-            serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth, ctx->theme.colour_bg_2);
+            serender2d_add_rect(&ctx->renderer, rect, ctx->current_panel->depth-1, ctx->theme.colour_bg_2);
 
             /* colour wheel */
             serender2d_add_hsv_wheel(&ctx->renderer, center, outer_radius - thickness, thickness, ctx->current_panel->depth);
@@ -469,7 +469,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
                 hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
                 hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
 
-                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, ctx->current_panel->depth, 8, RGBA_WHITE, 1);
+                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, ctx->current_panel->depth+1, 8, RGBA_WHITE, 1);
 
                 /* changing the saturation and value based on mouse input */
                 Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
@@ -499,7 +499,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             Rect preview_rect = seui_panel_put(ctx, 16, true);
             RGBA c = RGBA_WHITE;
             hsv_to_rgba(hsv->h, hsv->s, hsv->v, &c);
-            serender2d_add_rect(&ctx->renderer, preview_rect, ctx->current_panel->depth, c);
+            serender2d_add_rect(&ctx->renderer, preview_rect, ctx->current_panel->depth+1, c);
         }
     }
 }
