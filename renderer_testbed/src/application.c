@@ -121,7 +121,8 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- init UI
         ctx = new (SE_UI);
-        seui_init(ctx, &app->input, window_w, window_h);
+        // seui_init(ctx, &app->input, (Rect) {0,0, window_w, window_h}, 0.1f, 100);
+        seui_init(ctx, &app->input, (Rect) {0,0, window_w, window_h}, -1000, 1000);
 
         // panel = seui_add_panel(ctx);
         // panel_entity_info = seui_add_panel(ctx);

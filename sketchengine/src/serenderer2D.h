@@ -66,12 +66,12 @@ typedef struct SE_Renderer2D {
 ///     RENDERER
 ///
 
-void serender2d_init                   (SE_Renderer2D *renderer, Rect viewport);
-void serender2d_deinit                 (SE_Renderer2D *renderer);
-void serender2d_resize                 (SE_Renderer2D *renderer, Rect viewport);
-void serender2d_upload_to_gpu          (SE_Renderer2D *renderer);
-void serender2d_clear_shapes           (SE_Renderer2D *renderer);
-void serender2d_render_uploaded_shapes (SE_Renderer2D *renderer);
+void serender2d_init                    (SE_Renderer2D *renderer, Rect viewport, f32 min_depth, f32 max_depth);
+void serender2d_deinit                  (SE_Renderer2D *renderer);
+void serender2d_resize                  (SE_Renderer2D *renderer, Rect viewport, f32 min_depth, f32 max_depth);
+void serender2d_upload_to_gpu           (SE_Renderer2D *renderer);
+void serender2d_clear_shapes            (SE_Renderer2D *renderer);
+void serender2d_render                  (SE_Renderer2D *renderer);
 
 void serender2d_add_rect                (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour);
 void serender2d_add_circle              (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, u32 segment_count, RGBA colour);
@@ -81,7 +81,7 @@ void serender2d_add_line                (SE_Renderer2D *renderer, Vec2 pos1, Vec
 void serender2d_add_rect_outline        (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour, f32 width);
 void serender2d_add_circle_outline      (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, u32 segment_count, RGBA colour, f32 width);
 
-void serender2d_add_hsv_wheel        (SE_Renderer2D *renderer, Vec2 center, f32 inner_radius, f32 width, f32 depth);
-void serender2d_add_hsv_triangle     (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, f32 angle);
+void serender2d_add_hsv_wheel           (SE_Renderer2D *renderer, Vec2 center, f32 inner_radius, f32 width, f32 depth);
+void serender2d_add_hsv_triangle        (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, f32 angle);
 
 #endif // SEUI_RENDERER_2D

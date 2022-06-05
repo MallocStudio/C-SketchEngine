@@ -52,7 +52,11 @@ typedef struct SEUI_Panel {
     /* auto calculated ------------------------------------------------------- */
         u32 index; // the index identifier of the panel tracked by SE_UI
         bool is_closed;
-        u32 depth; // the depth that the panel is drawn with
+            // depth testing
+        f32 depth_bg; // depth used for background    items
+        f32 depth_fg; // depth used for foreground    items
+        f32 depth_mg; // depth used for middle ground items
+
         /* next item: (calculated based on layout) */
         // sense some items can be bigger than min row height in the same row,
         // we want all the items on that row to be of the same height
@@ -138,9 +142,13 @@ typedef struct SE_UI {
     u32 panel_capacity;
     u32 panel_count;
     SEUI_Panel *panels;
+    f32 current_max_depth; // the highest depth currently assigned (not the maximum available)
+    f32 min_depth_available;
+    f32 max_depth_available;
 
     SEUI_Panel *current_panel; // the panel we put the widgets on
     SEUI_Panel *current_dragging_panel; // the panel that the user is dragging
+    SEUI_Panel *latest_activated_panel; // used to determine which panel should be on top of the rest
 
     /* data */
     // data slots are places where widgets can store user data to, such as text input, colour, etc.
@@ -190,23 +198,27 @@ SEINLINE void seui_reset(SE_UI *ctx) {
     ctx->current_panel = NULL;
     ctx->panel_count = 0;
     ctx->panel_container_count = 0;
+    ctx->current_max_depth = ctx->min_depth_available;
 }
 
 SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
     ctx->viewport = (Rect) {0, 0, window_w, window_h};
-    serender2d_resize(&ctx->renderer, ctx->viewport);
+    serender2d_resize(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
     se_set_text_viewport(&ctx->txt_renderer, ctx->viewport);
 }
 
-SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h) {
+SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 max_depth) {
     ctx->warm = SEUI_ID_NULL;
     ctx->hot = SEUI_ID_NULL;
     ctx->active = SEUI_ID_NULL;
     seui_reset(ctx);
     ctx->input = input;
 
-    ctx->viewport = (Rect) {0, 0, window_w, window_h};
-    serender2d_init(&ctx->renderer, ctx->viewport);
+    ctx->min_depth_available = min_depth;
+    ctx->max_depth_available = max_depth;
+
+    ctx->viewport = viewport;
+    serender2d_init(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
     se_init_text_default(&ctx->txt_renderer, ctx->viewport);
 
     seui_theme_default(&ctx->theme);
@@ -215,6 +227,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, u32 window_w, u32 window_h)
 
     /* panels */
     ctx->current_panel = NULL;
+    ctx->current_max_depth = ctx->min_depth_available;
 
     ctx->panel_capacity = 100;
     ctx->panel_count = 0;
@@ -249,7 +262,7 @@ SEINLINE void seui_render(SE_UI *ctx) {
     /* configure */
 
     /* draw call */
-    serender2d_render_uploaded_shapes(&ctx->renderer);
+    serender2d_render(&ctx->renderer);
     serender2d_clear_shapes(&ctx->renderer);
 
     /* text */
@@ -267,6 +280,7 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
     if (ctx->panels[panel].index == ctx->panel_count) {
         // the indices match so we won't reset this panel, because we want to keep the data from the previous frame
         ctx->panel_count++;
+
         return &ctx->panels[panel];
     } else {
         // the indices don't match, so this is a different panel and we have to reset it
@@ -279,7 +293,6 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
         seui_panel_setup(&ctx->panels[panel], init_rect, false, 32, 0);
         ctx->panels[panel].index = panel;
         ctx->panels[panel].is_closed = false;
-        ctx->panels[panel].depth = 50;
         ctx->panel_count++;
         return &ctx->panels[panel];
     }

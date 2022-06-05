@@ -10,7 +10,6 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
     return result;
 }
 
-
 /// -----------------------------------------
 ///                 PANEL
 /// -----------------------------------------
@@ -91,7 +90,20 @@ Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand 
 
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     if (panel_data == NULL) return false;
+        // depth
+    panel_data->depth_bg = ctx->current_max_depth+1;
+    panel_data->depth_mg = ctx->current_max_depth+2;
+    panel_data->depth_fg = ctx->current_max_depth+3;
+    ctx->current_max_depth += 3;
 
+    if (ctx->latest_activated_panel == panel_data) {
+        // panel_data->depth_bg = -ctx->current_max_depth+1;
+        // panel_data->depth_mg = -ctx->current_max_depth+2;
+        // panel_data->depth_fg = -ctx->current_max_depth+3;
+        panel_data->depth_bg = ctx->max_depth_available-2;
+        panel_data->depth_mg = ctx->max_depth_available-1;
+        panel_data->depth_fg = ctx->max_depth_available;
+    }
     /* move the panel inside of the viewport of any portion of it is outside */
     // right
     if (panel_data->calc_rect.x + panel_data->calc_rect.w > ctx->viewport.w) {
@@ -129,7 +141,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     panel_data->next_item_height = panel_data->min_item_height;
 
     // draw a rectangle that represents the panel's dimensions
-    if (!is_minimised && !panel_data->is_embedded) serender2d_add_rect(&ctx->renderer, panel_data->cached_rect, panel_data->depth-1, colour);
+    if (!is_minimised && !panel_data->is_embedded) serender2d_add_rect(&ctx->renderer, panel_data->cached_rect, panel_data->depth_bg, colour);
 
     { // panel widgets
 
@@ -146,7 +158,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
         /* minimise button */
         Rect minimise_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size * 2, cursor.y, button_size, button_size};
         Vec2 index = is_minimised ? UI_ICON_INDEX_UNCOLLAPSE : UI_ICON_INDEX_COLLAPSE;
-        serender2d_add_rect_textured_atlas(&ctx->renderer, minimise_button_rect, panel_data->depth+1, RGBA_WHITE, &ctx->icon_atlas, index);
+        serender2d_add_rect_textured_atlas(&ctx->renderer, minimise_button_rect, panel_data->depth_fg, RGBA_WHITE, &ctx->icon_atlas, index);
         if (seui_button_at(ctx, "", minimise_button_rect)) {
             *minimised = !*minimised;
         }
@@ -159,19 +171,22 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             se_add_text_rect(&ctx->txt_renderer, title, drag_button_rect);
             panel_data->calc_rect.x += drag.x;
             panel_data->calc_rect.y += drag.y;
-            if (drag_state == UI_STATE_HOT) ctx->current_dragging_panel = panel_data;
+
+                // update the top panel / current_dragging_panel
+            if (drag_state == UI_STATE_HOT && ctx->current_dragging_panel != panel_data) ctx->current_dragging_panel = panel_data;
             if (ctx->current_dragging_panel == panel_data && drag_state != UI_STATE_HOT) ctx->current_dragging_panel = NULL;
+            if (drag_state == UI_STATE_HOT) ctx->latest_activated_panel = panel_data;
 
             /* close button */
             Rect close_button_rect = (Rect) {cursor.x + panel_data->calc_rect.w - button_size, cursor.y, button_size, button_size};
-            serender2d_add_rect_textured_atlas(&ctx->renderer, close_button_rect, panel_data->depth+1, RGBA_WHITE, &ctx->icon_atlas, UI_ICON_INDEX_CLOSE);
+            serender2d_add_rect_textured_atlas(&ctx->renderer, close_button_rect, panel_data->depth_fg, RGBA_WHITE, &ctx->icon_atlas, UI_ICON_INDEX_CLOSE);
             if (seui_button_at(ctx, "", close_button_rect)) {
                 seui_close_panel(ctx, panel_data->index);
             }
         }
 
         /* panel outline */
-        serender2d_add_rect_outline(&ctx->renderer, panel_data->cached_rect, panel_data->depth+1, RGBA_BLACK, 2);
+        serender2d_add_rect_outline(&ctx->renderer, panel_data->cached_rect, panel_data->depth_fg, RGBA_BLACK, 2);
 
         /* resizeing */
         // Vec2 min_size = panel_data->min_size;
@@ -211,7 +226,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             // @note UI_STATE_ACTIVE means that the button was just released
             if (rect_overlaps_point(SEUI_VIEW_REGION_COLLISION_RIGHT, normalised_cursor)) { // right
                 if (drag_state == UI_STATE_HOT) {
-                    serender2d_add_rect(&ctx->renderer,  expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT), panel_data->depth + 1, dock_colour);
+                    serender2d_add_rect(&ctx->renderer,  expand_view_region(ctx, SEUI_VIEW_REGION_RIGHT), panel_data->depth_fg, dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
                     panel_data->docked_dir = 2;
@@ -219,7 +234,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
             } else
             if (rect_overlaps_point(SEUI_VIEW_REGION_COLLISION_LEFT, normalised_cursor)) { // left
                 if (drag_state == UI_STATE_HOT) {
-                    serender2d_add_rect(&ctx->renderer,  expand_view_region(ctx, SEUI_VIEW_REGION_LEFT), panel_data->depth + 1, dock_colour);
+                    serender2d_add_rect(&ctx->renderer,  expand_view_region(ctx, SEUI_VIEW_REGION_LEFT), panel_data->depth_fg, dock_colour);
                 }
                 if (drag_state == UI_STATE_ACTIVE && !ctx->input->is_mouse_left_down) { // mouse released so dock
                     panel_data->docked_dir = 1;

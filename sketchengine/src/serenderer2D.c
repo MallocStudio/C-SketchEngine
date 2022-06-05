@@ -1,7 +1,7 @@
 #include "serenderer2D.h"
 
 
-void serender2d_init (SE_Renderer2D *renderer, Rect viewport) {
+void serender2d_init (SE_Renderer2D *renderer, Rect viewport, f32 min_depth, f32 max_depth) {
     renderer->initialised = true;
         // init shaders
     seshader_init_from(&renderer->shader, "shaders/2D.vsd", "shaders/2D.fsd");
@@ -38,7 +38,7 @@ void serender2d_init (SE_Renderer2D *renderer, Rect viewport) {
     glBindBuffer(GL_ARRAY_BUFFER,         0);
 
         // viewport
-    serender2d_resize(renderer, viewport);
+    serender2d_resize(renderer, viewport, min_depth, max_depth);
 }
 
 void serender2d_deinit (SE_Renderer2D *renderer) {
@@ -53,9 +53,9 @@ void serender2d_deinit (SE_Renderer2D *renderer) {
     }
 }
 
-void serender2d_resize (SE_Renderer2D *renderer, Rect viewport) {
+void serender2d_resize (SE_Renderer2D *renderer, Rect viewport, f32 min_depth, f32 max_depth) {
     renderer->viewport = viewport;
-    renderer->view_projection = viewport_to_ortho_projection_matrix_extra(viewport, -100, 100);
+    renderer->view_projection = viewport_to_ortho_projection_matrix_extra(viewport, min_depth, max_depth);
 }
 
 void serender2d_upload_to_gpu (SE_Renderer2D *renderer) {
@@ -69,7 +69,7 @@ void serender2d_clear_shapes (SE_Renderer2D *renderer) {
     renderer->shape_polygon_count = 0;
 }
 
-void serender2d_render_uploaded_shapes (SE_Renderer2D *renderer) {
+void serender2d_render (SE_Renderer2D *renderer) {
         // gl config
     glEnable(GL_BLEND);
         /// untextured shapes
