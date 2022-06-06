@@ -516,7 +516,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
     }
 }
 
-void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
+void seui_texture_viewer(SE_UI *ctx, u32 texture_id) {
     if (seui_panel(ctx, "texture viewer")) {
         Rect rect = ctx->current_panel->cached_rect;
         rect.h -= 48;
@@ -529,8 +529,8 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
         if (rect.w > rect.h) {
             rect.w = rect.h;
         }
-        // seui_render_texture_raw(&ctx->renderer, rect, texture_index);
-        // @TODO replace the line above
+
+        serender2d_add_rect_textured(&ctx->renderer, rect, get_depth_middleground(ctx), RGBA_WHITE, texture_id);
     }
 }
 

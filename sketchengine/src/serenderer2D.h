@@ -76,6 +76,7 @@ void serender2d_render                  (SE_Renderer2D *renderer);
 void serender2d_add_rect                (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour);
 void serender2d_add_circle              (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, u32 segment_count, RGBA colour);
 void serender2d_add_rect_textured_atlas (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA tint, const SE_Texture_Atlas *atlas, Vec2 atlas_index);
+void serender2d_add_rect_textured       (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA tint, i32 opengl_texture_id);
 
 void serender2d_add_line                (SE_Renderer2D *renderer, Vec2 pos1, Vec2 pos2, f32 depth, RGBA colour, f32 width);
 void serender2d_add_rect_outline        (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour, f32 width);

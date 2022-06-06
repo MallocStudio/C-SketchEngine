@@ -223,11 +223,11 @@ void app_update(Application *app) {
             *panel_entity.entity_rot = vec3_mul_scalar(rot_in_degrees, SEMATH_DEG2RAD_MULTIPLIER);
         }
 
-        // seui_texture_viewer(ctx, test_texture);
+        seui_texture_viewer(ctx, test_texture);
 
-        // if (light_map_texture != 0) {
-        //     seui_texture_viewer(ctx, light_map_texture);
-        // }
+        if (light_map_texture != 0) {
+            seui_texture_viewer(ctx, light_map_texture);
+        }
 
         if (show_hsv) {
             seui_hsv_picker(ctx, &hsv);

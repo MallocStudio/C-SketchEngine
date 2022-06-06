@@ -345,3 +345,15 @@ void serender2d_add_hsv_triangle (SE_Renderer2D *renderer, Vec2 center, f32 radi
     add_vertex(shape, p2, depth, colour_tip_white);
     add_vertex(shape, p3, depth, colour_tip_black);
 }
+
+void serender2d_add_rect_textured (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA tint, i32 opengl_texture_id) {
+    Vec2 uv_min = v2f(0, 0);
+    Vec2 uv_max = v2f(1, 1);
+    renderer->shape_textured_rects[renderer->shape_textured_rect_count].rect_shape.rect   = rect;
+    renderer->shape_textured_rects[renderer->shape_textured_rect_count].rect_shape.depth  = depth;
+    renderer->shape_textured_rects[renderer->shape_textured_rect_count].rect_shape.colour = tint;
+    renderer->shape_textured_rects[renderer->shape_textured_rect_count].texture_id        = opengl_texture_id;
+    renderer->shape_textured_rects[renderer->shape_textured_rect_count].uv_min            = uv_min;
+    renderer->shape_textured_rects[renderer->shape_textured_rect_count].uv_max            = uv_max;
+    renderer->shape_textured_rect_count++;
+}
