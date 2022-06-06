@@ -539,20 +539,36 @@ SEINLINE Mat4 mat4_ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near_clip
     // result.data[13] = (top + bottom) * bt;
     // result.data[14] = (far_clip + near_clip) * nf;
     // return result;
-    Mat4 result = mat4_identity();
 
-    f32 rl = 1.0f / (right - left);
-    f32 tb = 1.0f / (top - bottom);
-    f32 fn = 1.0f / (far_clip - near_clip);
+    // Mat4 result = mat4_identity();
 
-    result.data[0] = 2.0f * rl;
-    result.data[5] = 2.0f * tb;
-    result.data[10] = -2.0f * fn;
+    // f32 rl = 1.0f / (right - left);
+    // f32 tb = 1.0f / (top - bottom);
+    // f32 fn = 1.0f / (far_clip - near_clip);
 
-    result.data[12] = (left + right) * rl * -1;
-    result.data[13] = (top + bottom) * tb * -1;
-    result.data[14] = (far_clip + near_clip) * fn * -1;
-    return result;
+    // result.data[0] = 2.0f * rl;
+    // result.data[5] = 2.0f * tb;
+    // result.data[10] = -2.0f * fn;
+
+    // result.data[12] = (left + right) * rl * -1;
+    // result.data[13] = (top + bottom) * tb * -1;
+    // result.data[14] = (far_clip + near_clip) * fn * -1;
+    // return result;
+
+    Mat4 out_matrix = mat4_identity();
+
+    f32 lr = 1.0f / (left - right);
+    f32 bt = 1.0f / (bottom - top);
+    f32 nf = 1.0f / (near_clip - far_clip);
+
+    out_matrix.data[0] = -2.0f * lr;
+    out_matrix.data[5] = -2.0f * bt;
+    out_matrix.data[10] = 2.0f * nf;
+
+    out_matrix.data[12] = (left + right) * lr;
+    out_matrix.data[13] = (top + bottom) * bt;
+    out_matrix.data[14] = (far_clip + near_clip) * nf;
+    return out_matrix;
 }
 
 /// creates and returns a perspective Mat4. Typically used to render 3D scenes

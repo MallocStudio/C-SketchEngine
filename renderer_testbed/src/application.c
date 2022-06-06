@@ -296,6 +296,7 @@ void app_render(Application *app) {
         //     color.r, color.g, color.b
         // };
         glClearColor(ambient.r / 255.0f, ambient.g / 255.0f, ambient.b / 255.0f, 1.0f);
+        glClearDepth(1);
         // glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window_w, window_h);
@@ -314,6 +315,7 @@ void app_render(Application *app) {
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }
     { // -- ui
+        glClear(GL_DEPTH_BUFFER_BIT);
         seui_render(ctx);
     }
 }

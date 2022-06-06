@@ -90,43 +90,55 @@ Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand 
 
 bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     if (panel_data == NULL) return false;
-        // depth
-    panel_data->depth_bg = ctx->current_max_depth+1;
-    panel_data->depth_mg = ctx->current_max_depth+2;
-    panel_data->depth_fg = ctx->current_max_depth+3;
-    ctx->current_max_depth += 3;
-
-    if (ctx->latest_activated_panel == panel_data) {
-        // panel_data->depth_bg = -ctx->current_max_depth+1;
-        // panel_data->depth_mg = -ctx->current_max_depth+2;
-        // panel_data->depth_fg = -ctx->current_max_depth+3;
-        panel_data->depth_bg = ctx->max_depth_available-2;
-        panel_data->depth_mg = ctx->max_depth_available-1;
-        panel_data->depth_fg = ctx->max_depth_available;
-    }
-    /* move the panel inside of the viewport of any portion of it is outside */
-    // right
-    if (panel_data->calc_rect.x + panel_data->calc_rect.w > ctx->viewport.w) {
-        panel_data->calc_rect.x = ctx->viewport.w - panel_data->calc_rect.w;
-    }
-    // left
-    if (panel_data->calc_rect.x < 0) {
-        panel_data->calc_rect.x = 0;
-    }
-    // top
-    if (panel_data->calc_rect.y + panel_data->calc_rect.h > ctx->viewport.h) {
-        panel_data->calc_rect.y = ctx->viewport.h - panel_data->calc_rect.h;
-    }
-    // bottom
-    if (panel_data->calc_rect.y < 0) {
-        panel_data->calc_rect.y = 0;
-    }
-
     if (panel_data->is_closed) return false;
     ctx->current_panel = panel_data;
+
     bool *minimised   = &panel_data->minimised;
     bool is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
+
+    if (!panel_data->is_embedded) {
+        ctx->current_non_embedded_panel = panel_data;
+    }
+
+        // depth
+    if (panel_data->is_embedded && ctx->current_non_embedded_panel != NULL) {
+        panel_data->depth_bg = ctx->current_non_embedded_panel->depth_bg;
+        panel_data->depth_mg = ctx->current_non_embedded_panel->depth_mg;
+        panel_data->depth_fg = ctx->current_non_embedded_panel->depth_fg;
+    } else {
+        panel_data->depth_bg = ctx->current_max_depth+1;
+        panel_data->depth_mg = ctx->current_max_depth+2;
+        panel_data->depth_fg = ctx->current_max_depth+3;
+        ctx->current_max_depth += 3;
+
+        if (ctx->latest_activated_panel == panel_data) {
+            // panel_data->depth_bg = -ctx->current_max_depth+1;
+            // panel_data->depth_mg = -ctx->current_max_depth+2;
+            // panel_data->depth_fg = -ctx->current_max_depth+3;
+            panel_data->depth_bg = ctx->max_depth_available-2;
+            panel_data->depth_mg = ctx->max_depth_available-1;
+            panel_data->depth_fg = ctx->max_depth_available;
+        }
+    }
+
+    /* move the panel inside of the viewport of any portion of it is outside */
+        // right
+    if (panel_data->calc_rect.x + panel_data->calc_rect.w > ctx->viewport.w) {
+        panel_data->calc_rect.x = ctx->viewport.w - panel_data->calc_rect.w;
+    }
+        // left
+    if (panel_data->calc_rect.x < 0) {
+        panel_data->calc_rect.x = 0;
+    }
+        // top
+    if (panel_data->calc_rect.y + panel_data->calc_rect.h > ctx->viewport.h) {
+        panel_data->calc_rect.y = ctx->viewport.h - panel_data->calc_rect.h;
+    }
+        // bottom
+    if (panel_data->calc_rect.y < 0) {
+        panel_data->calc_rect.y = 0;
+    }
 
     /* record previous frame's data */
     panel_data->cached_rect = panel_data->calc_rect; // record previous frame's rect
@@ -145,7 +157,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
 
     { // panel widgets
 
-        f32 button_size = 32;
+        const f32 button_size = 16;
         seui_panel_row(ctx, button_size, 1); // make space for top bar
 
         Rect top_bar = seui_panel_put(ctx, 0, false);

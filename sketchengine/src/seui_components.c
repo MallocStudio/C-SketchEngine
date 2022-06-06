@@ -4,15 +4,15 @@
 ///               UTILITIES
 /// -----------------------------------------
 
-static f32 get_depth_mg(SE_UI *ctx) {
+static f32 get_depth_middleground(SE_UI *ctx) {
     if (ctx->current_panel != NULL) return ctx->current_panel->depth_mg;
     return ctx->max_depth_available-1;
 }
-static f32 get_depth_bg(SE_UI *ctx) {
+static f32 get_depth_background(SE_UI *ctx) {
     if (ctx->current_panel != NULL) return ctx->current_panel->depth_bg;
     return ctx->max_depth_available-2;
 }
-static f32 get_depth_fg(SE_UI *ctx) {
+static f32 get_depth_foreground(SE_UI *ctx) {
     if (ctx->current_panel != NULL) return ctx->current_panel->depth_fg;
     return ctx->max_depth_available;
 }
@@ -77,7 +77,6 @@ UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse
     return result;
 }
 
-
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
     SE_Renderer2D *renderer = &ctx->renderer;
@@ -102,7 +101,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
         } break;
    }
 
-    serender2d_add_rect(renderer, rect, get_depth_mg(ctx), colour);
+    serender2d_add_rect(renderer, rect, get_depth_middleground(ctx), colour);
     se_add_text_rect(&ctx->txt_renderer, text, rect);
 
     return ui_state == UI_STATE_ACTIVE;
@@ -134,9 +133,9 @@ bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
     }
 
     if (texture_index.x == 0 && texture_index.y == 0) {
-        serender2d_add_rect(renderer, rect, get_depth_mg(ctx), colour);
+        serender2d_add_rect(renderer, rect, get_depth_middleground(ctx), colour);
     } else {
-        serender2d_add_rect_textured_atlas(renderer, rect, get_depth_mg(ctx), colour, &ctx->icon_atlas, texture_index);
+        serender2d_add_rect_textured_atlas(renderer, rect, get_depth_middleground(ctx), colour, &ctx->icon_atlas, texture_index);
     }
 
     return ui_state == UI_STATE_ACTIVE;
@@ -171,9 +170,9 @@ Vec2 seui_drag_button_textured_at(SE_UI *ctx, Rect rect, Vec2 texture_index, UI_
     if (state != NULL) *state = ui_state;
 
     if (texture_index.x == 0 && texture_index.y == 0) {
-        serender2d_add_rect(renderer, rect, get_depth_mg(ctx), colour);
+        serender2d_add_rect(renderer, rect, get_depth_middleground(ctx), colour);
     } else {
-        serender2d_add_rect_textured_atlas(renderer, rect, get_depth_mg(ctx), colour, &ctx->icon_atlas, texture_index);
+        serender2d_add_rect_textured_atlas(renderer, rect, get_depth_middleground(ctx), colour, &ctx->icon_atlas, texture_index);
     }
 
     return drag;
@@ -193,7 +192,7 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
 
     // reset config
     ctx->txt_renderer.config_centered = previous_setting;
-    serender2d_add_rect(&ctx->renderer, rect, get_depth_mg(ctx), ctx->theme.colour_bg_2);
+    serender2d_add_rect(&ctx->renderer, rect, get_depth_middleground(ctx), ctx->theme.colour_bg_2);
 }
 
 void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
@@ -213,7 +212,7 @@ void seui_slider_at(SE_UI *ctx, Vec2 pos1, Vec2 pos2, f32 *value) {
     Vec2 button_pos = vec2_add(vec2_add(vec2_mul_scalar(vec2_average(pos_rel1, pos_rel2), *value * 2), pos1), pos_offset);
 
     /* draw the line */
-    serender2d_add_line(&ctx->renderer, pos1, pos2, get_depth_mg(ctx), RGBA_BLACK, 3);
+    serender2d_add_line(&ctx->renderer, pos1, pos2, get_depth_middleground(ctx), RGBA_BLACK, 3);
 
     /* draw the slider button */
     Rect button_rect = rect_create(button_pos, button_size);
@@ -245,7 +244,7 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     button_pos = vec2_sub(button_pos, vec2_mul_scalar(button_size, 0.5f));
 
     /* draw the border */
-    serender2d_add_circle(&ctx->renderer, center, radius, get_depth_mg(ctx), 4, (RGBA) {0, 0, 0, 50});
+    serender2d_add_circle(&ctx->renderer, center, radius-2, get_depth_middleground(ctx), 10, (RGBA) {0, 0, 0, 50});
 
     /* draw the button */
     Rect button_rect = rect_create(button_pos, button_size);
@@ -283,7 +282,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     }
 
     /* background */
-    serender2d_add_rect(&ctx->renderer, rect, get_depth_mg(ctx), colour_bg);
+    serender2d_add_rect(&ctx->renderer, rect, get_depth_middleground(ctx), colour_bg);
     /* left button */
     Rect button = {
         rect.x,
@@ -400,7 +399,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         }
     }
 
-    serender2d_add_rect(renderer, rect, get_depth_mg(ctx), colour);
+    serender2d_add_rect(renderer, rect, get_depth_middleground(ctx), colour);
     if (display_text->size > 0) {
         ctx->txt_renderer.config_colour = colour_text;
         se_add_text_rect(&ctx->txt_renderer, display_text->buffer, rect);
@@ -439,7 +438,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             {
                 seui_panel_row(ctx, 16, 1);
                 Rect rect = seui_panel_put(ctx, 0, true);
-                serender2d_add_rect(&ctx->renderer, rect, get_depth_bg(ctx), ctx->theme.colour_bg_2);
+                serender2d_add_rect(&ctx->renderer, rect, get_depth_background(ctx), ctx->theme.colour_bg_2);
             }
             seui_panel_row(ctx, 240, 1);
             Rect rect = seui_panel_put(ctx, 240, true);
@@ -447,16 +446,16 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             f32 outer_radius = rect.h / 2;
             f32 thickness = 16;
             /* background */
-            serender2d_add_rect(&ctx->renderer, rect, get_depth_bg(ctx), ctx->theme.colour_bg_2);
+            serender2d_add_rect(&ctx->renderer, rect, get_depth_background(ctx), ctx->theme.colour_bg_2);
 
             /* colour wheel */
-            serender2d_add_hsv_wheel(&ctx->renderer, center, outer_radius - thickness, thickness, get_depth_mg(ctx));
+            serender2d_add_hsv_wheel(&ctx->renderer, center, outer_radius - thickness, thickness, get_depth_middleground(ctx));
 
             f32 angle = hsv->h * SEMATH_DEG2RAD_MULTIPLIER;
             f32 radius = outer_radius - thickness;
 
             { /* colour triangle */
-                serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_mg(ctx), angle);
+                serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
                 if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
                     hsv->h += 5;
                 }
@@ -482,7 +481,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
                 hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
                 hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
 
-                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, get_depth_fg(ctx), 8, RGBA_WHITE, 1);
+                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, get_depth_foreground(ctx), 8, RGBA_WHITE, 1);
 
                 /* changing the saturation and value based on mouse input */
                 Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
@@ -512,7 +511,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             Rect preview_rect = seui_panel_put(ctx, 16, true);
             RGBA c = RGBA_WHITE;
             hsv_to_rgba(hsv->h, hsv->s, hsv->v, &c);
-            serender2d_add_rect(&ctx->renderer, preview_rect, get_depth_fg(ctx), c);
+            serender2d_add_rect(&ctx->renderer, preview_rect, get_depth_foreground(ctx), c);
         }
     }
 }
@@ -538,13 +537,12 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_index) {
 void seui_panel_container(SE_UI *ctx) {
     SEUI_Panel *panel = seui_ctx_get_panel_container(ctx);
     if (panel == NULL) {
-        // seui_panel_row(ctx, 64, 1);
-        // Rect rect = seui_panel_put(ctx, 0, true);
-        // draw a place holder
-        // seui_render_rect(&ctx->renderer, rect, RGBA_BLACK);
-        if (seui_button(ctx, "drag a panel")) {
+        seui_panel_row(ctx, 240, 1);
+        Rect rect = seui_panel_put(ctx, 0, true);
+        if (seui_button_at(ctx, "drag a panel", rect)) {
+                printf("released\n");
             if (ctx->current_dragging_panel != NULL) {
-
+                printf("released panel\n");
             }
         }
     } else {

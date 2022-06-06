@@ -72,6 +72,7 @@ void serender2d_clear_shapes (SE_Renderer2D *renderer) {
 void serender2d_render (SE_Renderer2D *renderer) {
         // gl config
     glEnable(GL_BLEND);
+    // glDisable(GL_DEPTH_TEST);
         /// untextured shapes
     seshader_use(&renderer->shader);
     seshader_set_uniform_mat4(&renderer->shader, "view_projection", renderer->view_projection);
@@ -112,6 +113,13 @@ void serender2d_render (SE_Renderer2D *renderer) {
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
+        // polygons
+    for (u32 i = 0; i < renderer->shape_polygon_count; ++i) {
+        SE_Shape_Polygon shape = renderer->shape_polygons[i];
+            // update the content of vbo
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(SE_Vertex2D) * shape.vertex_count, shape.vertices);
+        glDrawArrays(GL_TRIANGLES, 0, shape.vertex_count);
+    }
         // lines
     for (u32 i = 0; i < renderer->shape_line_count; ++i) {
         SE_Shape_Line shape = renderer->shape_lines[i];
@@ -132,18 +140,10 @@ void serender2d_render (SE_Renderer2D *renderer) {
         glDrawArrays(GL_LINES, 0, 2);
         glLineWidth(1);
     }
-        // polygons
-    for (u32 i = 0; i < renderer->shape_polygon_count; ++i) {
-        SE_Shape_Polygon shape = renderer->shape_polygons[i];
-            // update the content of vbo
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(SE_Vertex2D) * shape.vertex_count, shape.vertices);
-        glDrawArrays(GL_TRIANGLES, 0, shape.vertex_count);
-    }
-        /// textured shapes
+        // textured shapes
     seshader_use(&renderer->shader_textured);
     seshader_set_uniform_mat4(&renderer->shader_textured, "view_projection", renderer->view_projection);
     seshader_set_uniform_i32(&renderer->shader_textured, "diffuse", 0);
-
     for (u32 i = 0; i < renderer->shape_textured_rect_count; ++i) {
         SE_Shape_Textured_Rect shape = renderer->shape_textured_rects[i];
         f32 x = shape.rect_shape.rect.x;
@@ -195,6 +195,7 @@ void serender2d_render (SE_Renderer2D *renderer) {
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_BLEND);
+    // glEnable(GL_DEPTH_TEST);
 }
 
 void serender2d_add_rect (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA colour) {

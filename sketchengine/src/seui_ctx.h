@@ -137,7 +137,7 @@ typedef struct SE_UI {
         // this list refers to the index of the panels in the @panels of SE_UI
         // note that a panel_container of value (0) means that this container does not refer to anything
         // and if the value was (1) it means that the container is refering to panel at index 0
-    u32 panel_containers[SEUI_PANEL_CONTAINER_CAPACITY];
+    i32 panel_containers[SEUI_PANEL_CONTAINER_CAPACITY]; // if the result is negative it means that the container is empty
 
     u32 panel_capacity;
     u32 panel_count;
@@ -147,6 +147,7 @@ typedef struct SE_UI {
     f32 max_depth_available;
 
     SEUI_Panel *current_panel; // the panel we put the widgets on
+    SEUI_Panel *current_non_embedded_panel; // same as current panel but the latest non embedded one
     SEUI_Panel *current_dragging_panel; // the panel that the user is dragging
     SEUI_Panel *latest_activated_panel; // used to determine which panel should be on top of the rest
 
@@ -227,6 +228,9 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_dept
 
     /* panels */
     ctx->current_panel = NULL;
+    ctx->current_non_embedded_panel = NULL;
+    ctx->current_dragging_panel = NULL;
+    ctx->latest_activated_panel = NULL;
     ctx->current_max_depth = ctx->min_depth_available;
 
     ctx->panel_capacity = 100;
@@ -235,7 +239,7 @@ SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_dept
     memset(ctx->panels, 0, sizeof(SEUI_Panel) * ctx->panel_capacity);
 
     ctx->panel_container_count = 0;
-    memset(ctx->panel_containers, 0, sizeof(u32) * SEUI_PANEL_CONTAINER_CAPACITY);
+    memset(ctx->panel_containers, -1, sizeof(i32) * SEUI_PANEL_CONTAINER_CAPACITY);
 
     sestring_init(&ctx->text_input_cache, "");
     sestring_init(&ctx->text_input, "");
@@ -299,9 +303,9 @@ SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
 }
 
 SEINLINE SEUI_Panel* seui_ctx_get_panel_container(SE_UI *ctx) {
-    u32 panel = ctx->panel_containers[ctx->panel_container_count];
+    i32 panel = ctx->panel_containers[ctx->panel_container_count];
     ctx->panel_container_count++;
-    if (ctx->panels[panel].is_closed) return NULL;
+    if (ctx->panels[panel].is_closed || panel < 0) return NULL;
     return &ctx->panels[panel];
 }
 

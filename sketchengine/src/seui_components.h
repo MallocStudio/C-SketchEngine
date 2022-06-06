@@ -11,7 +11,6 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 
 /// Draws a button at the given rectangle.
 bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
-
 bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect);
 
 /// Draws a button that returns the drag if the mouse is trying to drag it.
