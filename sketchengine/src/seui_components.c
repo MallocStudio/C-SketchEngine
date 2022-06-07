@@ -244,7 +244,7 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     button_pos = vec2_sub(button_pos, vec2_mul_scalar(button_size, 0.5f));
 
     /* draw the border */
-    serender2d_add_circle(&ctx->renderer, center, radius-2, get_depth_middleground(ctx), 10, (RGBA) {0, 0, 0, 50});
+    serender2d_add_circle(&ctx->renderer, center, radius, get_depth_middleground(ctx), 10, (RGBA) {0, 0, 0, 50});
 
     /* draw the button */
     Rect button_rect = rect_create(button_pos, button_size);

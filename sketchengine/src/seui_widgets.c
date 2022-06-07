@@ -157,7 +157,7 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
         (rect.x + rect.x + rect.w) * 0.5f,
         (rect.y + rect.y + rect.h) * 0.5f
     };
-    f32 radius = rect.h * 0.8f;
+    f32 radius = rect.h * 0.5f;
     seui_slider2d_at(ctx, center, radius, value);
 }
 

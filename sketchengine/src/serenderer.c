@@ -436,6 +436,23 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 }
 
 ///
+/// ANIMATION
+///
+
+void seanimation_init(SE_Animation *animation) {
+    searray_f32_init(&animation->keyframes, 10);
+    animation->current_frame = 0;
+}
+
+void seanimation_deinit(SE_Animation *animation) {
+    searray_f32_deinit(&animation->keyframes);
+}
+
+void seanimation_add_keyframe(SE_Animation *animation, f32 time, f32 value) {
+    searray_f32_add(&animation->keyframes, value); // @incomplete ignoring 'time' currently
+}
+
+///
 /// RENDER 3D
 ///
 
@@ -543,6 +560,37 @@ AABB3D aabb3d_calc(const AABB3D *aabbs, u32 aabb_count) {
 
     AABB3D result = {(Vec3) {pos1x, pos1y, pos1z}, (Vec3) {pos2x, pos2y, pos2z}};
     return result;
+}
+
+static void seskeleton_init(SE_Skeleton *skeleton, u32 bone_count) {
+    skeleton->bone_count = bone_count;
+    skeleton->rest_inverse_matrix = malloc(sizeof(Mat4) * bone_count);
+}
+
+static void seskeleton_deinit(SE_Skeleton *skeleton) {
+    free(skeleton->rest_inverse_matrix);
+}
+
+static void copy_ai_matrix_to_mat4(struct aiMatrix4x4 aiMat, Mat4 *mat4) {
+    mat4->data[0] = aiMat.a1; mat4->data[4] = aiMat.a2; mat4->data[8]  = aiMat.a3; mat4->data[12] = aiMat.a4;
+    mat4->data[1] = aiMat.b1; mat4->data[5] = aiMat.b2; mat4->data[9]  = aiMat.b3; mat4->data[13] = aiMat.b4;
+    mat4->data[2] = aiMat.c1; mat4->data[6] = aiMat.c2; mat4->data[10] = aiMat.c3; mat4->data[14] = aiMat.c4;
+    mat4->data[3] = aiMat.d1; mat4->data[7] = aiMat.d2; mat4->data[11] = aiMat.d3; mat4->data[15] = aiMat.d4;
+}
+
+    /// returns true on success
+static bool seskeleton_construct
+(SE_Skeleton *skeleton, const struct aiMesh *ai_mesh, const struct aiScene *scene) {
+        // figure out the number of bones the skeleton will have and init it
+    if (ai_mesh->mNumBones == 0) {
+        printf("ERROR: tried to load a skeleton from asset importer but the number of bones was zero\n");
+        return false;
+    }
+    seskeleton_init(skeleton, ai_mesh->mNumBones);
+        // populate the skeleton based on the ai_mesh bone data
+    for (u32 i = 0; i < ai_mesh->mNumBones; ++i) {
+        copy_ai_matrix_to_mat4(ai_mesh->mBones[i]->mOffsetMatrix, &skeleton->rest_inverse_matrix[i]);
+    }
 }
 
 static void semesh_construct

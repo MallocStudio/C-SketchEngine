@@ -78,45 +78,86 @@ void hsv_to_rgba(i32 hue, f32 saturation, f32 value, RGBA *rgb);
 #define RGBA_WHITE (RGBA){255, 255, 255, 255}
 #define RGBA_BLACK (RGBA){0, 0, 0, 255}
 
-// ///
-// /// "dynamic" array type
-// ///
-// typedef enum ARRAY_TYPES {
-//     I32, F32, U32,
-//     VEC2, VEC3, VEC4, MAT3, MAT4, QUATERNION,
-//     COUNT
-// } ARRAY_TYPES;
+typedef struct SE_Array_F32 {
+    u32 count;
+    u32 capacity;
+    f32 *data;
+} SE_Array_F32;
 
-// typedef struct Array {
-//     u32 count;
-//     u32 capacity;
-//     ARRAY_TYPES type;
-//     void *data;
-// } Array;
+SEINLINE void searray_f32_init(SE_Array_F32 *array, u32 initial_capacity) {
+    array->count = 0;
+    array->capacity = initial_capacity;
+    array->data = malloc(sizeof(f32) * array->capacity);
+}
 
-// SEINLINE void array_init(Array *array, ARRAY_TYPES type, u32 capacity) {
-//     u32 type_size = 0;
-//     switch (type) {
-//         case I32: {
+SEINLINE void searray_f32_clear(SE_Array_F32 *array) {
+    array->count = 0;
+}
 
-//         } break;
-//         case F32: {
+SEINLINE void searray_f32_resize(SE_Array_F32 *array, u32 new_capacity) {
+    if (new_capacity > array->capacity) {
+        array->capacity = new_capacity;
+        array->data = realloc(array->data, sizeof(f32) * array->capacity);
+    }
+}
 
-//         } break;
-//         case U32: {
+SEINLINE void searray_f32_add(SE_Array_F32 *array, f32 value) {
+    if (array->count >= array->capacity) {
+        searray_f32_resize(array, array->capacity + array->capacity * 0.5f);
+    }
+    array->data[array->count] = value;
+    array->count++;
+}
 
-//         } break;
-//         case VEC2: {
+SEINLINE f32 searray_f32_get(SE_Array_F32 *array, u32 index) {
+    return array->data[index];
+}
 
-//         } break;
-//         case VEC3: {
+SEINLINE void searray_f32_deinit(SE_Array_F32 *array) {
+    free(array->data);
+    array->count = 0;
+    array->capacity = 0;
+}
 
-//         } break;
-//         default : {
-//             SDL_assert("Given a type that's not defined here mate");
-//         }
-//     }
-//     array->data = new(
-// }
+typedef struct SE_Array_I32 {
+    u32 count;
+    u32 capacity;
+    i32 *data;
+} SE_Array_I32;
+
+SEINLINE void searray_i32_init(SE_Array_I32 *array, u32 initial_capacity) {
+    array->count = 0;
+    array->capacity = initial_capacity;
+    array->data = malloc(sizeof(i32) * array->capacity);
+}
+
+SEINLINE void searray_i32_deinit(SE_Array_I32 *array) {
+    free(array->data);
+    array->count = 0;
+    array->capacity = 0;
+}
+
+SEINLINE void searray_i32_clear(SE_Array_I32 *array) {
+    array->count = 0;
+}
+
+SEINLINE void searray_i32_resize(SE_Array_I32 *array, u32 new_capacity) {
+    if (new_capacity > array->capacity) {
+        array->capacity = new_capacity;
+        array->data = realloc(array->data, sizeof(i32) * array->capacity);
+    }
+}
+
+SEINLINE void searray_i32_add(SE_Array_I32 *array, i32 value) {
+    if (array->count >= array->capacity) {
+        searray_i32_resize(array, array->capacity + array->capacity * 0.5f);
+    }
+    array->data[array->count] = value;
+    array->count++;
+}
+
+SEINLINE i32 searray_i32_get(SE_Array_I32 *array, u32 index) {
+    return array->data[index];
+}
 
 #endif // SEDEFINES_H

@@ -12,6 +12,10 @@
 #include "Serender_target.h"
 #include "sesprite.h"
 
+///
+/// VERTEX
+///
+
 /// Vertex info of a mesh
 typedef struct SE_Vertex3D {
     Vec3 position;
@@ -21,13 +25,34 @@ typedef struct SE_Vertex3D {
     Vec2 texture_coord;
 } SE_Vertex3D;
 
+///
+/// ANIMATION
+///
+
 #define SE_SKINNED_VERTEX_NUM_OF_BONES 4
 typedef struct SE_Skinned_Vertex {
     SE_Vertex3D vert;
     /* the bones that manipulate this vertex */
+    u32 bone_count;
     i32     bone_ids[SE_SKINNED_VERTEX_NUM_OF_BONES];
     f32 bone_weights[SE_SKINNED_VERTEX_NUM_OF_BONES];
 } SE_Skinned_Vertex;
+
+#define SE_ANIMATION_KEYFRAME_CAPACITY 1024
+typedef struct SE_Animation {
+    SE_Array_F32 keyframes;
+    u32 current_frame;
+} SE_Animation;
+
+#define SE_SKELETON_TRANSFORM_CAPACITY 1024
+typedef struct SE_Skeleton {
+    u32 bone_count; // number of bones
+    Mat4 *rest_inverse_matrix; // array of inverse transform of each bone
+} SE_Skeleton;
+
+void seanimation_init(SE_Animation *animation);
+void seanimation_deinit(SE_Animation *animation);
+void seanimation_add_keyframe(SE_Animation *animation, f32 time, f32 value);
 
 ///
 /// MATERIAL
