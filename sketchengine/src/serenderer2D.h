@@ -84,5 +84,5 @@ void serender2d_add_circle_outline      (SE_Renderer2D *renderer, Vec2 center, f
 
 void serender2d_add_hsv_wheel           (SE_Renderer2D *renderer, Vec2 center, f32 inner_radius, f32 width, f32 depth);
 void serender2d_add_hsv_triangle        (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, f32 angle);
-
+void serender2d_add_hsv_rect            (SE_Renderer2D *renderer, Rect rect, f32 depth, f32 hue);
 #endif // SEUI_RENDERER_2D

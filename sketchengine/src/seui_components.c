@@ -454,52 +454,87 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
             f32 angle = hsv->h * SEMATH_DEG2RAD_MULTIPLIER;
             f32 radius = outer_radius - thickness;
 
-            { /* colour triangle */
-                serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
-                if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
-                    hsv->h += 5;
-                }
-            }
-            { /* the cursor on the triangle */
-                Vec2 colour_tip = {
-                    semath_cos(angle) * radius + center.x,
-                    semath_sin(angle) * radius + center.y,
-                };
-                Vec2 white_tip = {
-                    semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-                    semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
-                };
-                Vec2 black_tip = {
-                    semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-                    semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
-                };
-                Vec2 hsv_point = colour_tip;
+            // { /* colour triangle */
+            //     serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
+            //     if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
+            //         hsv->h += 5;
+            //     }
+            // }
+            // { /* the cursor on the triangle */
+            //     Vec2 colour_tip = {
+            //         semath_cos(angle) * radius + center.x,
+            //         semath_sin(angle) * radius + center.y,
+            //     };
+            //     Vec2 white_tip = {
+            //         semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+            //         semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+            //     };
+            //     Vec2 black_tip = {
+            //         semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+            //         semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+            //     };
+            //     Vec2 hsv_point = colour_tip;
 
-                hsv_point.x = lerp(hsv_point.x, white_tip.x, 1 - hsv->s);
-                hsv_point.y = lerp(hsv_point.y, white_tip.y, 1 - hsv->s);
+            //     hsv_point.x = lerp(hsv_point.x, white_tip.x, 1 - hsv->s);
+            //     hsv_point.y = lerp(hsv_point.y, white_tip.y, 1 - hsv->s);
 
-                hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
-                hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
+            //     hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
+            //     hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
 
-                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, get_depth_foreground(ctx), 8, RGBA_WHITE, 1);
+            //     serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, get_depth_foreground(ctx), 8, RGBA_WHITE, 1);
 
-                /* changing the saturation and value based on mouse input */
-                Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
-                mouse_pos.y = ctx->viewport.h - mouse_pos.y;
+            //     /* changing the saturation and value based on mouse input */
+            //     Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+            //     mouse_pos.y = ctx->viewport.h - mouse_pos.y;
 
-                if (ctx->input->is_mouse_left_down) {
-                    if (point_overlaps_circle(mouse_pos, center, radius)) {
-                        Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
-                        if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
-                            hsv->s = 1 - result.y;
-                            hsv->v = 1 - result.z;
+            //     if (ctx->input->is_mouse_left_down) {
+            //         if (point_overlaps_circle(mouse_pos, center, radius)) {
+            //             Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
+            //             if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
+            //                 // hsv->s = 1 - result.y;
+            //                 // hsv->v = 1 - result.z;
+            //                 hsv->s = result.x;
+            //                 hsv->v = 1-result.y;
+            //             }
+            //         } else
+            //         if (point_overlaps_circle(mouse_pos, center, outer_radius)) {
+            //             f32 cursor_angle = vec2_angle(vec2_sub(mouse_pos, center));
+            //             hsv->h = SEMATH_RAD2DEG(cursor_angle);
+            //             hsv_clamp(hsv);
+            //         }
+            //     }
+            // }
+            { // colour rect
+                f32 extends = outer_radius - thickness;
+                extends *= 0.6f;
+                Rect hsv_rect = {center.x - extends, center.y - extends, extends * 2, extends * 2};
+                serender2d_add_hsv_rect(&ctx->renderer, hsv_rect, get_depth_middleground(ctx), hsv->h);
+
+                { // the cursor on the rect
+                    Vec2 cursor = v2f(hsv_rect.x, hsv_rect.y);
+                    cursor.x += hsv->s * hsv_rect.w;
+                    cursor.y += hsv->v * hsv_rect.h;
+                    serender2d_add_circle_outline(&ctx->renderer, cursor, 4, get_depth_foreground(ctx), 8, RGBA_WHITE, 2);
+
+                        //-- changing saturation and value
+                    Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+                    mouse_pos.y = ctx->viewport.h - mouse_pos.y;
+
+                    if (ctx->input->is_mouse_left_down) {
+                        if (rect_overlaps_point(hsv_rect, mouse_pos)) {
+                            Vec2 result = mouse_pos;
+                            result.x -= hsv_rect.x;
+                            result.y -= hsv_rect.y;
+                            hsv->s = result.x / hsv_rect.w;
+                            hsv->v = result.y / hsv_rect.h;
+                        } else
+                        if (point_overlaps_circle(mouse_pos, center, outer_radius)) {
+                            f32 cursor_angle = vec2_angle(vec2_sub(mouse_pos, center));
+                            hsv->h = SEMATH_RAD2DEG(cursor_angle);
+                            hsv_clamp(hsv);
                         }
-                    } else
-                    if (point_overlaps_circle(mouse_pos, center, outer_radius)) {
-                        f32 cursor_angle = vec2_angle(vec2_sub(mouse_pos, center));
-                        hsv->h = SEMATH_RAD2DEG(cursor_angle);
-                        hsv_clamp(hsv);
                     }
+
                 }
             }
         }

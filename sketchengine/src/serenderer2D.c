@@ -316,6 +316,7 @@ void serender2d_add_hsv_wheel (SE_Renderer2D *renderer, Vec2 center, f32 inner_r
         add_vertex(shape, pos2, depth, colour1);
     }
 }
+
 void serender2d_add_hsv_triangle (SE_Renderer2D *renderer, Vec2 center, f32 radius, f32 depth, f32 angle) {
     SE_Shape_Polygon *shape = &renderer->shape_polygons[renderer->shape_polygon_count];
     renderer->shape_polygon_count++;
@@ -344,6 +345,30 @@ void serender2d_add_hsv_triangle (SE_Renderer2D *renderer, Vec2 center, f32 radi
     add_vertex(shape, p1, depth, colour_tip);
     add_vertex(shape, p2, depth, colour_tip_white);
     add_vertex(shape, p3, depth, colour_tip_black);
+}
+
+void serender2d_add_hsv_rect (SE_Renderer2D *renderer, Rect rect, f32 depth, f32 hue) {
+    SE_Shape_Polygon *shape = &renderer->shape_polygons[renderer->shape_polygon_count];
+    renderer->shape_polygon_count++;
+
+    shape->vertex_count = 0;
+    Vec2 p1 = v2f(rect.x, rect.y);
+    Vec2 p2 = v2f(rect.x+rect.w, rect.y);
+    Vec2 p3 = v2f(rect.x+rect.w, rect.y+rect.h);
+    Vec2 p4 = v2f(rect.x, rect.y+rect.h);
+
+    RGBA colour_tip;
+    RGBA colour_tip_white = RGBA_WHITE;
+    RGBA colour_tip_black = RGBA_BLACK;
+    colour_tip.a = 255;
+    hsv_to_rgba(hue, 1, 1, &colour_tip);
+
+    add_vertex(shape, p1, depth, colour_tip_black);
+    add_vertex(shape, p2, depth, colour_tip_black);
+    add_vertex(shape, p3, depth, colour_tip);
+    add_vertex(shape, p1, depth, colour_tip_black);
+    add_vertex(shape, p3, depth, colour_tip);
+    add_vertex(shape, p4, depth, colour_tip_white);
 }
 
 void serender2d_add_rect_textured (SE_Renderer2D *renderer, Rect rect, f32 depth, RGBA tint, i32 opengl_texture_id) {
