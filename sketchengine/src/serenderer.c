@@ -430,6 +430,20 @@ static void semesh_generate_skinned // same as semesh_generate but for skinned v
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+static Mat4 recursive_calc_bone_transform(const SE_Skeleton *skeleton, const SE_Bone_Node *node) {
+    se_assert(node->id >= 0);
+    if (node->parent >= 0) { // if we have a parent go up the tree
+        Mat4 parent_transform = recursive_calc_bone_transform(skeleton, &skeleton->bone_nodes[node->parent]);
+        return mat4_mul(parent_transform, node->transform);
+    }
+    return node->transform;
+}
+
+static Mat4 seskeleton_get_bone_final_transform(const SE_Skeleton *skeleton, i32 bone_node_index) {
+    se_assert(bone_node_index >= 0 && bone_node_index < skeleton->bone_node_count);
+    return recursive_calc_bone_transform(skeleton, &skeleton->bone_nodes[bone_node_index]);
+}
+
 static void debug_print_skeleton(const SE_Skeleton *skeleton, const SE_Bone_Node *parent) {
     static i32 call = 0;
     printf("%i: parent id: %i | ", call, parent->id);
@@ -471,28 +485,28 @@ static void recursive_generate_skeleton_verts
 }
 
 static void recursive_generate_skeleton_verts_as_points
-(const SE_Skeleton *skeleton, SE_Vertex3D *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *parent) {
+(const SE_Skeleton *skeleton, SE_Vertex3D *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *node, Mat4 parent_transform) {
         // the problem here is that as we come back up the recursion stack our index_count and vert_count go back to their old values
         // instead of retaining their values.
 
-    Mat4 final_transform = parent->transform;
-    // final_transform = mat4_mul(skeleton->bones[parent->id].offset, final_transform);
+    Mat4 final_transform = node->transform;
+    final_transform = mat4_mul(parent_transform, node->transform);
 
         // draw a point at the given bone position
     verts[*vert_count].position = mat4_get_translation(final_transform);
     verts[*vert_count].texture_coord = v2f(0, 0);
     (*vert_count)++;
-    indices[*index_count] = parent->id;
+    indices[*index_count] = node->id;
     (*index_count)++;
 
-    se_assert(parent->id >= 0);
-    for (u32 i = 0; i < parent->children_count; ++i) {
-        recursive_generate_skeleton_verts_as_points(skeleton, verts, vert_count, indices, index_count, &skeleton->bone_nodes[parent->children[i]]);
+    se_assert(node->id >= 0);
+    for (u32 i = 0; i < node->children_count; ++i) {
+        recursive_generate_skeleton_verts_as_points(skeleton, verts, vert_count, indices, index_count, &skeleton->bone_nodes[node->children[i]], final_transform);
     }
 }
 
-void semesh_generate_skinned_skeleton
-(SE_Mesh *mesh, const SE_Skeleton *skeleton) {
+void semesh_generate_skinned_skeleton // if line is true, we will render the bones as lines not as points
+(SE_Mesh *mesh, const SE_Skeleton *skeleton, bool line) {
         // generate buffers
     glGenBuffers(1, &mesh->vbo);
     glGenVertexArrays(1, &mesh->vao);
@@ -503,37 +517,41 @@ void semesh_generate_skinned_skeleton
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ibo);
 
         // generate vertices for the skeleton
-#if 1 // line rendering
-    u32 vert_count = 0;
-    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
-    u32 index_count = 0;
-    u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
-    recursive_generate_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0], mat4_identity());
-    se_assert(vert_count == skeleton->bone_node_count);
-    // se_assert(index_count == skeleton->bone_node_count * 2);
+    u32 vert_count;
+    SE_Vertex3D *verts;
+    u32 index_count;
+    u32 *indices;
+    if (line) {
+        vert_count = 0;
+        verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
+        index_count = 0;
+        indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
+        recursive_generate_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0], mat4_identity());
+        se_assert(vert_count == skeleton->bone_node_count);
+        // se_assert(index_count == skeleton->bone_node_count * 2);
 
-        // mesh settings
-    mesh->vert_count = index_count;
-    mesh->indexed = true;
-    mesh->aabb = (AABB3D) {0};
-    mesh->line_width = 2;
-    mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
-#else // point rendering
-    u32 vert_count = 0;
-    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
-    u32 index_count = 0;
-    u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count);
-    recursive_generate_skeleton_verts_as_points(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0]);
-    se_assert(vert_count == skeleton->bone_node_count);
-    se_assert(index_count == skeleton->bone_node_count);
+            // mesh settings
+        mesh->vert_count = index_count;
+        mesh->indexed = true;
+        mesh->aabb = (AABB3D) {0};
+        mesh->line_width = 2;
+        mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
+    } else {// point rendering
+        vert_count = 0;
+        verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
+        index_count = 0;
+        indices = malloc(sizeof(u32) * skeleton->bone_node_count);
+        recursive_generate_skeleton_verts_as_points(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0], mat4_identity());
+        se_assert(vert_count == skeleton->bone_node_count);
+        se_assert(index_count == skeleton->bone_node_count);
 
-        // mesh settings
-    mesh->vert_count = index_count;
-    mesh->indexed = true;
-    mesh->point_radius = 8;
-    mesh->aabb = (AABB3D) {0};
-    mesh->type = SE_MESH_TYPE_POINT; // sense we're going to generate a skeleton we're going to be lines
-#endif
+            // mesh settings
+        mesh->vert_count = index_count;
+        mesh->indexed = true;
+        mesh->point_radius = 8;
+        mesh->aabb = (AABB3D) {0};
+        mesh->type = SE_MESH_TYPE_POINT; // sense we're going to generate a skeleton we're going to be lines
+    }
 
         // fill data
     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count,    verts, GL_STATIC_DRAW);
@@ -901,6 +919,7 @@ static void recursive_read_bone_heirarchy(SE_Skeleton *skeleton, SE_Bone_Node *d
     if (skeleton->bone_node_count == 0) { // this is the first call
         dest->id = skeleton->bone_node_count;
         skeleton->bone_node_count++;
+        dest->parent = -1; // root has no parent
         se_assert(dest->id == 0); // this must be root
     }
     sestring_init(&dest->name, src->mName.data);
@@ -914,6 +933,7 @@ static void recursive_read_bone_heirarchy(SE_Skeleton *skeleton, SE_Bone_Node *d
         recursive_read_bone_heirarchy(skeleton, new_bone_node, src->mChildren[i]);
         dest->children[dest->children_count] = new_bone_node->id;
         dest->children_count++;
+        new_bone_node->parent = dest->id;
     }
 }
 
@@ -1010,7 +1030,6 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         }
     }
     {   // bone heirarchy
-        mesh->skeleton->bone_nodes[0].id = 0;
         recursive_read_bone_heirarchy(mesh->skeleton, &mesh->skeleton->bone_nodes[0], scene->mRootNode);
     }
         // generate the vao

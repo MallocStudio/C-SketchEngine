@@ -59,6 +59,7 @@ typedef struct SE_Bone_Node {
     i32 id;
     u32 children_count;
     i32 children[MAX_BONE_CHILDREN];
+    i32 parent;
     Mat4 transform;
 } SE_Bone_Node;
 
@@ -74,9 +75,9 @@ void seanimation_init(SE_Animation *animation);
 void seanimation_deinit(SE_Animation *animation);
 void seanimation_add_keyframe(SE_Animation *animation, f32 time, f32 value);
 
-///
-/// MATERIAL
-/// (think of material as a bunch of parameters)
+//// ANIMATION ////
+
+//// MATERIAL //// (think of material as a bunch of parameters)
 
 typedef struct SE_Material {
     /* lit, line, sprite */
@@ -143,7 +144,7 @@ void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_wid
 void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width);
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
     /// generate a mesh of type line based on the given skeleton
-void semesh_generate_skinned_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton);
+void semesh_generate_skinned_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton, bool line);
 ///
 /// Light
 ///

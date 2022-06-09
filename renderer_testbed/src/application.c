@@ -118,7 +118,7 @@ void app_init(Application *app, SDL_Window *window) {
 
         skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
         app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
-        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player2].mesh_index]->skeleton);
+        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, true);
 
         app->entities[bulb].mesh_index = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
         app->entities[bulb].has_mesh = true;
