@@ -11,7 +11,9 @@
 #include "seshader.h"
 #include "Serender_target.h"
 #include "sesprite.h"
+#include "sestring.h"
 
+#include "khash.h"
 ///
 /// VERTEX
 ///
@@ -29,13 +31,12 @@ typedef struct SE_Vertex3D {
 /// ANIMATION
 ///
 
-#define SE_SKINNED_VERTEX_NUM_OF_BONES 4
+#define SE_MAX_BONE_WEIGHTS 4
 typedef struct SE_Skinned_Vertex {
     SE_Vertex3D vert;
     /* the bones that manipulate this vertex */
-    u32 bone_count;
-    i32     bone_ids[SE_SKINNED_VERTEX_NUM_OF_BONES];
-    f32 bone_weights[SE_SKINNED_VERTEX_NUM_OF_BONES];
+    i32     bone_ids[SE_MAX_BONE_WEIGHTS];
+    f32 bone_weights[SE_MAX_BONE_WEIGHTS];
 } SE_Skinned_Vertex;
 
 #define SE_ANIMATION_KEYFRAME_CAPACITY 1024
@@ -44,10 +45,29 @@ typedef struct SE_Animation {
     u32 current_frame;
 } SE_Animation;
 
-#define SE_SKELETON_TRANSFORM_CAPACITY 1024
+typedef struct SE_Bone {
+    // id is index in 'bones' in the skinned_vertex.vsd
+    i32 id;
+    // offset matrix transforms vertex from model space to bone space
+    Mat4 offset;
+} SE_Bone;
+// KHASH_INIT(bone_info, const char*, SE_Bone, true, kh_str_hash_func, kh_str_hash_equal);
+
+#define MAX_BONE_CHILDREN 8
+typedef struct SE_Bone_Node {
+    SE_String name;
+    i32 id;
+    u32 children_count;
+    i32 children[MAX_BONE_CHILDREN];
+    Mat4 transform;
+} SE_Bone_Node;
+
+#define SE_SKELETON_BONES_CAPACITY 100 // ! needs to match with MAX_BONES in skinned_vertex.vsd
 typedef struct SE_Skeleton {
-    u32 bone_count; // number of bones
-    Mat4 *rest_inverse_matrix; // array of inverse transform of each bone
+    u32 bone_count;
+    SE_Bone bones[SE_SKELETON_BONES_CAPACITY]; // array of bone data (index into bones and offset matrix)
+    u32 bone_node_count;
+    SE_Bone_Node bone_nodes[SE_SKELETON_BONES_CAPACITY]; // the heirarchy of bones and their information
 } SE_Skeleton;
 
 void seanimation_init(SE_Animation *animation);
@@ -79,7 +99,9 @@ void sematerial_deinit(SE_Material *material);
 typedef enum SE_MESH_TYPES {
     SE_MESH_TYPE_NORMAL, // normal mesh
     SE_MESH_TYPE_LINE,   // line mesh
+    SE_MESH_TYPE_POINT,  // mesh made out of points
     SE_MESH_TYPE_SPRITE, // meant for sprite (a quad)
+    SE_MESH_TYPE_SKINNED,// meant for skeletal mesh animation
 
     SE_MESH_TYPES_COUNT
 } SE_MESH_TYPES;
@@ -100,9 +122,13 @@ typedef struct SE_Mesh {
 
     /* line */
     f32 line_width;
+    /* point */
+    f32 point_radius;
 
     /* skinned */
-    bool is_skinned; // whether to use SE_Skinned_Vertex over SE_Vertex3D
+    // u32 bone_count;
+    // kh_bone_info_t *bone_info;
+    SE_Skeleton *skeleton; // if this mesh is skinned, this will not be nulled and must be freed
 } SE_Mesh;
 
 /// delete vao, vbo, ibo
@@ -116,6 +142,8 @@ void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 p
 void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width);
 void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width);
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
+    /// generate a mesh of type line based on the given skeleton
+void semesh_generate_skinned_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton);
 ///
 /// Light
 ///
@@ -169,12 +197,18 @@ void secamera3d_input(SE_Camera3D *camera, struct SE_Input *seinput);
 ///
 
 #define SERENDERER3D_MAX_MESHES 100
+#define SERENDERER3D_MAX_SKELETONS 100
 #define SERENDERER3D_MAX_SHADERS 100
 #define SERENDERER3D_MAX_MATERIALS 100
 
 typedef struct SE_Renderer3D {
+        // -- meshes
     u32 meshes_count;
     SE_Mesh *meshes[SERENDERER3D_MAX_MESHES];
+
+        // -- skeletons
+    u32 skeleton_count;
+    SE_Skeleton *skeletons[SERENDERER3D_MAX_SKELETONS];
 
     u32 shaders_count;
     SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
@@ -190,7 +224,7 @@ typedef struct SE_Renderer3D {
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
 
-    u32 material_lines;  // load this once not per obj
+    u32 material_lines;  // default line material (white lines)
     SE_Texture texture_default_diffuse;
     SE_Texture texture_default_normal;
     SE_Texture texture_default_specular;
@@ -211,7 +245,7 @@ typedef struct SE_Renderer3D {
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera);
 void serender3d_deinit(SE_Renderer3D *renderer);
 /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
-u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath);
+u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bool with_animation);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
 u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale);
 u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale);

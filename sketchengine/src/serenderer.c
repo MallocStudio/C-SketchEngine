@@ -6,6 +6,7 @@
 #include "sestring.h"
 
 #include "seinput.h" // for camera
+#include "stdio.h" // @temp for debugging
 
 ///
 /// Materials
@@ -85,7 +86,7 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
         }
     }
     { // -- rotate camera
-        u8 mouse_state = SDL_GetMouseState(NULL, NULL);
+        u32 mouse_state = SDL_GetMouseState(NULL, NULL);
         if (mouse_state & SDL_BUTTON_RMASK) {
             seui_mouse_fps_activate(seinput);
             f32 sensitivity = 0.15f;
@@ -109,7 +110,6 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
 static void sedefault_mesh(SE_Mesh *mesh) {
     mesh->next_mesh_index = -1;
     mesh->type = SE_MESH_TYPE_NORMAL;
-    mesh->is_skinned = false;
 }
 
 void semesh_deinit(SE_Mesh *mesh) {
@@ -117,6 +117,9 @@ void semesh_deinit(SE_Mesh *mesh) {
     glDeleteBuffers(1, &mesh->vbo);
     glDeleteBuffers(1, &mesh->ibo);
     mesh->material_index = 0;
+    if (mesh->type == SE_MESH_TYPE_SKINNED) {
+        free(mesh->skeleton);
+    }
 }
 
 void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
@@ -378,16 +381,196 @@ void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width) {
     semesh_generate(mesh, 6, verts, 6, indices);
 }
 
+static void semesh_generate_skinned // same as semesh_generate but for skinned vertices
+(SE_Mesh *mesh, u32 vert_count, const SE_Skinned_Vertex *vertices, u32 index_count, u32 *indices) {
+    // generate buffers
+    glGenBuffers(1, &mesh->vbo);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->ibo);
+
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ibo);
+
+    // fill data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Skinned_Vertex) * vert_count, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
+
+    se_assert(mesh->type == SE_MESH_TYPE_SKINNED && "mesh type was something other than skinned but we tried to generate one");
+
+        // enable position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, vert.position));
+        // enable normal
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, vert.normal));
+        // enable uv
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, vert.texture_coord));
+        // enable tangent
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, vert.tangent));
+        // enable bitangent
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, vert.bitangent));
+        // enable bone ids
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, bone_ids));
+        // enable bone weights
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, bone_weights));
+
+    mesh->vert_count = index_count;
+    mesh->indexed = true;
+    mesh->aabb = (AABB3D) {0}; //semesh_calc_aabb(vertices, vert_count);
+
+    // unselect
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+static void debug_print_skeleton(const SE_Skeleton *skeleton, const SE_Bone_Node *parent) {
+    static i32 call = 0;
+    printf("%i: parent id: %i | ", call, parent->id);
+    call++;
+    for (u32 i = 0; i < parent->children_count; ++i) {
+        printf("%i | ", parent->children[i]);
+    }
+    printf("\n");
+
+    for (u32 i = 0; i < parent->children_count; ++i) {
+        debug_print_skeleton(skeleton, &skeleton->bone_nodes[parent->children[i]]);
+    }
+}
+
+static void recursive_generate_skeleton_verts
+(const SE_Skeleton *skeleton, SE_Vertex3D *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *node, Mat4 parent_transform) {
+        // the problem here is that as we come back up the recursion stack our index_count and vert_count go back to their old values
+        // instead of retaining their values.
+
+    Mat4 final_transform = node->transform;
+    final_transform = mat4_mul(parent_transform, node->transform);
+
+    verts[*vert_count].position = mat4_get_translation(final_transform);
+    verts[*vert_count].texture_coord = v2f(0, 0);
+    (*vert_count)++;
+
+    se_assert(node->id >= 0);
+    for (u32 i = 0; i < node->children_count; ++i) {
+            // draw a line between the node and the child
+            // we can assign a node's id as the index because we're adding
+            // one vertex for each node. If this doesn't work consider changing
+            // verts[*vert_count] to verts[node->id] to be more explicit
+        indices[*index_count] = node->id;
+        (*index_count)++;
+        indices[*index_count] = skeleton->bone_nodes[node->children[i]].id;
+        (*index_count)++;
+        recursive_generate_skeleton_verts(skeleton, verts, vert_count, indices, index_count, &skeleton->bone_nodes[node->children[i]], final_transform);
+    }
+}
+
+static void recursive_generate_skeleton_verts_as_points
+(const SE_Skeleton *skeleton, SE_Vertex3D *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *parent) {
+        // the problem here is that as we come back up the recursion stack our index_count and vert_count go back to their old values
+        // instead of retaining their values.
+
+    Mat4 final_transform = parent->transform;
+    // final_transform = mat4_mul(skeleton->bones[parent->id].offset, final_transform);
+
+        // draw a point at the given bone position
+    verts[*vert_count].position = mat4_get_translation(final_transform);
+    verts[*vert_count].texture_coord = v2f(0, 0);
+    (*vert_count)++;
+    indices[*index_count] = parent->id;
+    (*index_count)++;
+
+    se_assert(parent->id >= 0);
+    for (u32 i = 0; i < parent->children_count; ++i) {
+        recursive_generate_skeleton_verts_as_points(skeleton, verts, vert_count, indices, index_count, &skeleton->bone_nodes[parent->children[i]]);
+    }
+}
+
+void semesh_generate_skinned_skeleton
+(SE_Mesh *mesh, const SE_Skeleton *skeleton) {
+        // generate buffers
+    glGenBuffers(1, &mesh->vbo);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->ibo);
+
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ibo);
+
+        // generate vertices for the skeleton
+#if 1 // line rendering
+    u32 vert_count = 0;
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
+    u32 index_count = 0;
+    u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
+    recursive_generate_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0], mat4_identity());
+    se_assert(vert_count == skeleton->bone_node_count);
+    // se_assert(index_count == skeleton->bone_node_count * 2);
+
+        // mesh settings
+    mesh->vert_count = index_count;
+    mesh->indexed = true;
+    mesh->aabb = (AABB3D) {0};
+    mesh->line_width = 2;
+    mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
+#else // point rendering
+    u32 vert_count = 0;
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
+    u32 index_count = 0;
+    u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count);
+    recursive_generate_skeleton_verts_as_points(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0]);
+    se_assert(vert_count == skeleton->bone_node_count);
+    se_assert(index_count == skeleton->bone_node_count);
+
+        // mesh settings
+    mesh->vert_count = index_count;
+    mesh->indexed = true;
+    mesh->point_radius = 8;
+    mesh->aabb = (AABB3D) {0};
+    mesh->type = SE_MESH_TYPE_POINT; // sense we're going to generate a skeleton we're going to be lines
+#endif
+
+        // fill data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count,    verts, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
+
+        // -- enable position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+        // -- enable normal
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
+        // -- enable uv
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+        // -- enable tangent
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
+        // -- enable bitangent
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
+
+    free(verts);
+    free(indices);
+
+        // unselect
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
     // generate buffers
     glGenBuffers(1, &mesh->vbo);
     glGenVertexArrays(1, &mesh->vao);
     glGenBuffers(1, &mesh->ibo);
 
-    // @note once we bind a VBO or IBO it "sticks" to the currently bound VAO, so we start by
-    // binding VAO and then VBO.
-    // This is so that later on, we'll just need to bind the vertex array object and not the buffers
-    glBindVertexArray(mesh->vao); // start the macro
+    glBindVertexArray(mesh->vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ibo);
 
@@ -396,29 +579,31 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
 
     if (mesh->type == SE_MESH_TYPE_NORMAL || mesh->type == SE_MESH_TYPE_LINE) {
-        // -- enable position
+            // -- enable position
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-        // -- enable normal
+            // -- enable normal
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
-        // -- enable uv
+            // -- enable uv
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
-        // -- enable tangent
+            // -- enable tangent
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
-        // -- enable bitangent
+            // -- enable bitangent
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
     } else
     if (mesh->type == SE_MESH_TYPE_SPRITE) {
-        // -- enable position
+            // -- enable position
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-        // -- enable uv
+            // -- enable uv
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
+    } else {
+        se_assert(false && "mesh type was something other than normal, line, or sprite but we tried to generate one");
     }
 
     mesh->vert_count = index_count;
@@ -426,13 +611,9 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     mesh->aabb = semesh_calc_aabb(vertices, vert_count);
 
     // unselect
-    glBindVertexArray(0); // stop the macro
+    glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    // glDisableVertexAttribArray(0);
-    // glDisableVertexAttribArray(1);
-    // glDisableVertexAttribArray(2);
-    // glDisableVertexAttribArray(3);
 }
 
 ///
@@ -562,15 +743,6 @@ AABB3D aabb3d_calc(const AABB3D *aabbs, u32 aabb_count) {
     return result;
 }
 
-static void seskeleton_init(SE_Skeleton *skeleton, u32 bone_count) {
-    skeleton->bone_count = bone_count;
-    skeleton->rest_inverse_matrix = malloc(sizeof(Mat4) * bone_count);
-}
-
-static void seskeleton_deinit(SE_Skeleton *skeleton) {
-    free(skeleton->rest_inverse_matrix);
-}
-
 static void copy_ai_matrix_to_mat4(struct aiMatrix4x4 aiMat, Mat4 *mat4) {
     mat4->data[0] = aiMat.a1; mat4->data[4] = aiMat.a2; mat4->data[8]  = aiMat.a3; mat4->data[12] = aiMat.a4;
     mat4->data[1] = aiMat.b1; mat4->data[5] = aiMat.b2; mat4->data[9]  = aiMat.b3; mat4->data[13] = aiMat.b4;
@@ -578,78 +750,8 @@ static void copy_ai_matrix_to_mat4(struct aiMatrix4x4 aiMat, Mat4 *mat4) {
     mat4->data[3] = aiMat.d1; mat4->data[7] = aiMat.d2; mat4->data[11] = aiMat.d3; mat4->data[15] = aiMat.d4;
 }
 
-    /// returns true on success
-static bool seskeleton_construct
-(SE_Skeleton *skeleton, const struct aiMesh *ai_mesh, const struct aiScene *scene) {
-        // figure out the number of bones the skeleton will have and init it
-    if (ai_mesh->mNumBones == 0) {
-        printf("ERROR: tried to load a skeleton from asset importer but the number of bones was zero\n");
-        return false;
-    }
-    seskeleton_init(skeleton, ai_mesh->mNumBones);
-        // populate the skeleton based on the ai_mesh bone data
-    for (u32 i = 0; i < ai_mesh->mNumBones; ++i) {
-        copy_ai_matrix_to_mat4(ai_mesh->mBones[i]->mOffsetMatrix, &skeleton->rest_inverse_matrix[i]);
-    }
-}
-
-static void semesh_construct
+static void semesh_construct_material // only meant to be called form serender3d_load_mesh
 (SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
-    sedefault_mesh(mesh);
-    u32 verts_count = 0;
-    u32 index_count = 0;
-    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
-    u32       *indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
-
-    // -- vertices
-
-    for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
-        SE_Vertex3D vertex = {0};
-
-        // -- pos
-        vertex.position.x = ai_mesh->mVertices[i].x;
-        vertex.position.y = ai_mesh->mVertices[i].y;
-        vertex.position.z = ai_mesh->mVertices[i].z;
-
-        // -- normals
-        vertex.normal.x = ai_mesh->mNormals[i].x;
-        vertex.normal.y = ai_mesh->mNormals[i].y;
-        vertex.normal.z = ai_mesh->mNormals[i].z;
-
-        // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
-        vertex.tangent.x = ai_mesh->mTangents[i].x;
-        vertex.tangent.y = ai_mesh->mTangents[i].y;
-        vertex.tangent.z = ai_mesh->mTangents[i].z;
-
-        // -- bi-tangents
-        vertex.bitangent.x = ai_mesh->mBitangents[i].x;
-        vertex.bitangent.y = ai_mesh->mBitangents[i].y;
-        vertex.bitangent.z = ai_mesh->mBitangents[i].z;
-
-        // -- uvs
-        if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
-            vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
-            vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
-        }
-
-        verts[verts_count] = vertex;
-        verts_count++;
-    }
-
-    // -- indices
-
-    for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
-        // ! we triangulate on import, so every face has three vertices
-        indices[index_count+0] = ai_mesh->mFaces[i].mIndices[0];
-        indices[index_count+1] = ai_mesh->mFaces[i].mIndices[1];
-        indices[index_count+2] = ai_mesh->mFaces[i].mIndices[2];
-        index_count += 3;
-    }
-
-    mesh->type = SE_MESH_TYPE_NORMAL;
-    semesh_generate(mesh, verts_count, verts, index_count, indices);
-
-
     if (scene->mNumMaterials > 0) { // -- materials
         // add a material to the renderer
         u32 material_index = serender3d_add_material(renderer);
@@ -733,13 +835,195 @@ static void semesh_construct
     }
 }
 
-u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
+static void semesh_construct_normal_mesh // only meant to be called from serender3d_load_mesh
+(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+    sedefault_mesh(mesh);
+    u32 verts_count = 0;
+    u32 index_count = 0;
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
+    u32       *indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
+
+    // -- this is a normal static mesh
+    mesh->type = SE_MESH_TYPE_NORMAL;
+
+        // vertices
+    for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
+        SE_Vertex3D vertex = {0};
+
+        // -- pos
+        vertex.position.x = ai_mesh->mVertices[i].x;
+        vertex.position.y = ai_mesh->mVertices[i].y;
+        vertex.position.z = ai_mesh->mVertices[i].z;
+
+        // -- normals
+        vertex.normal.x = ai_mesh->mNormals[i].x;
+        vertex.normal.y = ai_mesh->mNormals[i].y;
+        vertex.normal.z = ai_mesh->mNormals[i].z;
+
+        // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
+        vertex.tangent.x = ai_mesh->mTangents[i].x;
+        vertex.tangent.y = ai_mesh->mTangents[i].y;
+        vertex.tangent.z = ai_mesh->mTangents[i].z;
+
+        // -- bi-tangents
+        vertex.bitangent.x = ai_mesh->mBitangents[i].x;
+        vertex.bitangent.y = ai_mesh->mBitangents[i].y;
+        vertex.bitangent.z = ai_mesh->mBitangents[i].z;
+
+        // -- uvs
+        if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
+            vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
+            vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
+        } else {
+            vertex.texture_coord = v2f(0, 0);
+        }
+
+        verts[verts_count] = vertex;
+        verts_count++;
+    }
+
+        // indices
+    for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
+        // ! we triangulate on import, so every face has three vertices
+        indices[index_count+0] = ai_mesh->mFaces[i].mIndices[0];
+        indices[index_count+1] = ai_mesh->mFaces[i].mIndices[1];
+        indices[index_count+2] = ai_mesh->mFaces[i].mIndices[2];
+        index_count += 3;
+    }
+
+    semesh_generate(mesh, verts_count, verts, index_count, indices);
+}
+
+// static void recursive_read_missing_bones_found_in_animation(){}
+
+static void recursive_read_bone_heirarchy(SE_Skeleton *skeleton, SE_Bone_Node *dest, const struct aiNode *src) {
+    se_assert(src);
+    if (skeleton->bone_node_count == 0) { // this is the first call
+        dest->id = skeleton->bone_node_count;
+        skeleton->bone_node_count++;
+        se_assert(dest->id == 0); // this must be root
+    }
+    sestring_init(&dest->name, src->mName.data);
+    copy_ai_matrix_to_mat4(src->mTransformation, &dest->transform);
+
+    for (u32 i = 0; i < src->mNumChildren; ++i) {
+        SE_Bone_Node *new_bone_node = &skeleton->bone_nodes[skeleton->bone_node_count];
+        new_bone_node->id = skeleton->bone_node_count;
+        skeleton->bone_node_count++;
+
+        recursive_read_bone_heirarchy(skeleton, new_bone_node, src->mChildren[i]);
+        dest->children[dest->children_count] = new_bone_node->id;
+        dest->children_count++;
+    }
+}
+
+static void semesh_construct_skinned_mesh // only meant to be called from serender3d_load_mesh
+(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+    sedefault_mesh(mesh);
+    u32 verts_count = 0;
+    u32 index_count = 0;
+    SE_Skinned_Vertex *verts = malloc(sizeof(SE_Skinned_Vertex) * ai_mesh->mNumVertices);
+    u32             *indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
+
+        // remember that this is a skinned mesh
+    mesh->type = SE_MESH_TYPE_SKINNED;
+
+        // vertices
+    for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
+        SE_Skinned_Vertex vertex = {0};
+            // set the bone data to their default values
+        for (i32 j = 0; j < SE_MAX_BONE_WEIGHTS; ++j) {
+                // NOTE(Matin): we set vertex.bone_ids and vertex.bone_weights later on during the
+                // extraction of bone vertex ids and bone weights from the ai_mesh further down...
+            vertex.bone_ids[j] = -1;
+            vertex.bone_weights[j] = 0.0f;
+        }
+            // pos
+        vertex.vert.position.x = ai_mesh->mVertices[i].x;
+        vertex.vert.position.y = ai_mesh->mVertices[i].y;
+        vertex.vert.position.z = ai_mesh->mVertices[i].z;
+
+            // normals
+        vertex.vert.normal.x = ai_mesh->mNormals[i].x;
+        vertex.vert.normal.y = ai_mesh->mNormals[i].y;
+        vertex.vert.normal.z = ai_mesh->mNormals[i].z;
+
+            // tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
+        vertex.vert.tangent.x = ai_mesh->mTangents[i].x;
+        vertex.vert.tangent.y = ai_mesh->mTangents[i].y;
+        vertex.vert.tangent.z = ai_mesh->mTangents[i].z;
+
+            // bi-tangents
+        vertex.vert.bitangent.x = ai_mesh->mBitangents[i].x;
+        vertex.vert.bitangent.y = ai_mesh->mBitangents[i].y;
+        vertex.vert.bitangent.z = ai_mesh->mBitangents[i].z;
+
+            // uvs
+        if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
+            vertex.vert.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
+            vertex.vert.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
+        } else {
+            vertex.vert.texture_coord = v2f(0, 0);
+        }
+
+        verts[verts_count] = vertex;
+        verts_count++;
+    }
+
+        // indices
+    for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
+        // ! we triangulate on import, so every face has three vertices
+        indices[index_count+0] = ai_mesh->mFaces[i].mIndices[0];
+        indices[index_count+1] = ai_mesh->mFaces[i].mIndices[1];
+        indices[index_count+2] = ai_mesh->mFaces[i].mIndices[2];
+        index_count += 3;
+    }
+
+    {   // extract bone weight for vertices
+        mesh->skeleton = new (SE_Skeleton); // @leak
+        mesh->skeleton->bone_count = 0;
+            // copy the bone data to skeleton
+        for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
+                // add bone to skeleton
+            i32 bone_id = mesh->skeleton->bone_count;
+            SE_Bone *bone = &mesh->skeleton->bones[bone_index];
+            bone->id = bone_id;
+            copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
+            mesh->skeleton->bone_count++;
+
+            se_assert(bone_id != -1); // just to be clear
+
+                // copy over the vertex ids that this bone affects and the weights
+            for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
+                i32 vert_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
+                f32 weight  = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
+                se_assert(vert_id <= verts_count);
+                {   // set vertex bone data
+                    for (i32 xxx = 0; xxx < SE_MAX_BONE_WEIGHTS; ++xxx) {
+                        if (verts[vert_id].bone_ids[xxx] < 0) {
+                            verts[vert_id].bone_ids[xxx] = bone_id;
+                            verts[vert_id].bone_weights[xxx] = weight;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {   // bone heirarchy
+        mesh->skeleton->bone_nodes[0].id = 0;
+        recursive_read_bone_heirarchy(mesh->skeleton, &mesh->skeleton->bone_nodes[0], scene->mRootNode);
+    }
+        // generate the vao
+    semesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
+}
+
+u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bool with_animation) {
     u32 result = -1;
     // load mesh from file
     const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     if (scene == NULL) {
-        printf("ERROR: could not load load mesh from %s (%s)\n", model_filepath, aiGetErrorString());
+        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
         return result;
     }
 
@@ -751,13 +1035,26 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath) {
         renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
         memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
-        semesh_construct(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        if (with_animation && ai_mesh->mNumBones > 0) {
+                // load a skinned mesh ready to be animated
+            semesh_construct_skinned_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        } else {
+                // load normal static mesh
+            semesh_construct_normal_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        }
+            // load the material of this mesh
+        semesh_construct_material(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+
+        // if there are multiple meshes within this scene, add them on in a linked list
         if (i > 0) {
             renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
         }
         renderer->meshes_count++;
     }
+
+    // the final mesh in the linked list has no next (signified by -1 next_mesh_index)
     renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
+
     return result;
 }
 
@@ -869,6 +1166,73 @@ static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *
     }
 }
 
+static void
+serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+    u32 shader = renderer->shader_lit; // @temp change this to shader_skinned
+    seshader_use(renderer->shaders[shader]);
+
+    Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+    pvm = mat4_mul(pvm, renderer->current_camera->projection);
+
+     /* vertex */
+    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
+    seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
+
+    /* material uniforms */
+    seshader_set_uniform_f32 (renderer->shaders[shader], "material.shininess", 0.1f);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "material.diffuse", 0);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "material.specular", 1);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "material.normal", 2);
+    seshader_set_uniform_vec4(renderer->shaders[shader], "material.base_diffuse", material->base_diffuse);
+
+    // directional light uniforms
+    seshader_set_uniform_vec3(renderer->shaders[shader], "dir_light.direction", renderer->light_directional.direction);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.ambient", renderer->light_directional.ambient);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.diffuse", renderer->light_directional.diffuse);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.specular", (RGB) {0, 0, 0});
+    seshader_set_uniform_f32 (renderer->shaders[shader], "dir_light.intensity", renderer->light_directional.intensity);
+    seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
+
+    // point light uniforms
+    seshader_set_uniform_vec3(renderer->shaders[shader], "point_lights[0].position",  renderer->point_lights[0].position);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].ambient",   renderer->point_lights[0].ambient);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].diffuse",   renderer->point_lights[0].diffuse);
+    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].specular",  renderer->point_lights[0].specular);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].constant" , renderer->point_lights[0].constant);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].linear"   , renderer->point_lights[0].linear);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].quadratic", renderer->point_lights[0].quadratic);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].far_plane", 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
+    seshader_set_uniform_i32 (renderer->shaders[shader], "point_lights[0].shadow_map", 4); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
+
+    /* textures */
+    if (material->texture_diffuse.loaded) {
+        setexture_bind(&material->texture_diffuse, 0);
+    } else {
+        setexture_bind(&renderer->texture_default_diffuse, 0);
+    }
+
+    if (material->texture_specular.loaded) {
+        setexture_bind(&material->texture_specular, 1);
+    } else {
+        setexture_bind(&renderer->texture_default_specular, 1);
+    }
+
+    if (material->texture_normal.loaded) {
+        setexture_bind(&material->texture_normal, 2);
+    } else {
+        setexture_bind(&renderer->texture_default_normal, 2);
+    }
+
+    glActiveTexture(GL_TEXTURE0 + 3); // shadow map
+    glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
+
+    /* omnidirectional shadow map */
+    glActiveTexture(GL_TEXTURE0 + 4); // shadow map
+    glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[0].depth_cube_map);
+}
+
 void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     serender3d_reset_render_config(); // Reset configs to their default values
     // take the mesh (world space) and project it to view space
@@ -886,11 +1250,19 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         serender3d_render_set_material_uniforms_lit(renderer, material, transform);
-    }
+    } else
     if (mesh->type == SE_MESH_TYPE_SPRITE) { // SPRITE
         serender3d_render_set_material_uniforms_sprite(renderer, material, transform);
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
+    } else
+    if (mesh->type == SE_MESH_TYPE_SKINNED) { // SKELETAL ANIMATION
+        serender3d_render_set_material_uniforms_skinned(renderer, material, transform);
+    } else
+    if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
+        primitive = GL_POINTS;
+        glPointSize(mesh->point_radius);
+        serender3d_render_set_material_uniforms_lines(renderer, material, transform);
     }
 
     glBindVertexArray(mesh->vao);

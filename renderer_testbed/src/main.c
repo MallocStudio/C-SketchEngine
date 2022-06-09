@@ -6,6 +6,33 @@
 #include "sestring.h"
 #include "stdio.h"
 
+// #include "khash.h"
+
+// typedef struct Custom_Struct {
+//     i32 value1;
+//     i32 value2;
+// } Custom_Struct;
+
+// KHASH_INIT(custom, const char*, i32, true, kh_str_hash_func, kh_str_hash_equal);
+
+// void test () {
+//     i32 ret, is_missing;
+//     khiter_t iter;
+//     kh_custom_t *map = kh_init_custom();
+//     kh_put_custom(map, "key1", &ret);
+//     // kh_get_custom(map, "key1");
+//     // // iter through map
+//     // i32 i = 0;
+//     // for (iter = kh_begin(map); iter != kh_end(map); ++iter) {
+//     //     if (kh_exist(map, iter)) kh_value(map, iter) = i;
+//     //     i++;
+//     // }
+//     for (iter = kh_begin(map); iter != kh_end(map); ++iter) {
+//         printf("key: %s ; value: %i\n", kh_key(map, iter), kh_val(map, iter));
+//     }
+//     kh_destroy_custom(map);
+// }
+
 int main() {
     SDL_Window *window;
     i32 window_w = 1600;

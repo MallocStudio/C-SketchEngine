@@ -18,15 +18,19 @@ void print_sdl_error();
 #define new(type) ( type *) malloc (sizeof( type ))
 #define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
+#define SE_ERROR(message) {printf("ERROR: %s; FILE: %s (LINE: %i)\n", message, __FILE__, __LINE__);}
+#define se_assert(condition) SDL_assert_always(condition)
 
 typedef int i32;
 typedef unsigned int u32;
 typedef uint64_t u64;
 typedef short i16;
-typedef char u8;
+typedef char byte;
 typedef float f32;
 typedef long long f64;
 typedef unsigned char ubyte;
+typedef short i8;
+typedef unsigned short u8;
 // typedef enum bool {
 //     false, true
 // } bool;
