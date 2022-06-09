@@ -14,9 +14,8 @@
 #include "sestring.h"
 
 #include "khash.h"
-///
-/// VERTEX
-///
+
+//// VERTEX ////
 
 /// Vertex info of a mesh
 typedef struct SE_Vertex3D {
@@ -27,10 +26,6 @@ typedef struct SE_Vertex3D {
     Vec2 texture_coord;
 } SE_Vertex3D;
 
-///
-/// ANIMATION
-///
-
 #define SE_MAX_BONE_WEIGHTS 4
 typedef struct SE_Skinned_Vertex {
     SE_Vertex3D vert;
@@ -39,22 +34,46 @@ typedef struct SE_Skinned_Vertex {
     f32 bone_weights[SE_MAX_BONE_WEIGHTS];
 } SE_Skinned_Vertex;
 
-#define SE_ANIMATION_KEYFRAME_CAPACITY 1024
-typedef struct SE_Animation {
-    SE_Array_F32 keyframes;
-    u32 current_frame;
-} SE_Animation;
+//// ANIMATION ////
 
-typedef struct SE_Bone {
+#define SE_MAX_ANIMATION_BONE_KEYFRAMES 1000
+typedef struct SE_Bone_Animations {
+    // i32 bone_node_index;
+    SE_String name; // name pf the bone
+    u32 position_count;
+    u32 rotation_count;
+    u32 scale_count;
+        // NOTE(Matin): these arrays must be of the same size (positions and position_time_stamps, ...)
+        // the above count values describe how long each of these arrays are.
+    Vec3 *positions;    // array of positions
+    Quat *rotations;    // array of rotations
+    Vec3 *scales;       // array of scales
+    f32  *position_time_stamps; // array of position timestamps
+    f32  *rotation_time_stamps; // array of rotation timestamps
+    f32  *scale_time_stamps;    // array of scale timestamps
+} SE_Bone_Animations;
+
+typedef struct SE_Skeletal_Animation {
+        // name of the animation
+    SE_String name;
+        // animation data
+    u32 animated_bones_count;
+    SE_Bone_Animations *animated_bones;
+    f32 duration;
+    f32 ticks_per_second;
+} SE_Skeletal_Animation;
+
+//// SKELETON AND BONES ////
+
+typedef struct SE_Bone_Info {
     // id is index in 'bones' in the skinned_vertex.vsd
     i32 id;
     // offset matrix transforms vertex from model space to bone space
     Mat4 offset;
-} SE_Bone;
-// KHASH_INIT(bone_info, const char*, SE_Bone, true, kh_str_hash_func, kh_str_hash_equal);
+} SE_Bone_Info;
 
 #define MAX_BONE_CHILDREN 8
-typedef struct SE_Bone_Node {
+typedef struct SE_Bone_Node { // contains skeletal heirarchy information of a given bone
     SE_String name;
     i32 id;
     u32 children_count;
@@ -64,20 +83,24 @@ typedef struct SE_Bone_Node {
 } SE_Bone_Node;
 
 #define SE_SKELETON_BONES_CAPACITY 100 // ! needs to match with MAX_BONES in skinned_vertex.vsd
-typedef struct SE_Skeleton {
+#define SE_SKELETON_MAX_ANIMATIONS 100
+typedef struct SE_Skeleton { // contains skeletal heirarchy, bone info,
     u32 bone_count;
-    SE_Bone bones[SE_SKELETON_BONES_CAPACITY]; // array of bone data (index into bones and offset matrix)
+    SE_Bone_Info bones_info[SE_SKELETON_BONES_CAPACITY]; // array of bone data (index into bones and offset matrix)
     u32 bone_node_count;
     SE_Bone_Node bone_nodes[SE_SKELETON_BONES_CAPACITY]; // the heirarchy of bones and their information
+        // animations associated with this skeleton. The animations are loaded when the skeleton is loaded from a file
+    u32 animations_count;
+    SE_Skeletal_Animation *animations[SE_SKELETON_MAX_ANIMATIONS]; // maximum of a hundered animations
+    Mat4 final_pose[SE_SKELETON_BONES_CAPACITY]; // the pose sent to GPU, call seskeleton_calculate_pose to update this pose
 } SE_Skeleton;
 
-void seanimation_init(SE_Animation *animation);
-void seanimation_deinit(SE_Animation *animation);
-void seanimation_add_keyframe(SE_Animation *animation, f32 time, f32 value);
+    /// We do not have an animator class, instead use this procedure.
+    /// Based on the given skeleton, animation, and animation_time, update the pose of the skeleton.
+    /// The result is stored in final_bone_transforms and final_bone_transforms_count.
+void seskeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
 
-//// ANIMATION ////
-
-//// MATERIAL //// (think of material as a bunch of parameters)
+//// MATERIAL ////
 
 typedef struct SE_Material {
     /* lit, line, sprite */
@@ -93,9 +116,7 @@ typedef struct SE_Material {
 /// Deallocates memory and frees resources (textures ...)
 void sematerial_deinit(SE_Material *material);
 
-///
-/// MESH
-///
+//// MESH ////
 
 typedef enum SE_MESH_TYPES {
     SE_MESH_TYPE_NORMAL, // normal mesh
@@ -145,9 +166,8 @@ void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width);
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
     /// generate a mesh of type line based on the given skeleton
 void semesh_generate_skinned_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton, bool line);
-///
-/// Light
-///
+
+//// Light ////
 
 typedef struct SE_Light {
     Vec3 direction;
@@ -171,9 +191,7 @@ typedef struct SE_Light_Point {
     GLuint depth_map_fbo;
 } SE_Light_Point;
 
-///
-/// Camera
-///
+//// Camera ////
 
 typedef struct SE_Camera3D {
     // @note that these two matrices are updated by secamera3d_update_projection()
@@ -193,12 +211,9 @@ Mat4 secamera3d_get_view(const SE_Camera3D *cam);
 void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h);
 void secamera3d_input(SE_Camera3D *camera, struct SE_Input *seinput);
 
-///
-/// RENDERER
-///
+//// RENDERER ////
 
 #define SERENDERER3D_MAX_MESHES 100
-#define SERENDERER3D_MAX_SKELETONS 100
 #define SERENDERER3D_MAX_SHADERS 100
 #define SERENDERER3D_MAX_MATERIALS 100
 
@@ -206,10 +221,6 @@ typedef struct SE_Renderer3D {
         // -- meshes
     u32 meshes_count;
     SE_Mesh *meshes[SERENDERER3D_MAX_MESHES];
-
-        // -- skeletons
-    u32 skeleton_count;
-    SE_Skeleton *skeletons[SERENDERER3D_MAX_SKELETONS];
 
     u32 shaders_count;
     SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
@@ -262,16 +273,15 @@ void serender3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, 
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 /// Add an empty material to the renderer
 u32 serender3d_add_material(SE_Renderer3D *renderer);
+    /// Add an uninitialised skeleton to the renderer
+u32 serender3d_add_skeletal_animation(SE_Renderer3D *renderer);
 /// Setup renderer for rendering (set the configurations to their default values)
 void serender3d_reset_render_config();
 void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 
-
-///
-/// UTILITIES
-///
+//// UTILITIES ////
 
 /// calculate the bounding box of a collection of vertices
 AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count);

@@ -1153,7 +1153,7 @@ SEINLINE Quat quat_slerp(Quat q_0, Quat q_1, f32 percentage) {
     }
 
     // Since dot is in range [0, DOT_THRESHOLD], acos is safe
-    f32 theta_0 = kacos(dot);          // theta_0 = angle between input vectors
+    f32 theta_0 = semath_cos(dot);          // theta_0 = angle between input vectors
     f32 theta = theta_0 * percentage;  // theta = angle between v0 and result
     f32 sin_theta = semath_sin(theta);       // compute this value only once
     f32 sin_theta_0 = semath_sin(theta_0);   // compute this value only once
@@ -1264,6 +1264,15 @@ SEINLINE i32 remap(i32 value, i32 range_from, i32 range_to) {
 /// amount is in the range of [0-1]
 SEINLINE f32 lerp(f32 value, f32 target, f32 amount) {
     return value + amount * (target - value);
+}
+
+/// amount is in the range of [0-1]
+SEINLINE Vec3 vec3_lerp(Vec3 v1, Vec3 v2, f32 amount) {
+    return (Vec3) {
+        lerp(v1.x, v2.x, amount),
+        lerp(v1.y, v2.y, amount),
+        lerp(v1.z, v2.z, amount)
+    };
 }
 
 /// the result's x, y, z correspond with the barycentric coordinates of the given 'pos'

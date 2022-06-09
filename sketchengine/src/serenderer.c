@@ -430,6 +430,7 @@ static void semesh_generate_skinned // same as semesh_generate but for skinned v
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+    /// Returns the final transformation of a given SE_Bone_Node based on its parents
 static Mat4 recursive_calc_bone_transform(const SE_Skeleton *skeleton, const SE_Bone_Node *node) {
     se_assert(node->id >= 0);
     if (node->parent >= 0) { // if we have a parent go up the tree
@@ -634,26 +635,7 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-///
-/// ANIMATION
-///
-
-void seanimation_init(SE_Animation *animation) {
-    searray_f32_init(&animation->keyframes, 10);
-    animation->current_frame = 0;
-}
-
-void seanimation_deinit(SE_Animation *animation) {
-    searray_f32_deinit(&animation->keyframes);
-}
-
-void seanimation_add_keyframe(SE_Animation *animation, f32 time, f32 value) {
-    searray_f32_add(&animation->keyframes, value); // @incomplete ignoring 'time' currently
-}
-
-///
-/// RENDER 3D
-///
+//// RENDER 3D ////
 
 AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count) {
     f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
@@ -912,7 +894,17 @@ static void semesh_construct_normal_mesh // only meant to be called from serende
     semesh_generate(mesh, verts_count, verts, index_count, indices);
 }
 
-// static void recursive_read_missing_bones_found_in_animation(){}
+// static void recursive_read_animated_bones(const struct aiAnimation *animation, SE_Skeleton *skeleton) {
+//         // read the channels / animated bones and their keyframes
+//     for (u32 i = 0; i < animation->mNumChannels; ++i) {
+//             // NOTE(Matin): If we were not able to find the bone in skeleton for some reason, add it.
+//             // Sometimes when animations in fbx are loaded separately they contain additional bones not
+//             // found in the mesh fbx file itself. Might want to investigate this.
+//         if () {
+
+//         }
+//     }
+// }
 
 static void recursive_read_bone_heirarchy(SE_Skeleton *skeleton, SE_Bone_Node *dest, const struct aiNode *src) {
     se_assert(src);
@@ -1006,7 +998,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
                 // add bone to skeleton
             i32 bone_id = mesh->skeleton->bone_count;
-            SE_Bone *bone = &mesh->skeleton->bones[bone_index];
+            SE_Bone_Info *bone = &mesh->skeleton->bones_info[bone_index];
             bone->id = bone_id;
             copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
             mesh->skeleton->bone_count++;
@@ -1036,46 +1028,208 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
     semesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
 }
 
-u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bool with_animation) {
-    u32 result = -1;
-    // load mesh from file
-    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+//// ANIMATION BONES ////
 
-    if (scene == NULL) {
-        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
-        return result;
+    /// Gets the normalised value of 'amount' for lerp and slerp
+static f32 get_scale_factor(f32 last_time_stamp, f32 next_time_stamp, f32 animation_time) {
+    f32 mid_way_length = animation_time - last_time_stamp;
+    f32 frame_delta    = next_time_stamp - last_time_stamp;
+    return mid_way_length / frame_delta;
+}
+
+    /// Returns the interpolated translation of the bone at the given animation time
+static Mat4 interpolate_bone_pos(SE_Bone_Animations *bone, f32 animation_time) {
+    if (bone->position_count == 0) return mat4_identity();
+    if (bone->position_count == 1) {
+        return mat4_translation(bone->positions[0]);
     }
 
-    result = renderer->meshes_count; // the first mesh in the chain
-    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
-        struct aiMesh *ai_mesh = scene->mMeshes[i];
-
-        // add a mesh to the renderer
-        renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
-        memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-
-        if (with_animation && ai_mesh->mNumBones > 0) {
-                // load a skinned mesh ready to be animated
-            semesh_construct_skinned_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
-        } else {
-                // load normal static mesh
-            semesh_construct_normal_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        // find index 0 and 1
+    i32 index_0;
+    for (u32 i = 0; i < bone->position_count - 1; ++i) {
+        if (animation_time < bone->position_time_stamps[i + 1]) {
+            index_0 = i;
+            break;
         }
-            // load the material of this mesh
-        semesh_construct_material(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+    }
+    i32 index_1 = index_0 + 1;
 
-        // if there are multiple meshes within this scene, add them on in a linked list
-        if (i > 0) {
-            renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
-        }
-        renderer->meshes_count++;
+        // interpolate
+    f32 scale_factor = get_scale_factor(bone->position_time_stamps[index_0], bone->position_time_stamps[index_1], animation_time);
+    Vec3 interpolated_pos = vec3_lerp(bone->positions[index_0], bone->positions[index_1], scale_factor);
+    return mat4_translation(interpolated_pos);
+}
+
+    /// Returns the interpolated rotation of the bone at the given animation time
+static Mat4 interpolate_bone_rot(SE_Bone_Animations *bone, f32 animation_time) {
+    if (bone->rotation_count == 0) return mat4_identity();
+    if (bone->rotation_count == 1) {
+        Quat rot = quat_normalize(bone->rotations[0]);
+        return quat_to_mat4(rot);
     }
 
-    // the final mesh in the linked list has no next (signified by -1 next_mesh_index)
-    renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
+        // find index 0 and 1
+    i32 index_0;
+    for (u32 i = 0; i < bone->rotation_count - 1; ++i) {
+        if (animation_time < bone->rotation_time_stamps[i + 1]) {
+            index_0 = i;
+            break;
+        }
+    }
+    i32 index_1 = index_0 + 1;
 
+        // interpolate
+    f32 scale_factor = get_scale_factor(bone->rotation_time_stamps[index_0], bone->rotation_time_stamps[index_1], animation_time);
+    Quat interpolated_rot = quat_slerp(bone->rotations[index_0], bone->rotations[index_1], scale_factor);
+    interpolated_rot = quat_normalize(interpolated_rot);
+    return quat_to_mat4(interpolated_rot);
+}
+
+    /// Returns the interpolated scale of the bone at the given animation time
+static Mat4 interpolate_bone_scale(SE_Bone_Animations *bone, f32 animation_time) {
+    if (bone->scale_count == 0) return mat4_identity();
+    if (bone->scale_count == 1) {
+        return mat4_scale(bone->scales[0]);
+    }
+
+        // find index 0 and 1
+    i32 index_0;
+    for (u32 i = 0; i < bone->scale_count - 1; ++i) {
+        if (animation_time < bone->scale_time_stamps[i + 1]) {
+            index_0 = i;
+            break;
+        }
+    }
+    i32 index_1 = index_0 + 1;
+
+        // interpolate
+    f32 scale_factor = get_scale_factor(bone->scale_time_stamps[index_0], bone->scale_time_stamps[index_1], animation_time);
+    Vec3 interpolated_scale = vec3_lerp(bone->scales[index_0], bone->scales[index_1], scale_factor);
+    return mat4_scale(interpolated_scale);
+}
+
+static Mat4 get_interpolated_bone_transform(SE_Bone_Animations *bone, f32 animation_time) {
+    Mat4 translation = interpolate_bone_pos   (bone, animation_time);
+    Mat4 rotation    = interpolate_bone_rot   (bone, animation_time);
+    Mat4 scale       = interpolate_bone_scale (bone, animation_time);
+
+    Mat4 result = scale;
+    result = mat4_mul(result, rotation);
+    result = mat4_mul(result, translation);
     return result;
 }
+
+static void bone_animations_deinit(SE_Bone_Animations *bone) {
+    // bone->bone_node_index = -1;
+    sestring_deinit(&bone->name);
+    free(bone->positions);
+    free(bone->rotations);
+    free(bone->scales);
+    free(bone->position_time_stamps);
+    free(bone->rotation_time_stamps);
+    free(bone->scale_time_stamps);
+}
+
+    /// Populates the given bone with animation data
+static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAnim *channel) {
+    // bone->bone_node_index = bone_node_index;
+    bone->position_count  = channel->mNumPositionKeys;
+    bone->rotation_count  = channel->mNumRotationKeys;
+    bone->scale_count     = channel->mNumScalingKeys;
+    sestring_init(&bone->name, channel->mNodeName.data);
+
+        // allocate memory for the arrays
+    bone->positions = malloc(sizeof(Vec3) * bone->position_count);
+    bone->rotations = malloc(sizeof(Quat) * bone->rotation_count);
+    bone->scales    = malloc(sizeof(Vec3) * bone->scale_count);
+    bone->position_time_stamps = malloc(sizeof(f32) * bone->position_count);
+    bone->rotation_time_stamps = malloc(sizeof(f32) * bone->rotation_count);
+    bone->scale_time_stamps    = malloc(sizeof(f32) * bone->scale_count);
+
+        // copy the data over
+    for (u32 i = 0; i < bone->position_count; ++i) {
+        bone->positions[i] = (Vec3) {
+            .x = channel->mPositionKeys[i].mValue.x,
+            .y = channel->mPositionKeys[i].mValue.y,
+            .z = channel->mPositionKeys[i].mValue.z
+        };
+        bone->position_time_stamps[i] = (f32) channel->mPositionKeys[i].mTime;
+    }
+
+    for (u32 i = 0; i < bone->rotation_count; ++i) {
+        bone->rotations[i] = (Quat) {
+            .x = channel->mRotationKeys[i].mValue.x,
+            .y = channel->mRotationKeys[i].mValue.y,
+            .z = channel->mRotationKeys[i].mValue.z,
+            .w = channel->mRotationKeys[i].mValue.w
+        };
+        bone->rotation_time_stamps[i] = (f32) channel->mRotationKeys[i].mTime;
+    }
+
+    for (u32 i = 0; i < bone->scale_count; ++i) {
+        bone->scales[i] = (Vec3) {
+            .x = channel->mScalingKeys[i].mValue.x,
+            .y = channel->mScalingKeys[i].mValue.y,
+            .z = channel->mScalingKeys[i].mValue.z
+        };
+        bone->scale_time_stamps[i] = (f32) channel->mScalingKeys[i].mTime;
+    }
+}
+
+static void recursive_calculate_bone_pose // calculate the pose of the given bone based on the animation, do the same for its children
+(SE_Skeleton *skeleton, const SE_Skeletal_Animation *animation, f32 animation_time, const SE_Bone_Node *node, Mat4 parent_transform) {
+    // se_assert(node->id >= 0 && node->id < animation->animated_bones_count);
+
+    // SE_Bone_Animations *animated_bone = &animation->animated_bones[node->id]; // double check that the node->id is a valid way of query
+    SE_Bone_Animations *animated_bone = NULL;
+    for (u32 i = 0; i < animation->animated_bones_count; ++i) {
+        if (sestring_compare(&animation->animated_bones[i].name, &node->name)) {
+            animated_bone = &animation->animated_bones[i];
+            break;
+        }
+    }
+
+    Mat4 global_node_transform = node->transform;
+        // the node transform with its parents taken into account
+    if (animated_bone != NULL) {
+        global_node_transform = get_interpolated_bone_transform(animated_bone, animation_time);
+        global_node_transform = mat4_mul(parent_transform, global_node_transform);
+    }
+
+    if (node->id >= 0 && node->id < skeleton->bone_count) {
+        i32 index = skeleton->bones_info[node->id].id;
+        Mat4 offset = skeleton->bones_info[node->id].offset;
+        skeleton->final_pose[index] = mat4_mul(global_node_transform, offset);
+    }
+
+        // repeat for children
+    for (u32 i = 0; i < node->children_count; ++i) {
+        recursive_calculate_bone_pose(skeleton, animation, animation_time, &skeleton->bone_nodes[node->children[i]], global_node_transform);
+    }
+}
+
+static void recursive_calc_skeleton_pose_without_animation(SE_Skeleton *skeleton) {
+    for (u32 i = 0; i < SE_SKELETON_BONES_CAPACITY; ++i) {
+        skeleton->final_pose[i] = seskeleton_get_bone_final_transform(skeleton, i);
+    }
+}
+
+void seskeleton_calculate_pose // calculate the pose of the skeleton based on the given animation
+(SE_Skeleton *skeleton, f32 delta_time) {
+    if (skeleton->animations_count > 0) {
+        static f32 animation_time = 0;
+        animation_time += delta_time;
+        if (animation_time > skeleton->animations[0]->duration) animation_time = 0;
+        recursive_calculate_bone_pose(skeleton, skeleton->animations[0], animation_time, &skeleton->bone_nodes[0], mat4_identity());
+    } else {
+        // for (u32 i = 0; i < 100; ++i) {
+        //     final_bone_transforms[i] = mat4_identity();
+        // }
+        recursive_calc_skeleton_pose_without_animation(skeleton);
+    }
+}
+
+//// RENDERER ////
 
 static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     u32 shader = renderer->shader_lit;
@@ -1185,9 +1339,95 @@ static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *
     }
 }
 
+static u32 add_animation_to_skeleton(SE_Skeleton *skeleton) {
+    u32 anim = skeleton->animations_count;
+    skeleton->animations_count++;
+
+    skeleton->animations[anim] = new(SE_Skeletal_Animation);
+    memset(skeleton->animations[anim], 0, sizeof(SE_Skeletal_Animation));
+    return anim;
+}
+
+static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
+        // load scene from file
+    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+
+    if (scene == NULL) {
+        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
+        return;
+    }
+
+    for (u32 i = 0; i < scene->mNumAnimations; ++i) {
+            // add the animation to renderer
+        u32 anim_index = add_animation_to_skeleton(skeleton);
+        SE_Skeletal_Animation *anim = skeleton->animations[anim_index];
+            // update the data of animation
+        anim->duration = scene->mAnimations[i]->mDuration;
+        anim->ticks_per_second = scene->mAnimations[i]->mTicksPerSecond;
+        sestring_init(&anim->name, scene->mAnimations[i]->mName.data); // @leak we need to free anim->name (deinit)
+
+            // load the data of each animated bone
+        anim->animated_bones_count = scene->mAnimations[i]->mNumChannels;
+        anim->animated_bones = malloc(sizeof(SE_Bone_Animations) * anim->animated_bones_count);
+        for (u32 c = 0; c < scene->mAnimations[i]->mNumChannels; ++c) {
+            SE_Bone_Animations *animated_bone = &anim->animated_bones[c];
+            bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[i]);
+        }
+
+    }
+}
+
+u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bool with_skeleton) {
+    u32 result = -1;
+        // load scene from file
+    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+    if (scene == NULL) {
+        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
+        return result;
+    }
+        //-- load meshes within the scene
+    result = renderer->meshes_count; // the first mesh in the chain
+    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
+        struct aiMesh *ai_mesh = scene->mMeshes[i];
+
+        // add a mesh to the renderer
+        renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+        memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+
+            //-- load the skeleton of this mesh
+        if (with_skeleton && ai_mesh->mNumBones > 0) {
+                // load a skinned mesh ready to be animated
+            semesh_construct_skinned_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        } else {
+                // load normal static mesh
+            semesh_construct_normal_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+        }
+            //-- load the material of this mesh
+        semesh_construct_material(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+
+            //-- Link meshes together
+        // if there are multiple meshes within this scene, add them on in a linked list
+        if (i > 0) {
+            renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
+        }
+        renderer->meshes_count++;
+    }
+
+        // -- load animations associated with this mesh
+    if (renderer->meshes[result]->skeleton != NULL && scene->mNumAnimations > 0) {
+        load_animation(renderer->meshes[result]->skeleton, model_filepath);
+    }
+
+    // the final mesh in the linked list has no next (signified by -1 next_mesh_index)
+    renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
+
+    return result;
+}
+
 static void
 serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
-    u32 shader = renderer->shader_lit; // @temp change this to shader_skinned
+    u32 shader = renderer->shader_skinned_mesh;
     seshader_use(renderer->shaders[shader]);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
@@ -1277,6 +1517,7 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     } else
     if (mesh->type == SE_MESH_TYPE_SKINNED) { // SKELETAL ANIMATION
         serender3d_render_set_material_uniforms_skinned(renderer, material, transform);
+        seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
     } else
     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
         primitive = GL_POINTS;
@@ -1385,12 +1626,14 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->point_lights[0].linear    = 0.22f;
     renderer->point_lights[0].quadratic = 0.20f;
 
+    /* default shaders */
     renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
     renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "shaders/shadow_omni_calc.vsd", "shaders/shadow_omni_calc.fsd", "shaders/shadow_omni_calc.gsd");
     renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
     renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
     renderer->shader_sprite = serender3d_add_shader(renderer, "shaders/sprite.vsd", "shaders/sprite.fsd");
+    renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "shaders/skinned_vertex.vsd", "shaders/lit_better.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);

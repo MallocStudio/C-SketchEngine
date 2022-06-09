@@ -42,6 +42,7 @@ void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec
 void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value);
 /// Set a shader uniform
 void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value);
+void seshader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_name, Mat4 *value, u32 count);
 /// returns a pointer to a string on the heap.
 /// ! Needs to be freed by the caller
 char* se_load_file_as_string(const char *filename);

@@ -223,6 +223,17 @@ void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat
     glUniformMatrix4fv(var_loc, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
+void seshader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_name, Mat4 *value, u32 count) {
+    glGetError();
+    GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
+    }
+    seshader_use(shader);
+    glUniformMatrix4fv(var_loc, count, GL_FALSE, (const GLfloat*)value);
+}
+
 char* se_load_file_as_string(const char *file_name) {
     // https://stackoverflow.com/questions/2029103/correct-way-to-read-a-text-file-into-a-buffer-in-c
     char *source = NULL;

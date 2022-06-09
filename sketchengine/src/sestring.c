@@ -134,7 +134,7 @@ f32 sestring_as_f32(SE_String *string) {
     return result;
 }
 
-bool sestring_compare(SE_String *string1, SE_String *string2) {
+bool sestring_compare(const SE_String *string1, const SE_String *string2) {
     if (string1->size == 0 && string2->size == 0) return true;
     if (string1->size == 0 || string2->size == 0) return false;
     if (string1->size != string2->size) return false;

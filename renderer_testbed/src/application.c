@@ -109,16 +109,16 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj", false);
         // app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/fisherboy/source/all_posed.obj", false);
         app->entities[player].has_mesh = true;
-        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", true);
+        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", false);
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.dae", true);
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.fbx", true);
         app->entities[player2].has_mesh = true;
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
         app->entities[plane].has_mesh = true;
 
-        skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
-        app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
-        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, true);
+        // skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
+        // app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
+        // semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, true);
 
         app->entities[bulb].mesh_index = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
         app->entities[bulb].has_mesh = true;
@@ -172,6 +172,10 @@ void app_update(Application *app) {
     seui_resize(ctx, window_w, window_h);
 
     secamera3d_input(&app->camera, &app->input);
+
+    {   // -- animation
+        // seskeleton_calculate_pose(app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, 0.0167f);
+    }
 
 /// ---------------------------------------------------------
 ///                    UI ARRANGEMENT
@@ -324,7 +328,7 @@ void app_render(Application *app) {
         serender_mesh_index(&app->renderer, proj_lines,       mat4_identity());
         serender_mesh_index(&app->renderer, proj_box,         mat4_identity());
         serender_mesh_index(&app->renderer, current_obj_aabb, mat4_identity());
-        serender_mesh_index(&app->renderer, skeleton_mesh, entity_get_transform(&app->entities[player2]));
+        // serender_mesh_index(&app->renderer, skeleton_mesh, entity_get_transform(&app->entities[player2]));
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }
     { // -- ui

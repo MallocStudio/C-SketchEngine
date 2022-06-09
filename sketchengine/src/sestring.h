@@ -36,5 +36,5 @@ void sestring_delete_from_end(SE_String *string, u32 amount);
 f32 sestring_as_f32(SE_String *string);
 
 /// returns true if the strings have the same value stored
-bool sestring_compare(SE_String *string1, SE_String *string2);
+bool sestring_compare(const SE_String *string1, const SE_String *string2);
 #endif // SESTRING_H
