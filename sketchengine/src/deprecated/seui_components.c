@@ -102,7 +102,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
    }
 
     serender2d_add_rect(renderer, rect, get_depth_middleground(ctx), colour);
-    se_add_text_rect(&ctx->txt_renderer, text, rect);
+    se_add_text_rect(&ctx->txt_renderer, text, rect, get_depth_foreground(ctx));
 
     return ui_state == UI_STATE_ACTIVE;
 }
@@ -188,7 +188,7 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     bool previous_setting = ctx->txt_renderer.config_centered;
     ctx->txt_renderer.config_centered = ctx->current_panel->config_item_centered;
 
-    se_add_text_rect(&ctx->txt_renderer, text, apply_margin(rect, ctx->theme.margin));
+    se_add_text_rect(&ctx->txt_renderer, text, apply_margin(rect, ctx->theme.margin), get_depth_foreground(ctx));
 
     // reset config
     ctx->txt_renderer.config_centered = previous_setting;
@@ -282,7 +282,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     }
 
     /* background */
-    serender2d_add_rect(&ctx->renderer, rect, get_depth_middleground(ctx), colour_bg);
+    serender2d_add_rect(&ctx->renderer, rect, get_depth_background(ctx), colour_bg);
     /* left button */
     Rect button = {
         rect.x,
@@ -318,7 +318,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     /* display value */
     char buffer[SESTRING_MAX_NUM_OF_DIGITS];
     sprintf(buffer, "%i", *value);
-    se_add_text_rect(&ctx->txt_renderer, buffer, label);
+    se_add_text_rect(&ctx->txt_renderer, buffer, label, get_depth_foreground(ctx));
 
     return changed;
 }
@@ -346,7 +346,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             colour = colour_highlight;
 
             // allow for increasing and decreasing numerical values while hovering
-            if (ctx->text_input_only_numerical) {
+            if (ctx->text_input_only_numerical && ctx->active != id) { // if we are hovering but have not selected the text input to edit with keyboard
                 f32 numerical_value = sestring_as_f32(text);
                 if (ctx->input->mouse_wheel != 0) {
                     char value_as_string[SESTRING_MAX_NUM_OF_DIGITS];
@@ -382,8 +382,22 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             sestring_clear(&ctx->text_input);
         }
 
-        /* deactivate accept */
-        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM
+            // render the input cursor
+        // Rect cursor;
+        // Vec2 text_size = se_size_text(&ctx->txt_renderer, ctx->text_input.buffer);
+        // cursor.x = text_size.x + rect.x;
+        // cursor.y = text_size.y + rect.y;
+        // cursor.w = se_size_text(&ctx->txt_renderer, "W").x;
+        // cursor.h = text_size.y;
+        // RGBA cursor_colour = RGBA_WHITE;
+        // static f32 alpha = 0;
+        // alpha += 0.167; // @incomplete dummy delta
+        // cursor_colour.a = semath_sin(alpha);
+        // if (alpha > 1000) alpha = 0;
+        // serender2d_add_rect(renderer, cursor, get_depth_foreground(ctx), cursor_colour);
+
+        /* accept */
+        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM // clicked outside
             || seinput_is_key_pressed(ctx->input, SDL_SCANCODE_RETURN)) {
             // copy the input text data over to text
             sestring_clear(text); // get rid of what was there and put in the new edited text
@@ -391,7 +405,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             ctx->active = SEUI_ID_NULL;
             seinput_text_input_deactivate(input);
         } else
-        /* deactivate cancel */
+        /* cancel */
         if (seinput_is_key_pressed(ctx->input, SDL_SCANCODE_ESCAPE)) {
             // DON'T copy the input text data over to text
             ctx->active = SEUI_ID_NULL;
@@ -402,13 +416,13 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     serender2d_add_rect(renderer, rect, get_depth_middleground(ctx), colour);
     if (display_text->size > 0) {
         ctx->txt_renderer.config_colour = colour_text;
-        se_add_text_rect(&ctx->txt_renderer, display_text->buffer, rect);
+        se_add_text_rect(&ctx->txt_renderer, display_text->buffer, rect, get_depth_foreground(ctx));
     } else if (!ctx->text_input_only_numerical) {
         ctx->txt_renderer.config_colour = colour_text_hint;
-        se_add_text_rect(&ctx->txt_renderer, "press to type", rect);
+        se_add_text_rect(&ctx->txt_renderer, "press to type", rect, get_depth_foreground(ctx));
     } else {
         ctx->txt_renderer.config_colour = colour_text_hint;
-        se_add_text_rect(&ctx->txt_renderer, "...", rect);
+        se_add_text_rect(&ctx->txt_renderer, "...", rect, get_depth_foreground(ctx));
     }
     se_text_reset_config(&ctx->txt_renderer);
 }
@@ -453,57 +467,58 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 
             f32 angle = hsv->h * SEMATH_DEG2RAD_MULTIPLIER;
             f32 radius = outer_radius - thickness;
+#if 0   // colour triangle
+            { /* colour triangle */
+                serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
+                if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
+                    hsv->h += 5;
+                }
+            }
+            { /* the cursor on the triangle */
+                Vec2 colour_tip = {
+                    semath_cos(angle) * radius + center.x,
+                    semath_sin(angle) * radius + center.y,
+                };
+                Vec2 white_tip = {
+                    semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                };
+                Vec2 black_tip = {
+                    semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                };
+                Vec2 hsv_point = colour_tip;
 
-            // { /* colour triangle */
-            //     serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
-            //     if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
-            //         hsv->h += 5;
-            //     }
-            // }
-            // { /* the cursor on the triangle */
-            //     Vec2 colour_tip = {
-            //         semath_cos(angle) * radius + center.x,
-            //         semath_sin(angle) * radius + center.y,
-            //     };
-            //     Vec2 white_tip = {
-            //         semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-            //         semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
-            //     };
-            //     Vec2 black_tip = {
-            //         semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-            //         semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
-            //     };
-            //     Vec2 hsv_point = colour_tip;
+                hsv_point.x = lerp(hsv_point.x, white_tip.x, 1 - hsv->s);
+                hsv_point.y = lerp(hsv_point.y, white_tip.y, 1 - hsv->s);
 
-            //     hsv_point.x = lerp(hsv_point.x, white_tip.x, 1 - hsv->s);
-            //     hsv_point.y = lerp(hsv_point.y, white_tip.y, 1 - hsv->s);
+                hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
+                hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
 
-            //     hsv_point.x = lerp(hsv_point.x, black_tip.x, 1 - hsv->v);
-            //     hsv_point.y = lerp(hsv_point.y, black_tip.y, 1 - hsv->v);
+                serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, get_depth_foreground(ctx), 8, RGBA_WHITE, 1);
 
-            //     serender2d_add_circle_outline(&ctx->renderer, hsv_point, 4, get_depth_foreground(ctx), 8, RGBA_WHITE, 1);
+                /* changing the saturation and value based on mouse input */
+                Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+                mouse_pos.y = ctx->viewport.h - mouse_pos.y;
 
-            //     /* changing the saturation and value based on mouse input */
-            //     Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
-            //     mouse_pos.y = ctx->viewport.h - mouse_pos.y;
-
-            //     if (ctx->input->is_mouse_left_down) {
-            //         if (point_overlaps_circle(mouse_pos, center, radius)) {
-            //             Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
-            //             if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
-            //                 // hsv->s = 1 - result.y;
-            //                 // hsv->v = 1 - result.z;
-            //                 hsv->s = result.x;
-            //                 hsv->v = 1-result.y;
-            //             }
-            //         } else
-            //         if (point_overlaps_circle(mouse_pos, center, outer_radius)) {
-            //             f32 cursor_angle = vec2_angle(vec2_sub(mouse_pos, center));
-            //             hsv->h = SEMATH_RAD2DEG(cursor_angle);
-            //             hsv_clamp(hsv);
-            //         }
-            //     }
-            // }
+                if (ctx->input->is_mouse_left_down) {
+                    if (point_overlaps_circle(mouse_pos, center, radius)) {
+                        Vec3 result = cartesian_to_barycentric_coordinates(mouse_pos, colour_tip, white_tip, black_tip);
+                        if (result.x >= 0 && result.x <= 1 && result.y >= 0 && result.y <= 1 && result.z >= 0 && result.z <= 1) {
+                            // hsv->s = 1 - result.y;
+                            // hsv->v = 1 - result.z;
+                            hsv->s = result.x;
+                            hsv->v = 1-result.y;
+                        }
+                    } else
+                    if (point_overlaps_circle(mouse_pos, center, outer_radius)) {
+                        f32 cursor_angle = vec2_angle(vec2_sub(mouse_pos, center));
+                        hsv->h = SEMATH_RAD2DEG(cursor_angle);
+                        hsv_clamp(hsv);
+                    }
+                }
+            }
+#else   // colour rectangle
             { // colour rect
                 f32 extends = outer_radius - thickness;
                 extends *= 0.6f;
@@ -537,6 +552,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 
                 }
             }
+#endif
         }
         { /* buttons and sliders */
             seui_label_hsv(ctx, "hsv", hsv, true);

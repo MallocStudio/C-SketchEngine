@@ -13,9 +13,15 @@ static void setup_text_opengl_data(SE_Text *text) {
     glGenBuffers(1, &text->vbo);
     glBindVertexArray(text->vao);
     glBindBuffer(GL_ARRAY_BUFFER, text->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Text_Vertex) * 6, NULL, GL_DYNAMIC_DRAW);
+
+        // vertex
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Text_Vertex), (void*)offsetof(SE_Text_Vertex, vertex));
+        // depth
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(SE_Text_Vertex), (void*)offsetof(SE_Text_Vertex, depth));
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -95,9 +101,10 @@ static bool load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsi
     return true;
 }
 
-void se_set_text_viewport(SE_Text *text, Rect viewport) {
+void se_set_text_viewport(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth) {
     text->viewport = viewport;
     text->shader_projection_matrix = viewport_to_ortho_projection_matrix(viewport);
+    text->shader_projection_matrix = viewport_to_ortho_projection_matrix_extra(viewport, min_depth, max_depth);
 }
 
 Vec2 se_size_text(SE_Text *text, const char *string) {
@@ -112,7 +119,7 @@ Vec2 se_size_text(SE_Text *text, const char *string) {
     return size;
 }
 
-bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport) {
+bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport, f32 min_depth, f32 max_depth) {
     text->initialised = false;
     if (FT_Init_FreeType(&text->library)) {
         printf("ERROR:FREETYPE: Could not init freetype library\n");
@@ -126,7 +133,7 @@ bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewpo
     load_glyphs_to_atlas(text, fontpath, fontsize);
 
     /* projection matrix */
-    se_set_text_viewport(text, viewport);
+    se_set_text_viewport(text, viewport, min_depth, max_depth);
 
     /* opengl */
     setup_text_opengl_data(text);
@@ -138,8 +145,8 @@ bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewpo
     return text->initialised;
 }
 
-bool se_init_text_default(SE_Text *text, Rect viewport) {
-    return se_init_text(text, DEFAULT_FONT_PATH, 16, viewport);
+bool se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth) {
+    return se_init_text(text, DEFAULT_FONT_PATH, 20, viewport, min_depth, max_depth);
 }
 
 void se_deinit_text(SE_Text *text) {
@@ -161,7 +168,6 @@ void se_deinit_text(SE_Text *text) {
 void se_render_text(SE_Text *text) {
         // gl config
     glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
     /* shader */
@@ -182,6 +188,7 @@ void se_render_text(SE_Text *text) {
         const f32 scale = 1;
         f32 x = queue.rect.x;
         f32 y = queue.rect.y;
+        f32 depth = queue.depth;
 
         if (queue.rect.w > 0 && queue.rect.h > 0) {
             glScissor(queue.rect.x, queue.rect.y, queue.rect.w, queue.rect.h);
@@ -210,15 +217,21 @@ void se_render_text(SE_Text *text) {
             Vec2 uv_max = glyph.uv_max;
 
             // update VBO for each character
-            float vertices[6][4] = {
-                { xpos,     ypos + h,   uv_min.x, uv_min.y },
-                { xpos,     ypos,       uv_min.x, uv_max.y },
-                { xpos + w, ypos,       uv_max.x, uv_max.y },
+            SE_Text_Vertex vertices[6];
+            vertices[0].vertex = (Vec4) { xpos,     ypos + h,   uv_min.x, uv_min.y };
+            vertices[1].vertex = (Vec4) { xpos,     ypos,       uv_min.x, uv_max.y };
+            vertices[2].vertex = (Vec4) { xpos + w, ypos,       uv_max.x, uv_max.y };
 
-                { xpos,     ypos + h,   uv_min.x, uv_min.y },
-                { xpos + w, ypos,       uv_max.x, uv_max.y },
-                { xpos + w, ypos + h,   uv_max.x, uv_min.y }
-            };
+            vertices[3].vertex = (Vec4) { xpos,     ypos + h,   uv_min.x, uv_min.y };
+            vertices[4].vertex = (Vec4) { xpos + w, ypos,       uv_max.x, uv_max.y };
+            vertices[5].vertex = (Vec4) { xpos + w, ypos + h,   uv_max.x, uv_min.y };
+
+            vertices[0].depth = depth;
+            vertices[1].depth = depth;
+            vertices[2].depth = depth;
+            vertices[3].depth = depth;
+            vertices[4].depth = depth;
+            vertices[5].depth = depth;
 
             // update content of VBO memory
             glBindBuffer(GL_ARRAY_BUFFER, text->vbo);
@@ -233,7 +246,6 @@ void se_render_text(SE_Text *text) {
         // reset gl config
     glEnable(GL_CULL_FACE);
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
 
     glDisable(GL_SCISSOR_TEST);
     glBindVertexArray(0);
@@ -245,10 +257,11 @@ void se_text_reset_config(SE_Text *text) {
     text->config_colour = v3f(1, 1, 1);
 }
 
-void se_add_text(SE_Text *text, const char *string, Vec2 pos) {
+void se_add_text(SE_Text *text, const char *string, Vec2 pos, f32 depth) {
     SE_Text_Render_Queue queue_item;
     queue_item.glyph_count = 0;
     queue_item.rect = (Rect) {pos.x, pos.y, 0, 0};
+    queue_item.depth = depth;
     queue_item.colour = text->config_colour;
     queue_item.string_size = se_size_text(text, string);
     for (u32 i = 0; i < SDL_strlen(string); ++i) {
@@ -260,10 +273,11 @@ void se_add_text(SE_Text *text, const char *string, Vec2 pos) {
     text->render_queue_size++;
 }
 
-void se_add_text_rect(SE_Text *text, const char *string, Rect rect) {
+void se_add_text_rect(SE_Text *text, const char *string, Rect rect, f32 depth) { // @incomplete add text and add text rect are almost the exact same, call this procedure from se_add_text
     SE_Text_Render_Queue queue_item;
     queue_item.glyph_count = 0;
     queue_item.rect = rect;
+    queue_item.depth = depth;
     queue_item.colour = text->config_colour;
     queue_item.centered = text->config_centered;
     queue_item.string_size = se_size_text(text, string);

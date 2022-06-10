@@ -6,6 +6,11 @@
 #include "GL/glew.h"
 #include "seshader.h"
 
+typedef struct SE_Text_Vertex {
+    Vec4 vertex;
+    f32  depth;
+} SE_Text_Vertex;
+
 #define SE_TEXT_NUM_OF_GLYPHS 128
 typedef struct SE_Text_Glyph {
     unsigned char character;
@@ -23,6 +28,7 @@ typedef struct SE_Text_Render_Queue {
     u32 glyph_count;
     u32 glyph_indices[255]; // update this number
     Rect rect;
+    f32 depth;
     Vec3 colour;
     bool centered;
     Vec2 string_size;
@@ -52,13 +58,13 @@ typedef struct SE_Text {
 } SE_Text;
 
 /// initialise text with font and load the glyphs
-bool se_init_text_default(SE_Text *text, Rect viewport);
-bool se_init_text(SE_Text *text, const char *fontpath, u32 font_size, Rect viewport);
+bool se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth);
+bool se_init_text(SE_Text *text, const char *fontpath, u32 font_size, Rect viewport, f32 min_depth, f32 max_depth);
 void se_deinit_text(SE_Text *text);
 
 /// add strings to text's queue to render
-void se_add_text(SE_Text *text, const char *string, Vec2 pos);
-void se_add_text_rect(SE_Text *text, const char *string, Rect rect);
+void se_add_text(SE_Text *text, const char *string, Vec2 pos, f32 depth);
+void se_add_text_rect(SE_Text *text, const char *string, Rect rect, f32 depth);
 
 /// Reset the text rendering configuration (alignment) to their default values
 void se_text_reset_config(SE_Text *text);
@@ -66,7 +72,7 @@ void se_text_reset_config(SE_Text *text);
 /// render the text glyphs to the screen
 void se_render_text(SE_Text *text);
 void se_clear_text_render_queue(SE_Text *text);
-void se_set_text_viewport(SE_Text *text, Rect viewport);
+void se_set_text_viewport(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth);
 
 /// size the given string based on the loaded font of text
 Vec2 se_size_text(SE_Text *text, const char *string);

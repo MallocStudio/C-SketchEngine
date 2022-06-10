@@ -11,7 +11,9 @@ RGBA color;
 SE_UI *ctx;
 u32 entity_panel = -1;
 u32 light_panel = -1;
-bool show_hsv = false;
+bool show_hsv                      = false; // toggles
+bool show_texture_viewer_light_map = false; // toggles
+bool show_texture_viewer_soulspear = false; // toggles
 HSV hsv; // @temp
 u32 test_texture; // @temp
 u32 light_map_texture = 0;
@@ -33,8 +35,9 @@ Application_Panel app_panel;
 // Mat4 cheat_transform;
 
 /* entities */
-u32 player = -1;
+u32 player  = -1;
 u32 player2 = -1;
+u32 player3 = -1;
 u32 skeleton_mesh = -1;
 u32 plane = -1;
 u32 bulb = -1; // bulb entity
@@ -79,10 +82,10 @@ void app_init(Application *app, SDL_Window *window) {
 
     { // -- init entities
         player  = app_add_entity(app);
-        player2  = app_add_entity(app);
+        player2 = app_add_entity(app);
+        player3 = app_add_entity(app);
         plane = app_add_entity(app);
         bulb = app_add_entity(app);
-        // player3 = app_add_entity(app);
 
         app->entities[player].position = vec3_zero();
         app->entities[plane].position = (Vec3) {0, -1.2f, 0};
@@ -100,6 +103,10 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player2].oriantation = vec3_zero();
         app->entities[player2].scale = v3f(0.1f, 0.1f, 0.1f);
 
+        app->entities[player3].position = vec3_create(+5, 2, -1);
+        app->entities[player3].oriantation = vec3_zero();
+        app->entities[player3].scale = v3f(0.1f, 0.1f, 0.1f);
+
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
         proj_box = serender3d_add_mesh_empty(&app->renderer);
@@ -109,16 +116,21 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj", false);
         // app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/fisherboy/source/all_posed.obj", false);
         app->entities[player].has_mesh = true;
+
         app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", false);
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.dae", true);
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.fbx", true);
         app->entities[player2].has_mesh = true;
+
+        app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", true);
+        app->entities[player3].has_mesh = true;
+
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
         app->entities[plane].has_mesh = true;
 
-        // skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
-        // app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
-        // semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, true);
+        skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
+        app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
+        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true);
 
         app->entities[bulb].mesh_index = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
         app->entities[bulb].has_mesh = true;
@@ -184,7 +196,6 @@ void app_update(Application *app) {
         seui_reset(ctx);
 
         if (seui_panel(ctx, "light")) {
-            light_panel = ctx->current_panel->index;
             seui_panel_row(ctx, 32, 2);
             seui_label(ctx, "light direction:");
             seui_slider2d(ctx, &app_panel.light_direction);
@@ -202,6 +213,7 @@ void app_update(Application *app) {
             seui_label(ctx, "test input2:");
             seui_input_text(ctx, &app_panel.input_text2);
         }
+        light_panel = ctx->current_panel->index;
 
         // if (seui_panel(ctx, "test bruh")) {
         //     seui_panel_row(ctx, 32, 2);
@@ -211,7 +223,6 @@ void app_update(Application *app) {
         // }
 
         if (seui_panel(ctx, "entity")) {
-            entity_panel = ctx->current_panel->index;
             char label_buffer[255];
             seui_panel_row(ctx, 32, 4);
 
@@ -234,35 +245,60 @@ void app_update(Application *app) {
             seui_label_vec3(ctx, "scale", panel_entity.entity_scale, false);
             *panel_entity.entity_rot = vec3_mul_scalar(rot_in_degrees, SEMATH_DEG2RAD_MULTIPLIER);
         }
-
-        // seui_texture_viewer(ctx, test_texture);
-
-        // if (light_map_texture != 0) {
-        //     seui_texture_viewer(ctx, light_map_texture);
-        // }
+        entity_panel = ctx->current_panel->index;
 
         if (show_hsv) {
             seui_hsv_picker(ctx, &hsv);
             ctx->current_panel->is_closed = false;
+
+            hsv_to_rgb(hsv.h, hsv.s, hsv.v, &app->renderer.light_directional.ambient);
         }
 
-        if (seui_button_at(ctx, "entity", (Rect) {0,0, 128, 64})) {
-            // if (panel_entity_info == NULL) panel_entity_info = seui_add_panel(ctx);
-            ctx->panels[entity_panel].is_closed = false;
+        if (show_texture_viewer_light_map && light_map_texture != 0) {
+            seui_texture_viewer(ctx, light_map_texture);
+            ctx->current_panel->is_closed = false;
         }
 
-        if (seui_button_at(ctx, "light", (Rect) {128,0, 128, 64})) {
-            // if (panel == NULL) panel = seui_add_panel(ctx);
-            ctx->panels[light_panel].is_closed = false;
+        if (show_texture_viewer_soulspear) {
+            seui_texture_viewer(ctx, test_texture);
+            ctx->current_panel->is_closed = false;
         }
 
-        if (seui_button_at(ctx, "hsv", (Rect) {252, 0, 128, 64})) {
-            show_hsv = !show_hsv;
+        {   //-- PANELLESS WIDGETS
+            ctx->current_panel = NULL; // unbind these widgets from a panel
+            f32 cursor_x = 0;
+            f32 button_size = 200;
+            if (seui_button_at(ctx, "entity", (Rect) {cursor_x,0, button_size, 64})) {
+                ctx->panels[entity_panel].is_closed = false;
+            }
+            cursor_x += button_size;
+
+            if (seui_button_at(ctx, "light", (Rect) {cursor_x,0, button_size, 64})) {
+                ctx->panels[light_panel].is_closed = false;
+            }
+            cursor_x += button_size;
+
+            if (seui_button_at(ctx, "skeleton", (Rect) {cursor_x, 0, button_size, 64})) {
+                app->entities[player2].should_render_mesh = !app->entities[player2].should_render_mesh;
+            }
+            cursor_x += button_size;
+
+            if (seui_button_at(ctx, "hsv", (Rect) {cursor_x, 0, button_size, 64})) {
+                show_hsv = !show_hsv;
+            }
+            cursor_x += button_size;
+
+            if (seui_button_at(ctx, "texture viewer 1", (Rect) {cursor_x, 0, button_size, 64})) {
+                show_texture_viewer_light_map = !show_texture_viewer_light_map;
+            }
+            cursor_x += button_size;
+
+            if (seui_button_at(ctx, "texture viewer 2", (Rect) {cursor_x, 0, button_size, 64})) {
+                show_texture_viewer_soulspear = !show_texture_viewer_soulspear;
+            }
+            cursor_x += button_size;
         }
 
-        if (seui_button_at(ctx, "toggle plyr2", (Rect) {252 + 128, 0, 128, 64})) {
-            app->entities[player2].should_render_mesh = !app->entities[player2].should_render_mesh;
-        }
     }
 
     { // -- calculate world aabb
@@ -328,7 +364,8 @@ void app_render(Application *app) {
         serender_mesh_index(&app->renderer, proj_lines,       mat4_identity());
         serender_mesh_index(&app->renderer, proj_box,         mat4_identity());
         serender_mesh_index(&app->renderer, current_obj_aabb, mat4_identity());
-        // serender_mesh_index(&app->renderer, skeleton_mesh, entity_get_transform(&app->entities[player2]));
+        if (skeleton_mesh != -1) serender_mesh_index(&app->renderer, skeleton_mesh, entity_get_transform(&app->entities[player2]));
+
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }
     { // -- ui
