@@ -22,6 +22,9 @@ typedef struct SE_Shader {
 /// Creates GL resources and compiles & links the given shaders
 void seshader_init_from(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename);
 void seshader_init_from_with_geometry(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename, const char *geometry);
+    /// Compile the given source codes. For better error reporting, give each src code a name
+void seshader_init_from_string(SE_Shader *sp, const char *vertex_src, const char *frag_src, const char* vertex_shader_name, const char *fragment_shader_name);
+
 /// Unloads GL resources used by the shader program
 void seshader_deinit(SE_Shader *shader);
 /// Binds the given shader for the GPU to use

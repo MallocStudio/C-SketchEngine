@@ -1,16 +1,13 @@
 #include "seshader.h"
 #include <stdio.h> // for loading file as string
 
-void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
+void seshader_init_from_string(SE_Shader *sp, const char *vertex_src, const char *frag_src, const char* vertex_shader_name, const char *fragment_shader_name) {
     sp->loaded_successfully = true; // set to false later on if errors occure
     sp->has_geometry = false;
 
     sp->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     sp->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     sp->shader_program = glCreateProgram();
-
-    char *vertex_src = se_load_file_as_string(vertex_filename);
-    char *frag_src = se_load_file_as_string(fragment_filename);
 
     GLchar error_log[512];
     GLint success = 0;
@@ -21,12 +18,12 @@ void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *
     glGetShaderiv(sp->vertex_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         // something failed with the vertex shader compilation
-        printf ("vertex shader %s failed with error:\n", vertex_filename);
+        printf ("vertex shader %s failed with error:\n", vertex_shader_name);
         glGetShaderInfoLog(sp->vertex_shader, 512, NULL, error_log);
         printf("%s\n", error_log);
         sp->loaded_successfully = false;
     } else {
-        printf ("\\%s\\ compiled successfully.\n", vertex_filename);
+        printf ("\\%s\\ compiled successfully.\n", vertex_shader_name);
         // printf("%s\n", vertex_src);
     }
 
@@ -35,12 +32,12 @@ void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *
 
     glGetShaderiv(sp->fragment_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        printf ("fragment shader %s failed with error:\n", fragment_filename);
+        printf ("fragment shader %s failed with error:\n", fragment_shader_name);
         glGetShaderInfoLog(sp->fragment_shader, 512, NULL, error_log);
         printf("%s\n", error_log);
         sp->loaded_successfully = false;
     } else {
-        printf ("\\%s\\ compiled successfully.\n", fragment_filename);
+        printf ("\\%s\\ compiled successfully.\n", fragment_shader_name);
         // printf("%s\n", frag_src);
     }
 
@@ -49,7 +46,7 @@ void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *
     glLinkProgram(sp->shader_program);
     glGetProgramiv(sp->shader_program, GL_LINK_STATUS, &success);
     if (!success) {
-        printf ("Error linking shaders \\%s\\ and \\%s\\\n", vertex_filename, fragment_filename);
+        printf ("Error linking shaders \\%s\\ and \\%s\\\n", vertex_shader_name, fragment_shader_name);
         glGetProgramInfoLog(sp->shader_program, 512, NULL, error_log);
         printf("%s\n", error_log);
         sp->loaded_successfully = false;
@@ -63,7 +60,12 @@ void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *
         glDeleteShader(sp->fragment_shader);
         glDeleteProgram(sp->shader_program);
     }
+}
 
+void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
+    char *vertex_src = se_load_file_as_string(vertex_filename);
+    char *frag_src = se_load_file_as_string(fragment_filename);
+    seshader_init_from_string(sp, vertex_src, frag_src, vertex_filename, fragment_filename);
     free(vertex_src);
     free(frag_src);
 }

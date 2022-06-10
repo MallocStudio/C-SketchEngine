@@ -99,7 +99,6 @@ int main() {
         last = now;
         now = SDL_GetPerformanceCounter();
         delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
-        printf("delta time: %f\n", (f32)delta_time);
         app_update(app, (f32)delta_time);
         app_render(app);
 
