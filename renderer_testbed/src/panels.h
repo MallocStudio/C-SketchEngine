@@ -6,10 +6,11 @@
 
 typedef struct Panel_Entity {
     u32  entity_id;
-    u32  *entity_mesh;  // not owned
-    Vec3 *entity_pos;   // not owned
-    Vec3 *entity_rot;   // not owned
-    Vec3 *entity_scale; // not owned
+    u32  *entity_mesh;      // not owned
+    Vec3 *entity_pos;       // not owned
+    Vec3 *entity_rot;       // not owned
+    Vec3 *entity_scale;     // not owned
+    SE_String *entity_name; // not owned
 } Panel_Entity;
 
 #endif // PANELS_H

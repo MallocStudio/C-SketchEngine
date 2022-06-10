@@ -26,6 +26,11 @@ static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_inde
     p->entity_pos   = &entity->position;
     p->entity_rot   = &entity->oriantation;
     p->entity_scale = &entity->scale;
+    if (entity->has_name) {
+        p->entity_name  = &entity->name;
+    } else {
+        p->entity_name = NULL;
+    }
 }
 
 Application_Panel app_panel;
@@ -88,49 +93,48 @@ void app_init(Application *app, SDL_Window *window) {
         bulb = app_add_entity(app);
 
         app->entities[player].position = vec3_zero();
-        app->entities[plane].position = (Vec3) {0, -1.2f, 0};
-        app->entities[bulb].position = vec3_zero();
-
+        app->entities[player].oriantation = vec3_zero();
         app->entities[player].scale = vec3_one();
-        app->entities[plane].scale = vec3_one();
+        app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj", false);
+        // app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/fisherboy/source/all_posed.obj", false);
+        app->entities[player].has_mesh = true;
+
+        app->entities[bulb].position = vec3_zero();
+        app->entities[bulb].oriantation = vec3_zero();
         app->entities[bulb].scale = vec3_one();
 
-        app->entities[player].oriantation = vec3_zero();
+        app->entities[plane].position = (Vec3) {0, -1.2f, 0};
         app->entities[plane].oriantation = vec3_zero();
-        app->entities[bulb].oriantation = vec3_zero();
+        app->entities[plane].scale = vec3_one();
+        app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
+        app->entities[plane].has_mesh = true;
 
         app->entities[player2].position = vec3_create(-5, 2, -1);
         app->entities[player2].oriantation = vec3_zero();
         app->entities[player2].scale = v3f(0.1f, 0.1f, 0.1f);
+        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", false);
+        app->entities[player2].has_name = true;
+        sestring_init(&app->entities[player2].name, "without anim");
+        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.dae", true);
+        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.fbx", true);
+        app->entities[player2].has_mesh = true;
 
         app->entities[player3].position = vec3_create(+5, 2, -1);
         app->entities[player3].oriantation = vec3_zero();
         app->entities[player3].scale = v3f(0.1f, 0.1f, 0.1f);
+        app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", true);
+        app->entities[player3].has_name = true;
+        sestring_init(&app->entities[player3].name, "with anim");
+        app->entities[player3].has_mesh = true;
+        skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
+        app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
+        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true);
 
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
         proj_box = serender3d_add_mesh_empty(&app->renderer);
         current_obj_aabb = serender3d_add_mesh_empty(&app->renderer);
 
-        /* meshes */
-        app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/soulspear/soulspear.obj", false);
-        // app->entities[player].mesh_index = serender3d_load_mesh(&app->renderer, "assets/models/fisherboy/source/all_posed.obj", false);
-        app->entities[player].has_mesh = true;
-
-        app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", false);
-        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.dae", true);
-        // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.fbx", true);
-        app->entities[player2].has_mesh = true;
-
-        app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", true);
-        app->entities[player3].has_mesh = true;
-
-        app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
-        app->entities[plane].has_mesh = true;
-
-        skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
-        app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
-        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true);
 
         app->entities[bulb].mesh_index = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
         app->entities[bulb].has_mesh = true;
@@ -175,7 +179,7 @@ void app_deinit(Application *app) {
     seui_deinit(ctx);
 }
 
-void app_update(Application *app) {
+void app_update(Application *app, f32 delta_time) {
     // -- input
     u32 window_w, window_h;
     SDL_GetWindowSize(app->window, &window_w, &window_h);
@@ -236,8 +240,13 @@ void app_update(Application *app) {
             seui_label(ctx, "mesh:");
             seui_label(ctx, label_buffer);
 
-            // SE_String entity_info;
-            // sestring_init(&entity_info,
+                // name
+            if (panel_entity.entity_name != NULL) {
+                seui_panel_row(ctx, 32, 2);
+                seui_label(ctx, "name:");
+                seui_label(ctx, panel_entity.entity_name->buffer);
+            }
+
             /* pos, rot, scale */
             Vec3 rot_in_degrees = vec3_mul_scalar(*panel_entity.entity_rot, SEMATH_RAD2DEG_MULTIPLIER);
             seui_label_vec3(ctx, "position", panel_entity.entity_pos, true);
@@ -364,7 +373,7 @@ void app_render(Application *app) {
         serender_mesh_index(&app->renderer, proj_lines,       mat4_identity());
         serender_mesh_index(&app->renderer, proj_box,         mat4_identity());
         serender_mesh_index(&app->renderer, current_obj_aabb, mat4_identity());
-        if (skeleton_mesh != -1) serender_mesh_index(&app->renderer, skeleton_mesh, entity_get_transform(&app->entities[player2]));
+        if (skeleton_mesh != -1) serender_mesh_index(&app->renderer, skeleton_mesh, entity_get_transform(&app->entities[player3]));
 
         // serender3d_render_mesh(&app->renderer, bulb_mesh,        mat4_translation(app->renderer.point_lights[0].position));
     }

@@ -6,39 +6,10 @@
 #include "sestring.h"
 #include "stdio.h"
 
-// #include "khash.h"
-
-// typedef struct Custom_Struct {
-//     i32 value1;
-//     i32 value2;
-// } Custom_Struct;
-
-// KHASH_INIT(custom, const char*, i32, true, kh_str_hash_func, kh_str_hash_equal);
-
-// void test () {
-//     i32 ret, is_missing;
-//     khiter_t iter;
-//     kh_custom_t *map = kh_init_custom();
-//     kh_put_custom(map, "key1", &ret);
-//     // kh_get_custom(map, "key1");
-//     // // iter through map
-//     // i32 i = 0;
-//     // for (iter = kh_begin(map); iter != kh_end(map); ++iter) {
-//     //     if (kh_exist(map, iter)) kh_value(map, iter) = i;
-//     //     i++;
-//     // }
-//     for (iter = kh_begin(map); iter != kh_end(map); ++iter) {
-//         printf("key: %s ; value: %i\n", kh_key(map, iter), kh_val(map, iter));
-//     }
-//     kh_destroy_custom(map);
-// }
-
 int main() {
     SDL_Window *window;
     i32 window_w = 1600;
     i32 window_h = 1024;
-    // i32 window_w = 1024;
-    // i32 window_h = 1024;
     // -- init SDL
     ERROR_ON_NOTZERO_SDL(SDL_Init(SDL_INIT_EVERYTHING), "init_sdl");
 
@@ -75,6 +46,10 @@ int main() {
     // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
+        // delta time
+    Uint64 now  = SDL_GetPerformanceCounter();
+    Uint64 last = 0;
+    f64 delta_time = 0;
     // -- main loop
     while (!app->should_quit) {
         // -- events
@@ -121,7 +96,11 @@ int main() {
             }
         }
 
-        app_update(app);
+        last = now;
+        now = SDL_GetPerformanceCounter();
+        delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
+        printf("delta time: %f\n", (f32)delta_time);
+        app_update(app, (f32)delta_time);
         app_render(app);
 
         SDL_GL_SwapWindow(window);

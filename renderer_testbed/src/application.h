@@ -43,7 +43,7 @@ typedef struct Application {
 
 void app_init(Application *app, SDL_Window *window);
 void app_deinit(Application *app);
-void app_update(Application *app);
+void app_update(Application *app, f32 delta_time);
 void app_render(Application *app);
 u32 app_add_entity(Application *app);
 
