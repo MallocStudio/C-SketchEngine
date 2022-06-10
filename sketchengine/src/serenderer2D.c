@@ -1,11 +1,71 @@
 #include "serenderer2D.h"
 
+static const char *vertex_shader_src = "                               \n\
+#version 450                                                    \n\
+                                                                \n\
+layout ( location = 0 ) in vec2 in_pos;                         \n\
+layout ( location = 1 ) in float in_depth;                      \n\
+layout ( location = 2 ) in vec4 in_rgba;                        \n\
+layout ( location = 3 ) in vec2 in_uv;                          \n\
+                                                                \n\
+uniform mat4 view_projection;                                   \n\
+                                                                \n\
+out vec4 _rgba;                                                 \n\
+                                                                \n\
+void main () {                                                  \n\
+    gl_Position = view_projection * vec4(in_pos, in_depth, 1);  \n\
+    _rgba = in_rgba;                                            \n\
+}";
+
+static const char *fragment_shader_src = "                     \n\
+#version 450                                            \n\
+                                                        \n\
+in vec4 _rgba;                                          \n\
+out vec4 FragColour;                                    \n\
+                                                        \n\
+void main () {                                          \n\
+    FragColour = _rgba;                                 \n\
+}";
+
+static const char *vertex_textured_shader_src = "                      \n\
+#version 450                                                    \n\
+                                                                \n\
+layout ( location = 0 ) in vec2 in_pos;                         \n\
+layout ( location = 1 ) in float in_depth;                      \n\
+layout ( location = 2 ) in vec4 in_rgba;                        \n\
+layout ( location = 3 ) in vec2 in_uv;                          \n\
+                                                                \n\
+uniform mat4 view_projection;                                   \n\
+                                                                \n\
+out vec4 _rgba;                                                 \n\
+out vec2 _uv;                                                   \n\
+                                                                \n\
+void main () {                                                  \n\
+    gl_Position = view_projection * vec4(in_pos, in_depth, 1);  \n\
+    _rgba = in_rgba;                                            \n\
+    _uv = in_uv;                                                \n\
+}";
+
+static const char *fragment_textured_shader_src = "    \n\
+#version 450                                    \n\
+                                                \n\
+in vec4 _rgba;                                  \n\
+in vec2 _uv;                                    \n\
+out vec4 FragColour;                            \n\
+                                                \n\
+uniform sampler2D diffuse;                      \n\
+                                                \n\
+void main () {                                  \n\
+    FragColour = texture(diffuse, _uv) * _rgba; \n\
+}";
 
 void serender2d_init (SE_Renderer2D *renderer, Rect viewport, f32 min_depth, f32 max_depth) {
     renderer->initialised = true;
         // init shaders
-    seshader_init_from(&renderer->shader, "shaders/2D.vsd", "shaders/2D.fsd");
-    seshader_init_from(&renderer->shader_textured, "shaders/2D_Textured.vsd", "shaders/2D_Textured.fsd");
+    // seshader_init_from(&renderer->shader, "shaders/2D.vsd", "shaders/2D.fsd");
+    // seshader_init_from(&renderer->shader_textured, "shaders/2D_Textured.vsd", "shaders/2D_Textured.fsd");
+    seshader_init_from_string(&renderer->shader, vertex_shader_src, fragment_shader_src, "2D Vertex Shader", "2D Fragment Shader");
+    seshader_init_from_string(&renderer->shader_textured, vertex_textured_shader_src, fragment_textured_shader_src, "2D Vertex Textured Shader", "2D Fragment Textured Shader");
         // if shaders are not loaded successfully do not continue
     if (!renderer->shader.loaded_successfully || !renderer->shader_textured.loaded_successfully) {
         renderer->initialised = false;

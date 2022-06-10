@@ -1,6 +1,32 @@
 #include "setext.h"
 #include "sesprite.h"
 
+static const char *vertex_shader_src ="        \n\
+#version 330 core                       \n\
+layout (location = 0) in vec4 vertex;   \n\
+layout (location = 1) in float depth;   \n\
+out vec2 TexCoords;                     \n\
+                                        \n\
+uniform mat4 projection;                \n\
+                                        \n\
+void main() {                           \n\
+    gl_Position = projection * vec4(vertex.xy, depth, 1.0); \n\
+    TexCoords = vertex.zw;              \n\
+}";
+
+static const char *fragment_shader_src ="      \n\
+#version 330 core                       \n\
+in vec2 TexCoords;                      \n\
+out vec4 color;                         \n\
+                                        \n\
+uniform sampler2D atlas;                \n\
+uniform vec3 textColor;                 \n\
+                                        \n\
+void main() {                           \n\
+    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(atlas, TexCoords).r); \n\
+    color = vec4(textColor, 1.0) * sampled; \n\
+}";
+
 /* default fonts */
 // #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
 // #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
@@ -127,7 +153,7 @@ bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewpo
     }
 
     /* shader */
-    seshader_init_from(&text->shader_program, "shaders/Text.vsd", "shaders/Text.fsd");
+    seshader_init_from_string(&text->shader_program, vertex_shader_src, fragment_shader_src, "Text Vertex Shader", "Text Fragment Shader");
 
     /* load glyphs to atlas */
     load_glyphs_to_atlas(text, fontpath, fontsize);
