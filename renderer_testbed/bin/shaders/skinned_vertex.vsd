@@ -1,3 +1,4 @@
+/// To be matched with better_lit.fsd
 #version 450
 
 // vertex
@@ -17,7 +18,7 @@ const int MAX_BONES = 100; // must match with SE_SKELETON_BONES_CAPACITY of SE_S
 const int MAX_BONE_WEIGHTS = 4;
 uniform mat4 bones[MAX_BONES];
 
-// ! THIS MUST MATCH WITH LIT.VSD OUTPUT
+// ! THIS MUST MATCH WITH BETTER_LIT.FSD INPUT
 out vec2 _TexCoord;
 out vec3 _Normal;
 out vec3 _Position;

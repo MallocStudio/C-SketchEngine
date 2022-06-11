@@ -84,19 +84,27 @@ typedef struct SE_Bone_Node { // contains skeletal heirarchy information of a gi
 
 #define SE_SKELETON_BONES_CAPACITY 100 // ! needs to match with MAX_BONES in skinned_vertex.vsd
 #define SE_SKELETON_MAX_ANIMATIONS 100
-typedef struct SE_Skeleton { // contains skeletal heirarchy, bone info,
+    /// contains skeletal heirarchy, bone info
+typedef struct SE_Skeleton {
+        // array of bone data (index into bones and offset matrix)
     u32 bone_count;
-    SE_Bone_Info bones_info[SE_SKELETON_BONES_CAPACITY]; // array of bone data (index into bones and offset matrix)
+    SE_Bone_Info bones_info[SE_SKELETON_BONES_CAPACITY];
+        // the heirarchy of bones and their information
     u32 bone_node_count;
-    SE_Bone_Node bone_nodes[SE_SKELETON_BONES_CAPACITY]; // the heirarchy of bones and their information
-        // animations associated with this skeleton. The animations are loaded when the skeleton is loaded from a file
+    SE_Bone_Node bone_nodes[SE_SKELETON_BONES_CAPACITY];
+
+        // animations associated with this skeleton. The animations are loaded
+        // when the skeleton is loaded from a file
     u32 animations_count;
-    SE_Skeletal_Animation *animations[SE_SKELETON_MAX_ANIMATIONS]; // maximum of a hundered animations
-    Mat4 final_pose[SE_SKELETON_BONES_CAPACITY]; // the pose sent to GPU, call seskeleton_calculate_pose to update this pose
+    u32 current_animation;
+    SE_Skeletal_Animation *animations[SE_SKELETON_MAX_ANIMATIONS];
+
+        // the pose sent to GPU, call seskeleton_calculate_pose to update this pose
+    Mat4 final_pose[SE_SKELETON_BONES_CAPACITY];
 } SE_Skeleton;
 
     /// We do not have an animator class, instead use this procedure.
-    /// Based on the given skeleton, animation, and animation_time, update the pose of the skeleton.
+    /// Based on the given skeleton, skeleton->current_animation, and animation_time, we update the pose of the skeleton.
     /// The result is stored in final_bone_transforms and final_bone_transforms_count.
 void seskeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
 
@@ -164,8 +172,9 @@ void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 p
 void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width);
 void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width);
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
-    /// generate a mesh of type line based on the given skeleton
-void semesh_generate_skinned_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton, bool line);
+    /// If line is true, we will render the bones as lines not as points
+    /// If with_animation is true, the animation REFERENCE is copied over to this mesh.
+void semesh_generate_skinned_skeleton(SE_Mesh *mesh, SE_Skeleton *skeleton, bool line, bool with_animation);
 
 //// Light ////
 
@@ -225,13 +234,14 @@ typedef struct SE_Renderer3D {
     u32 shaders_count;
     SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
 
-    u32 shader_lit;                 // handles static meshes affected by light and the material system
-    u32 shader_skinned_mesh;        // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
-    u32 shader_shadow_calc;         // handles directional light shadow calulation
-    u32 shader_shadow_omnidir_calc; // handls point light shadow calculation
-    u32 shader_lines;               // handles rendering lines
-    u32 shader_outline;             // handles rendering outlines of static meshes
-    u32 shader_sprite;              // handles rendering sprites
+    u32 shader_lit;                     // handles static meshes affected by light and the material system
+    u32 shader_skinned_mesh;            // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
+    u32 shader_shadow_calc;             // handles directional light shadow calulation
+    u32 shader_shadow_omnidir_calc;     // handls point light shadow calculation
+    u32 shader_lines;                   // handles rendering lines
+    u32 shader_outline;                 // handles rendering outlines of static meshes
+    u32 shader_sprite;                  // handles rendering sprites
+    u32 shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
 
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];

@@ -3,7 +3,7 @@
 #include "seui.h"
 #include "panels.h"
 #include "serenderer2D.h"
-
+#include "seanimation.h"
 /* @temp */
 RGBA color;
 
@@ -18,6 +18,7 @@ HSV hsv; // @temp
 u32 test_texture; // @temp
 u32 light_map_texture = 0;
 Panel_Entity panel_entity;
+SE_Animation animation;
 
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
     Entity *entity  = &app->entities[entity_index];
@@ -103,12 +104,14 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[bulb].oriantation = vec3_zero();
         app->entities[bulb].scale = vec3_one();
 
+            //-- plane
         app->entities[plane].position = (Vec3) {0, -1.2f, 0};
         app->entities[plane].oriantation = vec3_zero();
         app->entities[plane].scale = vec3_one();
         app->entities[plane].mesh_index = serender3d_add_plane(&app->renderer, (Vec3) {20.0f, 20.0f, 20.0f});
         app->entities[plane].has_mesh = true;
 
+            //-- player 2
         app->entities[player2].position = vec3_create(-5, 2, -1);
         app->entities[player2].oriantation = vec3_zero();
         app->entities[player2].scale = v3f(0.1f, 0.1f, 0.1f);
@@ -119,6 +122,7 @@ void app_init(Application *app, SDL_Window *window) {
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.fbx", true);
         app->entities[player2].has_mesh = true;
 
+            //-- player 3
         app->entities[player3].position = vec3_create(+5, 2, -1);
         app->entities[player3].oriantation = vec3_zero();
         app->entities[player3].scale = v3f(0.1f, 0.1f, 0.1f);
@@ -126,15 +130,19 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player3].has_name = true;
         sestring_init(&app->entities[player3].name, "with anim");
         app->entities[player3].has_mesh = true;
+
+            //-- skeleton mesh of player 3
         skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
         app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
-        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true);
+        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true, true);
+        se_assert(app->renderer.meshes[skeleton_mesh]->skeleton != NULL);
+        se_assert(app->renderer.meshes[skeleton_mesh]->skeleton->animations_count > 0);
+        app->renderer.meshes[skeleton_mesh]->skeleton->current_animation = 0;
 
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
         proj_box = serender3d_add_mesh_empty(&app->renderer);
         current_obj_aabb = serender3d_add_mesh_empty(&app->renderer);
-
 
         app->entities[bulb].mesh_index = serender3d_add_sprite_mesh(&app->renderer, v2f(1, 1));
         app->entities[bulb].has_mesh = true;
@@ -143,16 +151,15 @@ void app_init(Application *app, SDL_Window *window) {
         app->renderer.meshes[app->entities[bulb].mesh_index]->material_index = bulb_material;
     }
 
+    {   //-- Animation
+        animation.duration = app->renderer.meshes[skeleton_mesh]->skeleton->animations[0]->duration;
+        animation.speed = app->renderer.meshes[skeleton_mesh]->skeleton->animations[0]->ticks_per_second;
+        animation.current_frame = 0;
+    }
+
     { // -- init UI
         ctx = new (SE_UI);
-        // seui_init(ctx, &app->input, (Rect) {0,0, window_w, window_h}, 0.1f, 100);
         seui_init(ctx, &app->input, (Rect) {0,0, window_w, window_h}, -1000, 1000);
-
-        // panel = seui_add_panel(ctx);
-        // panel_entity_info = seui_add_panel(ctx);
-        // seui_panel_setup(panel,             (Rect) {0, 0, 300, 400}, v2f(128 * 2, 128 * 2), false, 32, 1);
-        // seui_panel_setup(panel_entity_info, (Rect) {0, 500, 64, 64}, v2f(128 * 2, 128 * 2), false, 32, 2);
-        // test_colour_picker = seui_add_panel(ctx);
 
         panel_init(&app_panel);
         panel_entity_init(app, &panel_entity, player2);
@@ -160,18 +167,6 @@ void app_init(Application *app, SDL_Window *window) {
         SE_Texture soulspear_texture = app->renderer.materials[app->renderer.meshes[app->entities[player].mesh_index]->material_index]->texture_diffuse;
         test_texture = soulspear_texture.id;
     }
-    // { // -- constructed UI
-    //     SE_Constructed_Panel root = {
-    //         .config_centered = true,
-    //         .config_pos = v2f(300, 300),
-
-    //         .children = {
-    //             (SE_Constructed) (SE_Constructed_Button) {
-    //                 .text = "test button"
-    //             }
-    //         }
-    //     };
-    // }
 }
 
 void app_deinit(Application *app) {
@@ -189,8 +184,11 @@ void app_update(Application *app, f32 delta_time) {
 
     secamera3d_input(&app->camera, &app->input);
 
-    {   // -- animation
-        // seskeleton_calculate_pose(app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, 0.0167f);
+    {   //-- Animation
+        f32 current_frame = seanimation_update(&animation, delta_time);
+        // seskeleton_calculate_pose(app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, current_frame);
+        seskeleton_calculate_pose(app->renderer.meshes[skeleton_mesh]->skeleton, current_frame);
+        printf("current frame: %f\n", current_frame);
     }
 
 /// ---------------------------------------------------------

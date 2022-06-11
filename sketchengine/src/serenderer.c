@@ -110,6 +110,7 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
 static void sedefault_mesh(SE_Mesh *mesh) {
     mesh->next_mesh_index = -1;
     mesh->type = SE_MESH_TYPE_NORMAL;
+    mesh->skeleton = NULL;
 }
 
 void semesh_deinit(SE_Mesh *mesh) {
@@ -495,7 +496,6 @@ static void recursive_generate_skeleton_verts_as_points
 
         // draw a point at the given bone position
     verts[*vert_count].position = mat4_get_translation(final_transform);
-    verts[*vert_count].texture_coord = v2f(0, 0);
     (*vert_count)++;
     indices[*index_count] = node->id;
     (*index_count)++;
@@ -506,8 +506,8 @@ static void recursive_generate_skeleton_verts_as_points
     }
 }
 
-void semesh_generate_skinned_skeleton // if line is true, we will render the bones as lines not as points
-(SE_Mesh *mesh, const SE_Skeleton *skeleton, bool line) {
+void semesh_generate_skinned_skeleton
+(SE_Mesh *mesh, SE_Skeleton *skeleton, bool line, bool with_animation) {
         // generate buffers
     glGenBuffers(1, &mesh->vbo);
     glGenVertexArrays(1, &mesh->vao);
@@ -523,6 +523,7 @@ void semesh_generate_skinned_skeleton // if line is true, we will render the bon
     u32 index_count;
     u32 *indices;
     if (line) {
+            //* line rendering
         vert_count = 0;
         verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
         index_count = 0;
@@ -537,7 +538,8 @@ void semesh_generate_skinned_skeleton // if line is true, we will render the bon
         mesh->aabb = (AABB3D) {0};
         mesh->line_width = 2;
         mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
-    } else {// point rendering
+    } else {
+            //* point rendering
         vert_count = 0;
         verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
         index_count = 0;
@@ -554,25 +556,13 @@ void semesh_generate_skinned_skeleton // if line is true, we will render the bon
         mesh->type = SE_MESH_TYPE_POINT; // sense we're going to generate a skeleton we're going to be lines
     }
 
-        // fill data
+        //* fill data
     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count,    verts, GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
 
-        // -- enable position
+        // enable position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
-        // -- enable normal
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, normal));
-        // -- enable uv
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, texture_coord));
-        // -- enable tangent
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, tangent));
-        // -- enable bitangent
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
 
     free(verts);
     free(indices);
@@ -581,6 +571,9 @@ void semesh_generate_skinned_skeleton // if line is true, we will render the bon
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        //* Animation
+    mesh->skeleton = skeleton;
 }
 
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
@@ -1183,7 +1176,7 @@ static void recursive_calculate_bone_pose // calculate the pose of the given bon
     // SE_Bone_Animations *animated_bone = &animation->animated_bones[node->id]; // double check that the node->id is a valid way of query
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
-        if (sestring_compare(&animation->animated_bones[i].name, &node->name)) {
+        if (sestring_compare(&animation->animated_bones[i].name, &node->name)) { // @debug NOTE(Matin): Okay this array is broken because every entry has the same name and everything. We're not generating this array correctly
             animated_bone = &animation->animated_bones[i];
             break;
         }
@@ -1214,19 +1207,14 @@ static void recursive_calc_skeleton_pose_without_animation(SE_Skeleton *skeleton
     }
 }
 
-void seskeleton_calculate_pose // calculate the pose of the skeleton based on the given animation
-(SE_Skeleton *skeleton, f32 delta_time) {
-    if (skeleton->animations_count > 0) {
-        static f32 animation_time = 0;
-        animation_time += delta_time;
-        if (animation_time > skeleton->animations[0]->duration) animation_time = 0;
-        recursive_calculate_bone_pose(skeleton, skeleton->animations[0], animation_time, &skeleton->bone_nodes[0], mat4_identity());
-    } else {
-        // for (u32 i = 0; i < 100; ++i) {
-        //     final_bone_transforms[i] = mat4_identity();
-        // }
-        recursive_calc_skeleton_pose_without_animation(skeleton);
-    }
+void seskeleton_calculate_pose
+(SE_Skeleton *skeleton, f32 frame) {
+    se_assert(skeleton->animations_count > 0);
+    // if (skeleton->animations_count > 0) {
+        recursive_calculate_bone_pose(skeleton, skeleton->animations[skeleton->current_animation], frame, &skeleton->bone_nodes[0], mat4_identity());
+    // } else {
+        // recursive_calc_skeleton_pose_without_animation(skeleton);
+    // }
 }
 
 //// RENDERER ////
@@ -1371,7 +1359,7 @@ static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
         anim->animated_bones = malloc(sizeof(SE_Bone_Animations) * anim->animated_bones_count);
         for (u32 c = 0; c < scene->mAnimations[i]->mNumChannels; ++c) {
             SE_Bone_Animations *animated_bone = &anim->animated_bones[c];
-            bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[i]);
+            bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[c]);
         }
 
     }
@@ -1505,7 +1493,16 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
         primitive = GL_LINES;
         glLineWidth(mesh->line_width);
-        serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+        // if (mesh->skeleton != NULL && mesh->skeleton->animations_count > 0) {
+        //         // used for animated skeleton
+        //     // serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+        //     serender3d_render_set_material_uniforms_skinned(renderer, material, transform);
+        //     seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+        // } else {
+        //         // render the line without animation
+        //     serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+        // }
+            serender3d_render_set_material_uniforms_lines(renderer, material, transform);
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         serender3d_render_set_material_uniforms_lit(renderer, material, transform);
@@ -1517,6 +1514,9 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     } else
     if (mesh->type == SE_MESH_TYPE_SKINNED) { // SKELETAL ANIMATION
         serender3d_render_set_material_uniforms_skinned(renderer, material, transform);
+        // for (u32 i = 0; i < SE_SKELETON_BONES_CAPACITY; ++i) { // @temp // @debug for debugging purposes
+        //     mesh->skeleton->final_pose[i] = mat4_identity();
+        // }
         seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
     } else
     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
@@ -1540,7 +1540,7 @@ void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 tra
     SE_Mesh *mesh = renderer->meshes[mesh_index];
     serender_mesh(renderer, mesh, transform);
 
-    if (mesh->next_mesh_index > -1) {
+    if (mesh->next_mesh_index > -1 && mesh->type != SE_MESH_TYPE_SKINNED) { // @temp checking if it's not skinned because for some reason the other mesh does not get a proper skeleton final pose
         serender_mesh_index(renderer, mesh->next_mesh_index, transform);
     }
 }
@@ -1634,6 +1634,7 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
     renderer->shader_sprite = serender3d_add_shader(renderer, "shaders/sprite.vsd", "shaders/sprite.fsd");
     renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "shaders/skinned_vertex.vsd", "shaders/lit_better.fsd");
+    renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "shaders/skinned_skeleton_lines.vsd", "shaders/lines.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);
