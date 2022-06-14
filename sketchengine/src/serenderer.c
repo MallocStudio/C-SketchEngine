@@ -564,6 +564,15 @@ void semesh_generate_skinned_skeleton
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
 
+    if (with_animation) {
+            // enable bone ids
+        glEnableVertexAttribArray(1);
+        glVertexAttribIPointer(1, 4, GL_INT, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, bone_ids));
+            // enable bone weights
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, bone_weights));
+    }
+
     free(verts);
     free(indices);
 
@@ -1480,6 +1489,22 @@ serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, c
     glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[0].depth_cube_map);
 }
 
+static void
+serender3d_render_set_material_uniforms_skinned_skeleton(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+    u32 shader = renderer->shader_skinned_mesh_skeleton;
+    seshader_use(renderer->shaders[shader]);
+
+    Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+    pvm = mat4_mul(pvm, renderer->current_camera->projection);
+
+     /* vertex */
+    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
+
+    /* material uniforms */
+    seshader_set_uniform_vec3 (renderer->shaders[shader], "base_diffuse", v3f(1, 0, 0));
+}
+
 void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     serender3d_reset_render_config(); // Reset configs to their default values
     // take the mesh (world space) and project it to view space
@@ -1493,16 +1518,14 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
         primitive = GL_LINES;
         glLineWidth(mesh->line_width);
-        // if (mesh->skeleton != NULL && mesh->skeleton->animations_count > 0) {
-        //         // used for animated skeleton
-        //     // serender3d_render_set_material_uniforms_lines(renderer, material, transform);
-        //     serender3d_render_set_material_uniforms_skinned(renderer, material, transform);
-        //     seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
-        // } else {
-        //         // render the line without animation
-        //     serender3d_render_set_material_uniforms_lines(renderer, material, transform);
-        // }
+        if (mesh->skeleton != NULL && mesh->skeleton->animations_count > 0) {
+                // used for animated skeleton
+            serender3d_render_set_material_uniforms_skinned_skeleton(renderer, material, transform);
+            seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh_skeleton], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+        } else {
+                // render the line without animation
             serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+        }
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         serender3d_render_set_material_uniforms_lit(renderer, material, transform);
