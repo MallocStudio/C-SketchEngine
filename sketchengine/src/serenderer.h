@@ -75,7 +75,7 @@ typedef struct SE_Bone_Info {
 #define MAX_BONE_CHILDREN 8
 typedef struct SE_Bone_Node { // contains skeletal heirarchy information of a given bone
     SE_String name;
-    i32 id;
+    i32 bones_info_index; // an index into the skeleton's bones_info array
     u32 children_count;
     i32 children[MAX_BONE_CHILDREN];
     i32 parent;

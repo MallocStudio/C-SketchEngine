@@ -4,8 +4,6 @@
 #include "panels.h"
 #include "serenderer2D.h"
 #include "seanimation.h"
-/* @temp */
-RGBA color;
 
 /* ui */
 SE_UI *ctx;
@@ -205,10 +203,6 @@ void app_update(Application *app, f32 delta_time) {
             seui_label(ctx, "light intensity:");
             seui_slider(ctx, &app_panel.light_intensity);
 
-            // seui_panel_row(ctx, 32, 2);
-            // seui_label(ctx, "colour:");
-            // color = seui_colour_picker_hsv(ctx, &hue, &saturation, &value);
-
             seui_panel_row(ctx, 32, 4);
             seui_label(ctx, "test input1:");
             seui_input_text(ctx, &app_panel.input_text);
@@ -351,18 +345,14 @@ void app_render(Application *app) {
         // 3. render normally with the shadow map
         app->renderer.light_directional.intensity = app_panel.light_intensity;
         RGB ambient = app->renderer.light_directional.ambient;
-        // RGB ambient = {
-        //     color.r, color.g, color.b
-        // };
         glClearColor(ambient.r / 255.0f, ambient.g / 255.0f, ambient.b / 255.0f, 1.0f);
         glClearDepth(1);
-        // glClearColor(1, 1, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window_w, window_h);
-
+#if 0
         u32 selected = panel_entity.entity_id;
         serender3d_render_mesh_outline(&app->renderer, app->entities[selected].mesh_index, entity_get_transform(&app->entities[selected]));
-
+#endif
         // for (u32 i = 0; i < app->entity_count; ++i) {
         //     entity_render(&app->entities[i], &app->renderer);
         // }
