@@ -1019,6 +1019,9 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
     }
         // generate the vao
     semesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
+
+    free(verts);
+    free(indices);
 }
 
 //// ANIMATION BONES ////
@@ -1361,7 +1364,6 @@ static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
             SE_Bone_Animations *animated_bone = &anim->animated_bones[c];
             bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[c]);
         }
-
     }
 }
 
