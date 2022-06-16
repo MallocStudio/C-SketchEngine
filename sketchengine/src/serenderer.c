@@ -470,9 +470,6 @@ static Mat4 seskeleton_get_bone_final_transform(const SE_Skeleton *skeleton, i32
 
 static void recursive_generate_skeleton_verts
 (const SE_Skeleton *skeleton, SE_Skinned_Vertex *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *node, Mat4 parent_transform) {
-        // the problem here is that as we come back up the recursion stack our index_count and vert_count go back to their old values
-        // instead of retaining their values.
-
     Mat4 final_transform = node->transform;
     final_transform = mat4_mul(parent_transform, node->transform);
 
@@ -532,14 +529,21 @@ void semesh_generate_skinned_skeleton
     u32 *indices;
     if (line) {
             //* line rendering
+#if 1
         vert_count = 0;
         verts = malloc(sizeof(SE_Skinned_Vertex) * skeleton->bone_node_count);
         index_count = 0;
         indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
         recursive_generate_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0], mat4_identity());
-        se_assert(vert_count == skeleton->bone_node_count);
-        // se_assert(index_count == skeleton->bone_node_count * 2);
-
+        // se_assert(vert_count == skeleton->bone_node_count); @debug
+#else // @debug
+        vert_count = 0;
+        verts = malloc(sizeof(SE_Skinned_Vertex) * skeleton->bone_count);
+        index_count = 0;
+        indices = malloc(sizeof(u32) * skeleton->bone_count * 2);
+        recursive_generate_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count, &skeleton->bone_nodes[0], mat4_identity());
+        // se_assert(vert_count == skeleton->bone_count); @debug
+#endif
             // mesh settings
         mesh->vert_count = index_count;
         mesh->indexed = true;
@@ -915,26 +919,48 @@ static void recursive_read_animated_bones(const struct aiAnimation *animation, S
 }
 #endif
 
-static void recursive_read_bone_heirarchy(SE_Skeleton *skeleton, SE_Bone_Node *dest, const struct aiNode *src) {
+static void recursive_read_bone_heirarchy
+(SE_Skeleton *skeleton, i32 parent_id, const struct aiNode *src) {
     se_assert(src);
-    if (skeleton->bone_node_count == 0) {   // this is the first call
-        dest->bones_info_index = 0;         // root
-        skeleton->bone_node_count++;
-        dest->parent = -1;                  // root has no parent
-    }
-    sestring_init(&dest->name, src->mName.data);
-    copy_ai_matrix_to_mat4(src->mTransformation, &dest->transform);
 
-    printf("CREATING A NEW BONE NODE WITH ID %i\n", dest->bones_info_index);
-    for (u32 i = 0; i < src->mNumChildren; ++i) {
-        SE_Bone_Node *new_bone_node = &skeleton->bone_nodes[skeleton->bone_node_count];
+        // See if this node is a bone node by comparing names with the bones
+        // found in the mesh (as loaded to "skeleton" previously)
+    bool found = false;
+    SE_String src_name;
+    sestring_init(&src_name, src->mName.data);
+    for (u32 i = 0; i < skeleton->bone_count; ++i) {
+        if (sestring_compare(&skeleton->bones_info[i].name, &src_name)) {
+            found = true;
+            break;
+        }
+    }
+    sestring_deinit(&src_name);
+
+        // if this node is a bone node, add it to the skeleton's node heirarchy
+    SE_Bone_Node *new_bone_node = NULL;
+    if (found) {
+        new_bone_node = &skeleton->bone_nodes[skeleton->bone_node_count];
         new_bone_node->bones_info_index = skeleton->bone_node_count;
         skeleton->bone_node_count++;
 
-        recursive_read_bone_heirarchy(skeleton, new_bone_node, src->mChildren[i]);
-        dest->children[dest->children_count] = new_bone_node->bones_info_index;
-        dest->children_count++;
-        new_bone_node->parent = dest->bones_info_index;
+        new_bone_node->parent = parent_id;
+        sestring_init(&new_bone_node->name, src->mName.data);
+        copy_ai_matrix_to_mat4(src->mTransformation, &new_bone_node->transform);
+            // link this node to its parent
+        if (parent_id >= 0) {
+            skeleton->bone_nodes[parent_id].children[skeleton->bone_nodes[parent_id].children_count] = new_bone_node->bones_info_index;
+            skeleton->bone_nodes[parent_id].children_count++;
+        }
+
+        printf("CREATING A NEW BONE NODE WITH ID %i\n", new_bone_node->bones_info_index);
+    }
+
+    for (u32 i = 0; i < src->mNumChildren; ++i) {
+        if (new_bone_node == NULL) {
+            recursive_read_bone_heirarchy(skeleton, parent_id, src->mChildren[i]);
+        } else {
+            recursive_read_bone_heirarchy(skeleton, new_bone_node->bones_info_index, src->mChildren[i]);
+        }
     }
 }
 
@@ -1007,12 +1033,15 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
                 // add bone to skeleton
             i32 bone_id = mesh->skeleton->bone_count;
+            mesh->skeleton->bone_count++;
+            se_assert(bone_id != -1); // just to be clear
+
+                // copy the bone info over
             SE_Bone_Info *bone = &mesh->skeleton->bones_info[bone_index];
             bone->id = bone_id;
-            copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
-            mesh->skeleton->bone_count++;
+            sestring_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
 
-            se_assert(bone_id != -1); // just to be clear
+            copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
 
                 // copy over the vertex ids that this bone affects and the weights
             for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
@@ -1032,8 +1061,8 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         se_assert(mesh->skeleton->bone_count == ai_mesh->mNumBones);
     }
     {   // bone heirarchy
-        recursive_read_bone_heirarchy(mesh->skeleton, &mesh->skeleton->bone_nodes[0], scene->mRootNode);
-        se_assert(mesh->skeleton->bone_count == mesh->skeleton->bone_node_count);
+        recursive_read_bone_heirarchy(mesh->skeleton, -1, scene->mRootNode);
+        se_assert(mesh->skeleton->bone_count == mesh->skeleton->bone_node_count); // @debug
         {   // @debug
             for (u32 i = 0; i < mesh->skeleton->bone_node_count; ++i) {
                 se_assert(mesh->skeleton->bone_nodes[i].bones_info_index >= 0 && mesh->skeleton->bone_nodes[i].bones_info_index < mesh->skeleton->bone_count);
@@ -1101,7 +1130,8 @@ static Mat4 interpolate_bone_rot(SE_Bone_Animations *bone, f32 animation_time) {
     f32 scale_factor = get_scale_factor(bone->rotation_time_stamps[index_0], bone->rotation_time_stamps[index_1], animation_time);
     Quat interpolated_rot = quat_slerp(bone->rotations[index_0], bone->rotations[index_1], scale_factor);
     interpolated_rot = quat_normalize(interpolated_rot);
-    return quat_to_mat4(interpolated_rot);
+    // return quat_to_mat4(interpolated_rot);
+    return quat_to_rotation_matrix(interpolated_rot, v3f(0,0,0));
 }
 
     /// Returns the interpolated scale of the bone at the given animation time
@@ -1199,7 +1229,6 @@ static void recursive_calculate_bone_pose // calculate the pose of the given bon
 (SE_Skeleton *skeleton, const SE_Skeletal_Animation *animation, f32 animation_time, const SE_Bone_Node *node, Mat4 parent_transform) {
     se_assert(node->bones_info_index >= 0 && node->bones_info_index < animation->animated_bones_count);
 
-    // SE_Bone_Animations *animated_bone = &animation->animated_bones[node->id]; // double check that the node->id is a valid way of query
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
         if (sestring_compare(&animation->animated_bones[i].name, &node->name)) { // @debug NOTE(Matin): Okay this array is broken because every entry has the same name and everything. We're not generating this array correctly
@@ -1212,13 +1241,15 @@ static void recursive_calculate_bone_pose // calculate the pose of the given bon
         // the node transform with its parents taken into account
     if (animated_bone != NULL) {
         global_node_transform = get_interpolated_bone_transform(animated_bone, animation_time);
-        global_node_transform = mat4_mul(parent_transform, global_node_transform);
+        // global_node_transform = mat4_mul(parent_transform, global_node_transform);
+        global_node_transform = mat4_mul(global_node_transform, parent_transform);
     }
 
     if (node->bones_info_index >= 0 && node->bones_info_index < skeleton->bone_count) {
         i32 index = skeleton->bones_info[node->bones_info_index].id;
         Mat4 offset = skeleton->bones_info[node->bones_info_index].offset;
-        skeleton->final_pose[index] = mat4_mul(global_node_transform, offset);
+        // skeleton->final_pose[index] = mat4_mul(global_node_transform, offset);
+        skeleton->final_pose[index] = mat4_mul(offset, global_node_transform);
     }
 
         // repeat for children

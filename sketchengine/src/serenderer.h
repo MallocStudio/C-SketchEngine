@@ -66,10 +66,12 @@ typedef struct SE_Skeletal_Animation {
 //// SKELETON AND BONES ////
 
 typedef struct SE_Bone_Info {
-    // id is index in 'bones' in the skinned_vertex.vsd
+        // id is index in 'bones' in the skinned_vertex.vsd
     i32 id;
-    // offset matrix transforms vertex from model space to bone space
+        // offset matrix transforms vertex from model space to bone space
     Mat4 offset;
+        // name of the bone, used for checking if nodes in the asset's scene is a bone node
+    SE_String name;
 } SE_Bone_Info;
 
 #define MAX_BONE_CHILDREN 8
@@ -86,10 +88,10 @@ typedef struct SE_Bone_Node { // contains skeletal heirarchy information of a gi
 #define SE_SKELETON_MAX_ANIMATIONS 100
     /// contains skeletal heirarchy, bone info
 typedef struct SE_Skeleton {
-        // array of bone data (index into bones and offset matrix)
+        // array of bone data (index into transformed bones in vertex shader, and offset matrix)
     u32 bone_count;
     SE_Bone_Info bones_info[SE_SKELETON_BONES_CAPACITY];
-        // the heirarchy of bones and their information
+        // the heirarchy of bones (parent child relationship)
     u32 bone_node_count;
     SE_Bone_Node bone_nodes[SE_SKELETON_BONES_CAPACITY];
 

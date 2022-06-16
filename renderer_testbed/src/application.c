@@ -353,9 +353,9 @@ void app_render(Application *app) {
         u32 selected = panel_entity.entity_id;
         serender3d_render_mesh_outline(&app->renderer, app->entities[selected].mesh_index, entity_get_transform(&app->entities[selected]));
 #endif
-        // for (u32 i = 0; i < app->entity_count; ++i) {
-        //     entity_render(&app->entities[i], &app->renderer);
-        // }
+        for (u32 i = 0; i < app->entity_count; ++i) {
+            entity_render(&app->entities[i], &app->renderer);
+        }
 
         // serender_mesh_index(&app->renderer, proj_lines,       mat4_identity());
         // serender_mesh_index(&app->renderer, proj_box,         mat4_identity());

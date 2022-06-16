@@ -14,5 +14,6 @@ uniform mat4 bones[MAX_BONES]; // animated bones
 
 void main() {
     vec4 total_position = bones[bone_id] * vec4(Position, 1.0f); // the position of the vertex in the current animation
+    // vec4 total_position = vec4(Position, 1);
 	gl_Position = projection_view_model * total_position;
 }
