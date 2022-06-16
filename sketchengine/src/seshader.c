@@ -233,6 +233,10 @@ void seshader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_nam
         printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
     }
     seshader_use(shader);
+    // for (u32 i = 0; i < count; ++i) {
+    //     // NOTE(Matin): we're not certain that this is supported on all drivers, not sure if this is part of the spec
+    //     // glUniformMatrix4fv(var_loc + i, 1, GL_FALSE, (const GLfloat*)(&value + i));
+    // }
     glUniformMatrix4fv(var_loc, count, GL_FALSE, (const GLfloat*)value);
 }
 
