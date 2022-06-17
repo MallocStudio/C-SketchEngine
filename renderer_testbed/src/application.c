@@ -18,6 +18,14 @@ u32 light_map_texture = 0;
 Panel_Entity panel_entity;
 SE_Animation animation;
 
+static Entity* get_entity(Application *app, u32 entity_index) {
+    return &app->entities[entity_index];
+}
+
+static SE_Mesh* get_mesh(Application *app, u32 mesh_index) {
+    return app->renderer.meshes[mesh_index];
+}
+
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
     Entity *entity  = &app->entities[entity_index];
     p->entity_id    = entity_index;
@@ -125,6 +133,7 @@ void app_init(Application *app, SDL_Window *window) {
         app->entities[player3].oriantation = vec3_zero();
         app->entities[player3].scale = v3f(0.1f, 0.1f, 0.1f);
         app->entities[player3].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/1/Booty Hip Hop Dance.fbx", true);
+        se_assert(app->renderer.meshes[app->entities[player3].mesh_index]->skeleton != NULL);
         app->entities[player3].has_name = true;
         sestring_init(&app->entities[player3].name, "with anim");
         app->entities[player3].has_mesh = true;
@@ -184,8 +193,14 @@ void app_update(Application *app, f32 delta_time) {
 
     {   //-- Animation
         f32 current_frame = seanimation_update(&animation, delta_time);
+#if 0
         // seskeleton_calculate_pose(app->renderer.meshes[app->entities[player2].mesh_index]->skeleton, current_frame);
-        seskeleton_calculate_pose(app->renderer.meshes[skeleton_mesh]->skeleton, current_frame);
+        // @debug so it seems like the bone info of both of these skeletons are the same. Should we only have one skeleton per mesh parent? and all the child meshes share the parent's skeleton?
+        seskeleton_calculate_pose(app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, current_frame);
+        seskeleton_calculate_pose(app->renderer.meshes[app->renderer.meshes[app->entities[player3].mesh_index]->next_mesh_index]->skeleton, current_frame);
+        // seskeleton_calculate_pose(app->renderer.meshes[app->renderer.meshes[skeleton_mesh]->next_mesh_index]->skeleton, current_frame);
+#endif
+        seskeleton_calculate_pose(get_mesh(app, get_entity(app, player3)->mesh_index)->skeleton, current_frame);
         printf("current frame: %f\n", current_frame);
     }
 
@@ -353,9 +368,10 @@ void app_render(Application *app) {
         u32 selected = panel_entity.entity_id;
         serender3d_render_mesh_outline(&app->renderer, app->entities[selected].mesh_index, entity_get_transform(&app->entities[selected]));
 #endif
-        for (u32 i = 0; i < app->entity_count; ++i) {
-            entity_render(&app->entities[i], &app->renderer);
-        }
+        // for (u32 i = 0; i < app->entity_count; ++i) {
+        //     entity_render(&app->entities[i], &app->renderer);
+        // }
+        entity_render(&app->entities[player3], &app->renderer);
 
         // serender_mesh_index(&app->renderer, proj_lines,       mat4_identity());
         // serender_mesh_index(&app->renderer, proj_box,         mat4_identity());

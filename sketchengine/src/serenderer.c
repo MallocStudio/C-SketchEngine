@@ -762,92 +762,86 @@ static void copy_ai_matrix_to_mat4(struct aiMatrix4x4 aiMat, Mat4 *mat4) {
 }
 
 static void semesh_construct_material // only meant to be called form serender3d_load_mesh
-(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
-    if (scene->mNumMaterials > 0) { // -- materials
-        // add a material to the renderer
-        u32 material_index = serender3d_add_material(renderer);
-        mesh->material_index = material_index;
+(SE_Material *material, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+    // find the directory part of filepath
+    SE_String filepath_string;
+    sestring_init(&filepath_string, filepath);
 
-        // find the directory part of filepath
-        SE_String filepath_string;
-        sestring_init(&filepath_string, filepath);
+    SE_String dir;
+    sestring_init(&dir, "");
 
-        SE_String dir;
-        sestring_init(&dir, "");
-
-        u32 slash_index = sestring_lastof(&filepath_string, '/');
-        if (slash_index == SESTRING_MAX_SIZE) {
-            sestring_append(&dir, "/");
-        } else if (slash_index == 0) {
-            sestring_append(&dir, ".");
-        } else {
-            sestring_append_length(&dir, filepath, slash_index);
-            sestring_append(&dir, "/");
-        }
-
-        // now add the texture path to directory
-        const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
-
-        SE_String diffuse_path;
-        SE_String specular_path;
-        SE_String normal_path;
-
-        sestring_init(&diffuse_path, dir.buffer);
-        sestring_init(&specular_path, dir.buffer);
-        sestring_init(&normal_path, dir.buffer);
-
-        struct aiString *ai_texture_path_diffuse  = new(struct aiString);
-        struct aiString *ai_texture_path_specular = new(struct aiString);
-        struct aiString *ai_texture_path_normal   = new(struct aiString);
-
-        bool has_diffuse  = true;
-        bool has_specular = true;
-        bool has_normal   = true;
-
-        if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
-            has_diffuse = false;
-        }
-        if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
-            has_specular = false;
-        }
-        if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
-            has_normal = false;
-        }
-
-        /* diffuse */
-        renderer->materials[material_index]->base_diffuse = (Vec4) {1, 1, 1, 1};
-        if (has_diffuse) {
-            sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
-            setexture_load(&renderer->materials[material_index]->texture_diffuse , diffuse_path.buffer);
-        } else {
-            setexture_load(&renderer->materials[material_index]->texture_diffuse, "assets/textures/checkerboard.png");
-        }
-        free(ai_texture_path_diffuse);
-        /* specular */
-        if (has_specular) {
-            sestring_append(&specular_path, ai_texture_path_specular->data);
-            setexture_load(&renderer->materials[material_index]->texture_specular, specular_path.buffer);
-        }
-        free(ai_texture_path_specular);
-        /* normal */
-        if (has_normal) {
-            sestring_append(&normal_path, ai_texture_path_normal->data);
-            setexture_load(&renderer->materials[material_index]->texture_normal  , normal_path.buffer);
-        } else {
-            setexture_load(&renderer->materials[material_index]->texture_diffuse, "assets/textures/default_normal.png");
-        }
-        free(ai_texture_path_normal);
-
-        sestring_deinit(&diffuse_path);
-        sestring_deinit(&specular_path);
-        sestring_deinit(&normal_path);
-
-        sestring_deinit(&dir);
+    u32 slash_index = sestring_lastof(&filepath_string, '/');
+    if (slash_index == SESTRING_MAX_SIZE) {
+        sestring_append(&dir, "/");
+    } else if (slash_index == 0) {
+        sestring_append(&dir, ".");
+    } else {
+        sestring_append_length(&dir, filepath, slash_index);
+        sestring_append(&dir, "/");
     }
+
+    // now add the texture path to directory
+    const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+
+    SE_String diffuse_path;
+    SE_String specular_path;
+    SE_String normal_path;
+
+    sestring_init(&diffuse_path, dir.buffer);
+    sestring_init(&specular_path, dir.buffer);
+    sestring_init(&normal_path, dir.buffer);
+
+    struct aiString *ai_texture_path_diffuse  = new(struct aiString);
+    struct aiString *ai_texture_path_specular = new(struct aiString);
+    struct aiString *ai_texture_path_normal   = new(struct aiString);
+
+    bool has_diffuse  = true;
+    bool has_specular = true;
+    bool has_normal   = true;
+
+    if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
+        has_diffuse = false;
+    }
+    if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
+        has_specular = false;
+    }
+    if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
+        has_normal = false;
+    }
+
+    /* diffuse */
+    material->base_diffuse = (Vec4) {1, 1, 1, 1};
+    if (has_diffuse) {
+        sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
+        setexture_load(&material->texture_diffuse , diffuse_path.buffer);
+    } else {
+        setexture_load(&material->texture_diffuse, "assets/textures/checkerboard.png");
+    }
+    free(ai_texture_path_diffuse);
+    /* specular */
+    if (has_specular) {
+        sestring_append(&specular_path, ai_texture_path_specular->data);
+        setexture_load(&material->texture_specular, specular_path.buffer);
+    }
+    free(ai_texture_path_specular);
+    /* normal */
+    if (has_normal) {
+        sestring_append(&normal_path, ai_texture_path_normal->data);
+        setexture_load(&material->texture_normal  , normal_path.buffer);
+    } else {
+        setexture_load(&material->texture_diffuse, "assets/textures/default_normal.png");
+    }
+    free(ai_texture_path_normal);
+
+    sestring_deinit(&diffuse_path);
+    sestring_deinit(&specular_path);
+    sestring_deinit(&normal_path);
+
+    sestring_deinit(&dir);
 }
 
 static void semesh_construct_normal_mesh // only meant to be called from serender3d_load_mesh
-(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+(SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     sedefault_mesh(mesh);
     u32 verts_count = 0;
     u32 index_count = 0;
@@ -903,6 +897,9 @@ static void semesh_construct_normal_mesh // only meant to be called from serende
     }
 
     semesh_generate(mesh, verts_count, verts, index_count, indices);
+
+    free(verts);
+    free(indices);
 }
 
 #if 0 // no reason to implement this yet.
@@ -1445,13 +1442,19 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
             semesh_construct_skinned_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
         } else {
                 // load normal static mesh
-            semesh_construct_normal_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+            semesh_construct_normal_mesh(renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
         }
-            //-- load the material of this mesh
-        semesh_construct_material(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
 
-            //-- Link meshes together
-        // if there are multiple meshes within this scene, add them on in a linked list
+            //- load the material of this mesh
+        if (scene->mNumMaterials > 0) { // -- materials
+            u32 material_index = serender3d_add_material(renderer);
+            renderer->meshes[renderer->meshes_count]->material_index = material_index;
+
+            semesh_construct_material(renderer->materials[material_index], ai_mesh, model_filepath, scene);
+        }
+
+            //- Link meshes together:
+            //- If there are multiple meshes within this scene, add them on in a linked list
         if (i > 0) {
             renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
         }
