@@ -26,6 +26,10 @@ static SE_Mesh* get_mesh(Application *app, u32 mesh_index) {
     return app->renderer.meshes[mesh_index];
 }
 
+static u32 get_mesh_index(Application *app, u32 entity_index) {
+    return get_entity(app, entity_index)->mesh_index;
+}
+
 static void panel_entity_init(Application *app, Panel_Entity *p, u32 entity_index) {
     Entity *entity  = &app->entities[entity_index];
     p->entity_id    = entity_index;
@@ -128,7 +132,7 @@ void app_init(Application *app, SDL_Window *window) {
         // app->entities[player2].mesh_index = serender3d_load_mesh(&app->renderer, "assets/animations/2/Sitting Laughing.fbx", true);
         app->entities[player2].has_mesh = true;
 
-            //-- player 3
+            //- player 3
         app->entities[player3].position = vec3_create(+5, 2, -1);
         app->entities[player3].oriantation = vec3_zero();
         app->entities[player3].scale = v3f(0.1f, 0.1f, 0.1f);
@@ -138,14 +142,20 @@ void app_init(Application *app, SDL_Window *window) {
         sestring_init(&app->entities[player3].name, "with anim");
         app->entities[player3].has_mesh = true;
 
-            //-- skeleton mesh of player 3
+            //- skeleton mesh of player 3
+        // skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
+        // app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
+        // semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true, true);
+        // se_assert(app->renderer.meshes[skeleton_mesh]->skeleton != NULL);
+        // se_assert(app->renderer.meshes[skeleton_mesh]->skeleton->animations_count > 0);
+        // app->renderer.meshes[skeleton_mesh]->skeleton->current_animation = 0;
         skeleton_mesh = serender3d_add_mesh_empty(&app->renderer);
         app->renderer.meshes[skeleton_mesh]->material_index = app->renderer.material_lines;
-        semesh_generate_skinned_skeleton(app->renderer.meshes[skeleton_mesh], app->renderer.meshes[app->entities[player3].mesh_index]->skeleton, true, true);
-        se_assert(app->renderer.meshes[skeleton_mesh]->skeleton != NULL);
-        se_assert(app->renderer.meshes[skeleton_mesh]->skeleton->animations_count > 0);
-        app->renderer.meshes[skeleton_mesh]->skeleton->current_animation = 0;
+        semesh_generate_static_skeleton(app->renderer.meshes[skeleton_mesh],
+                                                app->renderer.meshes[app->entities[player3].mesh_index]->skeleton);
+        se_assert(app->renderer.meshes[skeleton_mesh]->skeleton == NULL);
 
+            //- Other meshes
         line_mesh = serender3d_add_mesh_empty(&app->renderer);
         proj_lines = serender3d_add_mesh_empty(&app->renderer);
         proj_box = serender3d_add_mesh_empty(&app->renderer);
@@ -159,8 +169,8 @@ void app_init(Application *app, SDL_Window *window) {
     }
 
     {   //-- Animation
-        animation.duration = app->renderer.meshes[skeleton_mesh]->skeleton->animations[0]->duration;
-        animation.speed = app->renderer.meshes[skeleton_mesh]->skeleton->animations[0]->ticks_per_second;
+        animation.duration = app->renderer.meshes[get_mesh_index(app, player3)]->skeleton->animations[0]->duration;
+        animation.speed = app->renderer.meshes[get_mesh_index(app, player3)]->skeleton->animations[0]->ticks_per_second;
         animation.current_frame = 0;
     }
 
@@ -200,7 +210,9 @@ void app_update(Application *app, f32 delta_time) {
         seskeleton_calculate_pose(app->renderer.meshes[app->renderer.meshes[app->entities[player3].mesh_index]->next_mesh_index]->skeleton, current_frame);
         // seskeleton_calculate_pose(app->renderer.meshes[app->renderer.meshes[skeleton_mesh]->next_mesh_index]->skeleton, current_frame);
 #endif
-        seskeleton_calculate_pose(get_mesh(app, get_entity(app, player3)->mesh_index)->skeleton, current_frame);
+        Entity *ent_player3 = get_entity(app, player3);
+        seskeleton_calculate_pose(get_mesh(app, ent_player3->mesh_index)->skeleton, current_frame);
+        seskeleton_calculate_pose(get_mesh(app, get_mesh(app, ent_player3->mesh_index)->next_mesh_index)->skeleton, current_frame);
         printf("current frame: %f\n", current_frame);
     }
 

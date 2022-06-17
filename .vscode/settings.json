@@ -32,6 +32,7 @@
         "sesprite.h": "c",
         "seui_components.h": "c",
         "algorithm": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "compare": "c"
     }
 }

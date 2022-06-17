@@ -458,9 +458,9 @@ static Mat4 recursive_calc_bone_transform(const SE_Skeleton *skeleton, const SE_
     se_assert(node->bones_info_index >= 0 && node->bones_info_index < skeleton->bone_count);
     if (node->parent >= 0) { // if we have a parent go up the tree
         Mat4 parent_transform = recursive_calc_bone_transform(skeleton, &skeleton->bone_nodes[node->parent]);
-        return mat4_mul(parent_transform, node->transform);
+        return mat4_mul(parent_transform, node->local_transform);
     }
-    return node->transform;
+    return node->local_transform;
 }
 
 static Mat4 seskeleton_get_bone_final_transform(const SE_Skeleton *skeleton, i32 bone_node_index) {
@@ -470,8 +470,8 @@ static Mat4 seskeleton_get_bone_final_transform(const SE_Skeleton *skeleton, i32
 
 static void recursive_generate_skeleton_verts
 (const SE_Skeleton *skeleton, SE_Skinned_Vertex *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *node, Mat4 parent_transform) {
-    Mat4 final_transform = node->transform;
-    final_transform = mat4_mul(parent_transform, node->transform);
+    Mat4 final_transform = node->local_transform;
+    final_transform = mat4_mul(parent_transform, node->local_transform);
 
     verts[*vert_count].vert.position = mat4_get_translation(final_transform);
     verts[*vert_count].bone_ids[0] = node->bones_info_index;
@@ -491,13 +491,35 @@ static void recursive_generate_skeleton_verts
     }
 }
 
+static void recursive_generate_static_skeleton_verts
+(const SE_Skeleton *skeleton, SE_Vertex3D *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *node, Mat4 parent_transform) {
+    Mat4 final_transform = node->local_transform;
+    final_transform = mat4_mul(parent_transform, node->local_transform);
+
+    verts[*vert_count].position = mat4_get_translation(final_transform);
+    (*vert_count)++;
+
+    se_assert(node->bones_info_index >= 0);
+    for (u32 i = 0; i < node->children_count; ++i) {
+            // draw a line between the node and the child
+            // we can assign a node's id as the index because we're adding
+            // one vertex for each node. If this doesn't work consider changing
+            // verts[*vert_count] to verts[node->id] to be more explicit
+        indices[*index_count] = node->bones_info_index;
+        (*index_count)++;
+        indices[*index_count] = skeleton->bone_nodes[node->children[i]].bones_info_index;
+        (*index_count)++;
+        recursive_generate_static_skeleton_verts(skeleton, verts, vert_count, indices, index_count, &skeleton->bone_nodes[node->children[i]], final_transform);
+    }
+}
+
 static void recursive_generate_skeleton_verts_as_points
 (const SE_Skeleton *skeleton, SE_Skinned_Vertex *verts, u32 *vert_count, u32 *indices, u32 *index_count, const SE_Bone_Node *node, Mat4 parent_transform) {
         // the problem here is that as we come back up the recursion stack our index_count and vert_count go back to their old values
         // instead of retaining their values.
 
-    Mat4 final_transform = node->transform;
-    final_transform = mat4_mul(parent_transform, node->transform);
+    Mat4 final_transform = node->local_transform;
+    final_transform = mat4_mul(parent_transform, node->local_transform);
 
         // draw a point at the given bone position
     verts[*vert_count].vert.position = mat4_get_translation(final_transform);
@@ -509,6 +531,63 @@ static void recursive_generate_skeleton_verts_as_points
     for (u32 i = 0; i < node->children_count; ++i) {
         recursive_generate_skeleton_verts_as_points(skeleton, verts, vert_count, indices, index_count, &skeleton->bone_nodes[node->children[i]], final_transform);
     }
+}
+
+void semesh_generate_static_skeleton
+(SE_Mesh *mesh, const SE_Skeleton *skeleton) {
+        // generate buffers
+    glGenBuffers(1, &mesh->vbo);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->ibo);
+
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ibo);
+
+        //- generate vertices for the skeleton
+    u32 vert_count = 0;
+    SE_Vertex3D *verts = malloc(sizeof(SE_Vertex3D) * skeleton->bone_node_count);
+    u32 index_count = 0;
+    u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
+
+    // recursive_generate_static_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count,
+    //                                         &skeleton->bone_nodes[0], mat4_identity());
+
+    // @debug each bone's inverse_neutral_transform
+        //- generate the verts based on the model space transform of each bone
+    for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
+        verts[vert_count].position = mat4_get_translation(mat4_inverse(skeleton->bone_nodes[i].inverse_neutral_transform));
+        indices[index_count] = i;
+        vert_count++;
+        index_count++;
+    }
+
+        //- mesh settings
+    mesh->vert_count = index_count;
+    mesh->indexed = true;
+    mesh->aabb = (AABB3D) {0};
+    mesh->line_width = 2;
+    // mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
+    mesh->point_radius = 3; // @temp
+    mesh->type = SE_MESH_TYPE_POINT; // sense we're going to generate a skeleton we're going to be lines
+    mesh->skeleton = NULL; // we don't want to remember the original skeleton. No reason yet.
+
+        //- fill data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count,    verts, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
+
+        //- enable position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
+
+        //- mamange memory
+    free(verts);
+    free(indices);
+
+        //- unselect
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void semesh_generate_skinned_skeleton
@@ -802,9 +881,11 @@ static void semesh_construct_material // only meant to be called form serender3d
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_diffuse = false;
     }
+
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_specular = false;
     }
+
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_normal = false;
     }
@@ -818,12 +899,14 @@ static void semesh_construct_material // only meant to be called form serender3d
         setexture_load(&material->texture_diffuse, "assets/textures/checkerboard.png");
     }
     free(ai_texture_path_diffuse);
+
     /* specular */
     if (has_specular) {
         sestring_append(&specular_path, ai_texture_path_specular->data);
         setexture_load(&material->texture_specular, specular_path.buffer);
     }
     free(ai_texture_path_specular);
+
     /* normal */
     if (has_normal) {
         sestring_append(&normal_path, ai_texture_path_normal->data);
@@ -917,7 +1000,7 @@ static void recursive_read_animated_bones(const struct aiAnimation *animation, S
 #endif
 
 static void recursive_read_bone_heirarchy
-(SE_Skeleton *skeleton, i32 parent_id, const struct aiNode *src) {
+(SE_Skeleton *skeleton, i32 parent_id, Mat4 parent_model_space_transform, const struct aiNode *src) {
     se_assert(src);
 
         // See if this node is a bone node by comparing names with the bones
@@ -935,6 +1018,7 @@ static void recursive_read_bone_heirarchy
 
         // if this node is a bone node, add it to the skeleton's node heirarchy
     SE_Bone_Node *new_bone_node = NULL;
+    Mat4 model_space_transform_of_this_node;
     if (found) {
         new_bone_node = &skeleton->bone_nodes[skeleton->bone_node_count];
         new_bone_node->bones_info_index = skeleton->bone_node_count;
@@ -942,8 +1026,12 @@ static void recursive_read_bone_heirarchy
 
         new_bone_node->parent = parent_id;
         sestring_init(&new_bone_node->name, src->mName.data);
-        copy_ai_matrix_to_mat4(src->mTransformation, &new_bone_node->transform);
-            // link this node to its parent
+        copy_ai_matrix_to_mat4(src->mTransformation, &new_bone_node->local_transform);
+            //- inverse model space transform of the bone
+        model_space_transform_of_this_node = mat4_mul(parent_model_space_transform, new_bone_node->local_transform);
+        new_bone_node->inverse_neutral_transform = mat4_inverse(model_space_transform_of_this_node);
+
+            //- link this node to its parent
         if (parent_id >= 0) {
             skeleton->bone_nodes[parent_id].children[skeleton->bone_nodes[parent_id].children_count] = new_bone_node->bones_info_index;
             skeleton->bone_nodes[parent_id].children_count++;
@@ -954,15 +1042,15 @@ static void recursive_read_bone_heirarchy
 
     for (u32 i = 0; i < src->mNumChildren; ++i) {
         if (new_bone_node == NULL) {
-            recursive_read_bone_heirarchy(skeleton, parent_id, src->mChildren[i]);
+            recursive_read_bone_heirarchy(skeleton, parent_id, parent_model_space_transform, src->mChildren[i]);
         } else {
-            recursive_read_bone_heirarchy(skeleton, new_bone_node->bones_info_index, src->mChildren[i]);
+            recursive_read_bone_heirarchy(skeleton, new_bone_node->bones_info_index, model_space_transform_of_this_node, src->mChildren[i]);
         }
     }
 }
 
 static void semesh_construct_skinned_mesh // only meant to be called from serender3d_load_mesh
-(SE_Renderer3D *renderer, SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
+(SE_Mesh *mesh, const struct aiMesh *ai_mesh, const struct aiScene *scene) {
     sedefault_mesh(mesh);
     u32 verts_count = 0;
     u32 index_count = 0;
@@ -1023,7 +1111,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         index_count += 3;
     }
 
-    {   // extract bone weight for vertices
+    {   //- extract bone info for each vertex
         mesh->skeleton = new (SE_Skeleton); // @leak
         mesh->skeleton->bone_count = 0;
             // copy the bone data to skeleton
@@ -1044,7 +1132,6 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
             for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
                 i32 vert_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
                 f32 weight  = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
-                se_assert(vert_id <= verts_count);
                 {   // set vertex bone data
                     for (i32 xxx = 0; xxx < SE_MAX_BONE_WEIGHTS; ++xxx) {
                         if (verts[vert_id].bone_ids[xxx] < 0) {
@@ -1057,8 +1144,8 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         }
         se_assert(mesh->skeleton->bone_count == ai_mesh->mNumBones);
     }
-    {   // bone heirarchy
-        recursive_read_bone_heirarchy(mesh->skeleton, -1, scene->mRootNode);
+    {   //- bone node heirarchy
+        recursive_read_bone_heirarchy(mesh->skeleton, -1, mat4_identity(), scene->mRootNode);
         se_assert(mesh->skeleton->bone_count == mesh->skeleton->bone_node_count); // @debug
         {   // @debug
             for (u32 i = 0; i < mesh->skeleton->bone_node_count; ++i) {
@@ -1066,6 +1153,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
             }
         }
     }
+
         // generate the vao
     semesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
 
@@ -1228,24 +1316,24 @@ static void recursive_calculate_bone_pose // calculate the pose of the given bon
 
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
-        if (sestring_compare(&animation->animated_bones[i].name, &node->name)) { // @debug NOTE(Matin): Okay this array is broken because every entry has the same name and everything. We're not generating this array correctly
+        if (sestring_compare(&animation->animated_bones[i].name, &node->name)) { // @performance: change this from a string compare to a hash compare
             animated_bone = &animation->animated_bones[i];
             break;
         }
     }
 
-    Mat4 global_node_transform = node->transform;
+    Mat4 global_node_transform = node->local_transform;
         // the node transform with its parents taken into account
     if (animated_bone != NULL) {
         global_node_transform = get_interpolated_bone_transform(animated_bone, animation_time);
-        // global_node_transform = mat4_mul(parent_transform, global_node_transform);
         global_node_transform = mat4_mul(global_node_transform, parent_transform);
     }
 
     if (node->bones_info_index >= 0 && node->bones_info_index < skeleton->bone_count) {
         i32 index = skeleton->bones_info[node->bones_info_index].id;
         Mat4 offset = skeleton->bones_info[node->bones_info_index].offset;
-        // skeleton->final_pose[index] = mat4_mul(global_node_transform, offset);
+            // inverse neutral pose
+        // global_node_transform = mat4_mul(node->inverse_neutral_transform, global_node_transform);
         skeleton->final_pose[index] = mat4_mul(offset, global_node_transform);
     }
 
@@ -1427,7 +1515,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
         printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
         return result;
     }
-        //-- load meshes within the scene
+        //- load meshes within the scene
     result = renderer->meshes_count; // the first mesh in the chain
     for (u32 i = 0; i < scene->mNumMeshes; ++i) {
         struct aiMesh *ai_mesh = scene->mMeshes[i];
@@ -1436,10 +1524,11 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
         renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
         memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
-            //-- load the skeleton of this mesh
+            //- load the skeleton of this mesh
         if (with_skeleton && ai_mesh->mNumBones > 0) {
-                // load a skinned mesh ready to be animated
-            semesh_construct_skinned_mesh(renderer, renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+                //- load a skinned mesh ready to be animated
+            SE_Mesh *mesh = renderer->meshes[renderer->meshes_count];
+            semesh_construct_skinned_mesh(mesh, ai_mesh, scene);
         } else {
                 // load normal static mesh
             semesh_construct_normal_mesh(renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
@@ -1461,19 +1550,18 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
         renderer->meshes_count++;
     }
 
-    if (renderer->meshes[result]->skeleton != NULL) {
-        printf("-------------------------------\n");
-        debug_print_skeleton(renderer->meshes[result]->skeleton, &renderer->meshes[result]->skeleton->bone_nodes[0]);
-    }
-
-        // -- load animations associated with this mesh
+        //- load animations associated with this mesh
     if (renderer->meshes[result]->skeleton != NULL && scene->mNumAnimations > 0) {
-        load_animation(renderer->meshes[result]->skeleton, model_filepath);
-
-        printf("-------------------------------\n");
-        for (u32 i = 0; i < renderer->meshes[result]->skeleton->animations[0]->animated_bones_count; i++) {
-            printf("%i: parent name: %s\n", i, renderer->meshes[result]->skeleton->animations[0]->animated_bones[i].name.buffer);
+        i32 current_mesh = result;
+        while (current_mesh >= 0) {
+            load_animation(renderer->meshes[current_mesh]->skeleton, model_filepath);
+            printf("-------------------------------\n");
+            for (u32 i = 0; i < renderer->meshes[result]->skeleton->animations[0]->animated_bones_count; i++) {
+                printf("%i: parent name: %s\n", i, renderer->meshes[result]->skeleton->animations[0]->animated_bones[i].name.buffer);
+            }
+            current_mesh = renderer->meshes[current_mesh]->next_mesh_index;
         }
+
     }
 
 
@@ -1624,7 +1712,8 @@ void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 tra
     SE_Mesh *mesh = renderer->meshes[mesh_index];
     serender_mesh(renderer, mesh, transform);
 
-    if (mesh->next_mesh_index > -1 && mesh->type != SE_MESH_TYPE_SKINNED) { // @temp checking if it's not skinned because for some reason the other mesh does not get a proper skeleton final pose
+    // if (mesh->next_mesh_index > -1 && mesh->type != SE_MESH_TYPE_SKINNED) { // @temp checking if it's not skinned because for some reason the other mesh does not get a proper skeleton final pose
+    if (mesh->next_mesh_index > -1) {
         serender_mesh_index(renderer, mesh->next_mesh_index, transform);
     }
 }

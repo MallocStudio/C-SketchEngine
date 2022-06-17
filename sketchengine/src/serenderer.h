@@ -81,7 +81,8 @@ typedef struct SE_Bone_Node { // contains skeletal heirarchy information of a gi
     u32 children_count;
     i32 children[MAX_BONE_CHILDREN];
     i32 parent;
-    Mat4 transform;
+    Mat4 local_transform; // local space (in t-pose)
+    Mat4 inverse_neutral_transform; // the inverse t-pose model space transform of the bone
 } SE_Bone_Node;
 
 #define SE_SKELETON_BONES_CAPACITY 100 // ! needs to match with MAX_BONES in skinned_vertex.vsd
@@ -177,6 +178,8 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     /// If line is true, we will render the bones as lines not as points
     /// If with_animation is true, the animation REFERENCE is copied over to this mesh.
 void semesh_generate_skinned_skeleton(SE_Mesh *mesh, SE_Skeleton *skeleton, bool line, bool with_animation);
+    /// Generates a mesh of type lines that shows the bone node heirachy of the given skeleton
+void semesh_generate_static_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton);
 
 //// Light ////
 
