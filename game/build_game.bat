@@ -1,6 +1,7 @@
+@ECHO OFF
 ECHO "---------------building game---------------"
 
-cl /EHsc src\*.c /I "../dep/include/" /I "../sketchengine/src/" /MT /Z7 /WL /link /OUT:bin\game.exe /LIBPATH:"../dep/lib" sketchengine.lib SDL2.lib OpenGL32.lib SDL2main.lib SDL2_ttf.lib freetype_debug.lib glew32.lib assimp-vc143-mtd.lib
+cl /EHsc src\*.cpp /I "../dep/include/" /I "../sketchengine/src/" /MT /Z7 /WL /link /OUT:bin\game.exe /LIBPATH:"../dep/lib" sketchengine.lib SDL2.lib OpenGL32.lib SDL2main.lib SDL2_ttf.lib freetype_debug.lib glew32.lib assimp-vc143-mtd.lib
 
 REM (assimp-vc143-mtd.lib zlibstaticd.lib)
 
@@ -14,7 +15,7 @@ echo game build issues baby!
 goto end
 
 :success
-echo game built successfully
+ECHO game built successfully
 goto end
 
 :end

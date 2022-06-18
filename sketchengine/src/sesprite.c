@@ -170,7 +170,7 @@ void setexture_atlas_unbind() {
 
 /// SPRITES
 
-bool sesprite_load(SE_Sprite *sprite, const char *filepath) {
+b8 sesprite_load(SE_Sprite *sprite, const char *filepath) {
     setexture_load(&sprite->texture, filepath);
     sprite->frame = 0;
     sprite->columns = 0;

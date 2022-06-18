@@ -4,14 +4,14 @@
 #include "seui_ctx.h"
 
 u32 generate_ui_id(SE_UI *ctx);
-UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse_leave /* = false */);
+UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, b8 stay_active_on_mouse_leave /* = false */);
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 
 
 /// Draws a button at the given rectangle.
-bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
-bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect);
+b8 seui_button_at(SE_UI *ctx, const char *text, Rect rect);
+b8 seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect);
 
 /// Draws a button that returns the drag if the mouse is trying to drag it.
 /// That means is the mouse is hovering over the button and pressing down.
@@ -40,7 +40,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect);
 /// A horizontal slider with buttons on its sides.
 /// Within the range of [min, max]
 /// If min AND max are zero, the limits will be ignored
-bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
+b8 seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
 
 void seui_texture_viewer(SE_UI *ctx, u32 texture_id); // texture_index refers to the texture added to the renderer
 // void seui_image_viewer(SE_UI *ctx, Rect rect, const SE_Texture *texture);
@@ -55,15 +55,15 @@ void seui_panel_container(SE_UI *ctx);
 /// DEFINED IN seui_widgets.c
 
 void seui_label(SE_UI *ctx, const char *text);
-void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable);
-void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable);
+void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable);
+void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable);
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.
-bool seui_button(SE_UI *ctx, const char *text);
-bool seui_button_textured(SE_UI *ctx, Vec2 texture_index);
+b8 seui_button(SE_UI *ctx, const char *text);
+b8 seui_button_textured(SE_UI *ctx, Vec2 texture_index);
 void seui_slider(SE_UI *ctx, f32 *value);
 void seui_slider2d(SE_UI *ctx, Vec2 *value);
 void seui_input_text(SE_UI *ctx, SE_String *text);
-bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max);
+b8 seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max);
 
 #endif SEUI_COMPONENETS_H

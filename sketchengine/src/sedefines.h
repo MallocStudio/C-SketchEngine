@@ -15,7 +15,7 @@
 /// debugging for SDL2
 void print_sdl_error();
 
-#define new(type) ( type *) malloc (sizeof( type ))
+#define NEW(type) ( type *) malloc (sizeof( type ))
 #define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define SE_ERROR(message) {printf("ERROR: %s; FILE: %s (LINE: %i)\n", message, __FILE__, __LINE__);}
@@ -34,7 +34,7 @@ typedef unsigned short u8;
 // typedef enum bool {
 //     false, true
 // } bool;
-typedef unsigned short bool;
+typedef unsigned short b8;
 #define false 0
 #define true 1
 
@@ -68,7 +68,7 @@ SEINLINE void rgba_normalise(RGBA *rgb) {
     rgb->a = rgb->a / 255;
 }
 
-SEINLINE bool rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
+SEINLINE b8 rgba_compare(RGBA v1, RGBA v2/*, f32 tolerance*/) {
     return (v1.r == v2.r && v1.b == v2.b && v1.g == v2.g && v1.a == v2.a);
 }
 
@@ -91,7 +91,7 @@ typedef struct SE_Array_F32 {
 SEINLINE void searray_f32_init(SE_Array_F32 *array, u32 initial_capacity) {
     array->count = 0;
     array->capacity = initial_capacity;
-    array->data = malloc(sizeof(f32) * array->capacity);
+    array->data = (f32*)malloc(sizeof(f32) * array->capacity);
 }
 
 SEINLINE void searray_f32_clear(SE_Array_F32 *array) {
@@ -101,7 +101,7 @@ SEINLINE void searray_f32_clear(SE_Array_F32 *array) {
 SEINLINE void searray_f32_resize(SE_Array_F32 *array, u32 new_capacity) {
     if (new_capacity > array->capacity) {
         array->capacity = new_capacity;
-        array->data = realloc(array->data, sizeof(f32) * array->capacity);
+        array->data = (f32*)realloc(array->data, sizeof(f32) * array->capacity);
     }
 }
 
@@ -132,7 +132,7 @@ typedef struct SE_Array_I32 {
 SEINLINE void searray_i32_init(SE_Array_I32 *array, u32 initial_capacity) {
     array->count = 0;
     array->capacity = initial_capacity;
-    array->data = malloc(sizeof(i32) * array->capacity);
+    array->data = (i32*)malloc(sizeof(i32) * array->capacity);
 }
 
 SEINLINE void searray_i32_deinit(SE_Array_I32 *array) {
@@ -148,7 +148,7 @@ SEINLINE void searray_i32_clear(SE_Array_I32 *array) {
 SEINLINE void searray_i32_resize(SE_Array_I32 *array, u32 new_capacity) {
     if (new_capacity > array->capacity) {
         array->capacity = new_capacity;
-        array->data = realloc(array->data, sizeof(i32) * array->capacity);
+        array->data = (i32*)realloc(array->data, sizeof(i32) * array->capacity);
     }
 }
 

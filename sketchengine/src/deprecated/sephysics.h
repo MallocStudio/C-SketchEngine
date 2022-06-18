@@ -46,7 +46,7 @@ static se_phys_check collision_function_array[] = {
 #include "serenderer.h"
 
 typedef struct SE_Physics_Global {
-    bool active;
+    b8 active;
     SEGL_Line_Renderer lines; // meant for debugging and rendering debug shapes
 } SE_Physics_Global;
 SE_Physics_Global *global_physics_debug;

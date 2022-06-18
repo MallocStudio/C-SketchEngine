@@ -42,7 +42,7 @@ typedef struct SE_Shape_Polygon {
 #define SE_RENDERER2D_SHAPE_MAX_SIZE 1024
 typedef struct SE_Renderer2D {
         /* misc */
-    bool initialised;
+    b8 initialised;
         /* viewport */
     Mat4 view_projection; // calculated once viewport is set
     Rect viewport;        // the viewport used to render

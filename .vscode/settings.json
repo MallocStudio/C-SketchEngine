@@ -33,6 +33,20 @@
         "seui_components.h": "c",
         "algorithm": "c",
         "xutility": "c",
-        "compare": "c"
+        "compare": "c",
+        "bit": "c",
+        "cmath": "c",
+        "concepts": "c",
+        "exception": "c",
+        "iosfwd": "c",
+        "limits": "c",
+        "string": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "xmemory": "c",
+        "xstddef": "c",
+        "xstring": "c",
+        "xtr1common": "c"
     }
 }

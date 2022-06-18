@@ -9,9 +9,9 @@
 SE_UI *ctx;
 u32 entity_panel = -1;
 u32 light_panel = -1;
-bool show_hsv                      = false; // toggles
-bool show_texture_viewer_light_map = false; // toggles
-bool show_texture_viewer_soulspear = false; // toggles
+b8 show_hsv                      = false; // toggles
+b8 show_texture_viewer_light_map = false; // toggles
+b8 show_texture_viewer_soulspear = false; // toggles
 HSV hsv; // @temp
 u32 test_texture; // @temp
 u32 light_map_texture = 0;
@@ -175,7 +175,7 @@ void app_init(Application *app, SDL_Window *window) {
     }
 
     { // -- init UI
-        ctx = new (SE_UI);
+        ctx = NEW (SE_UI);
         seui_init(ctx, &app->input, (Rect) {0,0, window_w, window_h}, -1000, 1000);
 
         panel_init(&app_panel);

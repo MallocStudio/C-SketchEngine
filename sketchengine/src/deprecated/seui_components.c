@@ -33,12 +33,12 @@ u32 generate_ui_id(SE_UI *ctx) {
 }
 
 /// note that stay_active_on_mouse_leave is used for dragging ui items
-UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse_leave /* = false */) {
+UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, b8 stay_active_on_mouse_leave /* = false */) {
     UI_STATES result = UI_STATE_IDLE;
     SE_Input *input = ctx->input;
-    bool mouse_down   = input->is_mouse_left_down;
-    bool mouse_up     = !mouse_down;
-    bool mouse_inside = rect_overlaps_point(rect, input->mouse_screen_pos);
+    b8 mouse_down   = input->is_mouse_left_down;
+    b8 mouse_up     = !mouse_down;
+    b8 mouse_inside = rect_overlaps_point(rect, input->mouse_screen_pos);
 
     if (ctx->hot == id) { // pressing down
         if (mouse_up) { // make active
@@ -77,7 +77,7 @@ UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse
     return result;
 }
 
-bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
+b8 seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
     SE_Renderer2D *renderer = &ctx->renderer;
 
@@ -107,7 +107,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     return ui_state == UI_STATE_ACTIVE;
 }
 
-bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
+b8 seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
     SE_Input *input = ctx->input;
     SE_Renderer2D *renderer = &ctx->renderer;
 
@@ -185,7 +185,7 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state) {
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour = RGBA_WHITE;
     // change config for this item
-    bool previous_setting = ctx->txt_renderer.config_centered;
+    b8 previous_setting = ctx->txt_renderer.config_centered;
     ctx->txt_renderer.config_centered = ctx->current_panel->config_item_centered;
 
     se_add_text_rect(&ctx->txt_renderer, text, apply_margin(rect, ctx->theme.margin), get_depth_foreground(ctx));
@@ -256,7 +256,7 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     vec2_normalise(value);
 }
 
-bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
+b8 seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     u32 id = generate_ui_id(ctx);
 
     RGBA colour_bg = (RGBA) {10, 10, 10, 100}; // same colour as label bg
@@ -290,7 +290,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
         button_size,
         button_size
     };
-    bool decrease = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_LEFT, button);
+    b8 decrease = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_LEFT, button);
     /* right button */
     button = (Rect) {
         rect.x + rect.w - button_size,
@@ -298,10 +298,10 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
         button_size,
         button_size
     };
-    bool increase = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_RIGHT, button);
+    b8 increase = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_RIGHT, button);
 
     /* value change */
-    bool changed = false;
+    b8 changed = false;
     if (increase) {
         (*value)++;
         changed = true;
@@ -427,7 +427,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     se_text_reset_config(&ctx->txt_renderer);
 }
 
-bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
+b8 seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         rect = seui_panel_put(ctx, rect.w, true);
@@ -435,7 +435,7 @@ bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     return seui_button_textured_at(ctx, texture_index, rect);
 }
 
-bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
+b8 seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     Rect rect = {0, 0, 100, 32}; // default
     if (ctx->current_panel != NULL) {
         rect = seui_panel_put(ctx, rect.w, true);

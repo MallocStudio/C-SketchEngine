@@ -146,7 +146,7 @@ typedef struct SE_Mesh {
     u32 vao;      // vertex array object
     u32 vbo;      // vertex buffer object
     u32 ibo;      // index buffer object
-    bool indexed; // whether we're using index buffers
+    b8 indexed; // whether we're using index buffers
     AABB3D aabb;  // bounding box, calculated on load
     u32 material_index;
 
@@ -177,7 +177,7 @@ void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width);
 void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices);
     /// If line is true, we will render the bones as lines not as points
     /// If with_animation is true, the animation REFERENCE is copied over to this mesh.
-void semesh_generate_skinned_skeleton(SE_Mesh *mesh, SE_Skeleton *skeleton, bool line, bool with_animation);
+void semesh_generate_skinned_skeleton(SE_Mesh *mesh, SE_Skeleton *skeleton, b8 line, b8 with_animation);
     /// Generates a mesh of type lines that shows the bone node heirachy of the given skeleton
 void semesh_generate_static_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton);
 
@@ -272,7 +272,7 @@ typedef struct SE_Renderer3D {
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera);
 void serender3d_deinit(SE_Renderer3D *renderer);
 /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
-u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bool with_animation);
+u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_animation);
 u32 serender3d_add_cube(SE_Renderer3D *renderer);
 u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale);
 u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale);

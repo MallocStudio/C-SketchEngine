@@ -8,7 +8,7 @@
 ///                WIDGETS
 /// -----------------------------------------
 
-bool seui_button(SE_UI *ctx, const char *text) {
+b8 seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
@@ -26,11 +26,11 @@ void seui_label(SE_UI *ctx, const char *text) {
     seui_label_at(ctx, text, rect);
 }
 
-void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
+void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
     char label_buffer[255];
     seui_panel_row(ctx, 32, 1);
 
-    bool previous_setting = ctx->current_panel->config_item_centered;
+    b8 previous_setting = ctx->current_panel->config_item_centered;
     ctx->current_panel->config_item_centered = true;
     seui_label(ctx, title);
         // reset setting
@@ -79,11 +79,11 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
     }
 }
 
-void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable) {
+void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
     char label_buffer[255];
     seui_panel_row(ctx, 32, 1);
 
-    bool previous_setting = ctx->current_panel->config_item_centered;
+    b8 previous_setting = ctx->current_panel->config_item_centered;
     ctx->current_panel->config_item_centered = true;
     seui_label(ctx, title);
         // reset setting

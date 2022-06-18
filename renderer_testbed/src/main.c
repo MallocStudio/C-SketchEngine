@@ -40,7 +40,7 @@ int main() {
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
     SDL_StopTextInput(); // don't take text input by default
-    Application *app = new(Application);
+    Application *app = NEW(Application);
     app_init(app, window);
 
     // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -54,8 +54,8 @@ int main() {
     while (!app->should_quit) {
         // -- events
         SDL_Event event;
-        bool keyboard_down = false;
-        bool keyboard_pressed = false;
+        b8 keyboard_down = false;
+        b8 keyboard_pressed = false;
         app->input.mouse_wheel = 0; // reset this to zero
         while (SDL_PollEvent(&event)) {
             switch (event.type) {

@@ -1,9 +1,7 @@
 #define SDL_MAIN_HANDLED // gets rid of linking errors
 
-#include "sedefines.h"
 #include "GL/glew.h"
-#include "application.h"
-#include "sestring.h"
+#include "game.hpp"
 #include "stdio.h"
 
 int main() {
@@ -40,8 +38,8 @@ int main() {
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
     SDL_StopTextInput(); // don't take text input by default
-    Application *app = new(Application);
-    app_init(app, window);
+
+    Game *game = new Game(window);
 
     // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
@@ -51,16 +49,16 @@ int main() {
     Uint64 last = 0;
     f64 delta_time = 0;
     // -- main loop
-    while (!app->should_quit) {
+    while (!game->should_quit) {
         // -- events
         SDL_Event event;
         bool keyboard_down = false;
         bool keyboard_pressed = false;
-        app->input.mouse_wheel = 0; // reset this to zero
+        game->input.mouse_wheel = 0; // reset this to zero
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT: { // -- wanting to quit
-                    app->should_quit = true;
+                    game->should_quit = true;
                 } break;
                 case SDL_WINDOWEVENT: { // -- resized window
                     if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
@@ -74,17 +72,17 @@ int main() {
                     // keyboard_down = true;
                 } break;
                 case SDL_MOUSEWHEEL: {
-                    app->input.mouse_wheel = event.wheel.preciseY;
+                    game->input.mouse_wheel = event.wheel.preciseY;
                 } break;
                 case SDL_TEXTINPUT: { // this event happens after SDL_StartTextInput() is called
-                    if (app->input.text_input_stream != NULL) {
-                        if (app->input.is_text_input_only_numeric) {
+                    if (game->input.text_input_stream != NULL) {
+                        if (game->input.is_text_input_only_numeric) {
                             if ((event.text.text[0] >= (i32)'0' && event.text.text[0] <= (i32)'9')
                                 || event.text.text[0] == (i32)'-' || event.text.text[0] == (i32)'.') {
-                                sestring_append(app->input.text_input_stream, event.text.text);
+                                sestring_append(game->input.text_input_stream, event.text.text);
                             }
                         } else {
-                            sestring_append(app->input.text_input_stream, event.text.text);
+                            sestring_append(game->input.text_input_stream, event.text.text);
                             // printf("WHAT!!! %s\n", event.text.text);
                         }
                     } else {
@@ -99,14 +97,14 @@ int main() {
         last = now;
         now = SDL_GetPerformanceCounter();
         delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
-        app_update(app, (f32)delta_time);
-        app_render(app);
+        game->update((f32)delta_time);
+        game->render();
 
         SDL_GL_SwapWindow(window);
     }
 
     // -- exit
-    app_deinit(app);
+    delete game;
     SDL_GL_DeleteContext(g_context);
     SDL_DestroyWindow(window);
     SDL_Quit();

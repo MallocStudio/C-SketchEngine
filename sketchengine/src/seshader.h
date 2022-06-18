@@ -15,8 +15,8 @@ typedef struct SE_Shader {
     GLuint fragment_shader;
     GLuint geometry_shader;
     GLuint shader_program;
-    bool loaded_successfully;
-    bool has_geometry;
+    b8 loaded_successfully;
+    b8 has_geometry;
 } SE_Shader;
 
 /// Creates GL resources and compiles & links the given shaders

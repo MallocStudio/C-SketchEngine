@@ -4,8 +4,8 @@
 
 typedef struct Entity {
         // mesh
-    bool has_mesh;
-    bool should_render_mesh;
+    b8 has_mesh;
+    b8 should_render_mesh;
     u32 mesh_index;
 
         // transform
@@ -14,7 +14,7 @@ typedef struct Entity {
     Vec3 scale;
 
         // data
-    bool has_name;
+    b8 has_name;
     SE_String name;
 } Entity;
 

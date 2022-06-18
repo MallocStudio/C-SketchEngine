@@ -30,13 +30,13 @@ typedef struct SE_Text_Render_Queue {
     Rect rect;
     f32 depth;
     Vec3 colour;
-    bool centered;
+    b8 centered;
     Vec2 string_size;
 } SE_Text_Render_Queue;
 
 typedef struct SE_Text {
     /* configs */
-    bool config_centered;
+    b8 config_centered;
     Vec3 config_colour;
     // f32  config_scale;
 
@@ -44,7 +44,7 @@ typedef struct SE_Text {
     FT_Library library; // ft requires the library
     FT_Face face;       // then we can load fonts
     SE_Shader shader_program;
-    bool initialised;
+    b8 initialised;
 
     /* rendering data */
     u32 vbo, vao;
@@ -58,8 +58,8 @@ typedef struct SE_Text {
 } SE_Text;
 
 /// initialise text with font and load the glyphs
-bool se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth);
-bool se_init_text(SE_Text *text, const char *fontpath, u32 font_size, Rect viewport, f32 min_depth, f32 max_depth);
+b8 se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth);
+b8 se_init_text(SE_Text *text, const char *fontpath, u32 font_size, Rect viewport, f32 min_depth, f32 max_depth);
 void se_deinit_text(SE_Text *text);
 
 /// add strings to text's queue to render

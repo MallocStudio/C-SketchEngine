@@ -33,7 +33,7 @@ typedef struct SEUI_Panel {
     /* CAN BE SET DIRECTLY ---------------------------------------------------- */
         /* positioning of panel */
         Rect calc_rect;
-        bool minimised;
+        b8 minimised;
         f32 min_item_height;
         // 0 means not docked, 1 means left, 2 means right
         u32 docked_dir;
@@ -45,14 +45,14 @@ typedef struct SEUI_Panel {
         /* layouting configuration */
         f32 config_row_left_margin;
         f32 config_row_right_margin;
-        bool config_item_centered;  // should the current "item" be aligned centered
-        bool config_item_minimised; // should the current "item" take the minimum amount of space
+        b8 config_item_centered;  // should the current "item" be aligned centered
+        b8 config_item_minimised; // should the current "item" take the minimum amount of space
 
         const char *title;
 
     /* auto calculated ------------------------------------------------------- */
         i32 index; // the index identifier of the panel tracked by SE_UI, if index is -1 then it's uninitialised?
-        bool is_closed;
+        b8 is_closed;
             // depth testing
         f32 depth_bg; // depth used for background    items
         f32 depth_fg; // depth used for foreground    items
@@ -77,7 +77,7 @@ typedef struct SEUI_Panel {
         Vec2 fit_size;
         Vec2 fit_cursor;
         Rect cached_rect; // the rect of the panel from the previous frame
-        bool is_embedded; // is inside of another panel
+        b8 is_embedded; // is inside of another panel
 } SEUI_Panel;
 
 typedef struct SE_Theme {
@@ -92,22 +92,8 @@ typedef struct SE_Theme {
     /* positioning */
     Vec2 margin; // x for horizontal margin, y for vertical margin
 } SE_Theme;
-SEINLINE void seui_theme_default(SE_Theme *theme) {
-    // theme->colour_normal  = (RGBA) {65, 84, 105, 255};
-    // theme->colour_hover   = (RGBA) {108, 145, 173, 255};
-    // theme->colour_pressed = (RGBA) {43, 56, 71, 255};
-    // theme->colour_bg      = (RGBA) {33, 39, 43, 200};
-    // theme->colour_fg      = (RGBA) {56, 95, 161, 255};
-    // theme->margin = v2f(8, 0);
-    theme->colour_normal  = (RGBA) {227, 126, 39, 255};
-    theme->colour_hover   = (RGBA) {242, 145, 85, 255};
-    theme->colour_pressed = (RGBA) {156, 67, 12, 255};
-    theme->colour_bg      = (RGBA) {59, 34, 32, 255};
-    theme->colour_fg      = (RGBA) {56, 95, 161, 255};
-    // theme->colour_bg_2    = (RGBA) {10, 10, 10, 230};
-    theme->colour_bg_2      = (RGBA) {59, 34, 32, 255};
-    theme->margin = v2f(16, 8);
-}
+
+void seui_theme_default(SE_Theme *theme);
 
 typedef enum UI_STATES {
     UI_STATE_DISABLED, // this UI element is unusable but is rendererd
@@ -165,166 +151,45 @@ typedef struct SE_UI {
     u32 active; // being used (used for text input)
     SE_String text_input_cache;   // used for all sorts of stuff. For example editing floating point values
     SE_String text_input; // store a copy of what's being typed into the active text input
-    bool text_input_only_numerical;
+    b8 text_input_only_numerical;
 } SE_UI;
 
 /// Set text input configurations to default values. It's good practice to
 /// do call this procedure after modifying the configuration for a usecase.
-SEINLINE void seui_configure_text_input_reset(SE_UI *ctx) {
-    ctx->text_input_only_numerical = false;
-}
-
-void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
-
-/// Reset the panel configurations to their default values.
-/// These are the values that the user can manually set before each widget call
-/// to customise their appearance.
-SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
-    panel->config_row_left_margin = 0;
-    panel->config_row_right_margin = 0;
-    panel->config_item_centered = false;
-    panel->config_item_minimised = false;
-}
+void seui_configure_text_input_reset(SE_UI *ctx);
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, b8 minimised, f32 min_item_height, i32 docked_dir /* = 0*/);
+void seui_configure_panel_reset(SEUI_Panel *panel);
 
 /// Start a panel at the given position. Aligns the items inside of the panel
 /// based on the given number of columns.
 /// Returns true if the panel is not closed.
-bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel);
-bool seui_panel(SE_UI *ctx, const char *title);
+b8 seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel);
+b8 seui_panel(SE_UI *ctx, const char *title);
 
 void seui_panel_row(SE_UI *ctx, f32 height, u32 columns);
 Rect seui_panel_put(SE_UI *ctx, f32 min_width);
 
 /// call this at the beginning of every frame before creating other widgets
-SEINLINE void seui_reset(SE_UI *ctx) {
-    ctx->max_id = SEUI_ID_NULL;
-    ctx->current_panel = NULL;
-    ctx->panel_count = 0;
-    ctx->panel_container_count = 0;
-    ctx->current_max_depth = ctx->min_depth_available;
-}
-
-SEINLINE void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
-    ctx->viewport = (Rect) {0, 0, window_w, window_h};
-    serender2d_resize(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
-    se_set_text_viewport(&ctx->txt_renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
-}
-
-SEINLINE void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 max_depth) {
-    ctx->warm = SEUI_ID_NULL;
-    ctx->hot = SEUI_ID_NULL;
-    ctx->active = SEUI_ID_NULL;
-    seui_reset(ctx);
-    ctx->input = input;
-
-    ctx->min_depth_available = min_depth;
-    ctx->max_depth_available = max_depth;
-
-    ctx->viewport = viewport;
-    serender2d_init(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
-    se_init_text_default(&ctx->txt_renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
-
-    seui_theme_default(&ctx->theme);
-
-    setexture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
-
-    /* panels */
-    ctx->current_panel = NULL;
-    ctx->current_non_embedded_panel = NULL;
-    ctx->current_dragging_panel = NULL;
-    ctx->latest_activated_panel = NULL;
-    ctx->current_max_depth = ctx->min_depth_available;
-
-    ctx->panel_capacity = 100;
-    ctx->panel_count = 0;
-    ctx->panels = (SEUI_Panel*) malloc(sizeof(SEUI_Panel) * ctx->panel_capacity);
-    memset(ctx->panels, 0, sizeof(SEUI_Panel) * ctx->panel_capacity);
-    for (u32 i = 0; i < ctx->panel_capacity; ++i) {
-        ctx->panels[i].index = -1;
-    }
-
-    ctx->panel_container_count = 0;
-    memset(ctx->panel_containers, -1, sizeof(i32) * SEUI_PANEL_CONTAINER_CAPACITY);
-
-    sestring_init(&ctx->text_input_cache, "");
-    sestring_init(&ctx->text_input, "");
-}
-
-SEINLINE void seui_deinit(SE_UI *ctx) {
-    serender2d_deinit(&ctx->renderer);
-    se_deinit_text(&ctx->txt_renderer);
-    sestring_deinit(&ctx->text_input_cache);
-    sestring_deinit(&ctx->text_input);
-    setexture_atlas_unload(&ctx->icon_atlas);
-    free(ctx->panels);
-    ctx->panel_count = 0;
-}
-
-SEINLINE void seui_close_panel(SE_UI *ctx, u32 panel_index) {
-    if (panel_index < ctx->panel_count) ctx->panels[panel_index].is_closed = true;
-}
-
-SEINLINE void seui_render(SE_UI *ctx) {
-    /* upload data */
-    serender2d_upload_to_gpu(&ctx->renderer);
-
-    /* configure */
-
-    /* draw call */
-    serender2d_render(&ctx->renderer);
-    serender2d_clear_shapes(&ctx->renderer);
-
-    /* text */
-    se_render_text(&ctx->txt_renderer);
-    se_clear_text_render_queue(&ctx->txt_renderer); // sense we're gonna recreate the queue next frame
-}
-
-SEINLINE SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
-    if (ctx->panel_count >= ctx->panel_capacity) {
-        ctx->panel_capacity += (ctx->panel_capacity+1) * 0.5f;
-        ctx->panels = realloc(ctx->panels, sizeof(SEUI_Panel) * ctx->panel_capacity);
-        memset(ctx->panels + ctx->panel_count, 0, sizeof(SEUI_Panel) * (ctx->panel_capacity - ctx->panel_count)); // @TODO test this
-    }
-    u32 panel = ctx->panel_count;
-    if (ctx->panels[panel].index == ctx->panel_count) { // the order of panel draw calls has not changed
-        // the indices match so we won't reset this panel, because we want to keep the data from the previous frame
-        ctx->panel_count++;
-
-        return &ctx->panels[panel];
-    } else {
-        // the indices don't match, so this is a different panel and we have to reset it
-        Rect init_rect = {
-            ctx->viewport.w / 2 - 128, // the hackiest way to get the viewport
-            ctx->viewport.h / 2 - 128, // the hackiest way to get the viewport
-            128 * 2,
-            128 * 2
-        };
-        seui_panel_setup(&ctx->panels[panel], init_rect, false, 32, 0);
-        ctx->panels[panel].index = panel;
-        ctx->panels[panel].is_closed = true; // by default panels are closed
-        ctx->panel_count++;
-        return &ctx->panels[panel];
-    }
-}
-
-SEINLINE SEUI_Panel* seui_ctx_get_panel_container(SE_UI *ctx) {
-    i32 panel = ctx->panel_containers[ctx->panel_container_count];
-    ctx->panel_container_count++;
-    if (ctx->panels[panel].is_closed || panel < 0) return NULL;
-    return &ctx->panels[panel];
-}
+void seui_reset(SE_UI *ctx);
+void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h);
+void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 max_depth);
+void seui_deinit(SE_UI *ctx);
+void seui_close_panel(SE_UI *ctx, u32 panel_index);
+void seui_render(SE_UI *ctx);
+SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx);
+SEUI_Panel* seui_ctx_get_panel_container(SE_UI *ctx);
 
 //// COMPONENTS ////
 
 u32 generate_ui_id(SE_UI *ctx);
-UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse_leave /* = false */);
+UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, b8 stay_active_on_mouse_leave /* = false */);
 
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect);
 
 
 /// Draws a button at the given rectangle.
-bool seui_button_at(SE_UI *ctx, const char *text, Rect rect);
-bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect);
+b8 seui_button_at(SE_UI *ctx, const char *text, Rect rect);
+b8 seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect);
 
 /// Draws a button that returns the drag if the mouse is trying to drag it.
 /// That means is the mouse is hovering over the button and pressing down.
@@ -353,7 +218,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect);
 /// A horizontal slider with buttons on its sides.
 /// Within the range of [min, max]
 /// If min AND max are zero, the limits will be ignored
-bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
+b8 seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max);
 
 void seui_texture_viewer(SE_UI *ctx, u32 texture_id); // texture_index refers to the texture added to the renderer
 // void seui_image_viewer(SE_UI *ctx, Rect rect, const SE_Texture *texture);
@@ -368,15 +233,15 @@ void seui_panel_container(SE_UI *ctx);
 /// DEFINED IN seui_widgets.c
 
 void seui_label(SE_UI *ctx, const char *text);
-void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable);
-void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable);
+void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable);
+void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable);
 /// Draws a button but figures out the position and the rect based on the current
 /// context and panel.
-bool seui_button(SE_UI *ctx, const char *text);
-bool seui_button_textured(SE_UI *ctx, Vec2 texture_index);
+b8 seui_button(SE_UI *ctx, const char *text);
+b8 seui_button_textured(SE_UI *ctx, Vec2 texture_index);
 void seui_slider(SE_UI *ctx, f32 *value);
 void seui_slider2d(SE_UI *ctx, Vec2 *value);
 void seui_input_text(SE_UI *ctx, SE_String *text);
-bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max);
+b8 seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max);
 
 #endif // SEUI_H_CTX

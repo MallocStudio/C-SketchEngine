@@ -13,7 +13,7 @@ typedef struct SE_Texture {
     i32 width;
     i32 height;
     i32 channel_count;
-    bool loaded;
+    b8 loaded;
 } SE_Texture;
 
 void setexture_load(SE_Texture *texture, const char *filepath);
@@ -27,7 +27,7 @@ typedef struct SE_Image {
     i32 width;
     i32 height;
     i32 channel_count;
-    bool loaded;
+    b8 loaded;
 } SE_Image;
 
 void seimage_load(SE_Image *image, const char *filepath);
@@ -71,7 +71,7 @@ typedef struct SE_Sprite {
 /// and resets animation data. In order to render a sprite it,
 /// must be assigned to a material and the material must be
 /// assigned to a mesh (perhaps a quad mesh)
-bool sesprite_load(SE_Sprite *sprite, const char *filepath);
+b8 sesprite_load(SE_Sprite *sprite, const char *filepath);
 /// must be called if sesprite_load is called to clean up opengl resources.
 void sesprite_unload(SE_Sprite *sprite);
 #endif // SE_SPRITE_H

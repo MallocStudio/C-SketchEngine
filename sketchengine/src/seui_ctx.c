@@ -35,6 +35,159 @@ static Rect expand_view_region(SE_UI *ctx, Rect normalised_rect) {
     return result;
 }
 
+void seui_theme_default(SE_Theme *theme) {
+    // theme->colour_normal  = (RGBA) {65, 84, 105, 255};
+    // theme->colour_hover   = (RGBA) {108, 145, 173, 255};
+    // theme->colour_pressed = (RGBA) {43, 56, 71, 255};
+    // theme->colour_bg      = (RGBA) {33, 39, 43, 200};
+    // theme->colour_fg      = (RGBA) {56, 95, 161, 255};
+    // theme->margin = v2f(8, 0);
+    theme->colour_normal  = (RGBA) {227, 126, 39, 255};
+    theme->colour_hover   = (RGBA) {242, 145, 85, 255};
+    theme->colour_pressed = (RGBA) {156, 67, 12, 255};
+    theme->colour_bg      = (RGBA) {59, 34, 32, 255};
+    theme->colour_fg      = (RGBA) {56, 95, 161, 255};
+    // theme->colour_bg_2    = (RGBA) {10, 10, 10, 230};
+    theme->colour_bg_2      = (RGBA) {59, 34, 32, 255};
+    theme->margin = v2f(16, 8);
+}
+
+/// Set text input configurations to default values. It's good practice to
+/// do call this procedure after modifying the configuration for a usecase.
+void seui_configure_text_input_reset(SE_UI *ctx) {
+    ctx->text_input_only_numerical = false;
+}
+
+/// Reset the panel configurations to their default values.
+/// These are the values that the user can manually set before each widget call
+/// to customise their appearance.
+void seui_configure_panel_reset(SEUI_Panel *panel) {
+    panel->config_row_left_margin = 0;
+    panel->config_row_right_margin = 0;
+    panel->config_item_centered = false;
+    panel->config_item_minimised = false;
+}
+
+
+/// call this at the beginning of every frame before creating other widgets
+void seui_reset(SE_UI *ctx) {
+    ctx->max_id = SEUI_ID_NULL;
+    ctx->current_panel = NULL;
+    ctx->panel_count = 0;
+    ctx->panel_container_count = 0;
+    ctx->current_max_depth = ctx->min_depth_available;
+}
+
+void seui_resize(SE_UI *ctx, u32 window_w, u32 window_h) {
+    ctx->viewport = (Rect) {0, 0, window_w, window_h};
+    serender2d_resize(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
+    se_set_text_viewport(&ctx->txt_renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
+}
+
+void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 max_depth) {
+    ctx->warm = SEUI_ID_NULL;
+    ctx->hot = SEUI_ID_NULL;
+    ctx->active = SEUI_ID_NULL;
+    seui_reset(ctx);
+    ctx->input = input;
+
+    ctx->min_depth_available = min_depth;
+    ctx->max_depth_available = max_depth;
+
+    ctx->viewport = viewport;
+    serender2d_init(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
+    se_init_text_default(&ctx->txt_renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
+
+    seui_theme_default(&ctx->theme);
+
+    setexture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
+
+    /* panels */
+    ctx->current_panel = NULL;
+    ctx->current_non_embedded_panel = NULL;
+    ctx->current_dragging_panel = NULL;
+    ctx->latest_activated_panel = NULL;
+    ctx->current_max_depth = ctx->min_depth_available;
+
+    ctx->panel_capacity = 100;
+    ctx->panel_count = 0;
+    ctx->panels = (SEUI_Panel*) malloc(sizeof(SEUI_Panel) * ctx->panel_capacity);
+    memset(ctx->panels, 0, sizeof(SEUI_Panel) * ctx->panel_capacity);
+    for (u32 i = 0; i < ctx->panel_capacity; ++i) {
+        ctx->panels[i].index = -1;
+    }
+
+    ctx->panel_container_count = 0;
+    memset(ctx->panel_containers, -1, sizeof(i32) * SEUI_PANEL_CONTAINER_CAPACITY);
+
+    sestring_init(&ctx->text_input_cache, "");
+    sestring_init(&ctx->text_input, "");
+}
+
+void seui_deinit(SE_UI *ctx) {
+    serender2d_deinit(&ctx->renderer);
+    se_deinit_text(&ctx->txt_renderer);
+    sestring_deinit(&ctx->text_input_cache);
+    sestring_deinit(&ctx->text_input);
+    setexture_atlas_unload(&ctx->icon_atlas);
+    free(ctx->panels);
+    ctx->panel_count = 0;
+}
+
+void seui_close_panel(SE_UI *ctx, u32 panel_index) {
+    if (panel_index < ctx->panel_count) ctx->panels[panel_index].is_closed = true;
+}
+
+void seui_render(SE_UI *ctx) {
+    /* upload data */
+    serender2d_upload_to_gpu(&ctx->renderer);
+
+    /* configure */
+
+    /* draw call */
+    serender2d_render(&ctx->renderer);
+    serender2d_clear_shapes(&ctx->renderer);
+
+    /* text */
+    se_render_text(&ctx->txt_renderer);
+    se_clear_text_render_queue(&ctx->txt_renderer); // sense we're gonna recreate the queue next frame
+}
+
+SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
+    if (ctx->panel_count >= ctx->panel_capacity) {
+        ctx->panel_capacity += (ctx->panel_capacity+1) * 0.5f;
+        ctx->panels = realloc(ctx->panels, sizeof(SEUI_Panel) * ctx->panel_capacity);
+        memset(ctx->panels + ctx->panel_count, 0, sizeof(SEUI_Panel) * (ctx->panel_capacity - ctx->panel_count)); // @TODO test this
+    }
+    u32 panel = ctx->panel_count;
+    if (ctx->panels[panel].index == ctx->panel_count) { // the order of panel draw calls has not changed
+        // the indices match so we won't reset this panel, because we want to keep the data from the previous frame
+        ctx->panel_count++;
+
+        return &ctx->panels[panel];
+    } else {
+        // the indices don't match, so this is a different panel and we have to reset it
+        Rect init_rect = {
+            ctx->viewport.w / 2 - 128, // the hackiest way to get the viewport
+            ctx->viewport.h / 2 - 128, // the hackiest way to get the viewport
+            128 * 2,
+            128 * 2
+        };
+        seui_panel_setup(&ctx->panels[panel], init_rect, false, 32, 0);
+        ctx->panels[panel].index = panel;
+        ctx->panels[panel].is_closed = true; // by default panels are closed
+        ctx->panel_count++;
+        return &ctx->panels[panel];
+    }
+}
+
+SEUI_Panel* seui_ctx_get_panel_container(SE_UI *ctx) {
+    i32 panel = ctx->panel_containers[ctx->panel_container_count];
+    ctx->panel_container_count++;
+    if (ctx->panels[panel].is_closed || panel < 0) return NULL;
+    return &ctx->panels[panel];
+}
+
 /// -----------------------------------------
 ///                 PANEL
 /// -----------------------------------------
@@ -60,7 +213,7 @@ void seui_panel_row(SE_UI *ctx, f32 height, u32 columns) {
 
 }
 
-void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
+void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, b8 minimised, f32 min_item_height, i32 docked_dir /* = 0*/) {
     seui_configure_panel_reset(panel);
     panel->calc_rect = initial_rect;
     panel->cached_rect = initial_rect;
@@ -118,13 +271,13 @@ Rect seui_panel_put(SE_UI *ctx, f32 min_width) {
     return item;
 }
 
-bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
+b8 seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     if (panel_data == NULL) return false;
     ctx->current_panel = panel_data; // record this panel as current panel before returning
     if (panel_data->is_closed) return false;
 
-    bool *minimised   = &panel_data->minimised;
-    bool is_minimised = *minimised;
+    b8 *minimised   = &panel_data->minimised;
+    b8 is_minimised = *minimised;
     RGBA colour = ctx->theme.colour_bg;
 
     if (!panel_data->is_embedded) {
@@ -303,7 +456,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
     return !panel_data->is_closed && !panel_data->minimised;
 }
 
-bool seui_panel(SE_UI *ctx, const char *title) {
+b8 seui_panel(SE_UI *ctx, const char *title) {
     SEUI_Panel *panel_data = seui_ctx_get_panel(ctx);
     return seui_panel_at(ctx, title, panel_data);
 }
@@ -317,12 +470,12 @@ u32 generate_ui_id(SE_UI *ctx) {
 }
 
 /// note that stay_active_on_mouse_leave is used for dragging ui items
-UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse_leave /* = false */) {
+UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, b8 stay_active_on_mouse_leave /* = false */) {
     UI_STATES result = UI_STATE_IDLE;
     SE_Input *input = ctx->input;
-    bool mouse_down   = input->is_mouse_left_down;
-    bool mouse_up     = !mouse_down;
-    bool mouse_inside = rect_overlaps_point(rect, input->mouse_screen_pos);
+    b8 mouse_down   = input->is_mouse_left_down;
+    b8 mouse_up     = !mouse_down;
+    b8 mouse_inside = rect_overlaps_point(rect, input->mouse_screen_pos);
 
     if (ctx->hot == id) { // pressing down
         if (mouse_up) { // make active
@@ -361,7 +514,7 @@ UI_STATES get_ui_state (SE_UI *ctx, u32 id, Rect rect, bool stay_active_on_mouse
     return result;
 }
 
-bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
+b8 seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     SE_Input *input = ctx->input;
     SE_Renderer2D *renderer = &ctx->renderer;
 
@@ -391,7 +544,7 @@ bool seui_button_at(SE_UI *ctx, const char *text, Rect rect) {
     return ui_state == UI_STATE_ACTIVE;
 }
 
-bool seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
+b8 seui_button_textured_at(SE_UI *ctx, Vec2 texture_index, Rect rect) {
     SE_Input *input = ctx->input;
     SE_Renderer2D *renderer = &ctx->renderer;
 
@@ -469,7 +622,7 @@ Vec2 seui_drag_button_at(SE_UI *ctx, Rect rect, UI_STATES *state) {
 void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     RGBA colour = RGBA_WHITE;
     // change config for this item
-    bool previous_setting = ctx->txt_renderer.config_centered;
+    b8 previous_setting = ctx->txt_renderer.config_centered;
     ctx->txt_renderer.config_centered = ctx->current_panel->config_item_centered;
 
     se_add_text_rect(&ctx->txt_renderer, text, rect, get_depth_foreground(ctx));
@@ -540,7 +693,7 @@ void seui_slider2d_at(SE_UI *ctx, Vec2 center, f32 radius, Vec2 *value) {
     vec2_normalise(value);
 }
 
-bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
+b8 seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
     u32 id = generate_ui_id(ctx);
 
     RGBA colour_bg = (RGBA) {10, 10, 10, 100}; // same colour as label bg
@@ -574,7 +727,7 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
         button_size,
         button_size
     };
-    bool decrease = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_LEFT, button);
+    b8 decrease = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_LEFT, button);
     /* right button */
     button = (Rect) {
         rect.x + rect.w - button_size,
@@ -582,10 +735,10 @@ bool seui_selector_at(SE_UI *ctx, Rect rect, i32 *value, i32 min, i32 max) {
         button_size,
         button_size
     };
-    bool increase = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_RIGHT, button);
+    b8 increase = seui_button_textured_at(ctx, UI_ICON_INDEX_ARROW_RIGHT, button);
 
     /* value change */
-    bool changed = false;
+    b8 changed = false;
     if (increase) {
         (*value)++;
         changed = true;
@@ -711,7 +864,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
     se_text_reset_config(&ctx->txt_renderer);
 }
 
-bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
+b8 seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         rect = seui_panel_put(ctx, rect.w);
@@ -719,7 +872,7 @@ bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     return seui_button_textured_at(ctx, texture_index, rect);
 }
 
-bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
+b8 seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     Rect rect = {0, 0, 100, 32}; // default
     if (ctx->current_panel != NULL) {
         rect = seui_panel_put(ctx, rect.w);
@@ -898,7 +1051,7 @@ void seui_panel_container(SE_UI *ctx) {
 ///                WIDGETS
 /// -----------------------------------------
 
-bool seui_button(SE_UI *ctx, const char *text) {
+b8 seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
@@ -916,11 +1069,11 @@ void seui_label(SE_UI *ctx, const char *text) {
     seui_label_at(ctx, text, rect);
 }
 
-void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) {
+void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
     char label_buffer[255];
     seui_panel_row(ctx, 32, 1);
 
-    bool previous_setting = ctx->current_panel->config_item_centered;
+    b8 previous_setting = ctx->current_panel->config_item_centered;
     ctx->current_panel->config_item_centered = true;
     seui_label(ctx, title);
         // reset setting
@@ -936,7 +1089,7 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_label(ctx, label_buffer);
     } else {
         ctx->text_input_only_numerical = true;
-        bool previous_item_minimised_config = ctx->current_panel->config_item_minimised;
+        b8 previous_item_minimised_config = ctx->current_panel->config_item_minimised;
         seui_panel_row(ctx, 32, 6);
 
             //- X
@@ -979,11 +1132,11 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
     }
 }
 
-void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable) {
+void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
     char label_buffer[255];
     seui_panel_row(ctx, 32, 1);
 
-    bool previous_setting = ctx->current_panel->config_item_centered;
+    b8 previous_setting = ctx->current_panel->config_item_centered;
     ctx->current_panel->config_item_centered = true;
     seui_label(ctx, title);
         // reset setting

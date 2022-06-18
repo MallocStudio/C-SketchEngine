@@ -52,7 +52,7 @@ static void setup_text_opengl_data(SE_Text *text) {
     glBindVertexArray(0);
 }
 
-static bool load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsize) {
+static b8 load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsize) {
     Vec2 texture_size = {1024, 1024}; // must be a multiple of 4
     SE_Image image;
     seimage_load_empty(&image, texture_size.x, texture_size.y, 1);
@@ -148,7 +148,7 @@ Vec2 se_size_text(SE_Text *text, const char *string) {
     return size;
 }
 
-bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport, f32 min_depth, f32 max_depth) {
+b8 se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport, f32 min_depth, f32 max_depth) {
     text->initialised = false;
     if (FT_Init_FreeType(&text->library)) {
         printf("ERROR:FREETYPE: Could not init freetype library\n");
@@ -174,7 +174,7 @@ bool se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewpo
     return text->initialised;
 }
 
-bool se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth) {
+b8 se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth) {
     return se_init_text(text, DEFAULT_FONT_PATH, 20, viewport, min_depth, max_depth);
 }
 

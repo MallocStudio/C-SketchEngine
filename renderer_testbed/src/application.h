@@ -35,7 +35,7 @@ typedef struct Application {
     SE_Renderer3D renderer;
 
     SDL_Window *window;
-    bool should_quit;
+    b8 should_quit;
 
     u32 entity_count;
     Entity entities[ENTITIES_MAX_COUNT];

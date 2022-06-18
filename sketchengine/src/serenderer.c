@@ -596,7 +596,7 @@ void semesh_generate_static_skeleton
 }
 
 void semesh_generate_skinned_skeleton
-(SE_Mesh *mesh, SE_Skeleton *skeleton, bool line, bool with_animation) {
+(SE_Mesh *mesh, SE_Skeleton *skeleton, b8 line, b8 with_animation) {
         // generate buffers
     glGenBuffers(1, &mesh->vbo);
     glGenVertexArrays(1, &mesh->vao);
@@ -875,13 +875,13 @@ static void semesh_construct_material // only meant to be called form serender3d
     sestring_init(&specular_path, dir.buffer);
     sestring_init(&normal_path, dir.buffer);
 
-    struct aiString *ai_texture_path_diffuse  = new(struct aiString);
-    struct aiString *ai_texture_path_specular = new(struct aiString);
-    struct aiString *ai_texture_path_normal   = new(struct aiString);
+    struct aiString *ai_texture_path_diffuse  = NEW(struct aiString);
+    struct aiString *ai_texture_path_specular = NEW(struct aiString);
+    struct aiString *ai_texture_path_normal   = NEW(struct aiString);
 
-    bool has_diffuse  = true;
-    bool has_specular = true;
-    bool has_normal   = true;
+    b8 has_diffuse  = true;
+    b8 has_specular = true;
+    b8 has_normal   = true;
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_diffuse = false;
@@ -1010,7 +1010,7 @@ static void recursive_read_bone_heirarchy
 
         // See if this node is a bone node by comparing names with the bones
         // found in the mesh (as loaded to "skeleton" previously)
-    bool found = false;
+    b8 found = false;
     SE_String src_name;
     sestring_init(&src_name, src->mName.data);
     for (u32 i = 0; i < skeleton->bone_count; ++i) {
@@ -1117,7 +1117,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
     }
 
     {   //- extract bone info for each vertex
-        mesh->skeleton = new (SE_Skeleton); // @leak
+        mesh->skeleton = NEW (SE_Skeleton); // @leak
         mesh->skeleton->bone_count = 0;
             // copy the bone data to skeleton
         for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
@@ -1477,7 +1477,7 @@ static u32 add_animation_to_skeleton(SE_Skeleton *skeleton) {
     u32 anim = skeleton->animations_count;
     skeleton->animations_count++;
 
-    skeleton->animations[anim] = new(SE_Skeletal_Animation);
+    skeleton->animations[anim] = NEW(SE_Skeletal_Animation);
     memset(skeleton->animations[anim], 0, sizeof(SE_Skeletal_Animation));
     return anim;
 }
@@ -1510,7 +1510,7 @@ static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
     }
 }
 
-u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bool with_skeleton) {
+u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_skeleton) {
     u32 result = -1;
         // load scene from file
     const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -1525,7 +1525,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
         struct aiMesh *ai_mesh = scene->mMeshes[i];
 
         // add a mesh to the renderer
-        renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+        renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
         memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
 
             //- load the skeleton of this mesh
@@ -1771,7 +1771,7 @@ void serender3d_reset_render_config() {
 static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const char *vsd, const char *fsd, const char *gsd) {
     // add a default shader
     u32 shader = renderer->shaders_count;
-    renderer->shaders[shader] = new (SE_Shader);
+    renderer->shaders[shader] = NEW (SE_Shader);
     seshader_init_from_with_geometry(renderer->shaders[shader], vsd, fsd, gsd);
     renderer->shaders_count++;
     return shader;
@@ -1780,7 +1780,7 @@ static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const ch
 u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
     // add a default shader
     u32 shader = renderer->shaders_count;
-    renderer->shaders[shader] = new (SE_Shader);
+    renderer->shaders[shader] = NEW (SE_Shader);
     seshader_init_from(renderer->shaders[shader], vsd, fsd);
     renderer->shaders_count++;
     return shader;
@@ -1876,7 +1876,7 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
 }
 
 u32 serender3d_add_material(SE_Renderer3D *renderer) {
-    renderer->materials[renderer->materials_count] = new(SE_Material);
+    renderer->materials[renderer->materials_count] = NEW(SE_Material);
     memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
     u32 material_index = renderer->materials_count;
     renderer->materials_count++;
@@ -1886,7 +1886,7 @@ u32 serender3d_add_material(SE_Renderer3D *renderer) {
 u32 serender3d_add_cube(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_cube(renderer->meshes[renderer->meshes_count], vec3_one());
 
@@ -1897,7 +1897,7 @@ u32 serender3d_add_cube(SE_Renderer3D *renderer) {
 u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     u32 result = renderer->meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_plane(renderer->meshes[renderer->meshes_count], scale);
 
@@ -1908,7 +1908,7 @@ u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
 u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
     u32 result = renderer->meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_sprite(renderer->meshes[renderer->meshes_count], scale);
 
@@ -1919,7 +1919,7 @@ u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
 u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width) {
     u32 result = renderer->meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width);
 
@@ -1929,7 +1929,7 @@ u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width
 
 u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     sedefault_mesh(renderer->meshes[renderer->meshes_count]);
     renderer->meshes_count++;
@@ -1939,7 +1939,7 @@ u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
 u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer, f32 scale, f32 width) {
     u32 result = renderer->meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], scale, width);
 
@@ -1950,7 +1950,7 @@ u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer, f32 scale, f32 wi
 u32 serender3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
     u32 result = renderer->meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = new(SE_Mesh);
+    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
     semesh_generate_gizmos_aabb(renderer->meshes[renderer->meshes_count], min, max, line_width);
 

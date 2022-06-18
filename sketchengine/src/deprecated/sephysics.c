@@ -3,23 +3,23 @@
 void render_collision_data(const SE_Collision_Data *collision_data) {
     if (!global_physics_debug->active) return;
     // world pos
-    segl_lines_draw_cross(&global_physics_debug->lines, 
+    segl_lines_draw_cross(&global_physics_debug->lines,
         collision_data->world_pos, 0.1f);
     // normal
-    segl_lines_draw_arrow(&global_physics_debug->lines, 
-        collision_data->world_pos, 
+    segl_lines_draw_arrow(&global_physics_debug->lines,
+        collision_data->world_pos,
         vec2_add(collision_data->world_pos, collision_data->normal));
     // normal depth
-    segl_lines_draw_arrow(&global_physics_debug->lines, 
-        collision_data->world_pos, 
-        vec2_add(collision_data->world_pos, 
+    segl_lines_draw_arrow(&global_physics_debug->lines,
+        collision_data->world_pos,
+        vec2_add(collision_data->world_pos,
             vec2_mul_scalar(collision_data->normal, collision_data->depth)));
 }
 
 SE_Collision_Data se_phys_check_plane_plane(SE_Shape *a, SE_Shape *b) {
     SDL_assert(a->type == SE_SHAPES_PLANE && b->type == SE_SHAPES_PLANE);
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -35,7 +35,7 @@ SE_Collision_Data se_phys_check_plane_circle(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result = se_phys_check_circle_plane(b, a);
     result.normal = vec2_mul_scalar(result.normal, -1);
     // @question the thing that's happening is that, in collision depentration we're also flipping the normal, so we actually depenetrate correctly, but the issue is having the above code results in us rendering the collision normal in the wrong direction. And perhaps the collision normal is wrong and should be the other way around. Talk to Finn about this and ask for his opinion.
-    
+
     // result.shape_a = b;
     // result.shape_b = a;
     return result;
@@ -53,7 +53,7 @@ SE_Collision_Data se_phys_check_plane_box(SE_Shape *a, SE_Shape *b) {
 SE_Collision_Data se_phys_check_circle_plane(SE_Shape *a, SE_Shape *b) {
     SDL_assert(a->type == SE_SHAPES_CIRCLE && b->type == SE_SHAPES_PLANE);
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -87,11 +87,11 @@ SE_Collision_Data se_phys_check_circle_plane(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_circle_circle(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
-    
+
     SE_Circle *c1 = (SE_Circle*) a;
     SE_Circle *c2 = (SE_Circle*) b;
     Vec2 c1_pos = c1->pos;
@@ -125,7 +125,7 @@ SE_Collision_Data se_phys_check_circle_box(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_box_plane(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -171,7 +171,7 @@ SE_Collision_Data se_phys_check_box_plane(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_box_circle(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -205,7 +205,7 @@ SE_Collision_Data se_phys_check_box_circle(SE_Shape *a, SE_Shape *b) {
     return result;
 }
 
-bool rect_overlaps_rect(Rect a, Rect b) {
+b8 rect_overlaps_rect(Rect a, Rect b) {
     // following Ericson, C, 2004. Real-Time Collision Detection. 1.  CRC Press.
     // page 79, AABB vs AABB
     f32 t;
@@ -216,7 +216,7 @@ bool rect_overlaps_rect(Rect a, Rect b) {
 
 SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -281,7 +281,7 @@ SE_Collision_Data se_phys_check_box_box(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_polygon_box(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -293,7 +293,7 @@ SE_Collision_Data se_phys_check_polygon_box(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_polygon_circle(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -305,7 +305,7 @@ SE_Collision_Data se_phys_check_polygon_circle(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_polygon_plane(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
@@ -317,14 +317,14 @@ SE_Collision_Data se_phys_check_polygon_plane(SE_Shape *a, SE_Shape *b) {
 
 SE_Collision_Data se_phys_check_polygon_polygon(SE_Shape *a, SE_Shape *b) {
     SE_Collision_Data result;
-    bool collided = false;
+    b8 collided = false;
     Vec2 world_pos = {0};
     Vec2 normal = {0};
     f32 depth = 0;
 
     SE_Polygon *polygon1 = (SE_Polygon*)a;
     SE_Polygon *polygon2 = (SE_Polygon*)b;
-    
+
     // -- figure out the axis of each edge
 
     Vec2 axis[SE_POLYGON_POINTS_COUNT_MAX - 1];
@@ -385,7 +385,7 @@ SE_Collision_Data se_phys_check_polygon_polygon(SE_Shape *a, SE_Shape *b) {
             collided = true;
             normal = vec2_create(current_axis.y, -current_axis.x);
             depth = semath_abs(min2 - max1);
-            // world_pos = 
+            // world_pos =
         }
     }
 
@@ -437,7 +437,7 @@ void se_phys_render_shape(SEGL_Line_Renderer *renderer, SE_Shape *shape) {
             // -- the line segment
             renderer->current_colour = (Vec3) {1, 0, 0};
             segl_lines_draw_line_segment(renderer,
-                vec2_add(plane_pos, vec2_mul_scalar(plane_vec, -10.0f)), 
+                vec2_add(plane_pos, vec2_mul_scalar(plane_vec, -10.0f)),
                 vec2_add(plane_pos, vec2_mul_scalar(plane_vec, +10.0f)));
             // -- the normal arrow
             renderer->current_colour = (Vec3) {0.5f, 0, 0.5f};

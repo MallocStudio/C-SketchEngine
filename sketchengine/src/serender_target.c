@@ -66,7 +66,7 @@ void serender_target_init_ext(SE_Render_Target *render_target, SE_Render_Target_
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const bool has_colour, const bool has_depth) {
+void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const b8 has_colour, const b8 has_depth) {
     SE_Render_Target_Config config;
     config.size = v2f(viewport.w, viewport.h);
     config.has_colour = has_colour;

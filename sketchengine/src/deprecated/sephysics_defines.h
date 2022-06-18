@@ -91,7 +91,7 @@ typedef struct SE_Plane {
 /// COLLISION DATA
 /// --------------
 typedef struct SE_Collision_Data {
-    bool is_collided;
+    b8 is_collided;
     f32 depth;   // HOW DEEP IS THE COLLISION (HOW FAR SHOULD WE MOVE THE PHYSICS OBJECTS)
     Vec2 normal; // THE DIRECTION OF DEPTH (from shape_a towards shape_b)
     Vec2 world_pos; // POINT OF CONTACT
@@ -156,7 +156,7 @@ SEINLINE void se_polygon_add_point(SE_Polygon *polygon, Vec2 point) {
     polygon->points_count++;
 }
 
-SEINLINE init_collision_data(SE_Collision_Data *cd, bool is_collided, Vec2 normal, Vec2 world_pos, f32 depth, SE_Shape *shape_a, SE_Shape* shape_b) {
+SEINLINE init_collision_data(SE_Collision_Data *cd, b8 is_collided, Vec2 normal, Vec2 world_pos, f32 depth, SE_Shape *shape_a, SE_Shape* shape_b) {
     cd->is_collided = is_collided;
     cd->normal = normal;
     cd->world_pos = world_pos;
