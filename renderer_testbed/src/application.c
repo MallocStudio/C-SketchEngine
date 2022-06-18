@@ -1,6 +1,6 @@
 #include "application.h"
 #include "stdio.h" // @remove
-#include "seui.h"
+#include "seui_ctx.h"
 #include "panels.h"
 #include "serenderer2D.h"
 #include "seanimation.h"
@@ -579,7 +579,7 @@ static void app_render_omnidirectional_shadow_map(Application *app) {
                 mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()),
                 shadow_proj);
             shadow_transforms[3] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()), // ! this may need to be vec3_forward()
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()),
                 shadow_proj);
             shadow_transforms[4] = mat4_mul(
                 mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, 1)), vec3_down()),

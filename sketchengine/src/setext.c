@@ -138,7 +138,10 @@ Vec2 se_size_text(SE_Text *text, const char *string) {
     for (i32 i = 0; i < strlen(string); ++i) {
         SE_Text_Glyph glyph = text->glyphs[(i32)string[i]];
         // increase x
-        size.x += glyph.advance;
+        // printf("width: %i, advance: %i\n", glyph.width, glyph.advance);
+        i32 glyph_size = glyph.advance;
+        if (glyph.width > glyph_size) glyph_size = glyph.width;
+        size.x += glyph_size;
         // increase y IF a letter has a larger height
         if (glyph.height > size.y) size.y = glyph.height;
     }
@@ -284,22 +287,10 @@ void se_text_reset_config(SE_Text *text) {
 }
 
 void se_add_text(SE_Text *text, const char *string, Vec2 pos, f32 depth) {
-    SE_Text_Render_Queue queue_item;
-    queue_item.glyph_count = 0;
-    queue_item.rect = (Rect) {pos.x, pos.y, 0, 0};
-    queue_item.depth = depth;
-    queue_item.colour = text->config_colour;
-    queue_item.string_size = se_size_text(text, string);
-    for (u32 i = 0; i < SDL_strlen(string); ++i) {
-        /* save glyph to be rendered later */
-        queue_item.glyph_indices[queue_item.glyph_count] = (i32)string[i];
-        queue_item.glyph_count++;
-    }
-    text->render_queue[text->render_queue_size] = queue_item;
-    text->render_queue_size++;
+    se_add_text_rect(text, string, (Rect) {pos.x, pos.y, 0, 0}, depth);
 }
 
-void se_add_text_rect(SE_Text *text, const char *string, Rect rect, f32 depth) { // @incomplete add text and add text rect are almost the exact same, call this procedure from se_add_text
+void se_add_text_rect(SE_Text *text, const char *string, Rect rect, f32 depth) {
     SE_Text_Render_Queue queue_item;
     queue_item.glyph_count = 0;
     queue_item.rect = rect;
@@ -307,7 +298,8 @@ void se_add_text_rect(SE_Text *text, const char *string, Rect rect, f32 depth) {
     queue_item.colour = text->config_colour;
     queue_item.centered = text->config_centered;
     queue_item.string_size = se_size_text(text, string);
-    for (u32 i = 0; i < SDL_strlen(string); ++i) {
+    u32 string_size = SDL_strlen(string);
+    for (u32 i = 0; i < string_size; ++i) {
         /* save glyph to be rendered later */
         queue_item.glyph_indices[queue_item.glyph_count] = (i32)string[i];
         queue_item.glyph_count++;

@@ -45,7 +45,8 @@ typedef struct SEUI_Panel {
         /* layouting configuration */
         f32 config_row_left_margin;
         f32 config_row_right_margin;
-        bool config_item_centered;
+        bool config_item_centered;  // should the current "item" be aligned centered
+        bool config_item_minimised; // should the current "item" take the minimum amount of space
 
         const char *title;
 
@@ -105,7 +106,7 @@ SEINLINE void seui_theme_default(SE_Theme *theme) {
     theme->colour_fg      = (RGBA) {56, 95, 161, 255};
     // theme->colour_bg_2    = (RGBA) {10, 10, 10, 230};
     theme->colour_bg_2      = (RGBA) {59, 34, 32, 255};
-    theme->margin = v2f(8, 0);
+    theme->margin = v2f(16, 8);
 }
 
 typedef enum UI_STATES {
@@ -182,6 +183,7 @@ SEINLINE void seui_configure_panel_reset(SEUI_Panel *panel) {
     panel->config_row_left_margin = 0;
     panel->config_row_right_margin = 0;
     panel->config_item_centered = false;
+    panel->config_item_minimised = false;
 }
 
 /// Start a panel at the given position. Aligns the items inside of the panel
@@ -191,7 +193,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel);
 bool seui_panel(SE_UI *ctx, const char *title);
 
 void seui_panel_row(SE_UI *ctx, f32 height, u32 columns);
-Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand);
+Rect seui_panel_put(SE_UI *ctx, f32 min_width);
 
 /// call this at the beginning of every frame before creating other widgets
 SEINLINE void seui_reset(SE_UI *ctx) {

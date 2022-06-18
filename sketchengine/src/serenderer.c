@@ -550,26 +550,31 @@ void semesh_generate_static_skeleton
     u32 index_count = 0;
     u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
 
-    // recursive_generate_static_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count,
-    //                                         &skeleton->bone_nodes[0], mat4_identity());
-
-    // @debug each bone's inverse_neutral_transform
-        //- generate the verts based on the model space transform of each bone
+// #define DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM
+#ifdef DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM // render each bone's inverse_neutral_transform for debugging purposes
+        // generate the verts based on the model space transform of each bone
     for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
         verts[vert_count].position = mat4_get_translation(mat4_inverse(skeleton->bone_nodes[i].inverse_neutral_transform));
         indices[index_count] = i;
         vert_count++;
         index_count++;
     }
+#else
+    recursive_generate_static_skeleton_verts(skeleton, verts, &vert_count, indices, &index_count,
+                                            &skeleton->bone_nodes[0], mat4_identity());
+#endif
 
         //- mesh settings
     mesh->vert_count = index_count;
     mesh->indexed = true;
     mesh->aabb = (AABB3D) {0};
-    mesh->line_width = 2;
-    // mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
+#ifdef DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM
     mesh->point_radius = 3; // @temp
     mesh->type = SE_MESH_TYPE_POINT; // sense we're going to generate a skeleton we're going to be lines
+#else
+    mesh->line_width = 2;
+    mesh->type = SE_MESH_TYPE_LINE; // sense we're going to generate a skeleton we're going to be lines
+#endif
     mesh->skeleton = NULL; // we don't want to remember the original skeleton. No reason yet.
 
         //- fill data
@@ -1322,24 +1327,23 @@ static void recursive_calculate_bone_pose // calculate the pose of the given bon
         }
     }
 
-    Mat4 global_node_transform = node->local_transform;
-        // the node transform with its parents taken into account
+    Mat4 final_node_transform = node->local_transform;
+        //- the node transform with its parents taken into account
     if (animated_bone != NULL) {
-        global_node_transform = get_interpolated_bone_transform(animated_bone, animation_time);
-        global_node_transform = mat4_mul(global_node_transform, parent_transform);
+        final_node_transform = get_interpolated_bone_transform(animated_bone, animation_time);
+        final_node_transform = mat4_mul(final_node_transform, parent_transform);
     }
 
-    if (node->bones_info_index >= 0 && node->bones_info_index < skeleton->bone_count) {
-        i32 index = skeleton->bones_info[node->bones_info_index].id;
-        Mat4 offset = skeleton->bones_info[node->bones_info_index].offset;
-            // inverse neutral pose
-        // global_node_transform = mat4_mul(node->inverse_neutral_transform, global_node_transform);
-        skeleton->final_pose[index] = mat4_mul(offset, global_node_transform);
-    }
+    se_assert(node->bones_info_index >= 0 && node->bones_info_index < skeleton->bone_count);
+    i32 index = skeleton->bones_info[node->bones_info_index].id;
+    Mat4 offset = skeleton->bones_info[node->bones_info_index].offset;
+        // inverse neutral pose
+    // final_node_transform = mat4_mul(node->inverse_neutral_transform, final_node_transform);
+    skeleton->final_pose[index] = mat4_mul(offset, final_node_transform);
 
         // repeat for children
     for (u32 i = 0; i < node->children_count; ++i) {
-        recursive_calculate_bone_pose(skeleton, animation, animation_time, &skeleton->bone_nodes[node->children[i]], global_node_transform);
+        recursive_calculate_bone_pose(skeleton, animation, animation_time, &skeleton->bone_nodes[node->children[i]], final_node_transform);
     }
 }
 
@@ -1488,7 +1492,7 @@ static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
     }
 
     for (u32 i = 0; i < scene->mNumAnimations; ++i) {
-            // add the animation to renderer
+            // add the animation to skeleton
         u32 anim_index = add_animation_to_skeleton(skeleton);
         SE_Skeletal_Animation *anim = skeleton->animations[anim_index];
             // update the data of animation
@@ -1526,7 +1530,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
 
             //- load the skeleton of this mesh
         if (with_skeleton && ai_mesh->mNumBones > 0) {
-                //- load a skinned mesh ready to be animated
+                // load a skinned mesh ready to be animated
             SE_Mesh *mesh = renderer->meshes[renderer->meshes_count];
             semesh_construct_skinned_mesh(mesh, ai_mesh, scene);
         } else {
@@ -1542,8 +1546,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
             semesh_construct_material(renderer->materials[material_index], ai_mesh, model_filepath, scene);
         }
 
-            //- Link meshes together:
-            //- If there are multiple meshes within this scene, add them on in a linked list
+            //- Link meshes together: If there are multiple meshes within this scene, add them on in a linked list
         if (i > 0) {
             renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
         }
@@ -1561,11 +1564,9 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, bo
             }
             current_mesh = renderer->meshes[current_mesh]->next_mesh_index;
         }
-
     }
 
-
-    // the final mesh in the linked list has no next (signified by -1 next_mesh_index)
+        //- the final mesh in the linked list has no next (signified by -1 next_mesh_index)
     renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
 
     return result;

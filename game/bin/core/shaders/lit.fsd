@@ -1,0 +1,114 @@
+#version 450
+
+in vec2 _TexCoord;
+in vec3 _Normal;
+in mat3 _TBN;
+in vec3 _Position;
+in vec3 _Tangent;
+in vec3 _Bitangent;
+//in vec3 N; // normalised surface normal
+
+in vec4 frag_pos_light_space;
+
+uniform sampler2D texture_diffuse;  // diffuse
+uniform sampler2D texture_specular; // specular
+uniform sampler2D texture_normal;   // normal map
+uniform sampler2D shadow_map;   	// shadow map
+uniform vec4 base_diffuse;          // diffuse multiplier
+uniform vec3 L = vec3(-1, -1, 0);  // normalised light direction from the light
+
+// environment ambient light and diffuse light
+uniform float light_intensity;
+uniform vec3 iA;
+uniform vec3 iD;
+uniform vec3 camera_pos;
+uniform float specular_power = 0.5;
+uniform mat4 model_matrix;
+
+layout (location = 0) out vec4 FragColour;
+// layout (location = 0) out vec3 FragColour_Rendertarget; // this is used for rendering to using render targets
+
+float shadow_calculation(vec4 param_frag_pos_light_space) {
+	// perform perspective divide
+	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
+	// transform to [0,1] range
+	proj_coords = proj_coords * 0.5 + 0.5;
+	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
+	float closest_depth = texture(shadow_map, proj_coords.xy).r;
+	// get depth of current fragment from light's perspective
+	float current_depth = proj_coords.z;
+	// check whether current frag pos is in shadow
+
+	float bias = max(0.005 * (1.0 - dot(_Normal, L)), 0.005);
+	// float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+	float shadow = 0.0;
+	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r;
+			shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
+		}
+	}
+	shadow /= 9.0;
+
+	if (proj_coords.z > 1.0) shadow = 0.0;
+	return shadow;
+}
+
+vec3 shadow_projection(vec4 param_frag_pos_light_space) {
+	// perform perspective divide
+	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
+	// transform to [0,1] range
+	proj_coords = proj_coords * 0.5 + 0.5;
+	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
+	return texture(shadow_map, proj_coords.xy).rgb;
+}
+
+void main() {
+	// -- setting up variables
+
+	vec3 tex_diffuse = texture(texture_diffuse, _TexCoord).xyz; // surface diffuse
+	vec3 tex_normal = texture(texture_normal, _TexCoord).xyz; //  * 2 - 1;
+
+	vec3 kD = vec3(1, 1, 1); // material colour
+	vec3 kA = kD;            // surface ambient
+	vec3 kS = normalize(kD); // material specular
+
+	// lambert term with L reversed to face the light
+	vec3 T = normalize(_Tangent);
+	vec3 B = normalize(_Bitangent);
+	vec3 N = normalize(_Normal);
+	mat3 TBN = mat3(T, B, N);
+
+	N = TBN * (tex_normal * 2 - 1);
+	N = (model_matrix * vec4(N, 0)).xyz;
+
+	// vec3 N = (TBN * n).xyz;
+	float lambert_term = max( 0.0, dot(N, -L));
+
+	// calculate view vector and reflection vector
+	vec3 V = normalize(camera_pos - _Position);
+	vec3 R = reflect( L, N );
+
+	// calculate specular term
+	float specular_term = pow(max(0, dot( R, V )), specular_power);
+
+	// -- calculate each light properly
+	// ambient light
+	vec3 ambient  = kA * iA * tex_diffuse;
+	// diffuse light for one light
+	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term * base_diffuse.xyz;
+	vec3 specular = iA * kS * tex_diffuse * specular_term;
+
+	ambient *= light_intensity;
+	diffuse *= light_intensity;
+	specular *= light_intensity;
+
+	// calculate shadow
+	float shadow = shadow_calculation(frag_pos_light_space);
+	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * base_diffuse.xyz;
+
+	FragColour = vec4(lighting, 1.0);
+}

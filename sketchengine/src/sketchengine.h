@@ -6,7 +6,7 @@
 #include "seinput.h"
 #include "serenderer.h"
 #include "setext.h"
-#include "seui.h"
+#include "seui_ctx.h"
 #include "sestring.h"
 
 // deprecated for now

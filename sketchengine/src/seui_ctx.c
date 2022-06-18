@@ -76,7 +76,7 @@ void seui_panel_setup(SEUI_Panel *panel, Rect initial_rect, bool minimised, f32 
 
 /// Returns a rectangle that's suppose to be the rect
 /// of the new item inside of the current panel.
-Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand parameter
+Rect seui_panel_put(SE_UI *ctx, f32 min_width) {
     SEUI_Panel *panel = ctx->current_panel;
     if (panel == NULL) {
         printf("ERROR: seui_panel_put but panel was null\n");
@@ -95,7 +95,12 @@ Rect seui_panel_put(SE_UI *ctx, f32 min_width, bool expand) { // @remove expand 
     item.y = panel->cursor.y + panel->cached_rect.y;
     item.h = panel->next_item_height;
 
-    item.w = panel->row_width / (f32)panel->row_columns;
+    // if (panel->config_item_minimised) {
+    //     item.w = min_width;
+    // } else {
+    //     item.w = panel->row_width / (f32)panel->row_columns;
+    // }
+        item.w = panel->row_width / (f32)panel->row_columns;
     // if (item.w < min_width) item.w = min_width;
 
     /* advance the cursor based on row layout */
@@ -185,7 +190,7 @@ bool seui_panel_at(SE_UI *ctx, const char *title, SEUI_Panel *panel_data) {
         const f32 button_size = 32;
         seui_panel_row(ctx, button_size, 1); // make space for top bar
 
-        Rect top_bar = seui_panel_put(ctx, 0, false);
+        Rect top_bar = seui_panel_put(ctx, 0);
 
 
         Vec2 cursor = {
@@ -467,7 +472,7 @@ void seui_label_at(SE_UI *ctx, const char *text, Rect rect) {
     bool previous_setting = ctx->txt_renderer.config_centered;
     ctx->txt_renderer.config_centered = ctx->current_panel->config_item_centered;
 
-    se_add_text_rect(&ctx->txt_renderer, text, apply_margin(rect, ctx->theme.margin), get_depth_foreground(ctx));
+    se_add_text_rect(&ctx->txt_renderer, text, rect, get_depth_foreground(ctx));
 
     // reset config
     ctx->txt_renderer.config_centered = previous_setting;
@@ -709,7 +714,7 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, rect.w, true);
+        rect = seui_panel_put(ctx, rect.w);
     }
     return seui_button_textured_at(ctx, texture_index, rect);
 }
@@ -717,7 +722,7 @@ bool seui_button_textured(SE_UI *ctx, Vec2 texture_index) {
 bool seui_selector(SE_UI *ctx, i32 *value, i32 min, i32 max) {
     Rect rect = {0, 0, 100, 32}; // default
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, rect.w, true);
+        rect = seui_panel_put(ctx, rect.w);
     }
     return seui_selector_at(ctx, rect, value, min, max);
 }
@@ -730,11 +735,11 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
         { /* colour picker wheel and triangle and functionality */
             {
                 seui_panel_row(ctx, 16, 1);
-                Rect rect = seui_panel_put(ctx, 0, true);
+                Rect rect = seui_panel_put(ctx, 0);
                 serender2d_add_rect(&ctx->renderer, rect, get_depth_background(ctx), ctx->theme.colour_bg_2);
             }
             seui_panel_row(ctx, 240, 1);
-            Rect rect = seui_panel_put(ctx, 240, true);
+            Rect rect = seui_panel_put(ctx, 240);
             Vec2 center = v2f(rect.x + rect.w / 2, rect.y + rect.h / 2);
             f32 outer_radius = rect.h / 2;
             f32 thickness = 16;
@@ -838,7 +843,7 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
         }
         { /* colour preview */
             seui_panel_row(ctx, 32, 1);
-            Rect preview_rect = seui_panel_put(ctx, 16, true);
+            Rect preview_rect = seui_panel_put(ctx, 16);
             RGBA c = RGBA_WHITE;
             hsv_to_rgba(hsv->h, hsv->s, hsv->v, &c);
             serender2d_add_rect(&ctx->renderer, preview_rect, get_depth_foreground(ctx), c);
@@ -868,7 +873,7 @@ void seui_panel_container(SE_UI *ctx) {
     SEUI_Panel *panel = seui_ctx_get_panel_container(ctx);
     if (panel == NULL) {
         seui_panel_row(ctx, 240, 1);
-        Rect rect = seui_panel_put(ctx, 0, true);
+        Rect rect = seui_panel_put(ctx, 0);
         if (seui_button_at(ctx, "drag a panel", rect)) {
                 printf("released\n");
             if (ctx->current_dragging_panel != NULL) {
@@ -877,7 +882,7 @@ void seui_panel_container(SE_UI *ctx) {
         }
     } else {
         seui_panel_row(ctx, 240, 1);
-        Rect rect = seui_panel_put(ctx, 0, true);
+        Rect rect = seui_panel_put(ctx, 0);
         // draw the panel
         panel->is_embedded = true;
         panel->calc_rect.x = rect.x;
@@ -897,7 +902,7 @@ bool seui_button(SE_UI *ctx, const char *text) {
     Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, text_size.x, true);
+        rect = seui_panel_put(ctx, text_size.x);
     }
     return seui_button_at(ctx, text, rect);
 }
@@ -906,7 +911,7 @@ void seui_label(SE_UI *ctx, const char *text) {
     Rect rect = {0, 0, 16, 16}; // default
     if (ctx->current_panel != NULL) {
         Vec2 text_size = se_size_text(&ctx->txt_renderer, text);
-        rect = seui_panel_put(ctx, text_size.x, true);
+        rect = seui_panel_put(ctx, text_size.x + ctx->theme.margin.x);
     }
     seui_label_at(ctx, text, rect);
 }
@@ -931,10 +936,14 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_label(ctx, label_buffer);
     } else {
         ctx->text_input_only_numerical = true;
+        bool previous_item_minimised_config = ctx->current_panel->config_item_minimised;
         seui_panel_row(ctx, 32, 6);
 
+            //- X
+        ctx->current_panel->config_item_minimised = true;
         sprintf(label_buffer, "x:");
         seui_label(ctx, label_buffer);
+        ctx->current_panel->config_item_minimised = previous_item_minimised_config;
 
         sprintf(label_buffer, "%.2f", value->x);
         sestring_clear(&ctx->text_input_cache);
@@ -942,8 +951,11 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_input_text(ctx, &ctx->text_input_cache);
         value->x = sestring_as_f32(&ctx->text_input_cache);
 
+            //- Y
+        ctx->current_panel->config_item_minimised = true;
         sprintf(label_buffer, "y:");
         seui_label(ctx, label_buffer);
+        ctx->current_panel->config_item_minimised = previous_item_minimised_config;
 
         sprintf(label_buffer, "%.2f", value->y);
         sestring_clear(&ctx->text_input_cache);
@@ -951,8 +963,11 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, bool editable) 
         seui_input_text(ctx, &ctx->text_input_cache);
         value->y = sestring_as_f32(&ctx->text_input_cache);
 
+            //- Z
+        ctx->current_panel->config_item_minimised = true;
         sprintf(label_buffer, "z:");
         seui_label(ctx, label_buffer);
+        ctx->current_panel->config_item_minimised = previous_item_minimised_config;
 
         sprintf(label_buffer, "%.2f", value->z);
         sestring_clear(&ctx->text_input_cache);
@@ -1026,7 +1041,7 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, bool editable) {
 void seui_slider(SE_UI *ctx, f32 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, 24, true);
+        rect = seui_panel_put(ctx, 24);
     }
     Vec2 pos1 = {rect.x, (rect.y + rect.y + rect.h) * 0.5f};
     Vec2 pos2 = {rect.x + rect.w, (rect.y + rect.y + rect.h) * 0.5f};
@@ -1036,7 +1051,7 @@ void seui_slider(SE_UI *ctx, f32 *value) {
 void seui_slider2d(SE_UI *ctx, Vec2 *value) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, 32, true);
+        rect = seui_panel_put(ctx, 32);
     }
     Vec2 center = {
         (rect.x + rect.x + rect.w) * 0.5f,
@@ -1049,7 +1064,7 @@ void seui_slider2d(SE_UI *ctx, Vec2 *value) {
 void seui_input_text(SE_UI *ctx, SE_String *text) {
     Rect rect = {0, 0, 16, 16}; // default label size
     if (ctx->current_panel != NULL) {
-        rect = seui_panel_put(ctx, 100, true);
+        rect = seui_panel_put(ctx, 100);
     }
     seui_input_text_at(ctx, text, rect);
 }
