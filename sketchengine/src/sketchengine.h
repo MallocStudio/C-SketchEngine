@@ -13,6 +13,7 @@ extern "C" {
 #include "setext.h"
 #include "seui_ctx.h"
 #include "sestring.h"
+#include "seanimation.h"
 
 #ifdef __cplusplus
 }

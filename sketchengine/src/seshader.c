@@ -64,7 +64,9 @@ void seshader_init_from_string(SE_Shader *sp, const char *vertex_src, const char
 
 void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
     char *vertex_src = se_load_file_as_string(vertex_filename);
+    se_assert(vertex_src);
     char *frag_src = se_load_file_as_string(fragment_filename);
+    se_assert(frag_src);
     seshader_init_from_string(sp, vertex_src, frag_src, vertex_filename, fragment_filename);
     free(vertex_src);
     free(frag_src);
@@ -250,7 +252,7 @@ char* se_load_file_as_string(const char *file_name) {
             // get the size of the file
             long bufsize = ftell(fp);
             if (bufsize == -1) { // error
-                printf("file reading error at %s: %i\n", __FILE__,__LINE__);
+                printf("file (%s) reading error at %s: %i\n", file_name, __FILE__,__LINE__);
                 return NULL;
             }
             // allocate our buffer to that size

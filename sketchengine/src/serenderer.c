@@ -8,6 +8,10 @@
 #include "seinput.h" // for camera
 #include "stdio.h" // @temp for debugging
 
+#define default_normal_filepath "core/textures/default_normal.png"
+#define default_diffuse_filepath "core/textures/checkerboard.png"
+#define default_specular_filepath "core/textures/default_specular.png"
+
 //// UTILITY DEBUG PROCEDURES
 
 static void debug_print_skeleton(const SE_Skeleton *skeleton, const SE_Bone_Node *parent) {
@@ -901,7 +905,7 @@ static void semesh_construct_material // only meant to be called form serender3d
         sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
         setexture_load(&material->texture_diffuse , diffuse_path.buffer);
     } else {
-        setexture_load(&material->texture_diffuse, "assets/textures/checkerboard.png");
+        setexture_load(&material->texture_diffuse, default_diffuse_filepath);
     }
     free(ai_texture_path_diffuse);
 
@@ -917,7 +921,7 @@ static void semesh_construct_material // only meant to be called form serender3d
         sestring_append(&normal_path, ai_texture_path_normal->data);
         setexture_load(&material->texture_normal  , normal_path.buffer);
     } else {
-        setexture_load(&material->texture_diffuse, "assets/textures/default_normal.png");
+        setexture_load(&material->texture_diffuse, default_normal_filepath);
     }
     free(ai_texture_path_normal);
 
@@ -1760,6 +1764,207 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     semesh_deinit(&outline_mesh);
 }
 
+void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count) {
+    se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
+        // -- shadow mapping
+    /* calculate the matrices */
+#if 1
+    // manually
+    f32 left   =-10 + 20 * 0;
+    f32 right  =-10 + 20 * 1;
+    f32 bottom =-10 + 20 * 0;
+    f32 top    =-10 + 20 * 1;
+    f32 near   =-10 + 20 * 0;
+    f32 far    =-10 + 20 * 1;
+    Vec3 light_pos = v3f(0, 0, 0);
+
+    // ! the following is a bit messed up. the problem is that we calculate world aabb fine, but when light
+    // ! rotation changes, we rotate that aabb and it does not cover everything
+#else
+    // automatically
+    f32 left   = world_aabb.min.x;
+    f32 right  = world_aabb.max.x;
+    f32 bottom = world_aabb.min.y;
+    f32 top    = world_aabb.max.y;
+    f32 near   = world_aabb.min.z;
+    f32 far    = world_aabb.max.z;
+    Vec3 light_pos = (Vec3) {
+        -light_direction.x,
+        -light_direction.y,
+        0,
+    };
+    light_pos = vec3_mul_scalar(light_pos, (far + near) * 0.5f);
+#endif
+    Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
+    Vec3 light_target = vec3_add(renderer->light_directional.direction, light_pos);
+    Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
+    Mat4 light_space_mat = mat4_mul(light_view, light_proj);
+
+    { // -- visualise the orhto projection
+        f32 left    = -1;
+        f32 right   = +1;
+        f32 bottom  = -1;
+        f32 top     = +1;
+        f32 near    = -1;
+        f32 far     = +1;
+
+        Vec4 poss_4d[8] = {
+            {.x = left,  .y = bottom, .z = near, 1.0}, // 0
+            {.x = right, .y = bottom, .z = near, 1.0}, // 1
+            {.x = right, .y = top,    .z = near, 1.0}, // 2
+            {.x = left,  .y = top,    .z = near, 1.0}, // 3
+            {.x = left,  .y = bottom, .z = far , 1.0}, // 4
+            {.x = right, .y = bottom, .z = far , 1.0}, // 5
+            {.x = right, .y = top,    .z = far , 1.0}, // 6
+            {.x = left,  .y = top,    .z = far , 1.0}  // 7
+        };
+
+        Mat4 inv_light_space_mat = mat4_inverse(light_space_mat);
+        poss_4d[0] = mat4_mul_vec4(inv_light_space_mat, poss_4d[0]);
+        poss_4d[1] = mat4_mul_vec4(inv_light_space_mat, poss_4d[1]);
+        poss_4d[2] = mat4_mul_vec4(inv_light_space_mat, poss_4d[2]);
+        poss_4d[3] = mat4_mul_vec4(inv_light_space_mat, poss_4d[3]);
+        poss_4d[4] = mat4_mul_vec4(inv_light_space_mat, poss_4d[4]);
+        poss_4d[5] = mat4_mul_vec4(inv_light_space_mat, poss_4d[5]);
+        poss_4d[6] = mat4_mul_vec4(inv_light_space_mat, poss_4d[6]);
+        poss_4d[7] = mat4_mul_vec4(inv_light_space_mat, poss_4d[7]);
+
+        Vec3 poss[8] = {
+            {poss_4d[0].x, poss_4d[0].y, poss_4d[0].z},
+            {poss_4d[1].x, poss_4d[1].y, poss_4d[1].z},
+            {poss_4d[2].x, poss_4d[2].y, poss_4d[2].z},
+            {poss_4d[3].x, poss_4d[3].y, poss_4d[3].z},
+            {poss_4d[4].x, poss_4d[4].y, poss_4d[4].z},
+            {poss_4d[5].x, poss_4d[5].y, poss_4d[5].z},
+            {poss_4d[6].x, poss_4d[6].y, poss_4d[6].z},
+            {poss_4d[7].x, poss_4d[7].y, poss_4d[7].z}
+        };
+
+        SE_Vertex3D verts[8] = {
+            {.position = poss[0]},
+            {.position = poss[1]},
+            {.position = poss[2]},
+            {.position = poss[3]},
+            {.position = poss[4]},
+            {.position = poss[5]},
+            {.position = poss[6]},
+            {.position = poss[7]}
+        };
+
+        u32 indices[24] = {
+            0, 1,
+            0, 3,
+            0, 4,
+            5, 1,
+            5, 6,
+            5, 4,
+            2, 6,
+            2, 3,
+            2, 1,
+            7, 3,
+            7, 6,
+            7, 4
+        };
+    }
+
+    glDisable(GL_CULL_FACE); // @TODO what the f investigate
+    { /* render the scene from the light's point of view */
+        glCullFace(GL_FRONT);
+        /* configure shadow shader */
+        serender_target_use(&renderer->shadow_render_target);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        seshader_use(renderer->shaders[renderer->shader_shadow_calc]);
+
+        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
+
+        for (u32 i = 0; i < transforms_count; ++i) {
+            SE_Mesh *mesh = renderer->meshes[i];
+            Mat4 model_mat = transforms[i];
+
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "model", model_mat);
+
+            glBindVertexArray(mesh->vao);
+            if (mesh->indexed) {
+                glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+            } else {
+                glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+            }
+        }
+        glBindVertexArray(0);
+
+        glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE); // @remove after fixing whatever this is
+    }
+
+    serender_target_use(NULL);
+
+    renderer->light_space_matrix = light_space_mat;
+}
+
+void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count) {
+    se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
+
+    SE_Light_Point *point_light = &renderer->point_lights[0];
+    glViewport(0, 0, 1024, 1024);
+    glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        { // configure shader and matrices
+            // projection
+            f32 aspect = 1024 / (f32) 1024;
+            f32 near = 1.0f;
+            f32 far  = 25.0f;
+            Mat4 shadow_proj = mat4_perspective(SEMATH_DEG2RAD_MULTIPLIER * 90.0f, aspect, near, far);
+            // views for each face
+            Mat4 shadow_transforms[6];
+            shadow_transforms[0] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(1, 0, 0)), vec3_down()),
+                shadow_proj);
+            shadow_transforms[1] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(-1, 0, 0)), vec3_down()),
+                shadow_proj);
+            shadow_transforms[2] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()),
+                shadow_proj);
+            shadow_transforms[3] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()),
+                shadow_proj);
+            shadow_transforms[4] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, 1)), vec3_down()),
+                shadow_proj);
+            shadow_transforms[5] = mat4_mul(
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, -1)), vec3_down()),
+                shadow_proj);
+
+            // configure shader
+            seshader_use(renderer->shaders[renderer->shader_shadow_omnidir_calc]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
+            seshader_set_uniform_f32 (renderer->shaders[renderer->shader_shadow_omnidir_calc], "far_plane", far);
+            seshader_set_uniform_vec3(renderer->shaders[renderer->shader_shadow_omnidir_calc], "light_pos", point_light->position);
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[0]", shadow_transforms[0]);
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[1]", shadow_transforms[1]);
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[2]", shadow_transforms[2]);
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[3]", shadow_transforms[3]);
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[4]", shadow_transforms[4]);
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[5]", shadow_transforms[5]);
+        }
+        // render scene
+        for (u32 i = 0; i < transforms_count; ++i) {
+            SE_Mesh *mesh = renderer->meshes[i];
+            Mat4 model_mat = transforms[i];
+
+            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "model", model_mat);
+
+            glBindVertexArray(mesh->vao);
+            if (mesh->indexed) {
+                glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+            } else {
+                glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+            }
+        }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void serender3d_reset_render_config() {
     /* default */
     glDisable(GL_BLEND);
@@ -1801,22 +2006,35 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->point_lights[0].quadratic = 0.20f;
 
     /* default shaders */
-    renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
-    renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
-    renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "shaders/shadow_omni_calc.vsd", "shaders/shadow_omni_calc.fsd", "shaders/shadow_omni_calc.gsd");
-    renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
-    renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
-    renderer->shader_sprite = serender3d_add_shader(renderer, "shaders/sprite.vsd", "shaders/sprite.fsd");
-    renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "shaders/skinned_vertex.vsd", "shaders/lit_better.fsd");
-    renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "shaders/skinned_skeleton_lines.vsd", "shaders/lines.fsd");
+    // renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
+    // renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
+    // renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "shaders/shadow_omni_calc.vsd", "shaders/shadow_omni_calc.fsd", "shaders/shadow_omni_calc.gsd");
+    // renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
+    // renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
+    // renderer->shader_sprite = serender3d_add_shader(renderer, "shaders/sprite.vsd", "shaders/sprite.fsd");
+    // renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "shaders/skinned_vertex.vsd", "shaders/lit_better.fsd");
+    // renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "shaders/skinned_skeleton_lines.vsd", "shaders/lines.fsd");
+
+    renderer->shader_lit = serender3d_add_shader(renderer, "core/shaders/lit.vsd","core/shaders/lit_better.fsd");
+    renderer->shader_shadow_calc = serender3d_add_shader(renderer, "core/shaders/shadow_calc.vsd","core/shaders/shadow_calc.fsd");
+    renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "core/shaders/shadow_omni_calc.vsd","core/shaders/shadow_omni_calc.fsd", "core/shaders/shadow_omni_calc.gsd");
+    renderer->shader_lines = serender3d_add_shader(renderer, "core/shaders/lines.vsd","core/shaders/lines.fsd");
+    renderer->shader_outline = serender3d_add_shader(renderer, "core/shaders/outline.vsd","core/shaders/outline.fsd");
+    renderer->shader_sprite = serender3d_add_shader(renderer, "core/shaders/sprite.vsd","core/shaders/sprite.fsd");
+    renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/skinned_vertex.vsd","core/shaders/lit_better.fsd");
+    renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "core/shaders/skinned_skeleton_lines.vsd","core/shaders/lines.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);
     renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
 
-    setexture_load(&renderer->texture_default_diffuse, "assets/textures/checkerboard.png");
-    setexture_load(&renderer->texture_default_normal, "assets/textures/default_normal.png");
-    setexture_load(&renderer->texture_default_specular, "assets/textures/default_specular.png");
+    // setexture_load(&renderer->texture_default_diffuse,  "assets/textures/checkerboard.png");
+    // setexture_load(&renderer->texture_default_normal,   "assets/textures/default_normal.png");
+    // setexture_load(&renderer->texture_default_specular, "assets/textures/default_specular.png");
+
+    setexture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
+    setexture_load(&renderer->texture_default_normal, default_normal_filepath);
+    setexture_load(&renderer->texture_default_specular, default_specular_filepath);
 
     /* shadow mapping */
     f32 shadow_w = 1024;

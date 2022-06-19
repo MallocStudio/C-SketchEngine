@@ -193,7 +193,7 @@ void app_deinit(Application *app) {
 
 void app_update(Application *app, f32 delta_time) {
     // -- input
-    u32 window_w, window_h;
+    i32 window_w, window_h;
     SDL_GetWindowSize(app->window, &window_w, &window_h);
     secamera3d_update_projection(&app->camera, window_w, window_h);
     seinput_update(&app->input, app->camera.projection, app->window);

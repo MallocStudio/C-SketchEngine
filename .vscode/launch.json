@@ -36,6 +36,17 @@
             "cwd": "${workspaceFolder}/renderer_testbed/bin/",
             "environment": [],
             "console": "externalTerminal"
+        },
+        {
+            "name": "(game) Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/game/bin/game.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/game/bin/",
+            "environment": [],
+            "console": "externalTerminal"
         }
     ]
 }

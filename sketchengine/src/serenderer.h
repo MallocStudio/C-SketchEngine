@@ -295,6 +295,11 @@ void serender3d_reset_render_config();
 void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+    /// Render a directional shadow map to the renderer.
+    /// "transforms_count" must be equal to or less than the number of meshes in the renderer.
+    /// This procedure will render each mesh based on the given array of transforms.
+void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count);
+void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count);
 
 //// UTILITIES ////
 

@@ -100,7 +100,8 @@ void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 ma
 
     seui_theme_default(&ctx->theme);
 
-    setexture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
+    // setexture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
+    setexture_atlas_load(&ctx->icon_atlas, "core/textures/ui_icons_atlas.png", 4, 4);
 
     /* panels */
     ctx->current_panel = NULL;
@@ -175,7 +176,7 @@ SEUI_Panel* seui_ctx_get_panel(SE_UI *ctx) {
         };
         seui_panel_setup(&ctx->panels[panel], init_rect, false, 32, 0);
         ctx->panels[panel].index = panel;
-        ctx->panels[panel].is_closed = true; // by default panels are closed
+        ctx->panels[panel].is_closed = false; // by default panels are closed
         ctx->panel_count++;
         return &ctx->panels[panel];
     }

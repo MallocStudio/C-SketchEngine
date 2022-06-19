@@ -28,9 +28,8 @@ void main() {                           \n\
 }";
 
 /* default fonts */
-// #define DEFAULT_FONT_PATH "assets/fonts/Ya'ahowu/Yaahowu.ttf"
-// #define DEFAULT_FONT_PATH "assets/fonts/josefin-sans-font/JosefinSansRegular-x3LYV.ttf"
-#define DEFAULT_FONT_PATH "assets/fonts/Nunito/static/Nunito-Medium.ttf"
+// #define DEFAULT_FONT_PATH "assets/fonts/Nunito/static/Nunito-Medium.ttf" // renderer_testbed
+#define DEFAULT_FONT_PATH "core/fonts/Nunito-VariableFont_wght.ttf"    // game
 
 /// create the vertex buffers
 static void setup_text_opengl_data(SE_Text *text) {
@@ -195,6 +194,8 @@ void se_deinit_text(SE_Text *text) {
 
 /// Render to the screen
 void se_render_text(SE_Text *text) {
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
+
         // gl config
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
