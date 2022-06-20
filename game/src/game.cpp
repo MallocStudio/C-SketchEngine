@@ -48,13 +48,15 @@ Game::Game(SDL_Window *window) {
     this->entities.has_mesh[player2]   = true;
 
     man = add_entity(this);
-    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    // this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Sitting Laughing.fbx", true);
     this->entities.has_mesh[man]   = true;
     this->entities.scale[man] = v3f(0.1f, 0.1f, 0.1f);
 
     skeleton_mesh = serender3d_add_mesh_empty(&this->renderer);
     this->renderer.meshes[skeleton_mesh]->material_index = this->renderer.material_lines;
-    semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]]->skeleton);
+    // semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]]->skeleton);
+    semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]+1]->skeleton);
     se_assert(this->renderer.meshes[skeleton_mesh]->skeleton == NULL);
 
         //- Animation

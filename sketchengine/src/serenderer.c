@@ -1126,27 +1126,45 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
             // copy the bone data to skeleton
         for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
                 // add bone to skeleton
-            i32 bone_id = mesh->skeleton->bone_count;
-            mesh->skeleton->bone_count++;
-            se_assert(bone_id != -1); // just to be clear
+            i32 bone_id = -1;
+            SE_String ai_mesh_bone_name;
+            sestring_init(&ai_mesh_bone_name,ai_mesh->mBones[bone_index]->mName.data);
 
-                // copy the bone info over
-            SE_Bone_Info *bone = &mesh->skeleton->bones_info[bone_index];
-            bone->id = bone_id;
-            sestring_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
+            b8 bone_found = false;
+            for (u32 i = 0; i < mesh->skeleton->bone_count; ++i) {
+                if (sestring_compare(&mesh->skeleton->bones_info[i].name, &ai_mesh_bone_name)) {
+                        //- Found the bone
+                    bone_found = true;
+                    bone_id = mesh->skeleton->bones_info[i].id;
+                    break;
+                }
+            }
 
-            copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
+            sestring_deinit(&ai_mesh_bone_name);
 
-                // copy over the vertex ids that this bone affects and the weights
+            if (!bone_found) {
+                    //- copy the bone info over
+                SE_Bone_Info *bone = &mesh->skeleton->bones_info[bone_index];
+                bone->id = mesh->skeleton->bone_count;
+                copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
+                sestring_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
+
+                bone_id = bone->id;
+                mesh->skeleton->bone_count++;
+            }
+            se_assert(bone_id != -1);
+
+            // @debug: The problem with our skinned mesh rendering lies in here.
+            // I don't think we're loading the weights and bone_ids correctly and assigning it to their corresponding vertices.
             for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
-                i32 vert_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
-                f32 weight  = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
-                {   // set vertex bone data
-                    for (i32 xxx = 0; xxx < SE_MAX_BONE_WEIGHTS; ++xxx) {
-                        if (verts[vert_id].bone_ids[xxx] < 0) {
-                            verts[vert_id].bone_ids[xxx] = bone_id;
-                            verts[vert_id].bone_weights[xxx] = weight;
-                        }
+                i32 vertex_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
+                f32 weight = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
+                se_assert(vertex_id <= verts_count);
+
+                for (i32 xxx = 0; xxx < SE_MAX_BONE_WEIGHTS; ++xxx) {
+                    if (verts[vertex_id].bone_ids    [xxx] < 0) {
+                        verts[vertex_id].bone_ids    [xxx] = bone_id;
+                        verts[vertex_id].bone_weights[xxx] = weight;
                     }
                 }
             }

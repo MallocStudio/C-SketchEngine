@@ -30,14 +30,17 @@ out vec3 _Frag_Pos;
 void main() {
     vec4 total_position = vec4(0.0f); // the position of the vertex in the current animation
     vec3 total_normal = vec3(0.0f);
+
     for (int i = 0; i < MAX_BONE_WEIGHTS; i++) {
         if (bone_ids[i] == -1) continue;
         if (bone_ids[i] >= MAX_BONES) {
             total_position = vec4(Position, 1.0f);
             break;
         }
+
         vec4 local_pos = bones[bone_ids[i]] * vec4(Position, 1.0f);
         total_position += local_pos * bone_weights[i];
+
         vec3 local_normal = mat3(bones[bone_ids[i]]) * Normal;
         total_normal += local_normal * bone_weights[i];
     }
