@@ -9,69 +9,25 @@ u32 man = -1;
 u32 skeleton_mesh = -1;
 SE_Animation animation;
 
-u32 add_entity(Game *game) {
+u32 add_entity(App *game) {
     u32 result = game->entities.count;
     game->entities.count++;
     return result;
 }
 
-Game::Game(SDL_Window *window) {
-        //- window and viewport
-    this->window = window;
-    i32 window_w;
-    i32 window_h;
-    SDL_GetWindowSize(window, &window_w, &window_h);
-    Rect viewport = {0, 0, (f32)window_w, (f32)window_h};
-    this->should_quit = false;
-
-    ctx = NEW(SE_UI);
-    seui_init(ctx, &this->input, viewport, -1000, 1000);
-    sestring_init(&input_text, "");
-
-        //- Input
-    seinput_init(&this->input);
-
-        //- Renderer
-    secamera3d_init(&this->camera);
-    serender3d_init(&this->renderer, &this->camera);
-    this->renderer.light_directional.direction = {0, -1, 0};
-    this->renderer.light_directional.ambient   = {50, 50, 50};
-    this->renderer.light_directional.diffuse   = {255, 255, 255};
-
-        //- Entities
-    player1 = add_entity(this);
-    this->entities.mesh_index[player1] = serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
-    this->entities.has_mesh[player1]   = true;
-
-    player2 = add_entity(this);
-    this->entities.mesh_index[player2] = serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
-    this->entities.has_mesh[player2]   = true;
-
-    man = add_entity(this);
-    // this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
-    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Sitting Laughing.fbx", true);
-    this->entities.has_mesh[man]   = true;
-    this->entities.scale[man] = v3f(0.1f, 0.1f, 0.1f);
-
-    skeleton_mesh = serender3d_add_mesh_empty(&this->renderer);
-    this->renderer.meshes[skeleton_mesh]->material_index = this->renderer.material_lines;
-    // semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]]->skeleton);
-    semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]+1]->skeleton);
-    se_assert(this->renderer.meshes[skeleton_mesh]->skeleton == NULL);
-
-        //- Animation
-    animation.duration = this->renderer.meshes[this->entities.mesh_index[man]]->skeleton->animations[0]->duration;
-    animation.speed = this->renderer.meshes[this->entities.mesh_index[man]]->skeleton->animations[0]->ticks_per_second;
-    animation.current_frame = 0;
+App::App(SDL_Window *window) {
+    this->init_application(window);
+        //- Start with Engine Mode
+    this->init_engine();
 }
 
-Game::~Game() {
+App::~App() {
     free(ctx);
     sestring_deinit(&input_text);
     serender3d_deinit(&this->renderer);
 }
 
-void Game::update(f32 delta_time) {
+void App::update(f32 delta_time) {
         //- Update Window and Input
     i32 window_w, window_h;
     SDL_GetWindowSize(this->window, &window_w, &window_h);
@@ -107,7 +63,7 @@ void Game::update(f32 delta_time) {
     }
 }
 
-void Game::render() {
+void App::render() {
         //- Default GL Mode
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -143,4 +99,72 @@ void Game::render() {
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
+}
+
+    /// Init the application. This must be called once, and before init_engine or init_game
+void App::init_application(SDL_Window *window) {
+    //- window and viewport
+    this->window = window;
+    i32 window_w;
+    i32 window_h;
+    SDL_GetWindowSize(window, &window_w, &window_h);
+    Rect viewport = {0, 0, (f32)window_w, (f32)window_h};
+    this->should_quit = false;
+
+    ctx = NEW(SE_UI);
+    seui_init(ctx, &this->input, viewport, -1000, 1000);
+    sestring_init(&input_text, "");
+
+        //- Input
+    seinput_init(&this->input);
+
+        //- Renderer
+    secamera3d_init(&this->camera);
+    serender3d_init(&this->renderer, &this->camera);
+    this->renderer.light_directional.direction = {0, -1, 0};
+    this->renderer.light_directional.ambient   = {50, 50, 50};
+    this->renderer.light_directional.diffuse   = {255, 255, 255};
+}
+
+void App::init_engine() {
+    this->clear();
+    this->mode = GAME_MODES::ENGINE;
+
+        //- Entities
+    player1 = add_entity(this);
+    this->entities.mesh_index[player1] = serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
+    this->entities.has_mesh[player1]   = true;
+
+    player2 = add_entity(this);
+    this->entities.mesh_index[player2] = serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
+    this->entities.has_mesh[player2]   = true;
+
+    man = add_entity(this);
+    // this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Sitting Laughing.fbx", true);
+    this->entities.has_mesh[man]   = true;
+    this->entities.scale[man] = v3f(0.1f, 0.1f, 0.1f);
+
+    skeleton_mesh = serender3d_add_mesh_empty(&this->renderer);
+    this->renderer.meshes[skeleton_mesh]->material_index = this->renderer.material_lines;
+    // semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]]->skeleton);
+    semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]+1]->skeleton);
+    se_assert(this->renderer.meshes[skeleton_mesh]->skeleton == NULL);
+
+        //- Animation
+    animation.duration = this->renderer.meshes[this->entities.mesh_index[man]]->skeleton->animations[0]->duration;
+    animation.speed = this->renderer.meshes[this->entities.mesh_index[man]]->skeleton->animations[0]->ticks_per_second;
+    animation.current_frame = 0;
+}
+
+void App::init_game() {
+    this->clear();
+    this->mode = GAME_MODES::GAME;
+}
+
+void App::clear() {
+        // free memory if required
+    this->entities.clear();
+        // set entity data to their default value
+    this->entities.init();
 }

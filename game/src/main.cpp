@@ -34,7 +34,7 @@ int main() {
 
     SDL_StopTextInput(); // don't take text input by default
 
-    Game *game = new Game(window);
+    App *game = new App(window);
 
     // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );

@@ -30,6 +30,11 @@ public:
     Entities();
     ~Entities();
 
+        /// clear out every entity data.
+    void clear();
+        /// Sets all entity data to their default values
+    void init();
+
         /// Calculate the transform matrix of the entity
     void update_transforms();
 };
