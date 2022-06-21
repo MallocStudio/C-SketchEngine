@@ -477,6 +477,8 @@ f32 frandom_in_range(f32 min, f32 max);
 
  b8 point_overlaps_circle(Vec2 point, Vec2 center, f32 radius);
 
+b8 ray_overlaps_sphere(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, Vec3 sphere_origin, f32 sphere_radius, f32 *hit_distance);
+
 /// -----------
 /// CONVERSIONS
 /// -----------

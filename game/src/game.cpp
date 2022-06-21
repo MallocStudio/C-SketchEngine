@@ -3,6 +3,15 @@
 SE_UI *ctx;
 SE_String input_text;
 
+    //@temp a temporary way of loading required meshes once at init_application() time
+u32 mesh_soulspear = -1;
+u32 mesh_plane = -1;
+u32 mesh_guy = -1;
+u32 mesh_skeleton = -1;
+u32 mesh_gizmos_translate = -1;
+
+#define SAVE_FILE_NAME "test_save_level.level"
+
 App::App(SDL_Window *window) {
     this->init_application(window);
         //- Start with Engine Mode
@@ -29,18 +38,31 @@ void App::update(f32 delta_time) {
         //- Entities
     this->level.entities.update_transforms();
 
+    if (seinput_is_mouse_left_released(&this->input)) {
+        printf("checking\n");
+        this->selected_entity = this->raycast_to_select_entity();
+        if (this->selected_entity >= 0) {
+            printf("hit %i\n", this->selected_entity);
+        }
+    }
+
         //- UI
     seui_reset(ctx);
-    if (seui_panel(ctx, "test")) {
-        seui_panel_row(ctx, 32, 3);
+    // if (seui_panel(ctx, "test")) {
+    //     seui_panel_row(ctx, 32, 3);
 
-        seui_label(ctx, "text");
+    //     seui_label(ctx, "text");
 
-        if (seui_button(ctx, "button")) {
-            printf("pressed button\n");
-        }
+    //     if (seui_button(ctx, "button")) {
+    //         printf("pressed button\n");
+    //     }
 
-        seui_input_text(ctx, &input_text);
+    //     seui_input_text(ctx, &input_text);
+    // }
+
+        // save
+    if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
+        this->level.save(SAVE_FILE_NAME);
     }
 }
 
@@ -75,6 +97,15 @@ void App::render() {
         }
     }
 
+        //- Gizmos
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+        // selected entity
+    if (this->selected_entity >= 0) {
+        se_assert(this->selected_entity < this->level.entities.count);
+        serender_mesh_index(&this->renderer, mesh_gizmos_translate, this->level.entities.transform[this->selected_entity]);
+    }
+
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
@@ -90,9 +121,12 @@ void App::init_application(SDL_Window *window) {
     Rect viewport = {0, 0, (f32)window_w, (f32)window_h};
     this->should_quit = false;
 
+        //- UI
     ctx = NEW(SE_UI);
     seui_init(ctx, &this->input, viewport, -1000, 1000);
     sestring_init(&input_text, "");
+    // this->selected_entity = -1; // no entity has been selected
+    this->selected_entity = 0; // select first entity
 
         //- Input
     seinput_init(&this->input);
@@ -103,33 +137,37 @@ void App::init_application(SDL_Window *window) {
     this->renderer.light_directional.direction = {0, -1, 0};
     this->renderer.light_directional.ambient   = {50, 50, 50};
     this->renderer.light_directional.diffuse   = {255, 255, 255};
+
+        //- Load meshes
+    mesh_soulspear = serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
+    mesh_plane = serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
+    mesh_gizmos_translate = serender3d_add_gizmos_coordniates(&this->renderer);
 }
 
 void App::init_engine() {
     this->clear();
     this->mode = GAME_MODES::ENGINE;
 
-#if 0 // manually create entities
+#if 1 // manually create entities
     // @temp add entities
     u32 soulspear = this->level.add_entity();
-    level.entities.mesh_index[soulspear] = serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
+    level.entities.mesh_index[soulspear] = mesh_soulspear;
     level.entities.has_mesh[soulspear] = true;
     level.entities.should_render_mesh[soulspear] = true;
     level.entities.has_name[soulspear] = true;
-    sestring_init(&level.entities.name[soulspear], "soulspear entity");
+    sestring_init(&level.entities.name[soulspear], "soulspear_entity");
+    level.entities.position[soulspear] = v3f(3, 1, 0);
 
     u32 plane = this->level.add_entity();
-    level.entities.mesh_index[plane] = serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
+    level.entities.mesh_index[plane] = mesh_plane;
     level.entities.has_mesh[plane] = true;
     level.entities.should_render_mesh[plane] = true;
     level.entities.has_name[plane] = true;
-    sestring_init(&level.entities.name[plane], "plane entity");
+    sestring_init(&level.entities.name[plane], "plane_entity");
 
-    this->level.save("test_save_level.level");
+    this->level.save(SAVE_FILE_NAME);
 #else // load from file
-    serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
-    serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
-    this->level.load("test_save_level.level");
+    this->level.load(SAVE_FILE_NAME);
 #endif
 }
 
@@ -143,4 +181,26 @@ void App::clear() {
     this->level.entities.clear();
         // set entity data to their default value
     this->level.entities.init();
+}
+
+i32 App::raycast_to_select_entity() {
+    const Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+
+    const Vec3 raycast_origin = this->camera.position;
+    const Vec3 raycast_dir = secamera3d_get_front(&this->camera);
+
+    i32 result = -1;
+
+    f32 closest_hit = -SEMATH_INFINITY;
+    for (u32 i = 0; i < this->level.entities.count; ++i) {
+        f32 hit;
+        if (ray_overlaps_sphere(raycast_origin, raycast_dir, 1000, level.entities.position[i], 3, &hit)) {
+            if (hit > closest_hit) {
+                closest_hit = hit;
+                result = i;
+            }
+        }
+    }
+
+    return result;
 }

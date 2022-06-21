@@ -2,8 +2,9 @@
 
 uniform vec4 base_diffuse;
 
+in vec4 vertex_colour;
 out vec4 FragColour;
 
 void main () {
-    FragColour = base_diffuse;
+    FragColour = base_diffuse * vertex_colour;
 }

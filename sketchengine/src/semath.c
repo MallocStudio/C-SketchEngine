@@ -1147,11 +1147,11 @@ b8 is_power_of_2(i32 value) {
 /// RECT
 /// ----
 
- Rect rect_create(Vec2 pos, Vec2 size) {
+Rect rect_create(Vec2 pos, Vec2 size) {
     return (Rect) {pos.x, pos.y, size.x, size.y};
 }
 
- b8 rect_overlaps_rect(Rect a, Rect b) {
+b8 rect_overlaps_rect(Rect a, Rect b) {
     // following Ericson, C, 2004. Real-Time Collision Detection. 1.  CRC Press.
     // page 79, AABB vs AABB
     f32 t;
@@ -1160,12 +1160,32 @@ b8 is_power_of_2(i32 value) {
     return true;
 }
 
- b8 rect_overlaps_point(Rect rect, Vec2 point) {
+b8 rect_overlaps_point(Rect rect, Vec2 point) {
     return (point.x > rect.x && point.x < rect.x + rect.w) && (point.y > rect.y && point.y < rect.y + rect.h);
 }
 
- b8 point_overlaps_circle(Vec2 point, Vec2 center, f32 radius) {
+b8 point_overlaps_circle(Vec2 point, Vec2 center, f32 radius) {
     return vec2_distance(point, center) <= radius;
+}
+
+b8 ray_overlaps_sphere(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, Vec3 sphere_origin, f32 sphere_radius, f32 *hit_distance) {
+        // check each plane of the box and see if  the line intersects it
+    vec3_normalise(&ray_direction);
+
+    for (u32 i = 0; i < max_distance; ++i) {
+        Vec3 point = v3f(
+            ray_origin.x + ray_direction.x * i,
+            ray_origin.y + ray_direction.y * i,
+            ray_origin.z + ray_direction.z * i
+        );
+
+        if (vec3_distance(point, sphere_origin) <= sphere_radius) {
+            *hit_distance = i;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /// -----------

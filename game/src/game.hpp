@@ -19,6 +19,7 @@ public:
     GAME_MODES mode;
 
     Level level;
+    i32 selected_entity; // when == -1 it means no entity is selected
 
     App(SDL_Window *window);
     ~App();
@@ -33,4 +34,7 @@ private:
     void clear();
     void init_engine();
     void init_game();
+        /// Raycasts into the scene to see if the user is trying to select an entiy.
+        /// It will return the index of the entity, -1 if nothing was being selected.
+    i32 raycast_to_select_entity();
 };

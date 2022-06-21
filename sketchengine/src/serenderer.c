@@ -306,7 +306,7 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
     semesh_generate(mesh, 4, verts, 6, indices);
 }
 
-void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
+void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
@@ -315,6 +315,9 @@ void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width) {
         {.position = pos1},
         {.position = pos2}
     };
+
+    verts[0].colour = colour;
+    verts[1].colour = colour;
 
     u32 indices[2] = {
         0, 1
@@ -381,7 +384,7 @@ void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_wid
     semesh_generate(mesh, 8, verts, 24, indices);
 }
 
-void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width) {
+void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 width) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
@@ -399,6 +402,13 @@ void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 scale, f32 width) {
         {.position = pos_o}, // z
         {.position = pos_z}
     };
+
+    verts[0].colour = RGBA_RED;
+    verts[1].colour = RGBA_RED;
+    verts[2].colour = RGBA_GREEN;
+    verts[3].colour = RGBA_GREEN;
+    verts[4].colour = RGBA_BLUE;
+    verts[5].colour = RGBA_BLUE;
 
     u32 indices[6] = {
         0, 1, // x
@@ -696,7 +706,7 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
     glBufferData(GL_ARRAY_BUFFER, sizeof(SE_Vertex3D) * vert_count, vertices, GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u32), indices, GL_STATIC_DRAW);
 
-    if (mesh->type == SE_MESH_TYPE_NORMAL || mesh->type == SE_MESH_TYPE_LINE) {
+    if (mesh->type == SE_MESH_TYPE_NORMAL || mesh->type == SE_MESH_TYPE_LINE || mesh->type == SE_MESH_TYPE_POINT) {
             // -- enable position
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, position));
@@ -712,6 +722,13 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
             // -- enable bitangent
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, bitangent));
+
+        if (mesh->type == SE_MESH_TYPE_LINE || mesh->type == SE_MESH_TYPE_POINT) {
+            // -- enable colour
+            glEnableVertexAttribArray(5);
+            glVertexAttribPointer(5, 4, TYPEOF_RGBA_OPENGL, GL_TRUE, sizeof(SE_Vertex3D), (void*)offsetof(SE_Vertex3D, colour));
+        }
+
     } else
     if (mesh->type == SE_MESH_TYPE_SPRITE) {
             // -- enable position
@@ -1339,7 +1356,7 @@ static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAn
 
 static void recursive_calculate_bone_pose // calculate the pose of the given bone based on the animation, do the same for its children
 (SE_Skeleton *skeleton, const SE_Skeletal_Animation *animation, f32 animation_time, const SE_Bone_Node *node, Mat4 parent_transform) {
-    // se_assert(node->bones_info_index >= 0 && node->bones_info_index < animation->animated_bones_count);
+    se_assert(node->bones_info_index >= 0 && node->bones_info_index < animation->animated_bones_count);
 
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
@@ -2159,12 +2176,12 @@ u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
     return result;
 }
 
-u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width) {
+u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width);
+    semesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width, colour);
 
     renderer->meshes_count++;
     return result;
@@ -2179,12 +2196,13 @@ u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
     return result;
 }
 
-u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer, f32 scale, f32 width) {
+u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
+    f32 width = 3;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], scale, width);
+    semesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], width);
 
     renderer->meshes_count++;
     return result;
