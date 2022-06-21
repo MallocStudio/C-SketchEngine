@@ -140,8 +140,8 @@ void App::init_engine() {
     this->entities.has_mesh[player2]   = true;
 
     man = add_entity(this);
-    // this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
-    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Sitting Laughing.fbx", true);
+    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/one_skin_cluster/Booty_Hip_Hop_Dance.fbx", true);
+    // this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Sitting Laughing.fbx", true);
     this->entities.has_mesh[man]   = true;
     this->entities.scale[man] = v3f(0.1f, 0.1f, 0.1f);
 

@@ -1339,7 +1339,7 @@ static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAn
 
 static void recursive_calculate_bone_pose // calculate the pose of the given bone based on the animation, do the same for its children
 (SE_Skeleton *skeleton, const SE_Skeletal_Animation *animation, f32 animation_time, const SE_Bone_Node *node, Mat4 parent_transform) {
-    se_assert(node->bones_info_index >= 0 && node->bones_info_index < animation->animated_bones_count);
+    // se_assert(node->bones_info_index >= 0 && node->bones_info_index < animation->animated_bones_count);
 
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
