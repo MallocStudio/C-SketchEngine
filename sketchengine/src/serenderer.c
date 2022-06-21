@@ -554,7 +554,7 @@ void semesh_generate_static_skeleton
     u32 index_count = 0;
     u32 *indices = malloc(sizeof(u32) * skeleton->bone_node_count * 2);
 
-// #define DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM
+#define DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM
 #ifdef DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM // render each bone's inverse_neutral_transform for debugging purposes
         // generate the verts based on the model space transform of each bone
     for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
@@ -1504,16 +1504,8 @@ static u32 add_animation_to_skeleton(SE_Skeleton *skeleton) {
     return anim;
 }
 
-static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
-        // load scene from file
-    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-
-    if (scene == NULL) {
-        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
-        return;
-    }
-
-    for (u32 i = 0; i < scene->mNumAnimations; ++i) {
+static void load_animation(SE_Skeleton *skeleton, const struct aiScene *scene) {
+        for (u32 i = 0; i < scene->mNumAnimations; ++i) {
             // add the animation to skeleton
         u32 anim_index = add_animation_to_skeleton(skeleton);
         SE_Skeletal_Animation *anim = skeleton->animations[anim_index];
@@ -1530,6 +1522,20 @@ static void load_animation(SE_Skeleton *skeleton, const char *model_filepath) {
             bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[c]);
         }
     }
+}
+
+static void load_animation_from_file(SE_Skeleton *skeleton, const char *model_filepath) {
+        // load scene from file
+    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+
+    if (scene == NULL) {
+        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
+        return;
+    }
+
+    load_animation(skeleton, scene);
+
+    aiReleaseImport(scene);
 }
 
 u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_skeleton) {
@@ -1579,7 +1585,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8
     if (renderer->meshes[result]->skeleton != NULL && scene->mNumAnimations > 0) {
         i32 current_mesh = result;
         while (current_mesh >= 0) {
-            load_animation(renderer->meshes[current_mesh]->skeleton, model_filepath);
+            load_animation(renderer->meshes[current_mesh]->skeleton, scene);
             printf("-------------------------------\n");
             for (u32 i = 0; i < renderer->meshes[result]->skeleton->animations[0]->animated_bones_count; i++) {
                 printf("%i: parent name: %s\n", i, renderer->meshes[result]->skeleton->animations[0]->animated_bones[i].name.buffer);
@@ -1591,6 +1597,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8
         //- the final mesh in the linked list has no next (signified by -1 next_mesh_index)
     renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
 
+    aiReleaseImport(scene);
     return result;
 }
 

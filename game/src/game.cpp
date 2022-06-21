@@ -3,18 +3,6 @@
 SE_UI *ctx;
 SE_String input_text;
 
-u32 player1 = -1;
-u32 player2 = -1;
-u32 man = -1;
-u32 skeleton_mesh = -1;
-SE_Animation animation;
-
-u32 add_entity(App *game) {
-    u32 result = game->entities.count;
-    game->entities.count++;
-    return result;
-}
-
 App::App(SDL_Window *window) {
     this->init_application(window);
         //- Start with Engine Mode
@@ -39,14 +27,7 @@ void App::update(f32 delta_time) {
     secamera3d_input(&this->camera, &this->input);
 
         //- Entities
-    this->entities.update_transforms();
-
-    {   //- Animation
-        f32 current_frame = seanimation_update(&animation, delta_time);
-        SE_Mesh *mesh = this->renderer.meshes[entities.mesh_index[man]];
-        seskeleton_calculate_pose(mesh->skeleton, current_frame);
-        seskeleton_calculate_pose(this->renderer.meshes[mesh->next_mesh_index]->skeleton, current_frame);
-    }
+    this->level.entities.update_transforms();
 
         //- UI
     seui_reset(ctx);
@@ -78,8 +59,8 @@ void App::render() {
     secamera3d_update_projection(&this->camera, window_w, window_h);
 
         //- Shadows
-    se_render_directional_shadow_map(&this->renderer, this->entities.transform, this->entities.count);
-    se_render_omnidirectional_shadow_map(&this->renderer, this->entities.transform, this->entities.count);
+    se_render_directional_shadow_map(&this->renderer,     this->level.entities.transform, this->level.entities.count);
+    se_render_omnidirectional_shadow_map(&this->renderer, this->level.entities.transform, this->level.entities.count);
 
         //- Clear Previous Frame
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -88,13 +69,11 @@ void App::render() {
     glViewport(0, 0, window_w, window_h);
 
         //- Render Entities
-    for (u32 i = 0; i < this->entities.count; ++i) {
-        if (this->entities.has_mesh[i] && this->entities.should_render_mesh[i]) {
-            serender_mesh_index(&this->renderer, this->entities.mesh_index[i], this->entities.transform[i]);
+    for (u32 i = 0; i < this->level.entities.count; ++i) {
+        if (this->level.entities.has_mesh[i] && this->level.entities.should_render_mesh[i]) {
+            serender_mesh_index(&this->renderer, this->level.entities.mesh_index[i], this->level.entities.transform[i]);
         }
     }
-        //- Render Special Meshes
-    if (skeleton_mesh != -1) serender_mesh_index(&this->renderer, skeleton_mesh, this->entities.transform[man]);
 
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -130,31 +109,28 @@ void App::init_engine() {
     this->clear();
     this->mode = GAME_MODES::ENGINE;
 
-        //- Entities
-    player1 = add_entity(this);
-    this->entities.mesh_index[player1] = serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
-    this->entities.has_mesh[player1]   = true;
+#if 0 // manually create entities
+    // @temp add entities
+    u32 soulspear = this->level.add_entity();
+    level.entities.mesh_index[soulspear] = serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
+    level.entities.has_mesh[soulspear] = true;
+    level.entities.should_render_mesh[soulspear] = true;
+    level.entities.has_name[soulspear] = true;
+    sestring_init(&level.entities.name[soulspear], "soulspear entity");
 
-    player2 = add_entity(this);
-    this->entities.mesh_index[player2] = serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
-    this->entities.has_mesh[player2]   = true;
+    u32 plane = this->level.add_entity();
+    level.entities.mesh_index[plane] = serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
+    level.entities.has_mesh[plane] = true;
+    level.entities.should_render_mesh[plane] = true;
+    level.entities.has_name[plane] = true;
+    sestring_init(&level.entities.name[plane], "plane entity");
 
-    man = add_entity(this);
-    this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/one_skin_cluster/Booty_Hip_Hop_Dance.fbx", true);
-    // this->entities.mesh_index[man] = serender3d_load_mesh(&this->renderer, "game/meshes/Sitting Laughing.fbx", true);
-    this->entities.has_mesh[man]   = true;
-    this->entities.scale[man] = v3f(0.1f, 0.1f, 0.1f);
-
-    skeleton_mesh = serender3d_add_mesh_empty(&this->renderer);
-    this->renderer.meshes[skeleton_mesh]->material_index = this->renderer.material_lines;
-    // semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]]->skeleton);
-    semesh_generate_static_skeleton(this->renderer.meshes[skeleton_mesh], this->renderer.meshes[this->entities.mesh_index[man]+1]->skeleton);
-    se_assert(this->renderer.meshes[skeleton_mesh]->skeleton == NULL);
-
-        //- Animation
-    animation.duration = this->renderer.meshes[this->entities.mesh_index[man]]->skeleton->animations[0]->duration;
-    animation.speed = this->renderer.meshes[this->entities.mesh_index[man]]->skeleton->animations[0]->ticks_per_second;
-    animation.current_frame = 0;
+    this->level.save("test_save_level.level");
+#else // load from file
+    serender3d_load_mesh(&this->renderer, "game/meshes/soulspear/soulspear.obj", false);
+    serender3d_add_plane(&this->renderer, v3f(10, 10, 10));
+    this->level.load("test_save_level.level");
+#endif
 }
 
 void App::init_game() {
@@ -164,7 +140,7 @@ void App::init_game() {
 
 void App::clear() {
         // free memory if required
-    this->entities.clear();
+    this->level.entities.clear();
         // set entity data to their default value
-    this->entities.init();
+    this->level.entities.init();
 }

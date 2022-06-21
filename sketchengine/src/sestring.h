@@ -37,4 +37,8 @@ f32 sestring_as_f32(SE_String *string_buffer);
 
 /// returns true if the strings have the same value stored
 b8 sestring_compare(const SE_String *string1, const SE_String *string2);
+
+    /// Replaces all space characters to '_'
+    /// Returns true if it found any space characters to convert.
+b8 sestring_replace_space_with_underscore(SE_String *string_buffer);
 #endif // SESTRING_H

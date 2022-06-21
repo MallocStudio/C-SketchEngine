@@ -147,3 +147,15 @@ b8 sestring_compare(const SE_String *string1, const SE_String *string2) {
 
     return true;
 }
+
+b8 sestring_replace_space_with_underscore(SE_String *string_buffer) {
+    se_assert(string_buffer->buffer);
+    b8 found = false;
+    for (u32 i = 0; i < string_buffer->size; ++i) {
+        if (string_buffer->buffer[i] == ' ') {
+            found = true;
+            string_buffer->buffer[i] = '_';
+        }
+    }
+    return found;
+}

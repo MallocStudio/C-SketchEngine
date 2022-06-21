@@ -18,7 +18,6 @@ public:
 
     GAME_MODES mode;
 
-    Entities entities; // @remove and add it to Level
     Level level;
 
     App(SDL_Window *window);

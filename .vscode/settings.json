@@ -47,6 +47,7 @@
         "xmemory": "c",
         "xstddef": "c",
         "xstring": "c",
-        "xtr1common": "c"
+        "xtr1common": "c",
+        "system_error": "cpp"
     }
 }

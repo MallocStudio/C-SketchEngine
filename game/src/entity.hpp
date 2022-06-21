@@ -12,7 +12,7 @@ public:
     Vec3 oriantation[ENTITIES_MAX];
     Vec3 position[ENTITIES_MAX];
     Vec3 scale[ENTITIES_MAX];
-    Mat4 transform[ENTITIES_MAX];
+    Mat4 transform[ENTITIES_MAX];   // ! does not need to be saved and loaded from files. Because it gets calculated after update_transforms is called.
 
         //- Mesh
     bool has_mesh[ENTITIES_MAX];
@@ -30,10 +30,12 @@ public:
     Entities();
     ~Entities();
 
-        /// clear out every entity data.
-    void clear();
         /// Sets all entity data to their default values
+        /// NOTE that this is called in the constructor
     void init();
+        /// Clear out every entity data.
+        /// Note that this is called in the destructor
+    void clear();
 
         /// Calculate the transform matrix of the entity
     void update_transforms();

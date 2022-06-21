@@ -18,7 +18,8 @@ void print_sdl_error();
 #define NEW(type) ( type *) malloc (sizeof( type ))
 #define ERROR_ON_NOTZERO_SDL(x, additional_message) if( x != 0) {printf("(%s)\n", additional_message); print_sdl_error();}
 #define ERROR_ON_NULL_SDL(x, additional_message) if( x == NULL) {printf("(%s)\n", additional_message); print_sdl_error();}
-#define SE_ERROR(message) {printf("ERROR: %s; FILE: %s (LINE: %i)\n", message, __FILE__, __LINE__);}
+#define SE_ERROR(message) {printf("ERROR: FILE: %s (LINE: %i): %s\n", __FILE__, __LINE__, message);}
+#define SE_WARNING(message) {printf("WARNING: FILE: %s (LINE: %i): %s\n", __FILE__, __LINE__, message);}
 #define se_assert(condition) SDL_assert_always(condition)
 
 typedef int i32;
@@ -35,8 +36,10 @@ typedef unsigned short u8;
 //     false, true
 // } bool;
 typedef unsigned short b8;
-#define false 0
-#define true 1
+#ifndef __cplusplus
+    #define false 0
+    #define true 1
+#endif //!__cplusplus
 
 typedef struct RGBA {
     ubyte r, g, b, a;   // 0 - 255
