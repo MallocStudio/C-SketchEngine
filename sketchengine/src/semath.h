@@ -261,7 +261,8 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent);
  Mat4 mat4_identity();
 
 /// returns the result of multiplying m1 and m2
- Mat4 mat4_mul(Mat4 m1, Mat4 m2);
+/// note that m1 * m2 in c++ glm would look like: mat4_mul(m2, m1) from my understanding
+Mat4 mat4_mul(Mat4 m1, Mat4 m2);
 
 /// creates and returns an orthographic projection Mat4.
 /// Typically used to render flat or 2D scenes

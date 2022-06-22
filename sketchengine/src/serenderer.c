@@ -1439,8 +1439,8 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].ambient",   renderer->point_lights[0].ambient);
     seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].diffuse",   renderer->point_lights[0].diffuse);
     seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].specular",  renderer->point_lights[0].specular);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].constant" , renderer->point_lights[0].constant);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].linear"   , renderer->point_lights[0].linear);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].constant",  renderer->point_lights[0].constant);
+    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].linear",    renderer->point_lights[0].linear);
     seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].quadratic", renderer->point_lights[0].quadratic);
     seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].far_plane", 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
     seshader_set_uniform_i32 (renderer->shaders[shader], "point_lights[0].shadow_map", 4); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported

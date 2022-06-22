@@ -4,6 +4,7 @@
 void Widget_Entity::construct_panel(SE_UI *ctx) {
     if (seui_panel(ctx, "entity data")) {
         panel_index = ctx->current_panel->index;
+        ctx->current_panel->docked_dir = 1; // left
 
         if (this->entity >= 0) {
                 // entity variables to display

@@ -39,7 +39,6 @@ void App::update(f32 delta_time) {
     m_level.entities.update_transforms();
 
         // select entities
-    this->raycast_to_select_entity();
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
         printf("checking\n"); // @debug
         m_selected_entity = this->raycast_to_select_entity();
@@ -188,33 +187,35 @@ void App::clear() {
 }
 
 i32 App::raycast_to_select_entity() {
-    Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
     i32 window_w, window_h;
     SDL_GetWindowSize(m_window, &window_w, &window_h);
 
-    // mouse_pos.y = window_h - mouse_pos.y;
-    mouse_pos.x -= window_w / 2; // anchor mouse pos from center of the window not a corner
-    mouse_pos.y -= window_h / 2; // anchor mouse pos from center of the window not a corner
-    mouse_pos.x /= window_w;
-    mouse_pos.y /= window_h;
-
-    Vec3 camera_pos = m_cameras[main_camera].position;
     Vec3 raycast_dir = secamera3d_get_front(&m_cameras[main_camera]);
+    Vec3 raycast_origin;
 
-    Vec3 raycast_dir_tangent;
-    Vec3 raycast_dir_bitangent;
-    vec3_calculate_tangent_bitangent(raycast_dir, &raycast_dir_tangent, &raycast_dir_bitangent);
+    {   //- Get Mouse World Pos
+        Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
+        Mat4 deprojection_world = mat4_inverse(proj_view_matrix);
+        Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
+        cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
+        cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
 
-    Vec3 mouse_pos_in_camera_space_offset = camera_pos;
-    mouse_pos_in_camera_space_offset.x += mouse_pos.x * raycast_dir_tangent.x;
-    mouse_pos_in_camera_space_offset.y += mouse_pos.y * raycast_dir_bitangent.y;
+        Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
+        Vec4 mouse_pos_world = mat4_mul_vec4(deprojection_world, mouse_pos_ndc);
+        cursor_pos.x = mouse_pos_world.x;
+        cursor_pos.y = mouse_pos_world.y;
+
+        raycast_origin.x = mouse_pos_world.x;
+        raycast_origin.y = mouse_pos_world.y;
+        raycast_origin.z = m_cameras[main_camera].position.z;
+    }
 
     i32 result = -1;
 
     f32 closest_hit = -SEMATH_INFINITY;
     for (u32 i = 0; i < m_level.entities.count; ++i) {
         f32 hit;
-        if (ray_overlaps_sphere(mouse_pos_in_camera_space_offset, raycast_dir, 1000, m_level.entities.position[i], 3, &hit)) {
+        if (ray_overlaps_sphere(raycast_origin, raycast_dir, 1000, m_level.entities.position[i], 1, &hit)) {
             if (hit > closest_hit) {
                 closest_hit = hit;
                 result = i;
