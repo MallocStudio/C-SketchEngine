@@ -246,14 +246,14 @@ b8 is_power_of_2(i32 value) {
     return (Vec3) {1.0f, 0.0f, 0.0f};
 }
 
-/// returns a Vec3 pointing forward (right handed coord system) (0, 0, -1)
+/// returns a Vec3 pointing forward
  Vec3 vec3_forward() {
-    return (Vec3) {0.0f, 0.0f, -1.0f};
+    return (Vec3) {0.0f, 0.0f, 1.0f};
 }
 
-/// returns a Vec3 pointing back (right handed coord system) (0, 0, +1)
+/// returns a Vec3 pointing back
  Vec3 vec3_backward() {
-    return (Vec3) {0.0f, 0.0f, 1.0f};
+    return (Vec3) {0.0f, 0.0f, -1.0f};
 }
 
 /// v1 + v2 and returns a copy

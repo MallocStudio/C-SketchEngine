@@ -2,6 +2,7 @@
 
 #include "sketchengine.h"
 #include "level.hpp"
+#include "widgets.hpp"
 
 enum class GAME_MODES {
     GAME,
@@ -37,4 +38,6 @@ private:
         /// Raycasts into the scene to see if the user is trying to select an entiy.
         /// It will return the index of the entity, -1 if nothing was being selected.
     i32 raycast_to_select_entity();
+
+    Widget_Entity widget_entity;
 };

@@ -1965,10 +1965,10 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
                 mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(-1, 0, 0)), vec3_down()),
                 shadow_proj);
             shadow_transforms[2] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()),
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()), // !if it doesn't work it's because I swapped froward and backward in semath.c. change these to vec3_backward()
                 shadow_proj);
             shadow_transforms[3] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()),
+                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()), // !if it doesn't work it's because I swapped froward and backward in semath.c. change these to vec3_backward()
                 shadow_proj);
             shadow_transforms[4] = mat4_mul(
                 mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, 1)), vec3_down()),

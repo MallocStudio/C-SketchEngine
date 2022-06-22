@@ -1,7 +1,7 @@
 #include "entity.hpp"
 
 Entities::Entities() {
-    this->init();
+    this->set_to_default();
 }
 
 Entities::~Entities() {
@@ -31,7 +31,7 @@ void Entities::clear() {
     }
 }
 
-void Entities::init() {
+void Entities::set_to_default() {
     this->count = 0;
     for (u32 i = 0; i < ENTITIES_MAX; ++i) {
         this->has_mesh           [i] = false;

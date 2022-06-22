@@ -1,6 +1,5 @@
 #include "sestring.h"
 #include "memory.h"
-// #include "stdio.h"
 #include "semath.h"
 void sestring_init(SE_String *sestring, const char *buffer) {
     if (buffer != NULL) {
@@ -16,6 +15,34 @@ void sestring_init(SE_String *sestring, const char *buffer) {
         sestring->size = 0;
         sestring->capacity = 0;
         sestring->buffer = NULL;
+    }
+}
+
+void sestring_init_i32(SE_String *sestring, i32 value) {
+    char buffer[32] = {0};
+    SDL_snprintf(buffer, 32, "%i", value);
+
+    sestring->size = SDL_strlen(buffer);
+    sestring->capacity = sestring->size + 1; // +1 to accomidate '\0'
+
+    sestring->buffer = malloc(sizeof(char) * sestring->capacity);
+
+    for (u32 i = 0; i < sestring->size+1; ++i) {
+        sestring->buffer[i] = buffer[i];
+    }
+}
+
+void sestring_init_f32(SE_String *sestring, f32 value) {
+    char buffer[32] = {0};
+    SDL_snprintf(buffer, 32, "%f", value);
+
+    sestring->size = SDL_strlen(buffer);
+    sestring->capacity = sestring->size + 1; // +1 to accomidate '\0'
+
+    sestring->buffer = malloc(sizeof(char) * sestring->capacity);
+
+    for (u32 i = 0; i < sestring->size+1; ++i) {
+        sestring->buffer[i] = buffer[i];
     }
 }
 

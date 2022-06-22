@@ -32,7 +32,7 @@ public:
 
         /// Sets all entity data to their default values
         /// NOTE that this is called in the constructor
-    void init();
+    void set_to_default();
         /// Clear out every entity data.
         /// Note that this is called in the destructor
     void clear();

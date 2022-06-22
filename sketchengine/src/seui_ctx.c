@@ -1089,8 +1089,10 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
         sprintf(label_buffer, "z: %.2f", value->z);
         seui_label(ctx, label_buffer);
     } else {
-        ctx->text_input_only_numerical = true;
+        b8 previous_item_centered_config = ctx->current_panel->config_item_centered;
         b8 previous_item_minimised_config = ctx->current_panel->config_item_minimised;
+        ctx->text_input_only_numerical = true;
+        ctx->current_panel->config_item_centered = true;
         seui_panel_row(ctx, 32, 6);
 
             //- X
@@ -1128,6 +1130,8 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
         sestring_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
         value->z = sestring_as_f32(&ctx->text_input_cache);
+
+        ctx->current_panel->config_item_centered = previous_item_centered_config;
 
         seui_configure_text_input_reset(ctx); // reset configurations
     }
