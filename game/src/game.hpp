@@ -9,18 +9,21 @@ enum class GAME_MODES {
     ENGINE
 };
 
+#define MAX_NUM_CAMERA 3
+
 struct App {
 public:
-    SE_Input input;
-    SE_Camera3D camera;
-    SE_Renderer3D renderer;
-    SDL_Window *window;
+    SE_Input m_input;
+    u32 m_camera_count;
+    SE_Camera3D m_cameras[MAX_NUM_CAMERA];
+    SE_Renderer3D m_renderer;
+    SDL_Window *m_window;
     bool should_quit;
 
-    GAME_MODES mode;
+    GAME_MODES m_mode;
 
-    Level level;
-    i32 selected_entity; // when == -1 it means no entity is selected
+    Level m_level;
+    i32 m_selected_entity; // when == -1 it means no entity is selected
 
     App(SDL_Window *window);
     ~App();
@@ -35,9 +38,10 @@ private:
     void clear();
     void init_engine();
     void init_game();
+    u32 add_camera();
         /// Raycasts into the scene to see if the user is trying to select an entiy.
         /// It will return the index of the entity, -1 if nothing was being selected.
     i32 raycast_to_select_entity();
 
-    Widget_Entity widget_entity;
+    Widget_Entity m_widget_entity;
 };

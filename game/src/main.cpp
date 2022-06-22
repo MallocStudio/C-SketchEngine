@@ -54,7 +54,7 @@ int main() {
         SDL_Event event;
         bool keyboard_down = false;
         bool keyboard_pressed = false;
-        game->input.mouse_wheel = 0; // reset this to zero
+        game->m_input.mouse_wheel = 0; // reset this to zero
         while (!game->should_quit && SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT: { // -- wanting to quit
@@ -72,17 +72,17 @@ int main() {
                     // keyboard_down = true;
                 } break;
                 case SDL_MOUSEWHEEL: {
-                    game->input.mouse_wheel = event.wheel.preciseY;
+                    game->m_input.mouse_wheel = event.wheel.preciseY;
                 } break;
                 case SDL_TEXTINPUT: { // this event happens after SDL_StartTextInput() is called
-                    if (game->input.text_input_stream != NULL) {
-                        if (game->input.is_text_input_only_numeric) {
+                    if (game->m_input.text_input_stream != NULL) {
+                        if (game->m_input.is_text_input_only_numeric) {
                             if ((event.text.text[0] >= (i32)'0' && event.text.text[0] <= (i32)'9')
                                 || event.text.text[0] == (i32)'-' || event.text.text[0] == (i32)'.') {
-                                sestring_append(game->input.text_input_stream, event.text.text);
+                                sestring_append(game->m_input.text_input_stream, event.text.text);
                             }
                         } else {
-                            sestring_append(game->input.text_input_stream, event.text.text);
+                            sestring_append(game->m_input.text_input_stream, event.text.text);
                             // printf("WHAT!!! %s\n", event.text.text);
                         }
                     } else {

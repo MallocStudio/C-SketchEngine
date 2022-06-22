@@ -49,9 +49,17 @@ void Widget_Entity::construct_panel(SE_UI *ctx) {
             }
 
             {   //- Pos, Rot, Scale
+                rot->x = SEMATH_RAD2DEG(rot->x);
+                rot->y = SEMATH_RAD2DEG(rot->y);
+                rot->z = SEMATH_RAD2DEG(rot->z);
+
                 seui_label_vec3(ctx, "position", pos, true);
                 seui_label_vec3(ctx, "oriantation", rot, true);
                 seui_label_vec3(ctx, "scale", scale, true);
+
+                rot->x = SEMATH_DEG2RAD(rot->x);
+                rot->y = SEMATH_DEG2RAD(rot->y);
+                rot->z = SEMATH_DEG2RAD(rot->z);
             }
         }
     }
