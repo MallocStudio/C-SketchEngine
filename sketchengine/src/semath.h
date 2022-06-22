@@ -215,6 +215,11 @@ f32 frandom_in_range(f32 min, f32 max);
 /// Returns the distance between v1 and v2
  f32 vec3_distance(Vec3 v1, Vec3 v2);
 
+    /// Calculates the tangent and bitangent of the given vec3.
+    /// NOTE that 'v' gets normalised.
+    /// "tangent" is the vector in local x axis, and "bitangent" is the vector in local y axis.
+void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent);
+
 /// ----
 /// Mat2
 /// ----

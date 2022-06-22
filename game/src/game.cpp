@@ -9,12 +9,41 @@ u32 mesh_guy = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 
+u32 debug_mesh = -1;
+u32 debug_mesh2 = -1;
+u32 debug_mesh3 = -1;
+u32 debug_mesh4 = -1;
+
 #define SAVE_FILE_NAME "test_save_level.level"
 
 App::App(SDL_Window *window) {
     this->init_application(window);
         //- Start with Engine Mode
     this->init_engine();
+
+    //@debug
+    debug_mesh = serender3d_add_mesh_empty(&renderer);
+    debug_mesh2 = serender3d_add_mesh_empty(&renderer);
+    debug_mesh3 = serender3d_add_mesh_empty(&renderer);
+    debug_mesh4 = serender3d_add_mesh_empty(&renderer);
+    Vec3 raycast_origin = v3f(0, 0, 0);
+    Vec3 raycast_dir = v3f(0, 1, -1);
+    vec3_normalise(&raycast_dir);
+
+    semesh_generate_line(renderer.meshes[debug_mesh], raycast_origin,  vec3_add(raycast_origin, raycast_dir), 3, {0, 0, 255, 255});
+
+    Vec3 raycast_dir_tangent;
+    Vec3 raycast_dir_bitangent;
+    vec3_calculate_tangent_bitangent(raycast_dir, &raycast_dir_tangent, &raycast_dir_bitangent);
+
+    Vec2 mouse_pos = v2f(1, 0);
+    Vec3 mouse_pos_in_camera_space_offset = raycast_origin;
+    mouse_pos_in_camera_space_offset.x += mouse_pos.x * raycast_dir_tangent.x;
+    mouse_pos_in_camera_space_offset.y += mouse_pos.y * raycast_dir_tangent.y;
+
+    semesh_generate_line(renderer.meshes[debug_mesh2], raycast_origin, vec3_add(raycast_origin, raycast_dir_bitangent), 3, {0, 255, 0, 255});
+    semesh_generate_line(renderer.meshes[debug_mesh3], raycast_origin, vec3_add(raycast_origin, raycast_dir_tangent), 3,   {255, 0, 0, 255});
+    semesh_generate_line(renderer.meshes[debug_mesh4], mouse_pos_in_camera_space_offset, vec3_add(mouse_pos_in_camera_space_offset, raycast_dir), 3,   {255, 255, 255, 255});
 }
 
 App::~App() {
@@ -103,6 +132,12 @@ void App::render() {
         serender_mesh_index(&this->renderer, mesh_gizmos_translate, this->level.entities.transform[this->selected_entity]);
     }
 
+    //@debug
+    serender_mesh_index(&renderer, debug_mesh, mat4_identity());
+    serender_mesh_index(&renderer, debug_mesh2, mat4_identity());
+    serender_mesh_index(&renderer, debug_mesh3, mat4_identity());
+    serender_mesh_index(&renderer, debug_mesh4, mat4_identity());
+
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
@@ -185,30 +220,23 @@ void App::clear() {
 
 i32 App::raycast_to_select_entity() {
     Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+    i32 window_w, window_h;
+    SDL_GetWindowSize(this->window, &window_w, &window_h);
+
+    mouse_pos.y = window_h - mouse_pos.y;
+    mouse_pos.x /= window_w;
+    mouse_pos.y /= window_h;
 
     Vec3 raycast_origin = this->camera.position;
     Vec3 raycast_dir = secamera3d_get_front(&this->camera);
 
     Vec3 raycast_dir_tangent;
-    Vec3 raycast_dir_bitanget;
-    {
-        Vec3 c1 = vec3_cross(raycast_dir, vec3_up());
-        Vec3 c2 = vec3_cross(raycast_dir, vec3_forward());
+    Vec3 raycast_dir_bitangent;
+    vec3_calculate_tangent_bitangent(raycast_dir, &raycast_dir_tangent, &raycast_dir_bitangent);
 
-        if (vec3_magnitude_squared(c1) > vec3_magnitude_squared(c2)) {
-            raycast_dir_tangent = c1;
-        } else {
-            raycast_dir_tangent = c2;
-        }
-        vec3_normalise(&raycast_dir_tangent);
-        raycast_dir_bitanget = vec3_cross(raycast_dir, raycast_dir_tangent);
-        vec3_normalise(&raycast_dir_bitanget);
-    }
-
-    Vec3 mouse_pos_in_camera_space_offset;
-    mouse_pos_in_camera_space_offset.x = mouse_pos.x + raycast_dir_tangent.x;
-    mouse_pos_in_camera_space_offset.y = mouse_pos.y + raycast_dir_tangent.y;
-    raycast_origin = vec3_add(raycast_origin, mouse_pos_in_camera_space_offset);
+    Vec3 mouse_pos_in_camera_space_offset = raycast_origin;
+    mouse_pos_in_camera_space_offset.x += mouse_pos.x * raycast_dir_tangent.x;
+    mouse_pos_in_camera_space_offset.y += mouse_pos.y * raycast_dir_tangent.y;
 
     i32 result = -1;
 

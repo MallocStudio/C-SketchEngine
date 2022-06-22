@@ -246,14 +246,14 @@ b8 is_power_of_2(i32 value) {
     return (Vec3) {1.0f, 0.0f, 0.0f};
 }
 
-/// returns a Vec3 pointing forward
+/// returns a Vec3 pointing forward (in right handed coord system forward is -1 z)
  Vec3 vec3_forward() {
-    return (Vec3) {0.0f, 0.0f, 1.0f};
+    return (Vec3) {0.0f, 0.0f, -1.0f};
 }
 
-/// returns a Vec3 pointing back
+/// returns a Vec3 pointing back (in right handed coord system backward is +1 z)
  Vec3 vec3_backward() {
-    return (Vec3) {0.0f, 0.0f, -1.0f};
+    return (Vec3) {0.0f, 0.0f, +1.0f};
 }
 
 /// v1 + v2 and returns a copy
@@ -358,6 +358,28 @@ b8 is_power_of_2(i32 value) {
         v1.x - v2.y,
         v1.z - v2.z};
     return vec3_magnitude(d);
+}
+
+void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
+    vec3_normalise(&v);
+    Vec3 raycast_dir_tangent;
+    Vec3 raycast_dir_bitangent;
+    {
+        Vec3 c1 = vec3_cross(v, vec3_up());
+        Vec3 c2 = vec3_cross(v, vec3_forward());
+
+        if (vec3_magnitude_squared(c1) > vec3_magnitude_squared(c2)) {
+            raycast_dir_tangent = c1;
+        } else {
+            raycast_dir_tangent = c2;
+        }
+        vec3_normalise(&raycast_dir_tangent);
+        raycast_dir_bitangent = vec3_cross(v, raycast_dir_tangent);
+        vec3_normalise(&raycast_dir_bitangent);
+    }
+
+    *tangent = raycast_dir_tangent;
+    *bitangent = raycast_dir_bitangent; // make bitangent to point in the positive direction of local y
 }
 
 /// ----
