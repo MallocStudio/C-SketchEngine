@@ -231,12 +231,25 @@ void secamera3d_input(SE_Camera3D *camera, struct SE_Input *seinput);
 #define SERENDERER3D_MAX_MESHES 100
 #define SERENDERER3D_MAX_SHADERS 100
 #define SERENDERER3D_MAX_MATERIALS 100
+#define SERENDERER3D_MAX_POINT_LIGHTS 4
 
 typedef struct SE_Renderer3D {
-        // -- meshes
+    // ! NOTE THAT EVERYTHING IS SET TO ZERO AT THE BEGINNING OF INIT()
+    // ! LOOK AT serender3d_init TO SEE THE DEFAULT VALUES
+
+        //- Meshes
     u32 meshes_count;
     SE_Mesh *meshes[SERENDERER3D_MAX_MESHES];
 
+        //- Materials
+    u32 materials_count;
+    SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
+    u32 material_lines;  // default line material (white lines)
+    SE_Texture texture_default_diffuse;
+    SE_Texture texture_default_normal;
+    SE_Texture texture_default_specular;
+
+        //- Shaders
     u32 shaders_count;
     SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
 
@@ -249,19 +262,12 @@ typedef struct SE_Renderer3D {
     u32 shader_sprite;                  // handles rendering sprites
     u32 shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
 
-    u32 materials_count;
-    SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
-
-    u32 material_lines;  // default line material (white lines)
-    SE_Texture texture_default_diffuse;
-    SE_Texture texture_default_normal;
-    SE_Texture texture_default_specular;
-
+        //- Camera and Light
     SE_Camera3D *current_camera;
     SE_Light light_directional;
 
     u32 point_lights_count;
-    SE_Light_Point point_lights[4];
+    SE_Light_Point point_lights[SERENDERER3D_MAX_POINT_LIGHTS];
 
     /* shadow mapping */
     // u32 shadow_depth_map_fbo;
@@ -291,6 +297,8 @@ u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *
 u32 serender3d_add_material(SE_Renderer3D *renderer);
     /// Add an uninitialised skeleton to the renderer
 u32 serender3d_add_skeletal_animation(SE_Renderer3D *renderer);
+    /// Add a point light to the renderer
+u32 serender3d_add_point_light(SE_Renderer3D *renderer);
 /// Setup renderer for rendering (set the configurations to their default values)
 void serender3d_reset_render_config();
 void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);

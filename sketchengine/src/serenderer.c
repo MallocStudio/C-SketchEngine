@@ -1435,15 +1435,28 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
 
     // point light uniforms
-    seshader_set_uniform_vec3(renderer->shaders[shader], "point_lights[0].position",  renderer->point_lights[0].position);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].ambient",   renderer->point_lights[0].ambient);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].diffuse",   renderer->point_lights[0].diffuse);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].specular",  renderer->point_lights[0].specular);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].constant",  renderer->point_lights[0].constant);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].linear",    renderer->point_lights[0].linear);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].quadratic", renderer->point_lights[0].quadratic);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].far_plane", 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
-    seshader_set_uniform_i32 (renderer->shaders[shader], "point_lights[0].shadow_map", 4); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
+    for (u32 i = 0; i < renderer->point_lights_count; ++i) {
+        char buf[100];
+        SDL_snprintf(buf, 100, "point_lights[%i].position", i);
+        seshader_set_uniform_vec3(renderer->shaders[shader], buf, renderer->point_lights[i].position);
+        SDL_snprintf(buf, 100, "point_lights[%i].ambient", i);
+        seshader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].ambient);
+        SDL_snprintf(buf, 100, "point_lights[%i].diffuse", i);
+        seshader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].diffuse);
+        SDL_snprintf(buf, 100, "point_lights[%i].specular", i);
+        seshader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].specular);
+        SDL_snprintf(buf, 100, "point_lights[%i].constant", i);
+        seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].constant);
+        SDL_snprintf(buf, 100, "point_lights[%i].linear", i);
+        seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].linear);
+        SDL_snprintf(buf, 100, "point_lights[%i].quadratic", i);
+        seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].quadratic);
+        SDL_snprintf(buf, 100, "point_lights[%i].far_plane", i);
+        seshader_set_uniform_f32 (renderer->shaders[shader], buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
+        SDL_snprintf(buf, 100, "point_lights[%i].shadow_map", i);
+        seshader_set_uniform_i32 (renderer->shaders[shader], buf, 4+i); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
+    }
+    seshader_set_uniform_i32 (renderer->shaders[shader], "num_of_point_lights", renderer->point_lights_count);
 
     /* textures */
     if (material->texture_diffuse.loaded) {
@@ -1468,8 +1481,10 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
 
     /* omnidirectional shadow map */
-    glActiveTexture(GL_TEXTURE0 + 4); // shadow map
-    glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[0].depth_cube_map);
+    for (u32 i = 0; i < renderer->point_lights_count; ++i) {
+        glActiveTexture(GL_TEXTURE0 + 4+i); // shadow map
+        glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[i].depth_cube_map);
+    }
 }
 
 static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
@@ -1946,65 +1961,67 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms,
 void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count) {
     se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
 
-    SE_Light_Point *point_light = &renderer->point_lights[0];
-    glViewport(0, 0, 1024, 1024);
-    glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        { // configure shader and matrices
-            // projection
-            f32 aspect = 1024 / (f32) 1024;
-            f32 near = 1.0f;
-            f32 far  = 25.0f;
-            Mat4 shadow_proj = mat4_perspective(SEMATH_DEG2RAD_MULTIPLIER * 90.0f, aspect, near, far);
-            // views for each face
-            Mat4 shadow_transforms[6];
-            shadow_transforms[0] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(1, 0, 0)), vec3_down()),
-                shadow_proj);
-            shadow_transforms[1] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(-1, 0, 0)), vec3_down()),
-                shadow_proj);
-            shadow_transforms[2] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()), // !if it doesn't work it's because I swapped froward and backward in semath.c. change these to vec3_backward()
-                shadow_proj);
-            shadow_transforms[3] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()), // !if it doesn't work it's because I swapped froward and backward in semath.c. change these to vec3_backward()
-                shadow_proj);
-            shadow_transforms[4] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, 1)), vec3_down()),
-                shadow_proj);
-            shadow_transforms[5] = mat4_mul(
-                mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, -1)), vec3_down()),
-                shadow_proj);
+    for (u32 i = 0; i < renderer->point_lights_count; ++i) {
+        SE_Light_Point *point_light = &renderer->point_lights[i];
+        glViewport(0, 0, 1024, 1024);
+        glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            { // configure shader and matrices
+                // projection
+                f32 aspect = 1024 / (f32) 1024;
+                f32 near = 1.0f;
+                f32 far  = 25.0f;
+                Mat4 shadow_proj = mat4_perspective(SEMATH_DEG2RAD_MULTIPLIER * 90.0f, aspect, near, far);
+                // views for each face
+                Mat4 shadow_transforms[6];
+                shadow_transforms[0] = mat4_mul(
+                    mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(1, 0, 0)), vec3_down()),
+                    shadow_proj);
+                shadow_transforms[1] = mat4_mul(
+                    mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(-1, 0, 0)), vec3_down()),
+                    shadow_proj);
+                shadow_transforms[2] = mat4_mul(
+                    mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 1, 0)), vec3_forward()), // !if it doesn't work it's because I swapped froward and backward in semath.c. change these to vec3_backward()
+                    shadow_proj);
+                shadow_transforms[3] = mat4_mul(
+                    mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, -1, 0)), vec3_forward()), // !if it doesn't work it's because I swapped froward and backward in semath.c. change these to vec3_backward()
+                    shadow_proj);
+                shadow_transforms[4] = mat4_mul(
+                    mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, 1)), vec3_down()),
+                    shadow_proj);
+                shadow_transforms[5] = mat4_mul(
+                    mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, -1)), vec3_down()),
+                    shadow_proj);
 
-            // configure shader
-            seshader_use(renderer->shaders[renderer->shader_shadow_omnidir_calc]);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
-            seshader_set_uniform_f32 (renderer->shaders[renderer->shader_shadow_omnidir_calc], "far_plane", far);
-            seshader_set_uniform_vec3(renderer->shaders[renderer->shader_shadow_omnidir_calc], "light_pos", point_light->position);
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[0]", shadow_transforms[0]);
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[1]", shadow_transforms[1]);
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[2]", shadow_transforms[2]);
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[3]", shadow_transforms[3]);
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[4]", shadow_transforms[4]);
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[5]", shadow_transforms[5]);
-        }
-        // render scene
-        for (u32 i = 0; i < transforms_count; ++i) {
-            SE_Mesh *mesh = renderer->meshes[i];
-            Mat4 model_mat = transforms[i];
-
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "model", model_mat);
-
-            glBindVertexArray(mesh->vao);
-            if (mesh->indexed) {
-                glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
-            } else {
-                glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+                // configure shader
+                seshader_use(renderer->shaders[renderer->shader_shadow_omnidir_calc]);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
+                seshader_set_uniform_f32 (renderer->shaders[renderer->shader_shadow_omnidir_calc], "far_plane", far);
+                seshader_set_uniform_vec3(renderer->shaders[renderer->shader_shadow_omnidir_calc], "light_pos", point_light->position);
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[0]", shadow_transforms[0]);
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[1]", shadow_transforms[1]);
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[2]", shadow_transforms[2]);
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[3]", shadow_transforms[3]);
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[4]", shadow_transforms[4]);
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[5]", shadow_transforms[5]);
             }
-        }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            // render scene
+            for (u32 i = 0; i < transforms_count; ++i) {
+                SE_Mesh *mesh = renderer->meshes[i];
+                Mat4 model_mat = transforms[i];
+
+                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "model", model_mat);
+
+                glBindVertexArray(mesh->vao);
+                if (mesh->indexed) {
+                    glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+                } else {
+                    glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+                }
+            }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 }
 
 void serender3d_reset_render_config() {
@@ -2034,18 +2051,19 @@ u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *
 }
 
 void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
-    memset(renderer, 0, sizeof(SE_Renderer3D));
+    memset(renderer, 0, sizeof(SE_Renderer3D)); // default everything to zero
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
-    // point lights
-    renderer->point_lights_count = 1;
-    renderer->point_lights[0].position = v3f(2, 1, 1);
-    renderer->point_lights[0].ambient   = (RGB) {100, 100, 100};
-    renderer->point_lights[0].diffuse   = (RGB) {255, 255, 255};
-    renderer->point_lights[0].specular  = (RGB) {0, 0, 0};
-    renderer->point_lights[0].constant  = 1.0f;
-    renderer->point_lights[0].linear    = 0.22f;
-    renderer->point_lights[0].quadratic = 0.20f;
+
+        //- point lights
+    u32 default_plight = serender3d_add_point_light(renderer);
+    renderer->point_lights[default_plight].position = v3f(2, 1, 1);
+    default_plight = serender3d_add_point_light(renderer);
+    renderer->point_lights[default_plight].position = v3f(-2, 1, 1);
+    // default_plight = serender3d_add_point_light(renderer);
+    // renderer->point_lights[default_plight].position = v3f(2,- 1, 1);
+    // default_plight = serender3d_add_point_light(renderer);
+    // renderer->point_lights[default_plight].position = v3f(2, 1, 3);
 
     /* default shaders */
     // renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
@@ -2084,29 +2102,31 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true, true);
 
     { /* omnidirectional shadow mapping */
-        SE_Light_Point *point_light = &renderer->point_lights[0];
-        glGenTextures(1, &point_light->depth_cube_map); // @leak
-        glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
-        for (u32 i = 0; i < 6; ++i) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        }
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        // ! note: Normally we'd attach a single face of a cubemap texture to the framebuffer object and render the scene 6 times,
-        // ! each time swiching the depth buffer target of the framebuffer to a different cubemap face. Since we're going to
-        // ! use a geometry shader, that allows us to render to all faces in a single pass, we can directly attach the cubemap
-        // ! as a framebuffer's depth attachment with glFramebufferTexture (- from learnopengl.com)
-        glGenFramebuffers(1, &point_light->depth_map_fbo); // @leak
-        glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, point_light->depth_cube_map, 0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
+        for (u32 L = 0; L < SERENDERER3D_MAX_POINT_LIGHTS; ++L) {
+            SE_Light_Point *point_light = &renderer->point_lights[L];
+            glGenTextures(1, &point_light->depth_cube_map); // @leak
+            glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
+            for (u32 i = 0; i < 6; ++i) {
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+            }
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            // ! note: Normally we'd attach a single face of a cubemap texture to the framebuffer object and render the scene 6 times,
+            // ! each time swiching the depth buffer target of the framebuffer to a different cubemap face. Since we're going to
+            // ! use a geometry shader, that allows us to render to all faces in a single pass, we can directly attach the cubemap
+            // ! as a framebuffer's depth attachment with glFramebufferTexture (- from learnopengl.com)
+            glGenFramebuffers(1, &point_light->depth_map_fbo); // @leak
+            glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, point_light->depth_cube_map, 0);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        }
     }
 }
 
@@ -2133,6 +2153,26 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
     setexture_unload(&renderer->texture_default_diffuse);
     setexture_unload(&renderer->texture_default_normal);
     setexture_unload(&renderer->texture_default_specular);
+}
+
+u32 serender3d_add_point_light(SE_Renderer3D *renderer) {
+    se_assert(renderer->point_lights_count < SERENDERER3D_MAX_POINT_LIGHTS);
+
+    u32 result = renderer->point_lights_count;
+    renderer->point_lights_count++;
+
+        //- Default values
+        // NOTE(Matin): We don't need to generate the cubmap here because all cubemaps
+        // have already been generated for the maximum number of point lights
+    renderer->point_lights[result].position  = v3f(0, 0, 0);
+    renderer->point_lights[result].ambient   = (RGB) {100, 100, 100};
+    renderer->point_lights[result].diffuse   = (RGB) {255, 255, 255};
+    renderer->point_lights[result].specular  = (RGB) {0, 0, 0};
+    renderer->point_lights[result].constant  = 1.0f;
+    renderer->point_lights[result].linear    = 0.22f;
+    renderer->point_lights[result].quadratic = 0.20f;
+
+    return result;
 }
 
 u32 serender3d_add_material(SE_Renderer3D *renderer) {

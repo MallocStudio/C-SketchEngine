@@ -30,7 +30,7 @@ void seshader_deinit(SE_Shader *shader);
 /// Binds the given shader for the GPU to use
 void seshader_use(const SE_Shader *shader);
 /// Get the address of a uniform
-GLuint seshader_get_uniform_loc(SE_Shader *shader, const char *uniform_name);
+GLint seshader_get_uniform_loc(SE_Shader *shader, const char *uniform_name);
 /// Set a shader uniform
 void seshader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32 value);
 /// Set a shader uniform
