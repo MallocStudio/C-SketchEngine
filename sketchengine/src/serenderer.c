@@ -2061,26 +2061,6 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
 
-        //- point lights
-    u32 default_plight = serender3d_add_point_light(renderer);
-    renderer->point_lights[default_plight].position = v3f(2, 1, 1);
-    default_plight = serender3d_add_point_light(renderer);
-    renderer->point_lights[default_plight].position = v3f(-2, 1, 1);
-    // default_plight = serender3d_add_point_light(renderer);
-    // renderer->point_lights[default_plight].position = v3f(2,- 1, 1);
-    // default_plight = serender3d_add_point_light(renderer);
-    // renderer->point_lights[default_plight].position = v3f(2, 1, 3);
-
-    /* default shaders */
-    // renderer->shader_lit = serender3d_add_shader(renderer, "shaders/lit.vsd", "shaders/lit_better.fsd");
-    // renderer->shader_shadow_calc = serender3d_add_shader(renderer, "shaders/shadow_calc.vsd", "shaders/shadow_calc.fsd");
-    // renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "shaders/shadow_omni_calc.vsd", "shaders/shadow_omni_calc.fsd", "shaders/shadow_omni_calc.gsd");
-    // renderer->shader_lines = serender3d_add_shader(renderer, "shaders/lines.vsd", "shaders/lines.fsd");
-    // renderer->shader_outline = serender3d_add_shader(renderer, "shaders/outline.vsd", "shaders/outline.fsd");
-    // renderer->shader_sprite = serender3d_add_shader(renderer, "shaders/sprite.vsd", "shaders/sprite.fsd");
-    // renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "shaders/skinned_vertex.vsd", "shaders/lit_better.fsd");
-    // renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "shaders/skinned_skeleton_lines.vsd", "shaders/lines.fsd");
-
     renderer->shader_lit = serender3d_add_shader(renderer, "core/shaders/lit.vsd","core/shaders/lit_better.fsd");
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "core/shaders/shadow_calc.vsd","core/shaders/shadow_calc.fsd");
     renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "core/shaders/shadow_omni_calc.vsd","core/shaders/shadow_omni_calc.fsd", "core/shaders/shadow_omni_calc.gsd");
@@ -2093,10 +2073,6 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);
     renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
-
-    // setexture_load(&renderer->texture_default_diffuse,  "assets/textures/checkerboard.png");
-    // setexture_load(&renderer->texture_default_normal,   "assets/textures/default_normal.png");
-    // setexture_load(&renderer->texture_default_specular, "assets/textures/default_specular.png");
 
     setexture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
     setexture_load(&renderer->texture_default_normal, default_normal_filepath);

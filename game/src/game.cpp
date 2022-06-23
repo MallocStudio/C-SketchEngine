@@ -10,6 +10,8 @@ u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 
 u32 main_camera = -1;
+u32 point_light_1 = -1;
+u32 point_light_1_entity = -1;
 
 #define SAVE_FILE_NAME "test_save_level.level"
 
@@ -37,6 +39,11 @@ void App::update(f32 delta_time) {
 
         //- Entities
     m_level.entities.update_transforms();
+
+        //- Update Point Light Pos
+    if (point_light_1 >= 0) {
+        m_renderer.point_lights[point_light_1].position = m_level.entities.position[point_light_1_entity];
+    }
 
         // select entities
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -151,25 +158,34 @@ void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
 
+        // @temp Must move to to level loader and saver so we don't have to do it here
+    point_light_1 = serender3d_add_point_light(&m_renderer);
+
 #if 0 // manually create entities
     // @temp add entities
-    u32 soulspear = level.add_entity();
-    level.entities.mesh_index[soulspear] = mesh_soulspear;
-    level.entities.has_mesh[soulspear] = true;
-    level.entities.should_render_mesh[soulspear] = true;
-    level.entities.has_name[soulspear] = true;
-    sestring_init(&level.entities.name[soulspear], "soulspear_entity");
-    level.entities.position[soulspear] = v3f(3, 1, 0);
+    u32 soulspear = m_level.add_entity();
+    m_level.entities.mesh_index[soulspear] = mesh_soulspear;
+    m_level.entities.has_mesh[soulspear] = true;
+    m_level.entities.should_render_mesh[soulspear] = true;
+    m_level.entities.has_name[soulspear] = true;
+    sestring_init(&m_level.entities.name[soulspear], "soulspear_entity");
+    m_level.entities.position[soulspear] = v3f(3, 1, 0);
 
-    u32 plane = level.add_entity();
-    level.entities.mesh_index[plane] = mesh_plane;
-    level.entities.has_mesh[plane] = true;
-    level.entities.should_render_mesh[plane] = true;
-    level.entities.has_name[plane] = true;
-    sestring_init(&level.entities.name[plane], "plane_entity");
+    u32 plane = m_level.add_entity();
+    m_level.entities.mesh_index[plane] = mesh_plane;
+    m_level.entities.has_mesh[plane] = true;
+    m_level.entities.should_render_mesh[plane] = true;
+    m_level.entities.has_name[plane] = true;
+    sestring_init(&m_level.entities.name[plane], "plane_entity");
 
-    level.save(SAVE_FILE_NAME);
+    point_light_1_entity = m_level.add_entity();
+    m_level.entities.has_name           [point_light_1_entity] = true;
+    sestring_init(&m_level.entities.name[point_light_1_entity], "light1");
+    m_level.entities.position[soulspear] = v3f(0, 1, 0);
+
+    m_level.save(SAVE_FILE_NAME);
 #else // load from file
+    point_light_1_entity = 2; // @temp very dodgy
     m_level.load(SAVE_FILE_NAME);
 #endif
 }
