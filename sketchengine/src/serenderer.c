@@ -367,6 +367,15 @@ void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_wid
         {.position = (Vec3) {min.x, max.y, max.z}}, // behind top left - 7
     };
 
+    verts[0].colour = RGBA_WHITE;
+    verts[1].colour = RGBA_WHITE;
+    verts[2].colour = RGBA_WHITE;
+    verts[3].colour = RGBA_WHITE;
+    verts[4].colour = RGBA_WHITE;
+    verts[5].colour = RGBA_WHITE;
+    verts[6].colour = RGBA_WHITE;
+    verts[7].colour = RGBA_WHITE;
+
     u32 indices[24] = {
         0, 1,
         0, 4,
@@ -1493,7 +1502,7 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     }
 }
 
-static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *renderer, Mat4 transform) {
     u32 shader = renderer->shader_lines;
     seshader_use(renderer->shaders[shader]);
 
@@ -1502,9 +1511,6 @@ static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *r
 
     /* vertex */
     seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
-
-    /* material */
-    seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
 }
 
 static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
@@ -1741,7 +1747,7 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
             seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh_skeleton], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
         } else {
                 // render the line without animation
-            serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+            serender3d_render_set_material_uniforms_lines(renderer, transform);
         }
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
@@ -1762,7 +1768,7 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
         primitive = GL_POINTS;
         glPointSize(mesh->point_radius);
-        serender3d_render_set_material_uniforms_lines(renderer, material, transform);
+        serender3d_render_set_material_uniforms_lines(renderer, transform);
     }
 
     glBindVertexArray(mesh->vao);

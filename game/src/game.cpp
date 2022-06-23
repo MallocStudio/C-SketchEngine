@@ -10,6 +10,7 @@ u32 mesh_plane = -1;
 u32 mesh_guy = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
+u32 current_obj_aabb = -1;
 
 u32 main_camera = -1;
 
@@ -95,6 +96,14 @@ void App::render() {
 
         //- Render Entities
     m_level.entities.render(&m_renderer);
+    if (m_selected_entity >= 0) {
+        semesh_generate_gizmos_aabb(m_renderer.meshes[current_obj_aabb],
+            m_level.entities.aabb[m_selected_entity].min,
+            m_level.entities.aabb[m_selected_entity].max,
+            2);
+
+        serender_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
+    }
 
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -154,7 +163,8 @@ void App::init_engine() {
     mesh_soulspear = serender3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
     mesh_plane = serender3d_add_plane(&m_renderer, v3f(10, 10, 10));
     mesh_gizmos_translate = serender3d_add_gizmos_coordniates(&m_renderer);
-    serender3d_add_point_light(&m_renderer);
+    u32 point_light_1 = serender3d_add_point_light(&m_renderer);
+    current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
 
 #if 0 // manually create entities
     // @temp add entities, Change this to a function that says: generate_default_level
@@ -173,7 +183,7 @@ void App::init_engine() {
     m_level.entities.has_name[plane] = true;
     sestring_init(&m_level.entities.name[plane], "plane_entity");
 
-    point_light_1_entity = m_level.add_entity();
+    u32 point_light_1_entity = m_level.add_entity();
     m_level.entities.has_name           [point_light_1_entity] = true;
     sestring_init(&m_level.entities.name[point_light_1_entity], "light1");
     m_level.entities.position           [point_light_1_entity] = v3f(0, 1, 0);

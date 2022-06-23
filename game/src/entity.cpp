@@ -20,6 +20,11 @@ void Entities::update(SE_Renderer3D *renderer, f32 delta_time) {
         this->transform[i] = mat4_mul(this->transform[i], mat4_euler_xyz(rot.x, rot.y, rot.z));
         this->transform[i] = mat4_mul(this->transform[i], mat4_translation(pos));
 
+            //- AABB
+        if (this->has_mesh[i]) {
+            this->aabb[i] = renderer->meshes[this->mesh_index[i]]->aabb;
+        }
+
             //- Update Point Light Pos
         if (this->has_light[i]) {
             renderer->point_lights[this->light_index[i]].position = this->position[i];
@@ -33,7 +38,6 @@ void Entities::render(SE_Renderer3D *renderer) {
             serender_mesh_index(renderer, this->mesh_index[i], this->transform[i]);
         }
     }
-
 }
 
 void Entities::clear() {
@@ -55,6 +59,7 @@ void Entities::set_to_default() {
         this->oriantation        [i] = v3f(0,0,0);
         this->position           [i] = v3f(0,0,0);
         this->scale              [i] = v3f(1,1,1);
+        this->aabb               [i] = aabb3d_one();
         this->has_name           [i] = false;
         this->has_light          [i] = false;
         this->light_index        [i] = -1;

@@ -471,6 +471,14 @@ Mat4 mat4_mul(Mat4 m1, Mat4 m2);
  */
  Quat quat_slerp(Quat q_0, Quat q_1, f32 percentage);
 
+/// ------
+/// AABB3D
+/// ------
+
+AABB3D aabb3d_create(f32 xmin, f32 ymin, f32 zmin, f32 xmax, f32 ymax, f32 zmax);
+
+AABB3D aabb3d_one();
+
 /// ----
 /// RECT
 /// ----

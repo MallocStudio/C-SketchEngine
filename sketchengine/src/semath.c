@@ -1165,6 +1165,21 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
         (v0.w * s0) + (v1.w * s1)};
 }
 
+/// ------
+/// AABB3D
+/// ------
+
+AABB3D aabb3d_create(f32 xmin, f32 ymin, f32 zmin, f32 xmax, f32 ymax, f32 zmax) {
+    AABB3D result;
+    result.min = v3f(xmin, ymin, zmin);
+    result.max = v3f(xmax, ymax, zmax);
+    return result;
+}
+
+AABB3D aabb3d_one() {
+    return aabb3d_create(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+}
+
 /// ----
 /// RECT
 /// ----

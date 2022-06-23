@@ -14,6 +14,9 @@ public:
     Vec3 scale[ENTITIES_MAX];
     Mat4 transform[ENTITIES_MAX];   // ! does not need to be saved and loaded from files. Because it gets calculated after update_transforms is called.
 
+        //- AABB
+    AABB3D aabb[ENTITIES_MAX];
+
         //- Mesh
     bool has_mesh[ENTITIES_MAX];
     bool should_render_mesh[ENTITIES_MAX];

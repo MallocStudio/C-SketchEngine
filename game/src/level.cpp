@@ -64,6 +64,15 @@ bool Level::load(const char *filepath) {
             file >> entities.scale[i].y;
             file >> entities.scale[i].z;
 
+                //- AABB
+            file >> entities.aabb[i].min.x;
+            file >> entities.aabb[i].min.y;
+            file >> entities.aabb[i].min.z;
+
+            file >> entities.aabb[i].max.x;
+            file >> entities.aabb[i].max.y;
+            file >> entities.aabb[i].max.z;
+
                 //- mesh data
             file >> entities.has_mesh[i];
             if (entities.has_mesh[i]) {
@@ -120,6 +129,15 @@ bool Level::save(const char *filepath) {
             file << entities.scale[i].x << " ";
             file << entities.scale[i].y << " ";
             file << entities.scale[i].z << std::endl;
+
+                //- AABB
+            file << entities.aabb[i].min.x;
+            file << entities.aabb[i].min.y;
+            file << entities.aabb[i].min.z << std::endl;
+
+            file << entities.aabb[i].max.x;
+            file << entities.aabb[i].max.y;
+            file << entities.aabb[i].max.z << std::endl;
 
                 //- mesh data
             file << entities.has_mesh[i] << std::endl;
