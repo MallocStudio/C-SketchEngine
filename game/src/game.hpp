@@ -10,7 +10,7 @@ enum class GAME_MODES {
 };
 
 #define MAX_NUM_CAMERA 3
-
+#define MAX_NUM_ASSETS 100
 struct App {
 public:
     SE_Input m_input;
@@ -38,10 +38,17 @@ private:
     void clear();
     void init_engine();
     void init_game();
+        /// Save level data, assets data
+    void save();
+        /// Load level data, assets data
+    void load();
+
     u32 add_camera();
         /// Raycasts into the scene to see if the user is trying to select an entiy.
         /// It will return the index of the entity, -1 if nothing was being selected.
     i32 raycast_to_select_entity();
 
     Widget_Entity m_widget_entity;
+    u32 m_mesh_assets_count;
+    SE_String m_mesh_assets[MAX_NUM_ASSETS]; // @TODO change this to a dynamic array
 };

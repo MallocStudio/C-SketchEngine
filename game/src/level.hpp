@@ -7,6 +7,9 @@ public:
     Level();
     ~Level();
 
+        /// Clear Entities (free memory) and set their values to default
+    void clear();
+
     bool load(const char *filepath);
     bool save(const char *filepath);
 

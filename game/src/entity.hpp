@@ -23,6 +23,10 @@ public:
     bool has_name[ENTITIES_MAX];
     SE_String name[ENTITIES_MAX];
 
+        //- Light
+    bool has_light[ENTITIES_MAX];
+    u32 light_index[ENTITIES_MAX];
+
     /// ---------
     /// PROCEDURES
     /// ---------
@@ -30,13 +34,15 @@ public:
     Entities();
     ~Entities();
 
+        /// Update all of the components data if they require it
+    void update(SE_Renderer3D *renderer, f32 delta_time);
+        /// Render entities' meshes or other renderable components
+    void render(SE_Renderer3D *renderer);
+
         /// Sets all entity data to their default values
         /// NOTE that this is called in the constructor
     void set_to_default();
         /// Clear out every entity data.
         /// Note that this is called in the destructor
     void clear();
-
-        /// Calculate the transform matrix of the entity
-    void update_transforms();
 };

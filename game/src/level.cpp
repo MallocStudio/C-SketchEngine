@@ -5,12 +5,23 @@
 #define LEVEL_SAVE_DATA_VERSION 1
 
 Level::Level() {
+    // in entities constructor everything is set to default
 }
 
 Level::~Level() {
+    this->clear();
+}
+
+void Level::clear() {
+        // free memory if required
+    this->entities.clear();
+        // set entity data to their default value
+    this->entities.set_to_default();
 }
 
 bool Level::load(const char *filepath) {
+    entities.count = 0;
+
     std::ifstream file(filepath);
     if (!file.is_open()) {
         SE_ERROR("could not open file:");
@@ -29,7 +40,7 @@ bool Level::load(const char *filepath) {
 
         for (u32 i = 0; i < count; ++i) {
             u32 entity = this->add_entity();
-                // name
+                //- name
             bool has_name;
             file >> has_name;
             entities.has_name[entity] = has_name;
@@ -40,7 +51,7 @@ bool Level::load(const char *filepath) {
                 sestring_init(&entities.name[entity], name);
             }
 
-                // transforms
+                //- transforms
             file >> entities.oriantation[i].x;
             file >> entities.oriantation[i].y;
             file >> entities.oriantation[i].z;
@@ -53,10 +64,18 @@ bool Level::load(const char *filepath) {
             file >> entities.scale[i].y;
             file >> entities.scale[i].z;
 
-                // mesh data
+                //- mesh data
             file >> entities.has_mesh[i];
-            file >> entities.should_render_mesh[i];
-            file >> entities.mesh_index[i];
+            if (entities.has_mesh[i]) {
+                file >> entities.should_render_mesh[i];
+                file >> entities.mesh_index[i];
+            }
+
+                //- light data
+            file >> entities.has_light[i];
+            if (entities.has_light[i]) {
+                file >> entities.light_index[i];
+            }
         }
     }
 
@@ -67,7 +86,7 @@ bool Level::load(const char *filepath) {
 bool Level::save(const char *filepath) {
     std::ofstream file(filepath);
     if (!file.is_open()) {
-        SE_ERROR("could not open file:");
+        SE_ERROR("could not open file to save:");
         SE_ERROR(filepath);
         return false;
     }
@@ -80,7 +99,7 @@ bool Level::save(const char *filepath) {
         file << entities.count << std::endl;
 
         for (u32 i = 0; i < entities.count; ++i) {
-                // name
+                //- name
             file << entities.has_name[i] << std::endl;
             if (entities.has_name[i]) {
                 if (sestring_replace_space_with_underscore(&entities.name[i])) {
@@ -89,7 +108,7 @@ bool Level::save(const char *filepath) {
                 file << entities.name[i].buffer << std::endl;
             }
 
-                // transforms
+                //- transforms
             file << entities.oriantation[i].x << " ";
             file << entities.oriantation[i].y << " ";
             file << entities.oriantation[i].z << std::endl;
@@ -102,10 +121,18 @@ bool Level::save(const char *filepath) {
             file << entities.scale[i].y << " ";
             file << entities.scale[i].z << std::endl;
 
-                // mesh data
+                //- mesh data
             file << entities.has_mesh[i] << std::endl;
-            file << entities.should_render_mesh[i] << std::endl;
-            file << entities.mesh_index[i] << std::endl;
+            if (entities.has_mesh[i]) {
+                file << entities.should_render_mesh[i] << std::endl;
+                file << entities.mesh_index[i] << std::endl;
+            }
+
+                //- light data
+            file << entities.has_light[i] << std::endl;
+            if (entities.has_light[i]) {
+                file << entities.light_index[i] << std::endl;
+            }
         }
     }
 
