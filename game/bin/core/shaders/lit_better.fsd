@@ -54,24 +54,24 @@ in vec4 frag_pos_light_space;
 
 uniform Dir_Light dir_light;
 
-#define MAX_NUM_POINT_LIGHTS 2
+#define MAX_NUM_POINT_LIGHTS 4
 uniform int num_of_point_lights; // ? why can't I use this instead of MAX_NUM_POINT_LIGHTS in the for loop
 uniform Point_Light point_lights[MAX_NUM_POINT_LIGHTS];
 
-uniform sampler2D shadow_map;   	// shadow map
+uniform sampler2D shadow_map; // directional shadow map
 // uniform mat4 model_matrix;
 uniform vec3 camera_pos;
 uniform Material material;
 
 out vec4 FragColour;
 void main () {
-    // properties
+        //- properties
     vec3 norm = normalize(_Normal);
     vec3 view_dir = normalize(camera_pos - _Frag_Pos);
 
-    // directional light
+        //- directional light
     vec3 result = calc_dir_light(dir_light, norm, view_dir);
-    // point light
+        //- point light
     for (int i = 0; i < MAX_NUM_POINT_LIGHTS; i++) {
         if (i < num_of_point_lights) {
             result += calc_point_light(point_lights[i], norm, _Frag_Pos, view_dir);

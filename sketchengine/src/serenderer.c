@@ -1453,8 +1453,6 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
         seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].quadratic);
         SDL_snprintf(buf, 100, "point_lights[%i].far_plane", i);
         seshader_set_uniform_f32 (renderer->shaders[shader], buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
-        SDL_snprintf(buf, 100, "point_lights[%i].shadow_map", i);
-        seshader_set_uniform_i32 (renderer->shaders[shader], buf, 4+i); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
     }
     seshader_set_uniform_i32 (renderer->shaders[shader], "num_of_point_lights", renderer->point_lights_count);
 
@@ -1477,10 +1475,18 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
         setexture_bind(&renderer->texture_default_normal, 2);
     }
 
+        // - Directional Shadow Map
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
     glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
 
-    /* omnidirectional shadow map */
+        //- Omnidirectional Shadow Map
+    for (u32 i = 0; i < SERENDERER3D_MAX_POINT_LIGHTS; ++i) {
+        char buf[100];
+        SDL_snprintf(buf, 100, "point_lights[%i].shadow_map", i);
+        seshader_set_uniform_i32 (renderer->shaders[shader], buf, 4+i);
+    }
+        // ! NOTE: Might want to consider merging the below for loop with the above. I'm not sure which one
+        // ! has what kind of a performance impact.
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
         glActiveTexture(GL_TEXTURE0 + 4+i); // shadow map
         glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[i].depth_cube_map);
