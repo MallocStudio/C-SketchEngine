@@ -239,7 +239,6 @@ i32 App::raycast_to_select_entity() {
     //     raycast_origin.y = m_cameras[main_camera].position.z;
     // }
     {   //- Get Mouse World Pos
-        // Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
         Mat4 invert_proj = mat4_inverse(m_cameras[main_camera].projection);
         Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
         cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
@@ -257,9 +256,9 @@ i32 App::raycast_to_select_entity() {
         vec3_normalise(&ray);
 
         raycast_dir = ray;
-        raycast_origin.x = ray.x + m_cameras[main_camera].position.x;
-        raycast_origin.y = ray.y + m_cameras[main_camera].position.y;
-        raycast_origin.z = ray.z + m_cameras[main_camera].position.z;
+        raycast_origin.x = m_cameras[main_camera].position.x;
+        raycast_origin.y = m_cameras[main_camera].position.y;
+        raycast_origin.z = m_cameras[main_camera].position.z;
     }
 
     i32 result = -1;
@@ -267,7 +266,7 @@ i32 App::raycast_to_select_entity() {
     f32 closest_hit = -SEMATH_INFINITY;
     for (u32 i = 0; i < m_level.entities.count; ++i) {
         f32 hit;
-        if (ray_overlaps_sphere(raycast_origin, raycast_dir, 1000, m_level.entities.position[i], 1, &hit)) {
+        if (ray_overlaps_sphere(raycast_origin, raycast_dir, 100, m_level.entities.position[i], 0.5f, &hit)) {
             if (hit > closest_hit) {
                 closest_hit = hit;
                 result = i;
@@ -276,7 +275,7 @@ i32 App::raycast_to_select_entity() {
     }
 
     semesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin,
-        vec3_add(raycast_origin, vec3_mul_scalar(raycast_dir, 1000)), 2, {255, 0,0, 255});
+        vec3_add(raycast_origin, vec3_mul_scalar(raycast_dir, 100)), 2, {255, 0,0, 255});
 
     return result;
 }

@@ -41,6 +41,9 @@ b8 is_power_of_2(i32 value) {
     return ((value != 0) && ((value) & (value - 1)) == 0);
 }
 
+f32 semath_round(f32 x) {
+    return roundf(x);
+}
 
 /// ----
 /// Vec2
@@ -1206,20 +1209,24 @@ b8 point_overlaps_circle(Vec2 point, Vec2 center, f32 radius) {
 }
 
 b8 ray_overlaps_sphere(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, Vec3 sphere_origin, f32 sphere_radius, f32 *hit_distance) {
-        // check each plane of the box and see if  the line intersects it
-    vec3_normalise(&ray_direction);
-
-    for (u32 i = 0; i < max_distance; ++i) {
+    for (u32 i = 0; i < max_distance; i += (u32)semath_round(sphere_radius)) {
         Vec3 point = v3f(
             ray_origin.x + ray_direction.x * i,
             ray_origin.y + ray_direction.y * i,
             ray_origin.z + ray_direction.z * i
         );
 
-        if (vec3_distance(point, sphere_origin) <= sphere_radius) {
+        Vec3 origin_minus_center = vec3_sub(ray_origin, sphere_origin);
+        f32 b = vec3_dot(ray_direction, origin_minus_center);
+        f32 c = vec3_dot(origin_minus_center, origin_minus_center) - sphere_radius * sphere_radius;
+        if (b * b - c >- 0) {
             *hit_distance = i;
             return true;
         }
+        // if (vec3_distance(point, sphere_origin) <= sphere_radius) {
+        //     *hit_distance = i;
+        //     return true;
+        // }
     }
 
     return false;
