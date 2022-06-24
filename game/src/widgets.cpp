@@ -1,7 +1,7 @@
 #include "widgets.hpp"
 #include <string>
 
-void Widget_Entity::construct_panel(SE_UI *ctx) {
+void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
     if (seui_panel(ctx, "entity data")) {
         panel_index = ctx->current_panel->index;
         ctx->current_panel->docked_dir = 1; // left
@@ -16,7 +16,7 @@ void Widget_Entity::construct_panel(SE_UI *ctx) {
             Vec3 *pos   = &entities->position[entity];
             Vec3 *rot   = &entities->oriantation[entity];
             Vec3 *scale = &entities->scale[entity];
-            u32 mesh_index = entities->mesh_index[entity];
+            u32 *mesh_index = &entities->mesh_index[entity];
 
                 //- Name
             if (name) {
@@ -39,13 +39,14 @@ void Widget_Entity::construct_panel(SE_UI *ctx) {
             }
 
             {   //- Mesh
-                SE_String mesh_index_string;
-                sestring_init_i32(&mesh_index_string, mesh_index);
 
                 seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "mesh index:");
-                seui_label(ctx, mesh_index_string.buffer);
+                // seui_selector(ctx, (i32*)mesh_index, 0, mesh_renderer->meshes_count-1);
 
+                SE_String mesh_index_string;
+                sestring_init_i32(&mesh_index_string, *mesh_index);
+                seui_label(ctx, mesh_index_string.buffer);
                 sestring_deinit(&mesh_index_string);
             }
 

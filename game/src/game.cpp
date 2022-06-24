@@ -12,6 +12,8 @@ u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 current_obj_aabb = -1;
 
+SE_Animation animation;
+
     //@debug
 u32 debug_raycast_visual = -1;
 
@@ -46,6 +48,8 @@ void App::update(f32 delta_time) {
 
         //- Entities
     m_level.entities.update(&m_renderer, delta_time);
+    seanimation_update(&animation, delta_time);
+    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
 
         // select entities
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -60,7 +64,7 @@ void App::update(f32 delta_time) {
 
         //- UI
     seui_reset(ctx);
-    m_widget_entity.construct_panel(ctx);
+    m_widget_entity.construct_panel(ctx, &m_renderer);
     m_selected_entity = m_widget_entity.entity;
 
         // make entity widget pop up
@@ -108,6 +112,8 @@ void App::render() {
 
         serender_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
     }
+
+    serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
 
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -164,9 +170,17 @@ void App::init_application(SDL_Window *window) {
 void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
-
         // @temp TODO: MOVE TO LOADER
     mesh_soulspear = serender3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
+
+    mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    mesh_skeleton = serender3d_add_mesh_empty(&m_renderer);
+    semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
+    // semesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
+    animation.current_frame = 0;
+    animation.duration = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->duration;
+    animation.speed = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
+
     mesh_plane = serender3d_add_plane(&m_renderer, v3f(10, 10, 10));
     mesh_gizmos_translate = serender3d_add_gizmos_coordniates(&m_renderer);
     u32 point_light_1 = serender3d_add_point_light(&m_renderer);
@@ -181,6 +195,15 @@ void App::init_engine() {
     m_level.entities.has_name[soulspear] = true;
     sestring_init(&m_level.entities.name[soulspear], "soulspear_entity");
     m_level.entities.position[soulspear] = v3f(3, 1, 0);
+
+    u32 guy = m_level.add_entity();
+    m_level.entities.mesh_index[guy] = mesh_guy;
+    m_level.entities.has_mesh[guy] = true;
+    m_level.entities.should_render_mesh[guy] = true;
+    m_level.entities.has_name[guy] = true;
+    sestring_init(&m_level.entities.name[guy], "guy");
+    m_level.entities.position[guy] = v3f(0, 0, 0);
+    m_level.entities.scale[guy]    = v3f(0.1f, 0.1f, 0.1f);
 
     u32 plane = m_level.add_entity();
     m_level.entities.mesh_index[plane] = mesh_plane;
