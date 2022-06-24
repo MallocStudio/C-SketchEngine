@@ -12,6 +12,9 @@ u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 current_obj_aabb = -1;
 
+    //@debug
+u32 debug_raycast_visual = -1;
+
 u32 main_camera = -1;
 
 #define SAVE_FILE_NAME "test_save_level.level"
@@ -22,6 +25,7 @@ App::App(SDL_Window *window) {
     this->init_application(window);
         //- Start with Engine Mode
     this->init_engine();
+    debug_raycast_visual = serender3d_add_mesh_empty(&m_renderer);
 }
 
 App::~App() {
@@ -113,6 +117,8 @@ void App::render() {
         se_assert(m_selected_entity < m_level.entities.count);
         serender_mesh_index(&m_renderer, mesh_gizmos_translate, m_level.entities.transform[m_selected_entity]);
     }
+
+    serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
 
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -208,25 +214,51 @@ void App::clear() {
 i32 App::raycast_to_select_entity() {
     i32 window_w, window_h;
     SDL_GetWindowSize(m_window, &window_w, &window_h);
+    secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
 
     Vec3 raycast_dir = secamera3d_get_front(&m_cameras[main_camera]);
     Vec3 raycast_origin;
 
+    // {   //- Get Mouse World Pos
+    //     Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
+    //     Mat4 deprojection_world = mat4_inverse(proj_view_matrix);
+    //     // deprojection_world = mat4_transposed(deprojection_world);
+    //     Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
+    //     cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
+    //     cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
+
+    //     Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 0};
+    //     // Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
+    //     Vec4 mouse_pos_world = mat4_mul_vec4(deprojection_world, mouse_pos_ndc);
+    //     cursor_pos.x = mouse_pos_world.x;
+    //     cursor_pos.y = mouse_pos_world.y;
+
+    //     raycast_origin.x = mouse_pos_world.x * 10;
+    //     raycast_origin.y = mouse_pos_world.y * 10;
+    //     raycast_origin.z = m_cameras[main_camera].position.z;
+    // }
     {   //- Get Mouse World Pos
-        Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
-        Mat4 deprojection_world = mat4_inverse(proj_view_matrix);
+        // Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
+        Mat4 invert_proj = mat4_inverse(m_cameras[main_camera].projection);
         Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
         cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
         cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
 
-        Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
-        Vec4 mouse_pos_world = mat4_mul_vec4(deprojection_world, mouse_pos_ndc);
-        cursor_pos.x = mouse_pos_world.x;
-        cursor_pos.y = mouse_pos_world.y;
+        Vec4 clip_coord = {cursor_pos.x, -cursor_pos.y, -1, 1};
 
-        raycast_origin.x = mouse_pos_world.x;
-        raycast_origin.y = mouse_pos_world.y;
-        raycast_origin.z = m_cameras[main_camera].position.z;
+        Vec4 eye_coord = mat4_mul_vec4(invert_proj, clip_coord);
+        eye_coord.z = -1;
+        eye_coord.w = 0;
+
+        Mat4 invert_view = mat4_inverse(m_cameras[main_camera].view);
+        Vec4 world_pos = mat4_mul_vec4(invert_view, eye_coord);
+        Vec3 ray = v3f(world_pos.x, world_pos.y, world_pos.z);
+        vec3_normalise(&ray);
+
+        raycast_origin.x = ray.x;
+        raycast_origin.y = ray.y;
+        raycast_origin.z = ray.z;
+        // raycast_origin.z = m_cameras[main_camera].position.z;
     }
 
     i32 result = -1;
@@ -241,6 +273,8 @@ i32 App::raycast_to_select_entity() {
             }
         }
     }
+
+    semesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin, vec3_add(raycast_origin, raycast_dir), 2, {255, 0,0, 255});
 
     return result;
 }
