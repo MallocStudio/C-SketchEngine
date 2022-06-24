@@ -37,6 +37,7 @@ App::App(SDL_Window *window) {
 App::~App() {
     free(ctx);
     serender3d_deinit(&m_renderer);
+    se_gizmo_renderer_deinit(&m_gizmo_renderer);
 }
 
     /// Init the application. ust be called once, and before init_engine or init_game
@@ -70,6 +71,9 @@ void App::init_application(SDL_Window *window) {
     vec3_normalise(&m_renderer.light_directional.direction);
     m_renderer.light_directional.ambient   = {50, 50, 50};
     m_renderer.light_directional.diffuse   = {255, 255, 255};
+
+        //- Gizmo Renderer
+    se_gizmo_renderer_init(&m_gizmo_renderer, &m_cameras[main_camera]);
 
         //- Load meshes
     m_mesh_assets_count = 0;
@@ -159,7 +163,6 @@ void App::update(f32 delta_time) {
     seanimation_update(&animation, delta_time);
     seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
     seskeleton_calculate_pose(m_renderer.meshes[mesh_guy+1]->skeleton, animation.current_frame);
-
 
         // select entities
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {

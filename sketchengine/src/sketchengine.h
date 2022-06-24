@@ -14,6 +14,7 @@ extern "C" {
 #include "seui_ctx.h"
 #include "sestring.h"
 #include "seanimation.h"
+#include "serenderer_gizmo.h"
 
 #ifdef __cplusplus
 }

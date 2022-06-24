@@ -1,0 +1,8 @@
+#version 450
+
+in vec4 vertex_colour;
+out vec4 FragColour;
+
+void main () {
+    FragColour = vertex_colour;
+}

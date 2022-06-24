@@ -17,6 +17,7 @@ public:
     u32 m_camera_count;
     SE_Camera3D m_cameras[MAX_NUM_CAMERA];
     SE_Renderer3D m_renderer;
+    SE_Gizmo_Renderer m_gizmo_renderer;
     SDL_Window *m_window;
     bool should_quit;
 
