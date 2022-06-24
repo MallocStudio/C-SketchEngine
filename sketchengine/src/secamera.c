@@ -85,3 +85,56 @@ void secamera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
         }
     }
 }
+
+void secamera3d_get_raycast(SE_Camera3D *camera, SDL_Window *window, Vec3 *_raycast_dir, Vec3 *_raycast_origin) {
+    i32 window_w, window_h;
+    SDL_GetWindowSize(window, &window_w, &window_h);
+
+    Vec3 raycast_dir;
+    Vec3 raycast_origin;
+#if 0 // old method that didn't work. Might want to look into this because this way is more performant?
+    {   //- Get Mouse World Pos
+        Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
+        Mat4 deprojection_world = mat4_inverse(proj_view_matrix);
+        // deprojection_world = mat4_transposed(deprojection_world);
+        Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
+        cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
+        cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
+
+        Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 0};
+        // Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
+        Vec4 mouse_pos_world = mat4_mul_vec4(deprojection_world, mouse_pos_ndc);
+        cursor_pos.x = mouse_pos_world.x;
+        cursor_pos.y = mouse_pos_world.y;
+
+        raycast_origin.x = mouse_pos_world.x * 10;
+        raycast_origin.z = mouse_pos_world.y * 10;
+        raycast_origin.y = m_cameras[main_camera].position.z;
+    }
+#endif
+    {   //- Get Mouse World Pos
+        Mat4 invert_proj = mat4_inverse(camera->projection);
+        Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
+        cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
+        cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
+
+        Vec4 clip_coord = {cursor_pos.x, -cursor_pos.y, -1, 1};
+
+        Vec4 eye_coord = mat4_mul_vec4(invert_proj, clip_coord);
+        eye_coord.z = -1;
+        eye_coord.w = 0;
+
+        Mat4 invert_view = mat4_inverse(camera->view);
+        Vec4 world_pos = mat4_mul_vec4(invert_view, eye_coord);
+        Vec3 ray = v3f(world_pos.x, world_pos.y, world_pos.z);
+        vec3_normalise(&ray);
+
+        raycast_dir = ray;
+        raycast_origin.x = camera->position.x;
+        raycast_origin.y = camera->position.y;
+        raycast_origin.z = camera->position.z;
+    }
+
+    *_raycast_dir    = raycast_dir;
+    *_raycast_origin = raycast_origin;
+}

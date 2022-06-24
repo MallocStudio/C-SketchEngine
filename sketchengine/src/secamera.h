@@ -22,4 +22,6 @@ Mat4 secamera3d_get_view(const SE_Camera3D *cam);
 void secamera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h);
 void secamera3d_input(SE_Camera3D *camera, struct SE_Input *seinput);
 
+void secamera3d_get_raycast(SE_Camera3D *camera, SDL_Window *window, Vec3 *raycast_dir, Vec3 *raycast_origin);
+
 #endif // SE_CAMERA_H

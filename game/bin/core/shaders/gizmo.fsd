@@ -3,6 +3,8 @@
 in vec4 vertex_colour;
 out vec4 FragColour;
 
+uniform vec4 base_colour = vec4(1);
+
 void main () {
-    FragColour = vertex_colour;
+    FragColour = vertex_colour * base_colour;
 }

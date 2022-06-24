@@ -14,6 +14,9 @@ u32 current_obj_aabb = -1;
 
 SE_Animation animation;
 
+RGBA dim = {100, 100, 100, 255};
+RGBA lit = {255, 255, 255, 255};
+
     //@debug
 u32 debug_raycast_visual = -1;
 
@@ -97,6 +100,7 @@ void App::init_engine() {
     mesh_plane = serender3d_add_plane(&m_renderer, v3f(10, 10, 10));
 
     mesh_gizmos_translate = se_gizmo_add_coordniates(&m_gizmo_renderer);
+    m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
 
     u32 point_light_1 = serender3d_add_point_light(&m_renderer);
     current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
@@ -254,54 +258,13 @@ void App::render() {
 }
 
 i32 App::raycast_to_select_entity() {
-    i32 window_w, window_h;
-    SDL_GetWindowSize(m_window, &window_w, &window_h);
-    secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
+    // i32 window_w, window_h;
+    // SDL_GetWindowSize(m_window, &window_w, &window_h);
 
     // Vec3 raycast_dir = secamera3d_get_front(&m_cameras[main_camera]);
     Vec3 raycast_dir;
     Vec3 raycast_origin;
-
-    // {   //- Get Mouse World Pos
-    //     Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
-    //     Mat4 deprojection_world = mat4_inverse(proj_view_matrix);
-    //     // deprojection_world = mat4_transposed(deprojection_world);
-    //     Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
-    //     cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
-    //     cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
-
-    //     Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 0};
-    //     // Vec4 mouse_pos_ndc = {cursor_pos.x, -cursor_pos.y, 0, 1};
-    //     Vec4 mouse_pos_world = mat4_mul_vec4(deprojection_world, mouse_pos_ndc);
-    //     cursor_pos.x = mouse_pos_world.x;
-    //     cursor_pos.y = mouse_pos_world.y;
-
-    //     raycast_origin.x = mouse_pos_world.x * 10;
-    //     raycast_origin.z = mouse_pos_world.y * 10;
-    //     raycast_origin.y = m_cameras[main_camera].position.z;
-    // }
-    {   //- Get Mouse World Pos
-        Mat4 invert_proj = mat4_inverse(m_cameras[main_camera].projection);
-        Vec2 cursor_pos = get_mouse_pos(NULL, NULL);
-        cursor_pos.x = (cursor_pos.x / window_w) * 2.0f - 1.0f;
-        cursor_pos.y = (cursor_pos.y / window_h) * 2.0f - 1.0f;
-
-        Vec4 clip_coord = {cursor_pos.x, -cursor_pos.y, -1, 1};
-
-        Vec4 eye_coord = mat4_mul_vec4(invert_proj, clip_coord);
-        eye_coord.z = -1;
-        eye_coord.w = 0;
-
-        Mat4 invert_view = mat4_inverse(m_cameras[main_camera].view);
-        Vec4 world_pos = mat4_mul_vec4(invert_view, eye_coord);
-        Vec3 ray = v3f(world_pos.x, world_pos.y, world_pos.z);
-        vec3_normalise(&ray);
-
-        raycast_dir = ray;
-        raycast_origin.x = m_cameras[main_camera].position.x;
-        raycast_origin.y = m_cameras[main_camera].position.y;
-        raycast_origin.z = m_cameras[main_camera].position.z;
-    }
+    secamera3d_get_raycast(&m_cameras[main_camera], m_window, &raycast_dir, &raycast_origin);
 
     i32 result = -1;
 

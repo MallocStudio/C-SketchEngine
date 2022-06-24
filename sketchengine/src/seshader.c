@@ -227,6 +227,12 @@ void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB 
     glUniform3f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f);
 }
 
+void seshader_set_uniform_rgba (SE_Shader *shader, const char *uniform_name, RGBA value) {
+    GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
+    seshader_use(shader);
+    glUniform4f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f);
+}
+
 void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {
     glGetError();
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);

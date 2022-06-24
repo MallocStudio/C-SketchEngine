@@ -22,7 +22,7 @@ void se_gizmo_renderer_deinit(SE_Gizmo_Renderer *renderer) {
     renderer->shapes_count = 0;
 }
 
-static void setup_mesh_shader(SE_Gizmo_Renderer *renderer, Mat4 transform) {
+static void setup_mesh_shader(SE_Gizmo_Renderer *renderer, SE_Gizmo_Shape *shape, Mat4 transform) {
     SE_Shader *shader = &renderer->shader_mesh;
     seshader_use(shader);
 
@@ -30,6 +30,7 @@ static void setup_mesh_shader(SE_Gizmo_Renderer *renderer, Mat4 transform) {
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
     seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
+    seshader_set_uniform_rgba(shader, "base_colour", shape->base_colour);
 }
 
 static void setup_sprite_shader(SE_Gizmo_Renderer *renderer, Mat4 transform) {
@@ -58,17 +59,17 @@ void se_gizmo_render(SE_Gizmo_Renderer *renderer, SE_Gizmo_Shape *shape, Mat4 tr
     i32 primitive = GL_TRIANGLES;
     if (shape->type == SE_GIZMO_TYPE_MESH) {
         primitive = GL_TRIANGLES;
-        setup_mesh_shader(renderer, transform);
+        setup_mesh_shader(renderer, shape, transform);
     } else
     if (shape->type == SE_GIZMO_TYPE_LINE) {
         primitive = GL_LINES;
         glLineWidth(shape->line_width);
-        setup_mesh_shader(renderer, transform);
+        setup_mesh_shader(renderer, shape, transform);
     } else
     if (shape->type == SE_GIZMO_TYPE_POINT) {
         primitive = GL_POINTS;
         glPointSize(shape->point_size);
-        setup_mesh_shader(renderer, transform);
+        setup_mesh_shader(renderer, shape, transform);
     } else
     if (shape->type == SE_GIZMO_TYPE_SPRITE) {
         primitive = GL_TRIANGLES;
@@ -144,6 +145,10 @@ static u32 add_shape(SE_Gizmo_Renderer *renderer) {
     se_assert(renderer->shapes_count < _SEGIZMO_RENDERER_MAX_SHAPES);
     u32 result = renderer->shapes_count;
     renderer->shapes_count++;
+
+    SE_Gizmo_Shape *shape = &renderer->shapes[result];
+    shape->base_colour = RGBA_WHITE;
+
     return result;
 }
 

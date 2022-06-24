@@ -37,6 +37,7 @@ typedef struct SE_Gizmo_Shape {
 
     f32 line_width;
     f32 point_size;
+    RGBA base_colour;
 } SE_Gizmo_Shape;
 
 #define _SEGIZMO_RENDERER_MAX_SHAPES 100
