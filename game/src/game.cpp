@@ -172,7 +172,7 @@ void App::init_engine() {
     u32 point_light_1 = serender3d_add_point_light(&m_renderer);
     current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
 
-#if 0 // manually create entities
+#if 1 // manually create entities
     // @temp add entities, Change this to a function that says: generate_default_level
     u32 soulspear = m_level.add_entity();
     m_level.entities.mesh_index[soulspear] = mesh_soulspear;
@@ -216,7 +216,8 @@ i32 App::raycast_to_select_entity() {
     SDL_GetWindowSize(m_window, &window_w, &window_h);
     secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
 
-    Vec3 raycast_dir = secamera3d_get_front(&m_cameras[main_camera]);
+    // Vec3 raycast_dir = secamera3d_get_front(&m_cameras[main_camera]);
+    Vec3 raycast_dir;
     Vec3 raycast_origin;
 
     // {   //- Get Mouse World Pos
@@ -234,8 +235,8 @@ i32 App::raycast_to_select_entity() {
     //     cursor_pos.y = mouse_pos_world.y;
 
     //     raycast_origin.x = mouse_pos_world.x * 10;
-    //     raycast_origin.y = mouse_pos_world.y * 10;
-    //     raycast_origin.z = m_cameras[main_camera].position.z;
+    //     raycast_origin.z = mouse_pos_world.y * 10;
+    //     raycast_origin.y = m_cameras[main_camera].position.z;
     // }
     {   //- Get Mouse World Pos
         // Mat4 proj_view_matrix = mat4_mul(m_cameras[main_camera].view, m_cameras[main_camera].projection);
@@ -255,10 +256,10 @@ i32 App::raycast_to_select_entity() {
         Vec3 ray = v3f(world_pos.x, world_pos.y, world_pos.z);
         vec3_normalise(&ray);
 
-        raycast_origin.x = ray.x;
-        raycast_origin.y = ray.y;
-        raycast_origin.z = ray.z;
-        // raycast_origin.z = m_cameras[main_camera].position.z;
+        raycast_dir = ray;
+        raycast_origin.x = ray.x + m_cameras[main_camera].position.x;
+        raycast_origin.y = ray.y + m_cameras[main_camera].position.y;
+        raycast_origin.z = ray.z + m_cameras[main_camera].position.z;
     }
 
     i32 result = -1;
@@ -274,7 +275,8 @@ i32 App::raycast_to_select_entity() {
         }
     }
 
-    semesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin, vec3_add(raycast_origin, raycast_dir), 2, {255, 0,0, 255});
+    semesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin,
+        vec3_add(raycast_origin, vec3_mul_scalar(raycast_dir, 1000)), 2, {255, 0,0, 255});
 
     return result;
 }
