@@ -100,7 +100,7 @@ void main() {
 	vec3 ambient  = kA * iA * tex_diffuse;
 	// diffuse light for one light
 	vec3 diffuse  = kD * iD * tex_diffuse * lambert_term * base_diffuse.xyz;
-	vec3 specular = iA * kS * tex_diffuse * specular_term;
+	vec3 specular = kS * iA * tex_diffuse * specular_term;
 
 	ambient *= light_intensity;
 	diffuse *= light_intensity;

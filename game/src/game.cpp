@@ -18,6 +18,7 @@ SE_Animation animation;
 u32 debug_raycast_visual = -1;
 
 u32 main_camera = -1;
+Vec2 ui_light_dir;
 
 #define SAVE_FILE_NAME "test_save_level.level"
 #define SAVE_FILE_ASSETS_NAME "test_save_assets.assets"
@@ -25,11 +26,12 @@ u32 main_camera = -1;
 
 App::App(SDL_Window *window) {
     this->init_application(window);
+    ui_light_dir = {-1, -1};
+    vec2_normalise(&ui_light_dir);
+
         //- Start with Engine Mode
     this->init_engine();
     debug_raycast_visual = serender3d_add_mesh_empty(&m_renderer);
-    m_renderer.light_directional.direction = v3f(1, -1, 0);
-    vec3_normalise(&m_renderer.light_directional.direction);
 }
 
 App::~App() {
@@ -64,7 +66,8 @@ void App::init_application(SDL_Window *window) {
     m_camera_count = 0;
     main_camera = this->add_camera();
     serender3d_init(&m_renderer, &m_cameras[main_camera]);
-    m_renderer.light_directional.direction = {0, -1, 0};
+    m_renderer.light_directional.direction = {-1, -1, -1};
+    vec3_normalise(&m_renderer.light_directional.direction);
     m_renderer.light_directional.ambient   = {50, 50, 50};
     m_renderer.light_directional.diffuse   = {255, 255, 255};
 
@@ -153,6 +156,10 @@ void App::update(f32 delta_time) {
 
         //- Entities
     m_level.entities.update(&m_renderer, delta_time);
+    seanimation_update(&animation, delta_time);
+    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
+    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy+1]->skeleton, animation.current_frame);
+
 
         // select entities
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -179,6 +186,11 @@ void App::update(f32 delta_time) {
     if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
         m_level.save(SAVE_FILE_NAME);
     }
+        // light dir
+    seui_slider2d_at(ctx, v2f(128 + 64, 32), 32, &ui_light_dir);
+    m_renderer.light_directional.direction.x = ui_light_dir.x;
+    m_renderer.light_directional.direction.x = ui_light_dir.y;
+    m_renderer.light_directional.direction.z = 0;
 }
 
 void App::render() {
@@ -206,9 +218,6 @@ void App::render() {
     glViewport(0, 0, window_w, window_h);
 
         //- Render Entities
-    seanimation_update(&animation, 0.0167f);
-    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
-
     m_level.entities.render(&m_renderer);
 
         // aabb of selected entity
