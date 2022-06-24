@@ -28,107 +28,13 @@ App::App(SDL_Window *window) {
         //- Start with Engine Mode
     this->init_engine();
     debug_raycast_visual = serender3d_add_mesh_empty(&m_renderer);
+    m_renderer.light_directional.direction = v3f(1, -1, 0);
+    vec3_normalise(&m_renderer.light_directional.direction);
 }
 
 App::~App() {
     free(ctx);
     serender3d_deinit(&m_renderer);
-}
-
-void App::update(f32 delta_time) {
-        //- Update Window and Input
-    i32 window_w, window_h;
-    SDL_GetWindowSize(m_window, &window_w, &window_h);
-    secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
-    seinput_update(&m_input, m_cameras[main_camera].projection, m_window);
-    seui_resize(ctx, window_w, window_h);
-
-        //- 3D Movement
-    secamera3d_input(&m_cameras[main_camera], &m_input);
-
-        //- Entities
-    m_level.entities.update(&m_renderer, delta_time);
-    seanimation_update(&animation, delta_time);
-    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
-
-        // select entities
-    if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
-        printf("checking\n"); // @debug
-        m_selected_entity = this->raycast_to_select_entity();
-        m_widget_entity.entity = m_selected_entity;
-
-        if (m_selected_entity >= 0) {   // @debug
-            printf("hit %i\n", m_selected_entity);
-        }
-    }
-
-        //- UI
-    seui_reset(ctx);
-    m_widget_entity.construct_panel(ctx, &m_renderer);
-    m_selected_entity = m_widget_entity.entity;
-
-        // make entity widget pop up
-    if (seinput_is_key_pressed(&m_input, SDL_SCANCODE_SPACE)) {
-        m_widget_entity.toggle_visibility(ctx);
-    }
-
-        // save
-    if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
-        m_level.save(SAVE_FILE_NAME);
-    }
-}
-
-void App::render() {
-        //- Default GL Mode
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    glDisable(GL_BLEND);
-    glEnable(GL_CULL_FACE);
-    glLineWidth(1.0f);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
-
-        //- 3D Renderer
-    i32 window_w, window_h;
-    SDL_GetWindowSize(m_window, &window_w, &window_h);
-    secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
-
-        //- Shadows
-    se_render_directional_shadow_map(&m_renderer,     m_level.entities.transform, m_level.entities.count);
-    se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.transform, m_level.entities.count);
-
-        //- Clear Previous Frame
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    glClearDepth(1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, window_w, window_h);
-
-        //- Render Entities
-    m_level.entities.render(&m_renderer);
-    if (m_selected_entity >= 0) {
-        semesh_generate_gizmos_aabb(m_renderer.meshes[current_obj_aabb],
-            m_level.entities.aabb[m_selected_entity].min,
-            m_level.entities.aabb[m_selected_entity].max,
-            2);
-
-        serender_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
-    }
-
-    serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
-
-        //- Gizmos
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-        // selected entity
-    if (m_selected_entity >= 0) {
-        se_assert(m_selected_entity < m_level.entities.count);
-        serender_mesh_index(&m_renderer, mesh_gizmos_translate, m_level.entities.transform[m_selected_entity]);
-    }
-
-    serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
-
-        //- UI
-    glClear(GL_DEPTH_BUFFER_BIT);
-    seui_render(ctx);
 }
 
     /// Init the application. ust be called once, and before init_engine or init_game
@@ -232,6 +138,105 @@ void App::init_game() {
 
 void App::clear() {
     m_level.clear();
+}
+
+void App::update(f32 delta_time) {
+        //- Update Window and Input
+    i32 window_w, window_h;
+    SDL_GetWindowSize(m_window, &window_w, &window_h);
+    secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
+    seinput_update(&m_input, m_cameras[main_camera].projection, m_window);
+    seui_resize(ctx, window_w, window_h);
+
+        //- 3D Movement
+    secamera3d_input(&m_cameras[main_camera], &m_input);
+
+        //- Entities
+    m_level.entities.update(&m_renderer, delta_time);
+
+        // select entities
+    if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
+        printf("checking\n"); // @debug
+        m_selected_entity = this->raycast_to_select_entity();
+        m_widget_entity.entity = m_selected_entity;
+
+        if (m_selected_entity >= 0) {   // @debug
+            printf("hit %i\n", m_selected_entity);
+        }
+    }
+
+        //- UI
+    seui_reset(ctx);
+    m_widget_entity.construct_panel(ctx, &m_renderer);
+    m_selected_entity = m_widget_entity.entity;
+
+        // make entity widget pop up
+    if (seinput_is_key_pressed(&m_input, SDL_SCANCODE_SPACE)) {
+        m_widget_entity.toggle_visibility(ctx);
+    }
+
+        // save
+    if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
+        m_level.save(SAVE_FILE_NAME);
+    }
+}
+
+void App::render() {
+        //- Default GL Mode
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glLineWidth(1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
+
+        //- 3D Renderer
+    i32 window_w, window_h;
+    SDL_GetWindowSize(m_window, &window_w, &window_h);
+    secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
+
+        //- Shadows
+    se_render_directional_shadow_map(&m_renderer,     m_level.entities.transform, m_level.entities.count);
+    se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.transform, m_level.entities.count);
+
+        //- Clear Previous Frame
+    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    glClearDepth(1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, window_w, window_h);
+
+        //- Render Entities
+    seanimation_update(&animation, 0.0167f);
+    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
+
+    m_level.entities.render(&m_renderer);
+
+        // aabb of selected entity
+    if (m_selected_entity >= 0) {
+        semesh_generate_gizmos_aabb(m_renderer.meshes[current_obj_aabb],
+            m_level.entities.aabb[m_selected_entity].min,
+            m_level.entities.aabb[m_selected_entity].max,
+            2);
+
+        serender_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
+    }
+        // skeleton mesh
+    serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
+
+        //- Gizmos
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+        // selected entity
+    if (m_selected_entity >= 0) {
+        se_assert(m_selected_entity < m_level.entities.count);
+        serender_mesh_index(&m_renderer, mesh_gizmos_translate, m_level.entities.transform[m_selected_entity]);
+    }
+
+    serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
+
+        //- UI
+    glClear(GL_DEPTH_BUFFER_BIT);
+    seui_render(ctx);
 }
 
 i32 App::raycast_to_select_entity() {

@@ -1839,6 +1839,12 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms,
     /* calculate the matrices */
 #if 1
     // manually
+    // f32 left   =-10 + 20 * 0;
+    // f32 right  =-10 + 20 * 1;
+    // f32 bottom =-10 + 20 * 0;
+    // f32 top    =-10 + 20 * 1;
+    // f32 near   =-10 + 20 * 0;
+    // f32 far    =-10 + 20 * 1;
     f32 left   =-10 + 20 * 0;
     f32 right  =-10 + 20 * 1;
     f32 bottom =-10 + 20 * 0;
