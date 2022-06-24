@@ -1220,7 +1220,9 @@ b8 ray_overlaps_sphere(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, Ve
         f32 b = vec3_dot(ray_direction, origin_minus_center);
         f32 c = vec3_dot(origin_minus_center, origin_minus_center) - sphere_radius * sphere_radius;
         if (b * b - c >- 0) {
-            *hit_distance = i;
+            if (hit_distance != NULL) {
+                *hit_distance = i;
+            }
             return true;
         }
         // if (vec3_distance(point, sphere_origin) <= sphere_radius) {

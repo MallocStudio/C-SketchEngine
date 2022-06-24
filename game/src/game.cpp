@@ -181,6 +181,16 @@ void App::update(f32 delta_time) {
         }
     }
 
+    if (m_selected_entity >= 0) {   // @temp
+        Vec3 dir;
+        Vec3 origin;
+        secamera3d_get_raycast(&m_cameras[main_camera], m_window, &dir, &origin);
+        if (ray_overlaps_sphere(origin, dir, 100, m_level.entities.position[m_selected_entity], 0.5f, NULL)) {
+            m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = lit;
+        } else {
+            m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
+        }
+    }
         //- UI
     seui_reset(ctx);
     m_widget_entity.construct_panel(ctx, &m_renderer);
