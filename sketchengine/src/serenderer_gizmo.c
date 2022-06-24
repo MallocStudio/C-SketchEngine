@@ -43,6 +43,11 @@ static void setup_sprite_shader(SE_Gizmo_Renderer *renderer, Mat4 transform) {
     seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
 }
 
+void se_gizmo_render_index(SE_Gizmo_Renderer *renderer, u32 shape_index, Mat4 transform) {
+    se_assert(shape_index < renderer->shapes_count);
+    se_gizmo_render(renderer, &renderer->shapes[shape_index], transform);
+}
+
 void se_gizmo_render(SE_Gizmo_Renderer *renderer, SE_Gizmo_Shape *shape, Mat4 transform) {
         //- Default GL State
     glDisable(GL_BLEND);

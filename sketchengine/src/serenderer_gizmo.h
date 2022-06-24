@@ -56,6 +56,7 @@ typedef struct SE_Gizmo_Renderer {
 
 void se_gizmo_renderer_init(SE_Gizmo_Renderer *renderer, SE_Camera3D *current_camera);
 void se_gizmo_renderer_deinit(SE_Gizmo_Renderer *renderer);
+void se_gizmo_render_index(SE_Gizmo_Renderer *renderer, u32 shape_index, Mat4 transform);
 void se_gizmo_render(SE_Gizmo_Renderer *renderer, SE_Gizmo_Shape *shape, Mat4 transform);
 
 //// GIZMO SHAPES WE CAN MAKE

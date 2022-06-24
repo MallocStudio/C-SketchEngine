@@ -95,11 +95,13 @@ void App::init_engine() {
     animation.speed = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
 
     mesh_plane = serender3d_add_plane(&m_renderer, v3f(10, 10, 10));
-    mesh_gizmos_translate = serender3d_add_gizmos_coordniates(&m_renderer);
+
+    mesh_gizmos_translate = se_gizmo_add_coordniates(&m_gizmo_renderer);
+
     u32 point_light_1 = serender3d_add_point_light(&m_renderer);
     current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
 
-#if 0 // manually create entities
+#if 1 // manually create entities
     // @temp add entities, Change this to a function that says: generate_default_level
     u32 soulspear = m_level.add_entity();
     m_level.entities.mesh_index[soulspear] = mesh_soulspear;
@@ -241,7 +243,7 @@ void App::render() {
         // selected entity
     if (m_selected_entity >= 0) {
         se_assert(m_selected_entity < m_level.entities.count);
-        serender_mesh_index(&m_renderer, mesh_gizmos_translate, m_level.entities.transform[m_selected_entity]);
+        se_gizmo_render_index(&m_gizmo_renderer, mesh_gizmos_translate, m_level.entities.transform[m_selected_entity]);
     }
 
     serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
