@@ -131,12 +131,12 @@ bool Level::save(const char *filepath) {
             file << entities.scale[i].z << std::endl;
 
                 //- AABB
-            file << entities.aabb[i].min.x;
-            file << entities.aabb[i].min.y;
+            file << entities.aabb[i].min.x << " ";
+            file << entities.aabb[i].min.y << " ";
             file << entities.aabb[i].min.z << std::endl;
 
-            file << entities.aabb[i].max.x;
-            file << entities.aabb[i].max.y;
+            file << entities.aabb[i].max.x << " ";
+            file << entities.aabb[i].max.y << " ";
             file << entities.aabb[i].max.z << std::endl;
 
                 //- mesh data

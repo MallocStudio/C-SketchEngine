@@ -172,7 +172,7 @@ void App::init_engine() {
     u32 point_light_1 = serender3d_add_point_light(&m_renderer);
     current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
 
-#if 1 // manually create entities
+#if 0 // manually create entities
     // @temp add entities, Change this to a function that says: generate_default_level
     u32 soulspear = m_level.add_entity();
     m_level.entities.mesh_index[soulspear] = mesh_soulspear;
