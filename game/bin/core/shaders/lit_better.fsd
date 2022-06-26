@@ -1,5 +1,4 @@
 #version 450
-
 ///
 /// prototypes
 ///
@@ -95,10 +94,6 @@ vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir) {
         // vec3 kS = normalize(kD); // material specular
 
         // //- lambert term with L reversed to face the light
-        // vec3 T = normalize(_Tangent);
-        // vec3 B = normalize(_Bitangent);
-        // vec3 N = normalize(_Normal);
-        // mat3 TBN = mat3(T, B, N);
 
         // N = TBN * (tex_normal * 2 - 1);
         // N = (model_matrix * vec4(N, 0)).xyz;
@@ -120,8 +115,17 @@ vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir) {
 //  }
 
 //  { PREVIOUS METHOD OF SHADING IGNORED NORMAL MAPPING
+        vec3 T = normalize(_Tangent);
+        vec3 B = normalize(_Bitangent);
+        vec3 N = normalize(_Normal);
+        mat3 TBN = mat3(T, B, N);
         vec3 light_dir = normalize(-light.direction);
-        // diffuse shading
+        float lambert_term = max( 0.0, dot(N, light_dir));
+        vec3 V = normalize(camera_pos - _Position);
+        vec3 R = reflect(-light_dir, N);
+
+        // vec3 light_dir = normalize(-light.direction);
+            //- diffuse shading
         float diff = max(dot(normal, light_dir), 0.0);
 
         // specular shading
@@ -129,8 +133,8 @@ vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir) {
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
 
         // combine results
-        vec3 ambient = light.ambient * vec3(texture(material.diffuse, _TexCoord));
-        vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, _TexCoord));
+        vec3 ambient = light.ambient * tex_diffuse;
+        vec3 diffuse = light.diffuse * diff * tex_diffuse * lambert_term;
         vec3 specular = light.specular * spec * vec3(texture(material.specular, _TexCoord));
 //  }
 
