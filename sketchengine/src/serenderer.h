@@ -241,6 +241,7 @@ typedef struct SE_Renderer3D {
     u32 shader_outline;                 // handles rendering outlines of static meshes
     u32 shader_sprite;                  // handles rendering sprites
     u32 shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
+    u32 shader_debug_skinned_mesh;      // renders the skinned mesh's weight
 
         //- Camera and Light
     SE_Camera3D *current_camera;
@@ -283,6 +284,9 @@ u32 serender3d_add_point_light(SE_Renderer3D *renderer);
 void serender3d_reset_render_config();
 void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
+    /// Render the given mesh with the given shader. The called must be passing the uniforms to the shader and make sure
+    /// that everything lines up
+void serender_mesh_with_shader(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
 void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
     /// Render a directional shadow map to the renderer.
     /// "transforms_count" must be equal to or less than the number of meshes in the renderer.

@@ -1,0 +1,29 @@
+#version 450
+layout ( location = 0 ) in vec3 Position; // model space
+layout ( location = 5 ) in ivec4 bone_ids;
+layout ( location = 6 ) in vec4 bone_weights;
+
+uniform mat4 projection_view_model;
+
+const int MAX_BONES = 100; // must match with SE_SKELETON_BONES_CAPACITY of SE_Skeleton
+const int MAX_BONE_WEIGHTS = 4;
+
+
+uniform int selection; // the bone the user wants to visualize
+
+out float weight_amount;
+
+void main() {
+
+    weight_amount = 0.0;
+    for (int i = 0; i < MAX_BONE_WEIGHTS; i++) {
+        if (bone_ids[i] == -1) continue;
+        if (selection >= 0 && selection < MAX_BONE_WEIGHTS) {
+            if (bone_ids[i] == bone_weights[i]) {
+                weight_amount += bone_weights[i];
+            }
+        }
+    }
+
+	gl_Position = projection_view_model * vec4(Position, 1.0);
+}

@@ -1064,6 +1064,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
     {   //- extract bone info for each vertex
         mesh->skeleton = NEW (SE_Skeleton); // @leak
         mesh->skeleton->bone_count = 0;
+        mesh->skeleton->bone_node_count = 0;
             // copy the bone data to skeleton
         for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
                 // add bone to skeleton
@@ -1106,6 +1107,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
                     if (verts[vertex_id].bone_ids    [xxx] < 0) {
                         verts[vertex_id].bone_ids    [xxx] = bone_id;
                         verts[vertex_id].bone_weights[xxx] = weight;
+                        break;
                     }
                 }
             }
@@ -1562,43 +1564,55 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8
 
 static void
 serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
-    u32 shader = renderer->shader_skinned_mesh;
-    seshader_use(renderer->shaders[shader]);
+    u32 shader_index = renderer->shader_skinned_mesh;
+    SE_Shader *shader = renderer->shaders[shader_index];
+    seshader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
      /* vertex */
-    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
-    seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
+    seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
+    seshader_set_uniform_mat4(shader, "model_matrix", transform);
+    seshader_set_uniform_vec3(shader, "camera_pos", renderer->current_camera->position);
+    seshader_set_uniform_mat4(shader, "light_space_matrix", renderer->light_space_matrix);
 
     /* material uniforms */
-    seshader_set_uniform_f32 (renderer->shaders[shader], "material.shininess", 0.1f);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "material.diffuse", 0);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "material.specular", 1);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "material.normal", 2);
-    seshader_set_uniform_vec4(renderer->shaders[shader], "material.base_diffuse", material->base_diffuse);
+    seshader_set_uniform_f32 (shader, "material.shininess", 0.1f);
+    seshader_set_uniform_i32 (shader, "material.diffuse", 0);
+    seshader_set_uniform_i32 (shader, "material.specular", 1);
+    seshader_set_uniform_i32 (shader, "material.normal", 2);
+    seshader_set_uniform_vec4(shader, "material.base_diffuse", material->base_diffuse);
 
     // directional light uniforms
-    seshader_set_uniform_vec3(renderer->shaders[shader], "dir_light.direction", renderer->light_directional.direction);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.ambient", renderer->light_directional.ambient);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.diffuse", renderer->light_directional.diffuse);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.specular", (RGB) {0, 0, 0});
-    seshader_set_uniform_f32 (renderer->shaders[shader], "dir_light.intensity", renderer->light_directional.intensity);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
+    seshader_set_uniform_vec3(shader, "dir_light.direction", renderer->light_directional.direction);
+    seshader_set_uniform_rgb (shader, "dir_light.ambient", renderer->light_directional.ambient);
+    seshader_set_uniform_rgb (shader, "dir_light.diffuse", renderer->light_directional.diffuse);
+    seshader_set_uniform_rgb (shader, "dir_light.specular", (RGB) {0, 0, 0});
+    seshader_set_uniform_f32 (shader, "dir_light.intensity", renderer->light_directional.intensity);
+    seshader_set_uniform_i32 (shader, "shadow_map", 3);
 
     // point light uniforms
-    seshader_set_uniform_vec3(renderer->shaders[shader], "point_lights[0].position",  renderer->point_lights[0].position);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].ambient",   renderer->point_lights[0].ambient);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].diffuse",   renderer->point_lights[0].diffuse);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "point_lights[0].specular",  renderer->point_lights[0].specular);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].constant" , renderer->point_lights[0].constant);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].linear"   , renderer->point_lights[0].linear);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].quadratic", renderer->point_lights[0].quadratic);
-    seshader_set_uniform_f32 (renderer->shaders[shader], "point_lights[0].far_plane", 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
-    seshader_set_uniform_i32 (renderer->shaders[shader], "point_lights[0].shadow_map", 4); // ! need to change 4 to 4 + the index of light point once multiple point lights are supported
+    for (u32 i = 0; i < renderer->point_lights_count; ++i) {
+        char buf[100];
+        SDL_snprintf(buf, 100, "point_lights[%i].position", i);
+        seshader_set_uniform_vec3(shader, buf, renderer->point_lights[i].position);
+        SDL_snprintf(buf, 100, "point_lights[%i].ambient", i);
+        seshader_set_uniform_rgb (shader, buf, renderer->point_lights[i].ambient);
+        SDL_snprintf(buf, 100, "point_lights[%i].diffuse", i);
+        seshader_set_uniform_rgb (shader, buf, renderer->point_lights[i].diffuse);
+        SDL_snprintf(buf, 100, "point_lights[%i].specular", i);
+        seshader_set_uniform_rgb (shader, buf, renderer->point_lights[i].specular);
+        SDL_snprintf(buf, 100, "point_lights[%i].constant", i);
+        seshader_set_uniform_f32 (shader, buf, renderer->point_lights[i].constant);
+        SDL_snprintf(buf, 100, "point_lights[%i].linear", i);
+        seshader_set_uniform_f32 (shader, buf, renderer->point_lights[i].linear);
+        SDL_snprintf(buf, 100, "point_lights[%i].quadratic", i);
+        seshader_set_uniform_f32 (shader, buf, renderer->point_lights[i].quadratic);
+        SDL_snprintf(buf, 100, "point_lights[%i].far_plane", i);
+        seshader_set_uniform_f32 (shader, buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
+    }
+    seshader_set_uniform_i32 (shader, "num_of_point_lights", renderer->point_lights_count);
 
     /* textures */
     if (material->texture_diffuse.loaded) {
@@ -1622,9 +1636,18 @@ serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, c
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
     glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
 
-    /* omnidirectional shadow map */
-    glActiveTexture(GL_TEXTURE0 + 4); // shadow map
-    glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[0].depth_cube_map);
+       //- Omnidirectional Shadow Map
+    for (u32 i = 0; i < SERENDERER3D_MAX_POINT_LIGHTS; ++i) {
+        char buf[100];
+        SDL_snprintf(buf, 100, "point_lights[%i].shadow_map", i);
+        seshader_set_uniform_i32 (shader, buf, 4+i);
+    }
+        // ! NOTE: Might want to consider merging the below for loop with the above. I'm not sure which one
+        // ! has what kind of a performance impact.
+    for (u32 i = 0; i < renderer->point_lights_count; ++i) {
+        glActiveTexture(GL_TEXTURE0 + 4+i); // shadow map
+        glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[i].depth_cube_map);
+    }
 }
 
 static void
@@ -1653,6 +1676,7 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     SE_Material *material = renderer->materials[mesh->material_index];
 
     /* configs for this mesh */
+        //- LINE / ANIMATED LINES
     if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
         primitive = GL_LINES;
         glLineWidth(mesh->line_width);
@@ -1665,14 +1689,17 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
             serender3d_render_set_material_uniforms_lines(renderer, transform);
         }
     } else
+        //- STATIC MESH
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         serender3d_render_set_material_uniforms_lit(renderer, material, transform);
     } else
+        //- SPRITE
     if (mesh->type == SE_MESH_TYPE_SPRITE) { // SPRITE
         serender3d_render_set_material_uniforms_sprite(renderer, material, transform);
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
     } else
+        //- SKINNED MESH
     if (mesh->type == SE_MESH_TYPE_SKINNED) { // SKELETAL ANIMATION
         serender3d_render_set_material_uniforms_skinned(renderer, material, transform);
         // for (u32 i = 0; i < SE_SKELETON_BONES_CAPACITY; ++i) { // @temp // @debug for debugging purposes
@@ -1680,12 +1707,42 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
         // }
         seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
     } else
+        //- POINT
     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
         primitive = GL_POINTS;
         glPointSize(mesh->point_radius);
         serender3d_render_set_material_uniforms_lines(renderer, transform);
     }
 
+        //- Draw Call
+    glBindVertexArray(mesh->vao);
+    if (mesh->indexed) {
+        glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(primitive, 0, mesh->vert_count);
+    }
+
+    glBindVertexArray(0);
+}
+
+void serender_mesh_with_shader
+(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader) {
+    serender3d_reset_render_config(); // Reset configs to their default values
+    seshader_use(shader);
+    i32 primitive = GL_TRIANGLES;
+
+        //- LINE
+    if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
+        primitive = GL_LINES;
+        glLineWidth(mesh->line_width);
+    } else
+        //- POINT
+    if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
+        primitive = GL_POINTS;
+        glPointSize(mesh->point_radius);
+    }
+
+        //- Draw Call
     glBindVertexArray(mesh->vao);
     if (mesh->indexed) {
         glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
@@ -1996,6 +2053,7 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->shader_sprite = serender3d_add_shader(renderer, "core/shaders/sprite.vsd","core/shaders/sprite.fsd");
     renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/skinned_vertex.vsd","core/shaders/lit_better.fsd");
     renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "core/shaders/skinned_skeleton_lines.vsd","core/shaders/lines.fsd");
+    renderer->shader_debug_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/debug_skinned_mesh_weights.vsd","core/shaders/debug_skinned_mesh_weights.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);

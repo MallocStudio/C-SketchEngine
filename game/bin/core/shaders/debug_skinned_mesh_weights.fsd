@@ -1,0 +1,8 @@
+#version 450
+
+in float weight_amount;
+
+out vec4 FragColour;
+void main () {
+    FragColour = vec4(weight_amount, weight_amount, weight_amount, 1.0);
+}

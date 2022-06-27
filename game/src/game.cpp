@@ -8,6 +8,7 @@ SE_UI *ctx;
 u32 mesh_soulspear = -1;
 u32 mesh_plane = -1;
 u32 mesh_guy = -1;
+u32 mesh_prizm = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 current_obj_aabb = -1;
@@ -90,6 +91,8 @@ void App::init_engine() {
     mesh_soulspear = serender3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
 
     mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    mesh_prizm = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
+
     mesh_skeleton = serender3d_add_mesh_empty(&m_renderer);
     semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
     // semesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
@@ -250,6 +253,28 @@ void App::render() {
     }
         // skeleton mesh
     serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
+
+    {   // @debug
+        SE_Mesh *mesh = m_renderer.meshes[mesh_prizm];
+        SE_Shader *shader = m_renderer.shaders[m_renderer.shader_debug_skinned_mesh];
+
+        {   //- Setup Shader
+            seshader_use(shader);
+
+            Mat4 pvm = mat4_mul(mat4_identity(), m_renderer.current_camera->view);
+            pvm = mat4_mul(pvm, m_renderer.current_camera->projection);
+            seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
+
+            static i32 selected_bone = 0;
+            if (seinput_is_key_pressed(&m_input, SDL_SCANCODE_RIGHT)) selected_bone++;
+            if (seinput_is_key_pressed(&m_input, SDL_SCANCODE_LEFT)) selected_bone--;
+            if (selected_bone < 0) selected_bone = 0;
+            if (selected_bone > 99) selected_bone = 99;
+            seshader_set_uniform_i32(shader, "selection", selected_bone);
+        }
+
+        serender_mesh_with_shader(&m_renderer, mesh, mat4_identity(), shader);
+    }
 
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);
