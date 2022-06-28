@@ -8,7 +8,7 @@ SE_UI *ctx;
 u32 mesh_soulspear = -1;
 u32 mesh_plane = -1;
 u32 mesh_guy = -1;
-u32 mesh_prizm = -1;
+// u32 mesh_prizm = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 current_obj_aabb = -1;
@@ -90,8 +90,9 @@ void App::init_engine() {
         // @temp TODO: MOVE TO LOADER
     mesh_soulspear = serender3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
 
-    mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
-    mesh_prizm = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
+    // mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    mesh_guy = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
+    // mesh_prizm = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
 
     mesh_skeleton = serender3d_add_mesh_empty(&m_renderer);
     semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
@@ -171,7 +172,7 @@ void App::update(f32 delta_time) {
     m_level.entities.update(&m_renderer, delta_time);
     seanimation_update(&animation, delta_time);
     seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
-    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy+1]->skeleton, animation.current_frame);
+    // seskeleton_calculate_pose(m_renderer.meshes[mesh_guy+1]->skeleton, animation.current_frame);
 
         // select entities
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -255,7 +256,8 @@ void App::render() {
     serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
 
     {   // @debug
-        SE_Mesh *mesh = m_renderer.meshes[mesh_prizm];
+        // SE_Mesh *mesh = m_renderer.meshes[mesh_prizm];
+        SE_Mesh *mesh = m_renderer.meshes[mesh_guy];
         SE_Shader *shader = m_renderer.shaders[m_renderer.shader_debug_skinned_mesh];
 
         {   //- Setup Shader
