@@ -63,5 +63,15 @@ typedef struct AABB3D {
     Vec3 max;
 } AABB3D;
 
+se_array_struct(Vec2);
+se_array_struct(Vec2i);
+se_array_struct(Vec3);
+se_array_struct(Vec3i);
+se_array_struct(Vec4);
+se_array_struct(Quat);
+se_array_struct(Rect);
+se_array_struct(Mat2);
+se_array_struct(Mat4);
+se_array_struct(AABB3D);
 
 #endif // SEMATH_TYPES

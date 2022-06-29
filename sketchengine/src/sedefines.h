@@ -167,4 +167,36 @@ SEINLINE i32 searray_i32_get(SE_Array_I32 *array, u32 index) {
     return array->data[index];
 }
 
+///
+/// DYNAMIC ARRAY
+///
+
+#define se_array_struct(type) struct se_array_##type {type *data; u32 size; u32 capacity;}
+se_array_struct(i32);
+se_array_struct(f32);
+se_array_struct(u32);
+
+#define Array(type) struct se_array_##type
+
+#define array_init(type, array) {\
+    array.capacity = 10;\
+    array.size = 0;\
+    array.data = (type*)malloc(sizeof(type) * array.capacity);\
+}
+
+#define array_deinit(array) {\
+    free(array.data);\
+    array.size = 0;\
+    array.capacity = 0;\
+}
+
+#define array_add(type, array, value) {\
+    array.data[array.size++] = value;\
+    if (array.size >= array.capacity) {\
+        array.capacity += array.size * 0.5f + 1;\
+        array.data = (type*)realloc(array.data, sizeof(type) * array.capacity);\
+    }\
+}
+
+
 #endif // SEDEFINES_H

@@ -56,6 +56,7 @@
         "iterator": "cpp",
         "xlocale": "cpp",
         "xlocnum": "cpp",
-        "streambuf": "cpp"
+        "streambuf": "cpp",
+        "memory": "c"
     }
 }
