@@ -8,7 +8,6 @@ SE_UI *ctx;
 u32 mesh_soulspear = -1;
 u32 mesh_plane = -1;
 u32 mesh_guy = -1;
-// u32 mesh_prizm = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 current_obj_aabb = -1;
@@ -91,12 +90,15 @@ void App::init_engine() {
     mesh_soulspear = serender3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
 
     // mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
-    mesh_guy = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
-    // mesh_prizm = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
+    mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Sitting Laughing.fbx", true);
+
+    // mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/changedPrizm2.fbx", true);
+    // mesh_guy = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
 
     mesh_skeleton = serender3d_add_mesh_empty(&m_renderer);
-    semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
+    semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, false);
     // semesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
+
     animation.current_frame = 0;
     animation.duration = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->duration;
     animation.speed = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
@@ -172,7 +174,6 @@ void App::update(f32 delta_time) {
     m_level.entities.update(&m_renderer, delta_time);
     seanimation_update(&animation, delta_time);
     seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
-    // seskeleton_calculate_pose(m_renderer.meshes[mesh_guy+1]->skeleton, animation.current_frame);
 
         // select entities
     if (seinput_is_mouse_left_released(&m_input) && seinput_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -255,36 +256,21 @@ void App::render() {
         // skeleton mesh
     serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
 
-    {   // @debug
-        // SE_Mesh *mesh = m_renderer.meshes[mesh_prizm];
-        SE_Mesh *mesh = m_renderer.meshes[mesh_guy];
-        SE_Shader *shader = m_renderer.shaders[m_renderer.shader_debug_skinned_mesh];
-
-        {   //- Setup Shader
-            seshader_use(shader);
-
-            Mat4 pvm = mat4_mul(mat4_identity(), m_renderer.current_camera->view);
-            pvm = mat4_mul(pvm, m_renderer.current_camera->projection);
-            seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
-
-            static i32 selected_bone = 0;
-            if (seinput_is_key_pressed(&m_input, SDL_SCANCODE_RIGHT)) selected_bone++;
-            if (seinput_is_key_pressed(&m_input, SDL_SCANCODE_LEFT)) selected_bone--;
-            if (selected_bone < 0) selected_bone = 0;
-            if (selected_bone > 99) selected_bone = 99;
-            seshader_set_uniform_i32(shader, "selection", selected_bone);
-        }
-
-        serender_mesh_with_shader(&m_renderer, mesh, mat4_identity(), shader);
-    }
-
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);
 
         // selected entity
     if (m_selected_entity >= 0) {
         se_assert(m_selected_entity < m_level.entities.count);
-        se_gizmo_render_index(&m_gizmo_renderer, mesh_gizmos_translate, m_level.entities.transform[m_selected_entity]);
+            // calculate transfrom without scale
+        Vec3 pos   = m_level.entities.position[m_selected_entity];
+        Vec3 rot   = m_level.entities.oriantation[m_selected_entity];
+
+        Mat4 transform = mat4_identity();
+        transform = mat4_mul(transform, mat4_euler_xyz(rot.x, rot.y, rot.z));
+        transform = mat4_mul(transform, mat4_translation(pos));
+
+        se_gizmo_render_index(&m_gizmo_renderer, mesh_gizmos_translate, transform);
     }
 
     serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
@@ -295,21 +281,17 @@ void App::render() {
 }
 
 i32 App::raycast_to_select_entity() {
-    // i32 window_w, window_h;
-    // SDL_GetWindowSize(m_window, &window_w, &window_h);
-
-    // Vec3 raycast_dir = secamera3d_get_front(&m_cameras[main_camera]);
     Vec3 raycast_dir;
     Vec3 raycast_origin;
     secamera3d_get_raycast(&m_cameras[main_camera], m_window, &raycast_dir, &raycast_origin);
 
     i32 result = -1;
 
-    f32 closest_hit = -SEMATH_INFINITY;
+    f32 closest_hit = SEMATH_INFINITY;
     for (u32 i = 0; i < m_level.entities.count; ++i) {
         f32 hit;
-        if (ray_overlaps_sphere(raycast_origin, raycast_dir, 100, m_level.entities.position[i], 0.5f, &hit)) {
-            if (hit > closest_hit) {
+        if (ray_overlaps_aabb3d(raycast_origin, raycast_dir, 100, m_level.entities.aabb_transformed[i], &hit)) {
+            if (hit < closest_hit) {
                 closest_hit = hit;
                 result = i;
             }

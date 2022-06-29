@@ -955,21 +955,33 @@ static void recursive_read_bone_heirarchy
 
         // See if this node is a bone node by comparing names with the bones
         // found in the mesh (as loaded to "skeleton" previously)
-    b8 found = false;
+    b8 found_in_bones = false;
+    b8 already_exists = false;
     SE_String src_name;
     sestring_init(&src_name, src->mName.data);
     for (u32 i = 0; i < skeleton->bone_count; ++i) {
         if (sestring_compare(&skeleton->bones_info[i].name, &src_name)) {
-            found = true;
+            found_in_bones = true;
             break;
         }
     }
+
+    if (found_in_bones) {
+            // now look to see if we've already added this to bone nodes or not
+        for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
+            if (sestring_compare(&skeleton->bone_nodes[i].name, &src_name)) {
+                already_exists = true;  // we already have this in here,
+                break;
+            }
+        }
+    }
+
     sestring_deinit(&src_name);
 
-        // if this node is a bone node, add it to the skeleton's node heirarchy
+        // if this node is a bone node AND it has not already been added to bone nodes, add it to the skeleton's node heirarchy
     SE_Bone_Node *new_bone_node = NULL;
     Mat4 model_space_transform_of_this_node;
-    if (found) {
+    if (found_in_bones && !already_exists) {
         new_bone_node = &skeleton->bone_nodes[skeleton->bone_node_count];
         new_bone_node->bones_info_index = skeleton->bone_node_count;
         skeleton->bone_node_count++;
@@ -999,8 +1011,74 @@ static void recursive_read_bone_heirarchy
     }
 }
 
+    /// Extract the bone info of the given assimp mesh and ADD it to the given skeleton
+static void seload_skeleton_additively
+(const struct aiMesh *ai_mesh, SE_Skeleton *skeleton, SE_Skinned_Vertex *verts, u32 verts_count, const struct aiScene *scene) {
+    {   //- extract bone info for each vertex
+            // copy the bone data to skeleton
+        for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
+                // add bone to skeleton
+            i32 bone_id = -1;
+            SE_String ai_mesh_bone_name;
+            sestring_init(&ai_mesh_bone_name,ai_mesh->mBones[bone_index]->mName.data);
+
+            b8 bone_found = false;
+            for (u32 i = 0; i < skeleton->bone_count; ++i) {
+                if (sestring_compare(&skeleton->bones_info[i].name, &ai_mesh_bone_name)) {
+                        //- Found the bone
+                    bone_found = true;
+                    bone_id = skeleton->bones_info[i].id;
+                    break;
+                }
+            }
+
+            sestring_deinit(&ai_mesh_bone_name);
+
+            if (!bone_found) {
+                    //- copy the bone info over
+                SE_Bone_Info *bone = &skeleton->bones_info[bone_index];
+                bone->id = skeleton->bone_count;
+                copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
+                sestring_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
+
+                bone_id = bone->id;
+                skeleton->bone_count++;
+            }
+            se_assert(bone_id != -1);
+
+            // @debug: The problem with our skinned mesh rendering lies in here.
+            // I don't think we're loading the weights and bone_ids correctly and assigning it to their corresponding vertices.
+            for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
+                i32 vertex_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
+                f32 weight = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
+                se_assert(vertex_id <= verts_count);
+
+                for (i32 xxx = 0; xxx < SE_MAX_BONE_WEIGHTS; ++xxx) {
+                    if (verts[vertex_id].bone_ids    [xxx] < 0) {
+                        verts[vertex_id].bone_ids    [xxx] = bone_id;
+                        verts[vertex_id].bone_weights[xxx] = weight;
+                        break;
+                    }
+                }
+            }
+        }
+        se_assert(skeleton->bone_count == ai_mesh->mNumBones);
+    }
+
+
+    {   //- bone node heirarchy
+        recursive_read_bone_heirarchy(skeleton, -1, mat4_identity(), scene->mRootNode);
+        se_assert(skeleton->bone_count == skeleton->bone_node_count); // @debug
+        {   // @debug
+            for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
+                se_assert(skeleton->bone_nodes[i].bones_info_index >= 0 && skeleton->bone_nodes[i].bones_info_index < skeleton->bone_count);
+            }
+        }
+    }
+}
+
 static void semesh_construct_skinned_mesh // only meant to be called from serender3d_load_mesh
-(SE_Mesh *mesh, const struct aiMesh *ai_mesh, const struct aiScene *scene) {
+(SE_Mesh *mesh, SE_Skeleton *skeleton, const struct aiMesh *ai_mesh, const struct aiScene *scene) {
     sedefault_mesh(mesh);
     u32 verts_count = 0;
     u32 index_count = 0;
@@ -1061,68 +1139,8 @@ static void semesh_construct_skinned_mesh // only meant to be called from serend
         index_count += 3;
     }
 
-    {   //- extract bone info for each vertex
-        mesh->skeleton = NEW (SE_Skeleton); // @leak
-        mesh->skeleton->bone_count = 0;
-        mesh->skeleton->bone_node_count = 0;
-            // copy the bone data to skeleton
-        for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
-                // add bone to skeleton
-            i32 bone_id = -1;
-            SE_String ai_mesh_bone_name;
-            sestring_init(&ai_mesh_bone_name,ai_mesh->mBones[bone_index]->mName.data);
-
-            b8 bone_found = false;
-            for (u32 i = 0; i < mesh->skeleton->bone_count; ++i) {
-                if (sestring_compare(&mesh->skeleton->bones_info[i].name, &ai_mesh_bone_name)) {
-                        //- Found the bone
-                    bone_found = true;
-                    bone_id = mesh->skeleton->bones_info[i].id;
-                    break;
-                }
-            }
-
-            sestring_deinit(&ai_mesh_bone_name);
-
-            if (!bone_found) {
-                    //- copy the bone info over
-                SE_Bone_Info *bone = &mesh->skeleton->bones_info[bone_index];
-                bone->id = mesh->skeleton->bone_count;
-                copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
-                sestring_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
-
-                bone_id = bone->id;
-                mesh->skeleton->bone_count++;
-            }
-            se_assert(bone_id != -1);
-
-            // @debug: The problem with our skinned mesh rendering lies in here.
-            // I don't think we're loading the weights and bone_ids correctly and assigning it to their corresponding vertices.
-            for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
-                i32 vertex_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
-                f32 weight = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
-                se_assert(vertex_id <= verts_count);
-
-                for (i32 xxx = 0; xxx < SE_MAX_BONE_WEIGHTS; ++xxx) {
-                    if (verts[vertex_id].bone_ids    [xxx] < 0) {
-                        verts[vertex_id].bone_ids    [xxx] = bone_id;
-                        verts[vertex_id].bone_weights[xxx] = weight;
-                        break;
-                    }
-                }
-            }
-        }
-        se_assert(mesh->skeleton->bone_count == ai_mesh->mNumBones);
-    }
-    {   //- bone node heirarchy
-        recursive_read_bone_heirarchy(mesh->skeleton, -1, mat4_identity(), scene->mRootNode);
-        se_assert(mesh->skeleton->bone_count == mesh->skeleton->bone_node_count); // @debug
-        {   // @debug
-            for (u32 i = 0; i < mesh->skeleton->bone_node_count; ++i) {
-                se_assert(mesh->skeleton->bone_nodes[i].bones_info_index >= 0 && mesh->skeleton->bone_nodes[i].bones_info_index < mesh->skeleton->bone_count);
-            }
-        }
-    }
+    mesh->skeleton = skeleton;
+    seload_skeleton_additively(ai_mesh, skeleton, verts, verts_count, scene);
 
         // generate the vao
     semesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
@@ -1282,7 +1300,7 @@ static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAn
 
 static void recursive_calculate_bone_pose // calculate the pose of the given bone based on the animation, do the same for its children
 (SE_Skeleton *skeleton, const SE_Skeletal_Animation *animation, f32 animation_time, const SE_Bone_Node *node, Mat4 parent_transform) {
-    se_assert(node->bones_info_index >= 0 && node->bones_info_index < animation->animated_bones_count);
+    se_assert(node->bones_info_index >= 0);
 
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
@@ -1510,6 +1528,14 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8
     }
         //- load meshes within the scene
     result = renderer->meshes_count; // the first mesh in the chain
+
+    SE_Skeleton *skeleton = NULL;
+    if (with_skeleton) {
+        skeleton = NEW (SE_Skeleton);
+            // it's important for bone_nodes.children_count be zero and so should the other things
+        memset(skeleton, 0, sizeof(SE_Skeleton));
+    }
+
     for (u32 i = 0; i < scene->mNumMeshes; ++i) {
         struct aiMesh *ai_mesh = scene->mMeshes[i];
 
@@ -1521,7 +1547,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8
         if (with_skeleton && ai_mesh->mNumBones > 0) {
                 // load a skinned mesh ready to be animated
             SE_Mesh *mesh = renderer->meshes[renderer->meshes_count];
-            semesh_construct_skinned_mesh(mesh, ai_mesh, scene);
+            semesh_construct_skinned_mesh(mesh, skeleton, ai_mesh, scene);
         } else {
                 // load normal static mesh
             semesh_construct_normal_mesh(renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
@@ -2053,7 +2079,7 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->shader_sprite = serender3d_add_shader(renderer, "core/shaders/sprite.vsd","core/shaders/sprite.fsd");
     renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/skinned_vertex.vsd","core/shaders/lit_better.fsd");
     renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "core/shaders/skinned_skeleton_lines.vsd","core/shaders/lines.fsd");
-    renderer->shader_debug_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/debug_skinned_mesh_weights.vsd","core/shaders/debug_skinned_mesh_weights.fsd");
+    renderer->shader_mouse_picking = serender3d_add_shader(renderer, "core/shaders/mouse_picking.vsd", "core/shaders/mouse_picking.fsd");
 
     /* default materials */
     renderer->material_lines = serender3d_add_material(renderer);

@@ -241,7 +241,7 @@ typedef struct SE_Renderer3D {
     u32 shader_outline;                 // handles rendering outlines of static meshes
     u32 shader_sprite;                  // handles rendering sprites
     u32 shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
-    u32 shader_debug_skinned_mesh;      // renders the skinned mesh's weight
+    u32 shader_mouse_picking;           // render the mesh with a given ID as colour so we can retrieve the colour under the mouse for picking purposes
 
         //- Camera and Light
     SE_Camera3D *current_camera;

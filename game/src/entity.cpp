@@ -1,5 +1,12 @@
 #include "entity.hpp"
 
+static AABB3D transform_aabb3d(AABB3D aabb, Mat4 transform) {
+    Vec3 translation = mat4_get_translation(transform);
+    aabb.min = vec3_add(aabb.min, translation);
+    aabb.max = vec3_add(aabb.max, translation);
+    return aabb;
+}
+
 Entities::Entities() {
     this->set_to_default();
 }
@@ -24,6 +31,8 @@ void Entities::update(SE_Renderer3D *renderer, f32 delta_time) {
         if (this->has_mesh[i]) {
             this->aabb[i] = renderer->meshes[this->mesh_index[i]]->aabb;
         }
+
+        this->aabb_transformed[i] = transform_aabb3d(this->aabb[i], this->transform[i]);
 
             //- Update Point Light Pos
         if (this->has_light[i]) {

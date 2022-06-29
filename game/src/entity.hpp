@@ -16,6 +16,7 @@ public:
 
         //- AABB
     AABB3D aabb[ENTITIES_MAX];
+    AABB3D aabb_transformed[ENTITIES_MAX];
 
         //- Mesh
     bool has_mesh[ENTITIES_MAX];

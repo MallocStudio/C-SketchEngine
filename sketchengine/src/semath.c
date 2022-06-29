@@ -1225,13 +1225,50 @@ b8 ray_overlaps_sphere(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, Ve
             }
             return true;
         }
-        // if (vec3_distance(point, sphere_origin) <= sphere_radius) {
-        //     *hit_distance = i;
-        //     return true;
-        // }
     }
 
     return false;
+}
+
+b8 ray_overlaps_aabb3d(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, AABB3D aabb, f32 *hit_distance) {
+    vec3_normalise(&ray_direction);
+    Vec3 dirfrac;
+    dirfrac.x = 1.0f / ray_direction.x;
+    dirfrac.y = 1.0f / ray_direction.y;
+    dirfrac.z = 1.0f / ray_direction.z;
+
+    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+    Vec3 lb = aabb.min;
+    Vec3 rt = aabb.max;
+    float t1 = (lb.x - ray_origin.x)*dirfrac.x;
+    float t2 = (rt.x - ray_origin.x)*dirfrac.x;
+    float t3 = (lb.y - ray_origin.y)*dirfrac.y;
+    float t4 = (rt.y - ray_origin.y)*dirfrac.y;
+    float t5 = (lb.z - ray_origin.z)*dirfrac.z;
+    float t6 = (rt.z - ray_origin.z)*dirfrac.z;
+
+    float tmin = semath_max(semath_max(semath_min(t1, t2), semath_min(t3, t4)), semath_min(t5, t6));
+    float tmax = semath_min(semath_min(semath_max(t1, t2), semath_max(t3, t4)), semath_max(t5, t6));
+
+    f32 t = max_distance;
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (tmax < 0)
+    {
+        t = tmax;
+        return false;
+    }
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmin > tmax)
+    {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+    *hit_distance = t;
+    return true;
 }
 
 /// -----------
