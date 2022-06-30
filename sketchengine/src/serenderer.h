@@ -236,6 +236,7 @@ typedef struct SE_Renderer3D {
     u32 shader_lit;                     // handles static meshes affected by light and the material system
     u32 shader_skinned_mesh;            // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
     u32 shader_shadow_calc;             // handles directional light shadow calulation
+    u32 shader_shadow_calc_skinned_mesh;// handles directional light shadow calulation
     u32 shader_shadow_omnidir_calc;     // handls point light shadow calculation
     u32 shader_lines;                   // handles rendering lines
     u32 shader_outline;                 // handles rendering outlines of static meshes
@@ -298,6 +299,7 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
 
 /// calculate the bounding box of a collection of vertices
 AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count);
+AABB3D semesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count);
 /// calculate the bounding box of a collection of bounding boxes
 AABB3D aabb3d_calc(const AABB3D *aabb, u32 aabb_count);
 AABB3D aabb3d_from_points(Vec3 point1, Vec3 point2, Mat4 transform);

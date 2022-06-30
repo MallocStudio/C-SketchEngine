@@ -383,7 +383,8 @@ static void semesh_generate_skinned // same as semesh_generate but for skinned v
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
-    mesh->aabb = (AABB3D) {0}; //semesh_calc_aabb(vertices, vert_count);
+    // mesh->aabb = (AABB3D) {0}; //semesh_calc_aabb(vertices, vert_count);
+    mesh->aabb = semesh_calc_aabb_skinned(vertices, vert_count);
 
     // unselect
     glBindVertexArray(0);
@@ -676,6 +677,24 @@ void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices,
 }
 
 //// RENDER 3D ////
+
+AABB3D semesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count) {
+    f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
+
+    for (u32 i = 0; i < verts_count; ++i) {
+        Vec3 vert_pos = verts[i].vert.position;
+        if (xmin > vert_pos.x) xmin = vert_pos.x;
+        if (ymin > vert_pos.y) ymin = vert_pos.y;
+        if (zmin > vert_pos.z) zmin = vert_pos.z;
+
+        if (xmax < vert_pos.x) xmax = vert_pos.x;
+        if (ymax < vert_pos.y) ymax = vert_pos.y;
+        if (zmax < vert_pos.z) zmax = vert_pos.z;
+    }
+
+    AABB3D result = {(Vec3) {xmin, ymin, zmin}, (Vec3) {xmax, ymax, zmax}};
+    return result;
+}
 
 AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count) {
     f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
@@ -1831,6 +1850,30 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     semesh_deinit(&outline_mesh);
 }
 
+static void se_render_directional_shadow_map_for_mesh
+(SE_Renderer3D *renderer, u32 mesh_index, Mat4 model_mat, Mat4 light_space_mat) {
+    SE_Mesh *mesh = renderer->meshes[mesh_index];
+
+    if (mesh->type == SE_MESH_TYPE_NORMAL) {
+        seshader_use(renderer->shaders[renderer->shader_shadow_calc]);
+        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
+        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "model", model_mat);
+    } else
+    if (mesh->type == SE_MESH_TYPE_SKINNED) {
+        seshader_use(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh]);
+        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "light_space_matrix", light_space_mat);
+        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "model", model_mat);
+        seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+    }
+
+    glBindVertexArray(mesh->vao);
+    if (mesh->indexed) {
+        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+    }
+}
+
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 transforms_count, AABB3D world_aabb) {
     se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
         // -- shadow mapping
@@ -1926,24 +1969,18 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
         /* configure shadow shader */
         serender_target_use(&renderer->shadow_render_target);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        seshader_use(renderer->shaders[renderer->shader_shadow_calc]);
-
-        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
 
         for (u32 i = 0; i < transforms_count; ++i) {
             u32 mesh_index = mesh_indices[i];
             if (mesh_index >= renderer->meshes_count) continue; // this mesh does not exist
-            SE_Mesh *mesh = renderer->meshes[mesh_index];
             Mat4 model_mat = transforms[i];
+            SE_Mesh *mesh = renderer->meshes[mesh_index];
 
-            seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "model", model_mat);
-
-            glBindVertexArray(mesh->vao);
-            if (mesh->indexed) {
-                glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
-            } else {
-                glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+            se_render_directional_shadow_map_for_mesh(renderer, mesh_index, model_mat, light_space_mat);
+            if (mesh->next_mesh_index >= 0) {
+                se_render_directional_shadow_map_for_mesh(renderer, mesh->next_mesh_index, model_mat, light_space_mat);
             }
+
         }
         glBindVertexArray(0);
 
@@ -2055,6 +2092,7 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
 
     renderer->shader_lit = serender3d_add_shader(renderer, "core/shaders/lit.vsd","core/shaders/lit_better.fsd");
     renderer->shader_shadow_calc = serender3d_add_shader(renderer, "core/shaders/shadow_calc.vsd","core/shaders/shadow_calc.fsd");
+    renderer->shader_shadow_calc_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/shadow_calc_skinned_mesh.vsd","core/shaders/shadow_calc.fsd");
     renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "core/shaders/shadow_omni_calc.vsd","core/shaders/shadow_omni_calc.fsd", "core/shaders/shadow_omni_calc.gsd");
     renderer->shader_lines = serender3d_add_shader(renderer, "core/shaders/lines.vsd","core/shaders/lines.fsd");
     renderer->shader_outline = serender3d_add_shader(renderer, "core/shaders/outline.vsd","core/shaders/outline.fsd");
