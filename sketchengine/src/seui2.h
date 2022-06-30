@@ -54,6 +54,13 @@ typedef enum UI_AXIS2 {
   UI_AXIS2_COUNT
 } UI_AXIS2;
 
+typedef struct UI_Layout {
+    b8 advance_x;
+    b8 advance_y;
+    Vec2 anchor;
+    Vec2 min_size;
+} UI_Layout;
+
 typedef struct UI_Widget {
     UI_Size semantic_size[UI_AXIS2_COUNT];
 
@@ -61,31 +68,58 @@ typedef struct UI_Widget {
     f32 computed_rel_position[UI_AXIS2_COUNT];  // The computed position relative to the parent position.
     f32 computed_size[UI_AXIS2_COUNT];          // The computed size in pixels
     Rect rect;                                  // The final on-screen rectangular coordinates
+    f32 depth;
+
+        //- Appearance
+    RGBA background;
+    RGBA foreground;
+    RGBA text_colour;
+    SE_String text;
+    b8 centered;
+    UI_Layout layout;
 
         //- Heirarchy
-    UI_Widget *first;
-    UI_Widget *last;
-    UI_Widget *next;
-    UI_Widget *prev;
-    UI_Widget *parent;
+    struct UI_Widget *first;
+    struct UI_Widget *last;
+    struct UI_Widget *next;
+    struct UI_Widget *prev;
+    struct UI_Widget *parent;
+    u32 child_count;
 } UI_Widget;
 se_array_struct(UI_Widget);
 
+#define UI_MAX_WIDGETS 1000
+#define UI_MAX_LAYOUTS 1000
 typedef struct UI_CTX {
         //- Needs for functionality
     SE_Renderer2D renderer;
     SE_Text txt_renderer;
     SE_Input *input; // not owned
     Rect viewport;
+    SE_Texture_Atlas icon_atlas;
 
         //- Widget Information
-    Array(UI_Widget) widgets;
+    UI_Widget *root;
+    UI_Widget *parent;
+    UI_Widget *last;
+    u32 widgets_count;
+    UI_Widget widgets[UI_MAX_WIDGETS];
+    u32 layout_stack_count;
+    UI_Layout layout_stack[UI_MAX_LAYOUTS];
 } UI_CTX;
 
 void ui_init(UI_CTX *ctx, SE_Input *input, Rect viewport);
 void ui_deinit(UI_CTX *ctx);
 void ui_render(UI_CTX *ctx);
+void ui_reset(UI_CTX *ctx);
 
+///
+/// Layout
+///
+
+void ui_push_layout(UI_CTX *ctx, UI_Layout layout);
+void ui_pop_layout(UI_CTX *ctx);
+void ui_layout_horizontal(UI_CTX *ctx, Vec2 anchor);
 ///
 /// Widgets
 ///
