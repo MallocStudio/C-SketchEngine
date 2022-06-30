@@ -64,7 +64,7 @@ void Entities::set_to_default() {
     for (u32 i = 0; i < ENTITIES_MAX; ++i) {
         this->has_mesh           [i] = false;
         this->should_render_mesh [i] = true;
-        this->mesh_index         [i] = -1;
+        this->mesh_index         [i] = -1;  // ! this must be default to -1. We rely on it @se_render_directional_shadow_map()
         this->oriantation        [i] = v3f(0,0,0);
         this->position           [i] = v3f(0,0,0);
         this->scale              [i] = v3f(1,1,1);

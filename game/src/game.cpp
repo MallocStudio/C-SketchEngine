@@ -11,6 +11,7 @@ u32 mesh_guy = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 current_obj_aabb = -1;
+u32 world_aabb_mesh = -1;
 
 SE_Animation animation;
 
@@ -21,7 +22,6 @@ RGBA lit = {255, 255, 255, 255};
 u32 debug_raycast_visual = -1;
 
 u32 main_camera = -1;
-Vec2 ui_light_dir;
 
 #define SAVE_FILE_NAME "test_save_level.level"
 #define SAVE_FILE_ASSETS_NAME "test_save_assets.assets"
@@ -29,12 +29,10 @@ Vec2 ui_light_dir;
 
 App::App(SDL_Window *window) {
     this->init_application(window);
-    ui_light_dir = {-1, -1};
-    vec2_normalise(&ui_light_dir);
-
         //- Start with Engine Mode
     this->init_engine();
     debug_raycast_visual = serender3d_add_mesh_empty(&m_renderer);
+    world_aabb_mesh = serender3d_add_mesh_empty(&m_renderer);
 }
 
 App::~App() {
@@ -96,7 +94,7 @@ void App::init_engine() {
     // mesh_guy = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
 
     mesh_skeleton = serender3d_add_mesh_empty(&m_renderer);
-    semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, false);
+    semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
     // semesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
 
     animation.current_frame = 0;
@@ -210,11 +208,8 @@ void App::update(f32 delta_time) {
     if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
         m_level.save(SAVE_FILE_NAME);
     }
-        // light dir
-    seui_slider2d_at(ctx, v2f(128 + 64, 32), 32, &ui_light_dir);
-    m_renderer.light_directional.direction.x = ui_light_dir.x;
-    m_renderer.light_directional.direction.x = ui_light_dir.y;
-    m_renderer.light_directional.direction.z = 0;
+
+    seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
 }
 
 void App::render() {
@@ -232,7 +227,11 @@ void App::render() {
     secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
 
         //- Shadows
-    se_render_directional_shadow_map(&m_renderer,     m_level.entities.transform, m_level.entities.count);
+    {
+        AABB3D world_aabb = aabb3d_calculate_from_array(m_level.entities.aabb_transformed, m_level.entities.count);
+        semesh_generate_gizmos_aabb(m_renderer.meshes[world_aabb_mesh], world_aabb.min, world_aabb.max, 2);
+        se_render_directional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count, world_aabb);
+    }
     se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.transform, m_level.entities.count);
 
         //- Clear Previous Frame
@@ -255,6 +254,7 @@ void App::render() {
     }
         // skeleton mesh
     serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
+    serender_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());
 
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);

@@ -1183,6 +1183,20 @@ AABB3D aabb3d_one() {
     return aabb3d_create(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
 }
 
+AABB3D aabb3d_calculate_from_array(AABB3D *array, u32 array_count) {
+    AABB3D result = {0};
+    for (u32 i = 0; i < array_count; ++i) {
+        if (array[i].min.x < result.min.x) result.min.x = array[i].min.x;
+        if (array[i].min.y < result.min.y) result.min.y = array[i].min.y;
+        if (array[i].min.z < result.min.z) result.min.z = array[i].min.z;
+
+        if (array[i].max.x > result.max.x) result.max.x = array[i].max.x;
+        if (array[i].max.y > result.max.y) result.max.y = array[i].max.y;
+        if (array[i].max.z > result.max.z) result.max.z = array[i].max.z;
+    }
+    return result;
+}
+
 /// ----
 /// RECT
 /// ----

@@ -69,15 +69,22 @@ typedef struct UI_Widget {
     UI_Widget *prev;
     UI_Widget *parent;
 } UI_Widget;
-
-typedef struct UI_Layout {
-} UI_Layout;
-se_array_struct(UI_Layout);
+se_array_struct(UI_Widget);
 
 typedef struct UI_CTX {
-    Array(UI_Layout) layouts;
+        //- Needs for functionality
+    SE_Renderer2D renderer;
+    SE_Text txt_renderer;
+    SE_Input *input; // not owned
+    Rect viewport;
 
+        //- Widget Information
+    Array(UI_Widget) widgets;
 } UI_CTX;
+
+void ui_init(UI_CTX *ctx, SE_Input *input, Rect viewport);
+void ui_deinit(UI_CTX *ctx);
+void ui_render(UI_CTX *ctx);
 
 ///
 /// Widgets

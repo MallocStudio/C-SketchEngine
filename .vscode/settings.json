@@ -57,6 +57,8 @@
         "xlocale": "cpp",
         "xlocnum": "cpp",
         "streambuf": "cpp",
-        "memory": "c"
+        "memory": "c",
+        "atomic": "cpp",
+        "xlocinfo": "cpp"
     }
 }

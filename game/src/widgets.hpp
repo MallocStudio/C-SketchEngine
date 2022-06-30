@@ -15,4 +15,5 @@ public:
 
 private:
     i32 panel_index = -1;
+    Vec2 light_dir = {0, 1};
 };

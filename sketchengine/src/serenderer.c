@@ -1831,30 +1831,10 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
     semesh_deinit(&outline_mesh);
 }
 
-void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count) {
+void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 transforms_count, AABB3D world_aabb) {
     se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
         // -- shadow mapping
     /* calculate the matrices */
-#if 1
-    // manually
-    // f32 left   =-10 + 20 * 0;
-    // f32 right  =-10 + 20 * 1;
-    // f32 bottom =-10 + 20 * 0;
-    // f32 top    =-10 + 20 * 1;
-    // f32 near   =-10 + 20 * 0;
-    // f32 far    =-10 + 20 * 1;
-    f32 left   =-10 + 20 * 0;
-    f32 right  =-10 + 20 * 1;
-    f32 bottom =-10 + 20 * 0;
-    f32 top    =-10 + 20 * 1;
-    f32 near   =-10 + 20 * 0;
-    f32 far    =-10 + 20 * 1;
-    Vec3 light_pos = v3f(0, 0, 0);
-
-    // ! the following is a bit messed up. the problem is that we calculate world aabb fine, but when light
-    // ! rotation changes, we rotate that aabb and it does not cover everything
-#else
-    // automatically
     f32 left   = world_aabb.min.x;
     f32 right  = world_aabb.max.x;
     f32 bottom = world_aabb.min.y;
@@ -1862,12 +1842,12 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms,
     f32 near   = world_aabb.min.z;
     f32 far    = world_aabb.max.z;
     Vec3 light_pos = (Vec3) {
-        -light_direction.x,
-        -light_direction.y,
+        -renderer->light_directional.direction.x,
+        -renderer->light_directional.direction.y,
         0,
     };
     light_pos = vec3_mul_scalar(light_pos, (far + near) * 0.5f);
-#endif
+
     Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
     Vec3 light_target = vec3_add(renderer->light_directional.direction, light_pos);
     Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
@@ -1951,7 +1931,9 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms,
         seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
 
         for (u32 i = 0; i < transforms_count; ++i) {
-            SE_Mesh *mesh = renderer->meshes[i];
+            u32 mesh_index = mesh_indices[i];
+            if (mesh_index >= renderer->meshes_count) continue; // this mesh does not exist
+            SE_Mesh *mesh = renderer->meshes[mesh_index];
             Mat4 model_mat = transforms[i];
 
             seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "model", model_mat);

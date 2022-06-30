@@ -480,6 +480,8 @@ AABB3D aabb3d_create(f32 xmin, f32 ymin, f32 zmin, f32 xmax, f32 ymax, f32 zmax)
 
 AABB3D aabb3d_one();
 
+AABB3D aabb3d_calculate_from_array(AABB3D *array, u32 array_count);
+
 /// ----
 /// RECT
 /// ----

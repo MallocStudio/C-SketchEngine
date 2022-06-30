@@ -5,7 +5,7 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
     if (seui_panel(ctx, "entity data")) {
         panel_index = ctx->current_panel->index;
         ctx->current_panel->docked_dir = 1; // left
-
+            //- Entity
         if (this->entity >= 0) {
                 // entity variables to display
             SE_String *name = nullptr;
@@ -63,6 +63,28 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
                 rot->y = SEMATH_DEG2RAD(rot->y);
                 rot->z = SEMATH_DEG2RAD(rot->z);
             }
+        } else {
+            {   //- Entity index
+                SE_String entity_index_string;
+                sestring_init_i32(&entity_index_string, entity);
+
+                seui_panel_row(ctx, 32, 2);
+                seui_label(ctx, "entity index:");
+
+                seui_selector(ctx, &entity, -1, entities->count-1);
+
+                sestring_deinit(&entity_index_string);
+            }
+        }
+
+            //- Light Data
+        {
+            seui_panel_row(ctx, 64, 2);
+            seui_label(ctx, "light dir:");
+            seui_slider2d(ctx, &light_dir);
+            mesh_renderer->light_directional.direction.x = light_dir.x;
+            mesh_renderer->light_directional.direction.y = light_dir.y;
+            mesh_renderer->light_directional.direction.z = 0;
         }
     }
 }
