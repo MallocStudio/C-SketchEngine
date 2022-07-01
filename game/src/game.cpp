@@ -168,6 +168,7 @@ void App::update(f32 delta_time) {
     secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
     seinput_update(&m_input, m_cameras[main_camera].projection, m_window);
     seui_resize(ctx, window_w, window_h);
+    ui_resize(ctx2, {0, 0, (f32)window_w, (f32)window_h});
 
         //- 3D Movement
     secamera3d_input(&m_cameras[main_camera], &m_input);
@@ -216,10 +217,20 @@ void App::update(f32 delta_time) {
     seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
 
     ui_reset(ctx2);
-    ui_layout_horizontal(ctx2, v2f(100, 100));
-    ui_button(ctx2, "test1");
-    ui_button(ctx2, "test2");
-    ui_pop_layout(ctx2);
+    ui_panel(ctx2);
+
+    if (ui_button(ctx2, "test1").clicked) {
+        printf("test1 pressed\n");
+    }
+    if (ui_button(ctx2, "test2").pressed) {
+        printf("test2 hovering\n");
+    }
+    // ui_button(ctx2, "test3");
+    // ui_button(ctx2, "test4");
+    ui_label(ctx2, "label");
+    ui_label(ctx2, "label2");
+
+    // ui_pop_layout(ctx2);
 }
 
 void App::render() {

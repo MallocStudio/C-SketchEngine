@@ -57,12 +57,46 @@ typedef enum UI_AXIS2 {
 typedef struct UI_Layout {
     b8 advance_x;
     b8 advance_y;
-    Vec2 anchor;
-    Vec2 min_size;
 } UI_Layout;
 
+typedef enum UI_WIDGET_FLAGS {
+    UI_WIDGET_FLAG_NULL             = (1 << 0),
+    UI_WIDGET_FLAG_CLICKABLE        = (1 << 1),
+    UI_WIDGET_FLAG_VIEW_SCROLL      = (1 << 2),
+    UI_WIDGET_FLAG_DRAW_TEXT        = (1 << 3),
+    UI_WIDGET_FLAG_DRAW_BORDER      = (1 << 4),
+    UI_WIDGET_FLAG_DRAW_BACKGROUND  = (1 << 5),
+    UI_WIDGET_FLAG_DRAW_DROP_SHADOW = (1 << 6),
+    UI_WIDGET_FLAG_HOT_ANIMATION    = (1 << 7),
+    UI_WIDGET_FLAG_ACTIVE_ANIMATION = (1 << 8),
+} UI_WIDGET_FLAGS;
+
+typedef struct UI_Theme {
+    RGBA colour_bg;
+    RGBA colour_button_normal;
+    RGBA colour_button_highlight;
+    RGBA colour_button_dim;
+    RGBA colour_outline;
+    Vec3 colour_text;
+    b8   alignment_centered;
+} UI_Theme;
+
+typedef struct UI_Interaction {
+    struct UI_Widget *widget; // not owned
+    Vec2 mouse;
+    Vec2 drag_delta;
+    b8 dragging;
+    b8 clicked;     // mouse button just went up
+    b8 pressed;     // mouse button is down
+    b8 hovering;
+} UI_Interaction;
+
+#define UI_WIDGET_MAX_CHILDREN 1000
 typedef struct UI_Widget {
+        //- Per-frame info provided by builders
+    UI_WIDGET_FLAGS flags;
     UI_Size semantic_size[UI_AXIS2_COUNT];
+    SE_String text;
 
         //- Recomputed every frame
     f32 computed_rel_position[UI_AXIS2_COUNT];  // The computed position relative to the parent position.
@@ -70,21 +104,18 @@ typedef struct UI_Widget {
     Rect rect;                                  // The final on-screen rectangular coordinates
     f32 depth;
 
+        //- Persistent data
+    f32 hot_transition;
+    f32 active_transition;
+
         //- Appearance
-    RGBA background;
-    RGBA foreground;
-    RGBA text_colour;
-    SE_String text;
-    b8 centered;
     UI_Layout layout;
+    UI_Interaction recorded_interaction;
 
         //- Heirarchy
-    struct UI_Widget *first;
-    struct UI_Widget *last;
-    struct UI_Widget *next;
-    struct UI_Widget *prev;
     struct UI_Widget *parent;
     u32 child_count;
+    struct UI_Widget *children[UI_WIDGET_MAX_CHILDREN];
 } UI_Widget;
 se_array_struct(UI_Widget);
 
@@ -100,18 +131,25 @@ typedef struct UI_CTX {
 
         //- Widget Information
     UI_Widget *root;
-    UI_Widget *parent;
     UI_Widget *last;
+
+    u32 parent_stack_count;
+    UI_Widget *parent_stack[UI_MAX_WIDGETS];
+
     u32 widgets_count;
     UI_Widget widgets[UI_MAX_WIDGETS];
+
     u32 layout_stack_count;
     UI_Layout layout_stack[UI_MAX_LAYOUTS];
+
+    UI_Theme theme;
 } UI_CTX;
 
 void ui_init(UI_CTX *ctx, SE_Input *input, Rect viewport);
 void ui_deinit(UI_CTX *ctx);
 void ui_render(UI_CTX *ctx);
 void ui_reset(UI_CTX *ctx);
+void ui_resize(UI_CTX *ctx, Rect viewport);
 
 ///
 /// Layout
@@ -120,15 +158,18 @@ void ui_reset(UI_CTX *ctx);
 void ui_push_layout(UI_CTX *ctx, UI_Layout layout);
 void ui_pop_layout(UI_CTX *ctx);
 void ui_layout_horizontal(UI_CTX *ctx, Vec2 anchor);
+
+UI_Theme ui_default_theme();
+
 ///
 /// Widgets
 ///
 
-b8   ui_button(UI_CTX *ctx, const char *string);
-b8   ui_button_at(UI_CTX *ctx, const char *string, Rect rect);
+UI_Interaction ui_button(UI_CTX *ctx, const char *string);
+UI_Interaction ui_button_at(UI_CTX *ctx, const char *string, Rect rect);
 
-b8   ui_button_icon(UI_CTX *ctx, const char *string, Vec2 icon);
-b8   ui_button_icon_at(UI_CTX *ctx, const char *string, Vec2 icon, Rect rect);
+UI_Interaction ui_button_icon(UI_CTX *ctx, const char *string, Vec2 icon);
+UI_Interaction ui_button_icon_at(UI_CTX *ctx, const char *string, Vec2 icon, Rect rect);
 
 void ui_checkbox(UI_CTX *ctx, b8 *value);
 void ui_checkbox_at(UI_CTX *ctx, b8 *value, Rect rect);
@@ -141,6 +182,9 @@ void ui_label_at(UI_CTX *ctx, const char *string, Rect rect);
 
 void ui_text_input(UI_CTX *ctx, SE_String *text);
 void ui_text_input_at(UI_CTX *ctx, SE_String *text, Rect rect);
+
+void ui_panel(UI_CTX *ctx);
+void ui_empty(UI_CTX *ctx, Rect rect);
 
 void ui_panel_begin(UI_CTX *ctx);
 void ui_panel_end(UI_CTX *ctx);

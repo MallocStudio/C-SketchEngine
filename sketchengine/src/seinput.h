@@ -36,6 +36,12 @@ typedef struct SE_Input {
     // whethered we want to let others know that we've handled the mouse input
     b8 is_mouse_left_handled;
     b8 is_mouse_right_handled;
+
+        //- Mouse Data
+    b8 is_left_mouse_clicked;   // whether the user just released the mouse button
+    b8 is_left_mouse_down;      // whether the user is holding the left mouse button down
+    b8 is_left_mouse_just_pressed; // did the user just press down the mouse button
+
     // warp mouse around window
     SDL_Window *window; // not owned
     b8 is_mouse_fps_activated;

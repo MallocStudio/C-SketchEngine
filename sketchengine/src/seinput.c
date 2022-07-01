@@ -64,6 +64,16 @@
         input->was_mouse_right_down = input->is_mouse_right_down;
         // update for this frame
         get_mouse_pos(&input->is_mouse_left_down, &input->is_mouse_right_down);
+
+            //- New Mouse Input
+        input->is_left_mouse_down = input->is_mouse_left_down;
+
+        input->is_left_mouse_just_pressed = (input->is_mouse_left_handled == false
+            && input->is_left_mouse_down
+            && !input->was_mouse_left_down);
+
+        input->is_left_mouse_clicked = (!input->is_left_mouse_down
+                                        && input->was_mouse_left_down);
     }
 
     { // reset
@@ -123,9 +133,7 @@
 }
 
  b8 seinput_is_mouse_left_pressed (const SE_Input *input) {
-    return (input->is_mouse_left_handled == false
-            && input->is_mouse_left_down
-            && !input->was_mouse_left_down);
+    return input->is_left_mouse_clicked;
 }
 
  b8 seinput_is_mouse_left_released (const SE_Input *input) {
