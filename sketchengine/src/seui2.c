@@ -54,6 +54,7 @@ static void render_widget(UI_CTX *ctx, UI_Widget *widget) {
     }
 
     {   //- RENDERING
+        Rect rect = widget->rect;
             // Background
         if (widget->flags & UI_WIDGET_FLAG_DRAW_BACKGROUND) {
             serender2d_add_rect(&ctx->renderer, rect, bg_depth, colour_bg);
@@ -79,61 +80,90 @@ static void render_widget(UI_CTX *ctx, UI_Widget *widget) {
     }
 }
 
-static void calculate_widget_rect(UI_CTX *ctx, UI_Widget *widget, u32 child_iteration) {
+static void calculate_widget_rect_static(UI_CTX *ctx, UI_Widget *widget) {
     UI_Layout layout = widget->layout;
     if (widget->semantic_size[0].type == UI_SIZE_TYPE_NULL) {
         // widget's rect remains the same as before
     }
-        // X axis
+
     if (widget->semantic_size[0].type == UI_SIZE_TYPE_PIXELS ||
         widget->semantic_size[0].type == UI_SIZE_TYPE_TEXT) {
         f32 x;
         f32 w = widget->semantic_size[0].value;
+
         if (widget->parent) {
-            layout = widget->parent->layout;
-            x = child_iteration * layout.advance_x * w + layout.anchor.x;
+            widget->computed_rel_position.x = widget->parent->rect.x + widget->parent->layout.cursor.x;
         } else {
-            x = layout.anchor.x;
+            widget->computed_rel_position.x = 0;
         }
+
+        x = widget->computed_rel_position.x;
 
         widget->rect.x = x;
         widget->rect.w = w;
-    } else
-    if (widget->semantic_size[0].type == UI_SIZE_TYPE_PRECENTAGE_OF_PARENT) {
-
-    } else
-    if (widget->semantic_size[0].type == UI_SIZE_TYPE_CHILDREN_SUM) {
     }
-        // Y axis
+
     if (widget->semantic_size[1].type == UI_SIZE_TYPE_PIXELS ||
         widget->semantic_size[1].type == UI_SIZE_TYPE_TEXT) {
         f32 y;
         f32 h = widget->semantic_size[1].value;
+
         if (widget->parent) {
-            layout = widget->parent->layout;
-            y = child_iteration * layout.advance_y * h + layout.anchor.y;
+            widget->computed_rel_position.y = widget->parent->rect.y + widget->parent->layout.cursor.y;
         } else {
-            y = layout.anchor.y;
+            widget->computed_rel_position.y = 0;
         }
+
+        y = widget->computed_rel_position.y;
 
         widget->rect.y = y;
         widget->rect.h = h;
-    } else
-    if (widget->semantic_size[1].type == UI_SIZE_TYPE_PRECENTAGE_OF_PARENT) {
+    }
 
-    } else
-    if (widget->semantic_size[1].type == UI_SIZE_TYPE_CHILDREN_SUM) {
+        //- Advance layout cursor
+    if (widget->parent) {
+        widget->parent->layout.cursor.x += widget->rect.x * layout.advance_x;
+        widget->parent->layout.cursor.y += widget->rect.y * layout.advance_y;
+    }
+
+
+}
+
+static void calculate_widget_rect_percentage_of_parent(UI_CTX *ctx, UI_Widget *widget) {
+    UI_Layout layout = widget->layout;
+
+    if (widget->parent) { // we must have a parent
+        if (widget->semantic_size[0].type == UI_SIZE_TYPE_PRECENTAGE_OF_PARENT &&
+            widget->parent->semantic_size[0].type != UI_SIZE_TYPE_CHILDREN_SUM) {
+
+        }
+
+        if (widget->semantic_size[1].type == UI_SIZE_TYPE_PRECENTAGE_OF_PARENT &&
+            widget->parent->semantic_size[1].type != UI_SIZE_TYPE_CHILDREN_SUM) {
+
+        }
     }
 
     for (u32 i = 0; i < widget->child_count; ++i) {
-        render_widget(ctx, widget->children[i]);
-        calculate_widget_rect(ctx, widget->children[i], i);
+        calculate_widget_rect_percentage_of_parent(ctx, widget->children[i]);
     }
 }
 
+static void calculate_widget_rect_sum_of_children(UI_CTX *ctx, UI_Widget *widget) {
+    UI_Layout layout = widget->layout;
+        //- CHILDREN SUM
+    if (widget->semantic_size[0].type == UI_SIZE_TYPE_CHILDREN_SUM) {
+    }
+    if (widget->semantic_size[1].type == UI_SIZE_TYPE_CHILDREN_SUM) {
+    }
+}
+
+
 void ui_render(UI_CTX *ctx) {
     if (ctx->root) {
-        calculate_widget_rect(ctx, ctx->root, 0);
+        calculate_widget_rect_static(ctx, ctx->root);
+        calculate_widget_rect_percentage_of_parent(ctx, ctx->root);
+        calculate_widget_rect_sum_of_children(ctx, ctx->root);
         render_widget(ctx, ctx->root);
     }
 
@@ -343,6 +373,6 @@ void ui_panel(UI_CTX *ctx) {
 }
 
 void ui_empty(UI_CTX *ctx, Rect rect) {
-    UI_Widget *widget = add_widget(ctx, NULL);
+    UI_Widget *widget = add_widget(ctx, UI_WIDGET_FLAG_NULL);
     widget->rect = rect;
 }

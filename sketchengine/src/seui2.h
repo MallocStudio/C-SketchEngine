@@ -57,6 +57,7 @@ typedef enum UI_AXIS2 {
 typedef struct UI_Layout {
     b8 advance_x;
     b8 advance_y;
+    Vec2 cursor;
 } UI_Layout;
 
 typedef enum UI_WIDGET_FLAGS {
@@ -99,8 +100,8 @@ typedef struct UI_Widget {
     SE_String text;
 
         //- Recomputed every frame
-    f32 computed_rel_position[UI_AXIS2_COUNT];  // The computed position relative to the parent position.
-    f32 computed_size[UI_AXIS2_COUNT];          // The computed size in pixels
+    Vec2 computed_rel_position;  // The computed position relative to the parent position.
+    Vec2 computed_size;          // The computed size in pixels
     Rect rect;                                  // The final on-screen rectangular coordinates
     f32 depth;
 
