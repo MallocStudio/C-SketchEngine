@@ -81,7 +81,6 @@ static void render_widget(UI_CTX *ctx, UI_Widget *widget) {
 }
 
 static void calculate_widget_rect_static(UI_CTX *ctx, UI_Widget *widget) {
-    UI_Layout layout = widget->layout;
     if (widget->semantic_size[0].type == UI_SIZE_TYPE_NULL) {
         // widget's rect remains the same as before
     }
@@ -94,7 +93,7 @@ static void calculate_widget_rect_static(UI_CTX *ctx, UI_Widget *widget) {
         if (widget->parent) {
             widget->computed_rel_position.x = widget->parent->rect.x + widget->parent->layout.cursor.x;
         } else {
-            widget->computed_rel_position.x = 0;
+            widget->computed_rel_position.x = 100;
         }
 
         x = widget->computed_rel_position.x;
@@ -109,9 +108,9 @@ static void calculate_widget_rect_static(UI_CTX *ctx, UI_Widget *widget) {
         f32 h = widget->semantic_size[1].value;
 
         if (widget->parent) {
-            widget->computed_rel_position.y = widget->parent->rect.y + widget->parent->layout.cursor.y;
+            widget->computed_rel_position.y = widget->parent->rect.y + widget->parent->rect.h + widget->parent->layout.cursor.y;
         } else {
-            widget->computed_rel_position.y = 0;
+            widget->computed_rel_position.y = 100;
         }
 
         y = widget->computed_rel_position.y;
@@ -122,11 +121,13 @@ static void calculate_widget_rect_static(UI_CTX *ctx, UI_Widget *widget) {
 
         //- Advance layout cursor
     if (widget->parent) {
-        widget->parent->layout.cursor.x += widget->rect.x * layout.advance_x;
-        widget->parent->layout.cursor.y += widget->rect.y * layout.advance_y;
+        widget->parent->layout.cursor.x += widget->rect.w * widget->parent->layout.advance_x;
+        widget->parent->layout.cursor.y += widget->rect.h * widget->parent->layout.advance_y;
     }
 
-
+    for (u32 i = 0; i < widget->child_count; ++i) {
+        calculate_widget_rect_static(ctx, widget->children[i]);
+    }
 }
 
 static void calculate_widget_rect_percentage_of_parent(UI_CTX *ctx, UI_Widget *widget) {
@@ -364,12 +365,12 @@ void ui_panel(UI_CTX *ctx) {
     widget->semantic_size[1].value = 400;
 
         //- Panel Child Nodes
-    ui_push_layout(ctx, get_layout_horizontal());
-    UI_Interaction drag_button = ui_button(ctx, "");
-    if (drag_button.dragging) {
+    // ui_push_layout(ctx, get_layout_horizontal());
+    // UI_Interaction drag_button = ui_button(ctx, "");
+    // if (drag_button.dragging) {
 
-    }
-    ui_pop_layout(ctx);
+    // }
+    // ui_pop_layout(ctx);
 }
 
 void ui_empty(UI_CTX *ctx, Rect rect) {
