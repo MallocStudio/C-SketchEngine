@@ -3,7 +3,6 @@
 #include <fstream>  // used for writing save files
 
 SE_UI *ctx;
-UI_CTX *ctx2;
 
     //@temp a temporary way of loading required meshes once at init_application() time
 u32 mesh_soulspear = -1;
@@ -38,7 +37,6 @@ App::App(SDL_Window *window) {
 
 App::~App() {
     free(ctx);
-    free(ctx2);
     serender3d_deinit(&m_renderer);
     se_gizmo_renderer_deinit(&m_gizmo_renderer);
 }
@@ -56,8 +54,6 @@ void App::init_application(SDL_Window *window) {
         //- UI
     ctx = NEW(SE_UI);
     seui_init(ctx, &m_input, viewport, -1000, 1000);
-    ctx2 = NEW(UI_CTX);
-    ui_init(ctx2, &m_input, viewport);
 
         // entity widget
     // m_selected_entity = -1; // no entity has been selected
@@ -168,7 +164,6 @@ void App::update(f32 delta_time) {
     secamera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
     seinput_update(&m_input, m_cameras[main_camera].projection, m_window);
     seui_resize(ctx, window_w, window_h);
-    ui_resize(ctx2, {0, 0, (f32)window_w, (f32)window_h});
 
         //- 3D Movement
     secamera3d_input(&m_cameras[main_camera], &m_input);
@@ -215,22 +210,6 @@ void App::update(f32 delta_time) {
     }
 
     seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
-
-    ui_reset(ctx2);
-    ui_panel(ctx2);
-
-    if (ui_button(ctx2, "test1").clicked) {
-        printf("test1 pressed\n");
-    }
-    if (ui_button(ctx2, "test2").pressed) {
-        printf("test2 hovering\n");
-    }
-    // ui_button(ctx2, "test3");
-    // ui_button(ctx2, "test4");
-    ui_label(ctx2, "label");
-    ui_label(ctx2, "label2");
-
-    // ui_pop_layout(ctx2);
 }
 
 void App::render() {
@@ -301,7 +280,6 @@ void App::render() {
     seui_render(ctx);
 
     glClear(GL_DEPTH_BUFFER_BIT);
-    ui_render(ctx2);
 }
 
 i32 App::raycast_to_select_entity() {
