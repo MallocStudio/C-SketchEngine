@@ -186,6 +186,7 @@ void semesh_generate_static_skeleton(SE_Mesh *mesh, const SE_Skeleton *skeleton)
 
 typedef struct SE_Light {
     Vec3 direction;
+    Vec3 calculated_position; // calculated during the rendering of the shadow map
     RGB ambient;
     RGB diffuse;
     f32 intensity;

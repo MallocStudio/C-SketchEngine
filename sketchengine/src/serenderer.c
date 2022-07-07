@@ -1876,6 +1876,7 @@ static void se_render_directional_shadow_map_for_mesh
 
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 transforms_count, AABB3D world_aabb) {
     se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
+    SE_Light *light = &renderer->light_directional;
         // -- shadow mapping
     /* calculate the matrices */
     f32 left   = world_aabb.min.x;
@@ -1884,16 +1885,23 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
     f32 top    = world_aabb.max.y;
     f32 near   = world_aabb.min.z;
     f32 far    = world_aabb.max.z;
-    Vec3 light_pos = (Vec3) {
-        -renderer->light_directional.direction.x,
-        -renderer->light_directional.direction.y,
-        0,
-    };
-    light_pos = vec3_mul_scalar(light_pos, (far + near) * 0.5f);
+    // Vec3 light_pos = v3f(10,0,10);
+    // light->calculated_position = v3f(
+    //     -light->direction.x,
+    //     -light->direction.y,
+    //     // -renderer->light_directional.direction.z,
+    //     0
+    // );
+    // light->calculated_position = vec3_mul_scalar(light->calculated_position, (far) * 0.5f);
+    light->calculated_position = v3f(
+        right * 0.99f * -light->direction.x,
+        top   * 0.99f * -light->direction.y,
+        far   * 0.99f * -light->direction.z
+    );
 
     Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
-    Vec3 light_target = vec3_add(renderer->light_directional.direction, light_pos);
-    Mat4 light_view = mat4_lookat(light_pos, light_target, vec3_up());
+    Vec3 light_target = vec3_add(renderer->light_directional.direction, light->calculated_position);
+    Mat4 light_view = mat4_lookat(light->calculated_position, light_target, vec3_up());
     Mat4 light_space_mat = mat4_mul(light_view, light_proj);
 
     { // -- visualise the orhto projection

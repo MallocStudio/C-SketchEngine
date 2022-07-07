@@ -10,6 +10,7 @@ u32 mesh_plane = -1;
 u32 mesh_guy = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
+u32 mesh_light_pos_gizmos = -1;
 u32 current_obj_aabb = -1;
 u32 world_aabb_mesh = -1;
 
@@ -106,10 +107,13 @@ void App::init_engine() {
     mesh_gizmos_translate = se_gizmo_add_coordniates(&m_gizmo_renderer);
     m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
 
+    mesh_light_pos_gizmos = se_gizmo_add_coordniates(&m_gizmo_renderer);
+    m_gizmo_renderer.shapes[mesh_light_pos_gizmos].base_colour = lit;
+
     u32 point_light_1 = serender3d_add_point_light(&m_renderer);
     current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
 
-#if 1 // manually create entities
+#if 0 // manually create entities
     // @temp add entities, Change this to a function that says: generate_default_level
     u32 soulspear = m_level.add_entity();
     m_level.entities.mesh_index[soulspear] = mesh_soulspear;
@@ -271,6 +275,13 @@ void App::render() {
         transform = mat4_mul(transform, mat4_translation(pos));
 
         se_gizmo_render_index(&m_gizmo_renderer, mesh_gizmos_translate, transform);
+    }
+        // @debug directional light pos
+    {
+        Vec3 pos = m_renderer.light_directional.calculated_position;
+        Mat4 transform = mat4_identity();
+        transform = mat4_mul(transform, mat4_translation(pos));
+        se_gizmo_render_index(&m_gizmo_renderer, mesh_light_pos_gizmos, transform);
     }
 
     serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
