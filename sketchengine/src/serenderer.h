@@ -103,14 +103,14 @@ typedef struct SE_Skeleton {
     u32 current_animation;
     SE_Skeletal_Animation *animations[SE_SKELETON_MAX_ANIMATIONS];
 
-        // the pose sent to GPU, call seskeleton_calculate_pose to update this pose
+        // the pose sent to GPU, call se_skeleton_calculate_pose to update this pose
     Mat4 final_pose[SE_SKELETON_BONES_CAPACITY];
 } SE_Skeleton;
 
     /// We do not have an animator class, instead use this procedure.
     /// Based on the given skeleton, skeleton->current_animation, and animation_time, we update the pose of the skeleton.
     /// The result is stored in final_bone_transforms and final_bone_transforms_count.
-void seskeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
+void se_skeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
 
 //// MATERIAL ////
 
@@ -126,7 +126,7 @@ typedef struct SE_Material {
 } SE_Material;
 
 /// Deallocates memory and frees resources (textures ...)
-void sematerial_deinit(SE_Material *material);
+void se_material_deinit(SE_Material *material);
 
 //// MESH ////
 
@@ -299,8 +299,8 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
 //// UTILITIES ////
 
 /// calculate the bounding box of a collection of vertices
-AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count);
-AABB3D semesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count);
+AABB3D se_mesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count);
+AABB3D se_mesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count);
 /// calculate the bounding box of a collection of bounding boxes
 AABB3D aabb3d_calc(const AABB3D *aabb, u32 aabb_count);
 AABB3D aabb3d_from_points(Vec3 point1, Vec3 point2, Mat4 transform);

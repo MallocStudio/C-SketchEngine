@@ -175,7 +175,7 @@ void App::update(f32 delta_time) {
         //- Entities
     m_level.entities.update(&m_renderer, delta_time);
     se_animation_update(&animation, delta_time);
-    seskeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
+    se_skeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
 
         // select entities
     if (se_input_is_mouse_left_released(&m_input) && se_input_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {

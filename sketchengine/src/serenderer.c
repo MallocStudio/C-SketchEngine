@@ -38,7 +38,7 @@ void debug_print_animation(const SE_Skeletal_Animation *anim, const SE_Bone_Anim
 /// Materials
 ///
 
-void sematerial_deinit(SE_Material *material) {
+void se_material_deinit(SE_Material *material) {
     if (material->texture_diffuse.loaded)  se_texture_unload(&material->texture_diffuse);
     if (material->texture_specular.loaded) se_texture_unload(&material->texture_specular);
     if (material->texture_normal.loaded)   se_texture_unload(&material->texture_normal);
@@ -383,8 +383,8 @@ static void semesh_generate_skinned // same as se_mesh_generate but for skinned 
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
-    // mesh->aabb = (AABB3D) {0}; //semesh_calc_aabb(vertices, vert_count);
-    mesh->aabb = semesh_calc_aabb_skinned(vertices, vert_count);
+    // mesh->aabb = (AABB3D) {0}; //se_mesh_calc_aabb(vertices, vert_count);
+    mesh->aabb = se_mesh_calc_aabb_skinned(vertices, vert_count);
 
     // unselect
     glBindVertexArray(0);
@@ -668,7 +668,7 @@ void se_mesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices
 
     mesh->vert_count = index_count;
     mesh->indexed = true;
-    mesh->aabb = semesh_calc_aabb(vertices, vert_count);
+    mesh->aabb = se_mesh_calc_aabb(vertices, vert_count);
 
     // unselect
     glBindVertexArray(0);
@@ -678,7 +678,7 @@ void se_mesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices
 
 //// RENDER 3D ////
 
-AABB3D semesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count) {
+AABB3D se_mesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count) {
     f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
 
     for (u32 i = 0; i < verts_count; ++i) {
@@ -696,7 +696,7 @@ AABB3D semesh_calc_aabb_skinned(const SE_Skinned_Vertex *verts, u32 verts_count)
     return result;
 }
 
-AABB3D semesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count) {
+AABB3D se_mesh_calc_aabb(const SE_Vertex3D *verts, u32 verts_count) {
     f32 xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
 
     for (u32 i = 0; i < verts_count; ++i) {
@@ -778,7 +778,7 @@ AABB3D aabb3d_from_points(Vec3 point1, Vec3 point2, Mat4 transform) {
     dummy_verts[5].position = (Vec3) {points[5].x, points[5].y, points[5].z};
     dummy_verts[6].position = (Vec3) {points[6].x, points[6].y, points[6].z};
     dummy_verts[7].position = (Vec3) {points[7].x, points[7].y, points[7].z};
-    return semesh_calc_aabb(dummy_verts, 8);
+    return se_mesh_calc_aabb(dummy_verts, 8);
 }
 
 AABB3D aabb3d_calc(const AABB3D *aabbs, u32 aabb_count) {
@@ -1355,7 +1355,7 @@ static void recursive_calc_skeleton_pose_without_animation(SE_Skeleton *skeleton
     }
 }
 
-void seskeleton_calculate_pose
+void se_skeleton_calculate_pose
 (SE_Skeleton *skeleton, f32 frame) {
     se_assert(skeleton->animations_count > 0);
     // if (skeleton->animations_count > 0) {
@@ -2163,7 +2163,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     renderer->shaders_count = 0;
 
     for (u32 i = 0; i < renderer->materials_count; ++i) {
-        sematerial_deinit(renderer->materials[i]);
+        se_material_deinit(renderer->materials[i]);
     }
     renderer->materials_count = 0;
 
