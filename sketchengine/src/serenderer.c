@@ -849,14 +849,18 @@ static void semesh_construct_material // only meant to be called form se_render3
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_diffuse = false;
+        printf("WARNING: ASSIMP unable to load dffiuse: %s\n", aiGetErrorString());
+        aiGetMaterialString
     }
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_specular = false;
+        printf("WARNING: ASSIMP unable to load specular: %s\n", aiGetErrorString());
     }
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_normal = false;
+        printf("WARNING: ASSIMP unable to load normals: %s\n", aiGetErrorString());
     }
 
     /* diffuse */
@@ -1018,7 +1022,9 @@ static void recursive_read_bone_heirarchy
             skeleton->bone_nodes[parent_id].children_count++;
         }
 
+#if 0 // debug
         printf("CREATING A NEW BONE NODE WITH ID %i\n", new_bone_node->bones_info_index);
+#endif
     }
 
     for (u32 i = 0; i < src->mNumChildren; ++i) {
@@ -1592,10 +1598,12 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
         i32 current_mesh = result;
         while (current_mesh >= 0) {
             load_animation(renderer->meshes[current_mesh]->skeleton, scene);
+#if 0 // debug
             printf("-------------------------------\n");
             for (u32 i = 0; i < renderer->meshes[result]->skeleton->animations[0]->animated_bones_count; i++) {
                 printf("%i: parent name: %s\n", i, renderer->meshes[result]->skeleton->animations[0]->animated_bones[i].name.buffer);
             }
+#endif
             current_mesh = renderer->meshes[current_mesh]->next_mesh_index;
         }
     }
