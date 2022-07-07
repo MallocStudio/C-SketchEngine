@@ -52,4 +52,11 @@ private:
     Widget_Entity m_widget_entity;
     u32 m_mesh_assets_count;
     SE_String m_mesh_assets[MAX_NUM_ASSETS]; // @TODO change this to a dynamic array
+
+
+    ///
+    ///     UTILITY FUNCTIONALITIES
+    ///
+    void util_load_meshes_from_disk();
+    void util_create_default_scene();
 };
