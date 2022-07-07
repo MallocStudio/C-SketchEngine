@@ -1,9 +1,0 @@
-#version 330 core
-
-in vec2 _TexCoord;
-uniform sampler2D sprite_texture;
-
-out vec4 FragColour;
-void main () {
-    FragColour = texture(sprite_texture, _TexCoord).rgba;
-}
