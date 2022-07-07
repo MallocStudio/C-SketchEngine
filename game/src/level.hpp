@@ -10,9 +10,6 @@ public:
         /// Clear Entities (free memory) and set their values to default
     void clear();
 
-    bool load(const char *filepath);
-    bool save(const char *filepath);
-
         /// Add an entity to the entities array and return its index.
     u32 add_entity();
 

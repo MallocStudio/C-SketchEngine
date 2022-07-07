@@ -1,7 +1,8 @@
 #include "game.hpp"
-#include <iostream> // used for writing save files
-#include <fstream>  // used for writing save files
-#include "game_util.hpp" // utility functions
+#include <iostream>         // used for writing save files
+#include <fstream>          // used for writing save files
+#include "game_util.hpp"    // utility functions
+#include "assets.hpp"       // saving and loading assets
 
 #define SAVE_FILE_NAME "test_save_level.level"
 #define SAVE_FILE_ASSETS_NAME "test_save_assets.assets"
@@ -133,7 +134,7 @@ void App::update(f32 delta_time) {
 
         // save
     if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
-        m_level.save(SAVE_FILE_NAME);
+        Assets::save_level(&m_level, SAVE_FILE_NAME);
     }
 
     seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
@@ -271,7 +272,7 @@ void App::save() {
     }
 
         //- Level
-    m_level.save(SAVE_FILE_NAME);
+    Assets::save_level(&m_level, SAVE_FILE_NAME);
 }
 
 void App::load() {
@@ -308,5 +309,5 @@ void App::load() {
     // }
 
         //- Level
-    m_level.load(SAVE_FILE_NAME);
+    Assets::load_level(&m_level, SAVE_FILE_NAME);
 }

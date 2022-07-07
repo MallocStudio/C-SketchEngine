@@ -849,18 +849,17 @@ static void semesh_construct_material // only meant to be called form se_render3
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_diffuse = false;
-        printf("WARNING: ASSIMP unable to load dffiuse: %s\n", aiGetErrorString());
-        aiGetMaterialString
+        printf("WARNING: ASSIMP unable to load dffiuse for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
     }
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_specular = false;
-        printf("WARNING: ASSIMP unable to load specular: %s\n", aiGetErrorString());
+        printf("WARNING: ASSIMP unable to load specular for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
     }
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_normal = false;
-        printf("WARNING: ASSIMP unable to load normals: %s\n", aiGetErrorString());
+        printf("WARNING: ASSIMP unable to load normals for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
     }
 
     /* diffuse */
