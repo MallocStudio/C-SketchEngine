@@ -381,10 +381,10 @@ SE_Collision_Data se_phys_check_polygon_polygon(SE_Shape *a, SE_Shape *b) {
             break;
         }
 
-        if (semath_abs(min2 - max1) < min_peneteration) { // update min penetration
+        if (se_math_abs(min2 - max1) < min_peneteration) { // update min penetration
             collided = true;
             normal = vec2_create(current_axis.y, -current_axis.x);
-            depth = semath_abs(min2 - max1);
+            depth = se_math_abs(min2 - max1);
             // world_pos =
         }
     }

@@ -62,10 +62,10 @@ void main () {                                  \n\
 void serender2d_init (SE_Renderer2D *renderer, Rect viewport, f32 min_depth, f32 max_depth) {
     renderer->initialised = true;
         // init shaders
-    // seshader_init_from(&renderer->shader, "shaders/2D.vsd", "shaders/2D.fsd");
-    // seshader_init_from(&renderer->shader_textured, "shaders/2D_Textured.vsd", "shaders/2D_Textured.fsd");
-    seshader_init_from_string(&renderer->shader, vertex_shader_src, fragment_shader_src, "2D Vertex Shader", "2D Fragment Shader");
-    seshader_init_from_string(&renderer->shader_textured, vertex_textured_shader_src, fragment_textured_shader_src, "2D Vertex Textured Shader", "2D Fragment Textured Shader");
+    // se_shader_init_from(&renderer->shader, "shaders/2D.vsd", "shaders/2D.fsd");
+    // se_shader_init_from(&renderer->shader_textured, "shaders/2D_Textured.vsd", "shaders/2D_Textured.fsd");
+    se_shader_init_from_string(&renderer->shader, vertex_shader_src, fragment_shader_src, "2D Vertex Shader", "2D Fragment Shader");
+    se_shader_init_from_string(&renderer->shader_textured, vertex_textured_shader_src, fragment_textured_shader_src, "2D Vertex Textured Shader", "2D Fragment Textured Shader");
         // if shaders are not loaded successfully do not continue
     if (!renderer->shader.loaded_successfully || !renderer->shader_textured.loaded_successfully) {
         renderer->initialised = false;
@@ -105,8 +105,8 @@ void serender2d_deinit (SE_Renderer2D *renderer) {
     if (renderer->initialised) {
         renderer->initialised = false;
             // shaders
-        seshader_deinit(&renderer->shader);
-        seshader_deinit(&renderer->shader_textured);
+        se_shader_deinit(&renderer->shader);
+        se_shader_deinit(&renderer->shader_textured);
             // opengl
         glDeleteBuffers(1,      &renderer->vbo_dynamic);
         glDeleteVertexArrays(1, &renderer->vao_dynamic);
@@ -134,8 +134,8 @@ void serender2d_render (SE_Renderer2D *renderer) {
     glEnable(GL_BLEND);
     // glDisable(GL_DEPTH_TEST);
         /// untextured shapes
-    seshader_use(&renderer->shader);
-    seshader_set_uniform_mat4(&renderer->shader, "view_projection", renderer->view_projection);
+    se_shader_use(&renderer->shader);
+    se_shader_set_uniform_mat4(&renderer->shader, "view_projection", renderer->view_projection);
 
     glBindVertexArray(renderer->vao_dynamic);
     glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo_dynamic);
@@ -201,9 +201,9 @@ void serender2d_render (SE_Renderer2D *renderer) {
         glLineWidth(1);
     }
         // textured shapes
-    seshader_use(&renderer->shader_textured);
-    seshader_set_uniform_mat4(&renderer->shader_textured, "view_projection", renderer->view_projection);
-    seshader_set_uniform_i32(&renderer->shader_textured, "diffuse", 0);
+    se_shader_use(&renderer->shader_textured);
+    se_shader_set_uniform_mat4(&renderer->shader_textured, "view_projection", renderer->view_projection);
+    se_shader_set_uniform_i32(&renderer->shader_textured, "diffuse", 0);
     for (u32 i = 0; i < renderer->shape_textured_rect_count; ++i) {
         SE_Shape_Textured_Rect shape = renderer->shape_textured_rects[i];
         f32 x = shape.rect_shape.rect.x;
@@ -318,13 +318,13 @@ void serender2d_add_circle_outline (SE_Renderer2D *renderer, Vec2 center, f32 ra
         SE_Shape_Line *shape = &renderer->shape_lines[renderer->shape_line_count];
         renderer->shape_line_count++;
 
-        f32 x = semath_cos(angle) * radius + center.x;
-        f32 y = semath_sin(angle) * radius + center.y;
+        f32 x = se_math_cos(angle) * radius + center.x;
+        f32 y = se_math_sin(angle) * radius + center.y;
         shape->pos1 = v2f(x, y);
 
         angle += angle_increment_amount;
-        x = semath_cos(angle) * radius + center.x;
-        y = semath_sin(angle) * radius + center.y;
+        x = se_math_cos(angle) * radius + center.x;
+        y = se_math_sin(angle) * radius + center.y;
         shape->pos2 = v2f(x, y);
 
         shape->depth = depth;
@@ -349,23 +349,23 @@ void serender2d_add_hsv_wheel (SE_Renderer2D *renderer, Vec2 center, f32 inner_r
         colour1.a = 255; colour2.a = 255;
 
             // outer
-        pos1.x = semath_cos(angle) * outer_radius + center.x;
-        pos1.y = semath_sin(angle) * outer_radius + center.y;
+        pos1.x = se_math_cos(angle) * outer_radius + center.x;
+        pos1.y = se_math_sin(angle) * outer_radius + center.y;
         hsv_to_rgba(SEMATH_RAD2DEG(angle), 1, 1, &colour1);
             // inner
-        pos2.x = semath_cos(angle) * inner_radius + center.x;
-        pos2.y = semath_sin(angle) * inner_radius + center.y;
+        pos2.x = se_math_cos(angle) * inner_radius + center.x;
+        pos2.y = se_math_sin(angle) * inner_radius + center.y;
 
         angle += angle_increment_amount;
         if (SEMATH_RAD2DEG(angle) < 0 || SEMATH_RAD2DEG(angle) > 359) angle = 0;
 
             // outer
-        pos3.x = semath_cos(angle) * outer_radius + center.x;
-        pos3.y = semath_sin(angle) * outer_radius + center.y;
+        pos3.x = se_math_cos(angle) * outer_radius + center.x;
+        pos3.y = se_math_sin(angle) * outer_radius + center.y;
         hsv_to_rgba(SEMATH_RAD2DEG(angle), 1, 1, &colour2);
             // inner
-        pos4.x = semath_cos(angle) * inner_radius + center.x;
-        pos4.y = semath_sin(angle) * inner_radius + center.y;
+        pos4.x = se_math_cos(angle) * inner_radius + center.x;
+        pos4.y = se_math_sin(angle) * inner_radius + center.y;
 
             // vertices
         add_vertex(shape, pos2, depth, colour1);
@@ -384,16 +384,16 @@ void serender2d_add_hsv_triangle (SE_Renderer2D *renderer, Vec2 center, f32 radi
     shape->vertex_count = 0;
 
     Vec2 p1 = {
-        semath_cos(angle) * radius + center.x,
-        semath_sin(angle) * radius + center.y,
+        se_math_cos(angle) * radius + center.x,
+        se_math_sin(angle) * radius + center.y,
     };
     Vec2 p2 = {
-        semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-        semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+        se_math_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+        se_math_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
     };
     Vec2 p3 = {
-        semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-        semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+        se_math_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+        se_math_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
     };
 
     RGBA colour_tip;

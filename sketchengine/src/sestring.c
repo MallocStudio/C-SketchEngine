@@ -1,7 +1,7 @@
 #include "sestring.h"
 #include "memory.h"
 #include "semath.h"
-void sestring_init(SE_String *sestring, const char *buffer) {
+void se_string_init(SE_String *sestring, const char *buffer) {
     if (buffer != NULL) {
         sestring->size = SDL_strlen(buffer);
         sestring->capacity = sestring->size + 1; // +1 to accomidate '\0'
@@ -18,7 +18,7 @@ void sestring_init(SE_String *sestring, const char *buffer) {
     }
 }
 
-void sestring_init_i32(SE_String *sestring, i32 value) {
+void se_string_init_i32(SE_String *sestring, i32 value) {
     char buffer[32] = {0};
     SDL_snprintf(buffer, 32, "%i", value);
 
@@ -32,7 +32,7 @@ void sestring_init_i32(SE_String *sestring, i32 value) {
     }
 }
 
-void sestring_init_f32(SE_String *sestring, f32 value) {
+void se_string_init_f32(SE_String *sestring, f32 value) {
     char buffer[32] = {0};
     SDL_snprintf(buffer, 32, "%f", value);
 
@@ -46,7 +46,7 @@ void sestring_init_f32(SE_String *sestring, f32 value) {
     }
 }
 
-void sestring_deinit(SE_String *sestring) {
+void se_string_deinit(SE_String *sestring) {
     if (sestring->buffer != NULL) {
         free(sestring->buffer);
         sestring->buffer = NULL;
@@ -55,21 +55,21 @@ void sestring_deinit(SE_String *sestring) {
     }
 }
 
-void sestring_duplicate(SE_String *string1, SE_String *string2) {
-    sestring_deinit(string2);
+void se_string_duplicate(SE_String *string1, SE_String *string2) {
+    se_string_deinit(string2);
     if (string1->buffer != NULL) {
-        sestring_init(string2, string1->buffer);
+        se_string_init(string2, string1->buffer);
     }
 }
 
-void sestring_append(SE_String *sestring, const char *buffer) {
-    sestring_append_length(sestring, buffer, SDL_strlen(buffer));
+void se_string_append(SE_String *sestring, const char *buffer) {
+    se_string_append_length(sestring, buffer, SDL_strlen(buffer));
 }
 
-void sestring_append_length(SE_String *sestring, const char *src, u32 length) {
+void se_string_append_length(SE_String *sestring, const char *src, u32 length) {
     if (sestring->buffer == NULL) {
         // if this sestring is empty, initialise it with the given src
-        sestring_init(sestring, src);
+        se_string_init(sestring, src);
     } else {
         u32 start_index = sestring->size;
 
@@ -86,7 +86,7 @@ void sestring_append_length(SE_String *sestring, const char *src, u32 length) {
     }
 }
 
-u32 sestring_lastof(SE_String *sestring, const char letter) {
+u32 se_string_lastof(SE_String *sestring, const char letter) {
     if (sestring->buffer == NULL || sestring->size == 0) {
         return SESTRING_MAX_SIZE;
     }
@@ -101,21 +101,21 @@ u32 sestring_lastof(SE_String *sestring, const char letter) {
     return result;
 }
 
-void sestring_clear(SE_String *sestring) {
+void se_string_clear(SE_String *sestring) {
     if (sestring->buffer == NULL || sestring->size == 0) {
         return;
     }
     sestring->size = 0;
 }
 
-void sestring_delete_from_end(SE_String *sestring, u32 amount) {
+void se_string_delete_from_end(SE_String *sestring, u32 amount) {
     if (sestring->size >= amount) {
         sestring->size -= amount;
         sestring->buffer[sestring->size] = '\0';
     }
 }
 
-f32 sestring_as_f32(SE_String *sestring) {
+f32 se_string_as_f32(SE_String *sestring) {
     f32 result = 0; // default
     if (sestring->buffer == NULL || sestring->size == 0) return result;
 
@@ -143,7 +143,7 @@ f32 sestring_as_f32(SE_String *sestring) {
 
         if (potential_number == '.' && decimal_place_set == false) {
             decimal_place_set = true;
-            decimal_place = semath_power(10, digits_count);
+            decimal_place = se_math_power(10, digits_count);
         }
 
         if (potential_number == '-' && i == 0) {
@@ -152,7 +152,7 @@ f32 sestring_as_f32(SE_String *sestring) {
     }
 
     for (u32 i = 0; i < digits_count; ++i) {
-        i32 power = (i32)semath_power(10, i);
+        i32 power = (i32)se_math_power(10, i);
         result += digits[i] * power;
     }
 
@@ -161,7 +161,7 @@ f32 sestring_as_f32(SE_String *sestring) {
     return result;
 }
 
-b8 sestring_compare(const SE_String *string1, const SE_String *string2) {
+b8 se_string_compare(const SE_String *string1, const SE_String *string2) {
     if (string1->size == 0 && string2->size == 0) return true;
     if (string1->size == 0 || string2->size == 0) return false;
     if (string1->size != string2->size) return false;
@@ -175,7 +175,7 @@ b8 sestring_compare(const SE_String *string1, const SE_String *string2) {
     return true;
 }
 
-b8 sestring_replace_space_with_underscore(SE_String *string_buffer) {
+b8 se_string_replace_space_with_underscore(SE_String *string_buffer) {
     se_assert(string_buffer->buffer);
     b8 found = false;
     for (u32 i = 0; i < string_buffer->size; ++i) {

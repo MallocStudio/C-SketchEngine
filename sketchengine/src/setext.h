@@ -58,9 +58,9 @@ typedef struct SE_Text {
 } SE_Text;
 
 /// initialise text with font and load the glyphs
-b8 se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth);
-b8 se_init_text(SE_Text *text, const char *fontpath, u32 font_size, Rect viewport, f32 min_depth, f32 max_depth);
-void se_deinit_text(SE_Text *text);
+b8 se_text_init_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth);
+b8 se_text_init(SE_Text *text, const char *fontpath, u32 font_size, Rect viewport, f32 min_depth, f32 max_depth);
+void se_text_deinit(SE_Text *text);
 
 /// add strings to text's queue to render
 void se_add_text(SE_Text *text, const char *string, Vec2 pos, f32 depth);

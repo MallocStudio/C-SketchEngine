@@ -45,26 +45,26 @@
 /// ----------------------
 /// GENERAL MATH FUNCTIONS
 /// ----------------------
-f32 semath_sin(f32 x);
-f32 semath_cos(f32 x);
-f32 semath_tan(f32 x);
-f32 semath_acos(f32 x);
-f32 semath_asin(f32 x);
-f32 semath_sqrt(f32 x);
-f32 semath_abs(f32 x);
-f32 semath_power(f32 base, f32 power);
-f32 semath_remainder(f32 x, f32 denominator);
-f32 semath_round(f32 x);
+f32 se_math_sin(f32 x);
+f32 se_math_cos(f32 x);
+f32 se_math_tan(f32 x);
+f32 se_math_acos(f32 x);
+f32 se_math_asin(f32 x);
+f32 se_math_sqrt(f32 x);
+f32 se_math_abs(f32 x);
+f32 se_math_power(f32 base, f32 power);
+f32 se_math_remainder(f32 x, f32 denominator);
+f32 se_math_round(f32 x);
 
 /// Indicates if the value is a power of 2. 0 is considered _not_ a power of 2
 /// 'value' is the value to be interpreted
 /// 'returns' true if a power of 2, otherwise false
 b8 is_power_of_2(i32 value);
 
-i32 random();
-i32 random_in_range(i32 min, i32 max);
-f32 frandom();
-f32 frandom_in_range(f32 min, f32 max);
+i32 se_random();
+i32 se_random_in_range(i32 min, i32 max);
+f32 se_frandom();
+f32 se_frandom_in_range(f32 min, f32 max);
 
 /// ----
 /// Vec2

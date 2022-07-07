@@ -1,7 +1,7 @@
 #include "seshader.h"
 #include <stdio.h> // for loading file as string
 
-void seshader_init_from_string(SE_Shader *sp, const char *vertex_src, const char *frag_src, const char* vertex_shader_name, const char *fragment_shader_name) {
+void se_shader_init_from_string(SE_Shader *sp, const char *vertex_src, const char *frag_src, const char* vertex_shader_name, const char *fragment_shader_name) {
     sp->loaded_successfully = true; // set to false later on if errors occure
     sp->has_geometry = false;
 
@@ -62,17 +62,17 @@ void seshader_init_from_string(SE_Shader *sp, const char *vertex_src, const char
     }
 }
 
-void seshader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
+void se_shader_init_from(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename) {
     char *vertex_src = se_load_file_as_string(vertex_filename);
     se_assert(vertex_src);
     char *frag_src = se_load_file_as_string(fragment_filename);
     se_assert(frag_src);
-    seshader_init_from_string(sp, vertex_src, frag_src, vertex_filename, fragment_filename);
+    se_shader_init_from_string(sp, vertex_src, frag_src, vertex_filename, fragment_filename);
     free(vertex_src);
     free(frag_src);
 }
 
-void seshader_init_from_with_geometry(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename, const char *geometry_filename) {
+void se_shader_init_from_with_geometry(SE_Shader *sp, const char *vertex_filename, const char *fragment_filename, const char *geometry_filename) {
     // @copypasta massive from above
     sp->loaded_successfully = true; // set to false later on if errors occure
     sp->has_geometry = true;
@@ -161,7 +161,7 @@ void seshader_init_from_with_geometry(SE_Shader *sp, const char *vertex_filename
     free(frag_src);
 }
 
-void seshader_deinit(SE_Shader *shader) {
+void se_shader_deinit(SE_Shader *shader) {
     if (shader->loaded_successfully) {
         glDeleteShader(shader->vertex_shader);
         glDeleteShader(shader->fragment_shader);
@@ -170,22 +170,22 @@ void seshader_deinit(SE_Shader *shader) {
     }
 }
 
-void seshader_use(const SE_Shader *shader) {
+void se_shader_use(const SE_Shader *shader) {
     glUseProgram(shader->shader_program);
 }
 
-GLint seshader_get_uniform_loc(SE_Shader *shader, const char *uniform_name) {
+GLint se_shader_get_uniform_loc(SE_Shader *shader, const char *uniform_name) {
     return glGetUniformLocation(shader->shader_program, uniform_name);
 }
 
-void seshader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32 value) {
+void se_shader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     // if ((i32)var_loc == -1) printf("Something's boned (%s)\n", uniform_name);
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform1f(var_loc, value);
 }
 
-void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value) {
+void se_shader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value) {
     glGetError(); // @debug
 
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
@@ -199,59 +199,59 @@ void seshader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32
     if (var_loc == -1) {
         printf("Something's boned (%s)\n", uniform_name);
     }
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform1i(var_loc, value);
 }
 
-void seshader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value) {
+void se_shader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform3f(var_loc, value.x, value.y, value.z);
 }
 
-void seshader_set_uniform_vec4 (SE_Shader *shader, const char *uniform_name, Vec4 value) {
+void se_shader_set_uniform_vec4 (SE_Shader *shader, const char *uniform_name, Vec4 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform4f(var_loc, value.x, value.y, value.z, value.w);
 }
 
-void seshader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value) {
+void se_shader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform2f(var_loc, value.x, value.y);
 }
 
-void seshader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value) {
+void se_shader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform3f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f);
 }
 
-void seshader_set_uniform_rgba (SE_Shader *shader, const char *uniform_name, RGBA value) {
+void se_shader_set_uniform_rgba (SE_Shader *shader, const char *uniform_name, RGBA value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniform4f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f);
 }
 
-void seshader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {
+void se_shader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {
     glGetError();
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
         printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
     }
-    seshader_use(shader);
+    se_shader_use(shader);
     glUniformMatrix4fv(var_loc, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
-void seshader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_name, Mat4 *value, u32 count) {
+void se_shader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_name, Mat4 *value, u32 count) {
     glGetError();
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
         printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
     }
-    seshader_use(shader);
+    se_shader_use(shader);
     // for (u32 i = 0; i < count; ++i) {
     //     // NOTE(Matin): we're not certain that this is supported on all drivers, not sure if this is part of the spec
     //     // glUniformMatrix4fv(var_loc + i, 1, GL_FALSE, (const GLfloat*)(&value + i));

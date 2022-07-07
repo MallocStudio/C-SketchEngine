@@ -13,6 +13,6 @@ typedef struct SE_Animation {
 
     /// Updates current frame and returns its value.
     /// If current frame exceeds duration, it gets set to zero.
-f32 seanimation_update(SE_Animation *animation, f32 delta_time);
+f32 se_animation_update(SE_Animation *animation, f32 delta_time);
 
 #endif // SE_ANIMATION_H

@@ -347,13 +347,13 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 
             // allow for increasing and decreasing numerical values while hovering
             if (ctx->text_input_only_numerical && ctx->active != id) { // if we are hovering but have not selected the text input to edit with keyboard
-                f32 numerical_value = sestring_as_f32(text);
+                f32 numerical_value = se_string_as_f32(text);
                 if (ctx->input->mouse_wheel != 0) {
                     char value_as_string[SESTRING_MAX_NUM_OF_DIGITS];
                     numerical_value += ctx->input->mouse_wheel;
                     sprintf(value_as_string, "%i", (i32)numerical_value);
-                    sestring_clear(text);
-                    sestring_append(text, value_as_string);
+                    se_string_clear(text);
+                    se_string_append(text, value_as_string);
                 }
             }
 
@@ -362,8 +362,8 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             if (ctx->active != id) {
                 // make this the current active widget
                 ctx->active = id;
-                sestring_duplicate(text, &ctx->text_input); // prepare the cache for new data
-                seinput_text_input_activate(input, &ctx->text_input, ctx->text_input_only_numerical);
+                se_string_duplicate(text, &ctx->text_input); // prepare the cache for new data
+                se_input_text_input_activate(input, &ctx->text_input, ctx->text_input_only_numerical);
             }
         } break;
     }
@@ -373,13 +373,13 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         colour = RGBA_BLACK;
 
         // allow for deleting characters
-        if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
-            sestring_delete_from_end(&ctx->text_input, 1);
+        if (se_input_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
+            se_string_delete_from_end(&ctx->text_input, 1);
         }
 
         // clear when double clicked on
         if (ctx->input->is_mouse_left_down && rect_overlaps_point(rect, ctx->input->mouse_screen_pos)) {
-            sestring_clear(&ctx->text_input);
+            se_string_clear(&ctx->text_input);
         }
 
             // render the input cursor
@@ -392,24 +392,24 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         // RGBA cursor_colour = RGBA_WHITE;
         // static f32 alpha = 0;
         // alpha += 0.167; // @incomplete dummy delta
-        // cursor_colour.a = semath_sin(alpha);
+        // cursor_colour.a = se_math_sin(alpha);
         // if (alpha > 1000) alpha = 0;
         // serender2d_add_rect(renderer, cursor, get_depth_foreground(ctx), cursor_colour);
 
         /* accept */
-        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM // clicked outside
-            || seinput_is_key_pressed(ctx->input, SDL_SCANCODE_RETURN)) {
+        if ((se_input_is_mouse_left_pressed(ctx->input) || se_input_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM // clicked outside
+            || se_input_is_key_pressed(ctx->input, SDL_SCANCODE_RETURN)) {
             // copy the input text data over to text
-            sestring_clear(text); // get rid of what was there and put in the new edited text
-            sestring_duplicate(&ctx->text_input, text);
+            se_string_clear(text); // get rid of what was there and put in the new edited text
+            se_string_duplicate(&ctx->text_input, text);
             ctx->active = SEUI_ID_NULL;
-            seinput_text_input_deactivate(input);
+            se_input_text_input_deactivate(input);
         } else
         /* cancel */
-        if (seinput_is_key_pressed(ctx->input, SDL_SCANCODE_ESCAPE)) {
+        if (se_input_is_key_pressed(ctx->input, SDL_SCANCODE_ESCAPE)) {
             // DON'T copy the input text data over to text
             ctx->active = SEUI_ID_NULL;
-            seinput_text_input_deactivate(input);
+            se_input_text_input_deactivate(input);
         }
     }
 
@@ -470,22 +470,22 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 #if 0   // colour triangle
             { /* colour triangle */
                 serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
-                if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
+                if (se_input_is_key_down(ctx->input, SDL_SCANCODE_H)) {
                     hsv->h += 5;
                 }
             }
             { /* the cursor on the triangle */
                 Vec2 colour_tip = {
-                    semath_cos(angle) * radius + center.x,
-                    semath_sin(angle) * radius + center.y,
+                    se_math_cos(angle) * radius + center.x,
+                    se_math_sin(angle) * radius + center.y,
                 };
                 Vec2 white_tip = {
-                    semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-                    semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                    se_math_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    se_math_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
                 };
                 Vec2 black_tip = {
-                    semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-                    semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                    se_math_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    se_math_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
                 };
                 Vec2 hsv_point = colour_tip;
 

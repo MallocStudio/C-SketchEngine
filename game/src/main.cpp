@@ -79,10 +79,10 @@ int main() {
                         if (game->m_input.is_text_input_only_numeric) {
                             if ((event.text.text[0] >= (i32)'0' && event.text.text[0] <= (i32)'9')
                                 || event.text.text[0] == (i32)'-' || event.text.text[0] == (i32)'.') {
-                                sestring_append(game->m_input.text_input_stream, event.text.text);
+                                se_string_append(game->m_input.text_input_stream, event.text.text);
                             }
                         } else {
-                            sestring_append(game->m_input.text_input_stream, event.text.text);
+                            se_string_append(game->m_input.text_input_stream, event.text.text);
                             // printf("WHAT!!! %s\n", event.text.text);
                         }
                     } else {

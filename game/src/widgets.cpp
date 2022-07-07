@@ -27,7 +27,7 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
 
             {   //- Entity index
                 SE_String entity_index_string;
-                sestring_init_i32(&entity_index_string, entity);
+                se_string_init_i32(&entity_index_string, entity);
 
                 seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "index:");
@@ -35,7 +35,7 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
 
                 seui_selector(ctx, &entity, 0, entities->count-1);
 
-                sestring_deinit(&entity_index_string);
+                se_string_deinit(&entity_index_string);
             }
 
             {   //- Mesh
@@ -45,9 +45,9 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
                 // seui_selector(ctx, (i32*)mesh_index, 0, mesh_renderer->meshes_count-1);
 
                 SE_String mesh_index_string;
-                sestring_init_i32(&mesh_index_string, *mesh_index);
+                se_string_init_i32(&mesh_index_string, *mesh_index);
                 seui_label(ctx, mesh_index_string.buffer);
-                sestring_deinit(&mesh_index_string);
+                se_string_deinit(&mesh_index_string);
             }
 
             {   //- Pos, Rot, Scale
@@ -66,14 +66,14 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
         } else {
             {   //- Entity index
                 SE_String entity_index_string;
-                sestring_init_i32(&entity_index_string, entity);
+                se_string_init_i32(&entity_index_string, entity);
 
                 seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "entity index:");
 
                 seui_selector(ctx, &entity, -1, entities->count-1);
 
-                sestring_deinit(&entity_index_string);
+                se_string_deinit(&entity_index_string);
             }
         }
 

@@ -52,28 +52,28 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%.2f", value->x);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->x = sestring_as_f32(&ctx->text_input_cache);
+        value->x = se_string_as_f32(&ctx->text_input_cache);
 
         sprintf(label_buffer, "y:");
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%.2f", value->y);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->y = sestring_as_f32(&ctx->text_input_cache);
+        value->y = se_string_as_f32(&ctx->text_input_cache);
 
         sprintf(label_buffer, "z:");
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%.2f", value->z);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->z = sestring_as_f32(&ctx->text_input_cache);
+        value->z = se_string_as_f32(&ctx->text_input_cache);
 
         seui_configure_text_input_reset(ctx); // reset configurations
     }
@@ -105,10 +105,10 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%i", value->h);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->h = (i32)sestring_as_f32(&ctx->text_input_cache);
+        value->h = (i32)se_string_as_f32(&ctx->text_input_cache);
         if (value->h < 0) value->h = 359;
         if (value->h > 359) value->h = 0;
 
@@ -116,10 +116,10 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%i", (i32)(value->s * 100));
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->s = sestring_as_f32(&ctx->text_input_cache) / 100.0f;
+        value->s = se_string_as_f32(&ctx->text_input_cache) / 100.0f;
         if (value->s < 0) value->s = 0;
         if (value->s > 1) value->s = 1;
 
@@ -127,10 +127,10 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%i", (i32)(value->v * 100));
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->v = sestring_as_f32(&ctx->text_input_cache) / 100.0f;
+        value->v = se_string_as_f32(&ctx->text_input_cache) / 100.0f;
         if (value->v < 0) value->v = 0;
         if (value->v > 1) value->v = 1;
 

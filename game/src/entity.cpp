@@ -58,7 +58,7 @@ void Entities::clear() {
     for (u32 i = 0; i < ENTITIES_MAX; ++i) {
             //- Name
         if (this->has_name[i]) {
-            sestring_deinit(&this->name[i]);
+            se_string_deinit(&this->name[i]);
         }
     }
 }

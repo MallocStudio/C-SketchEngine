@@ -61,8 +61,8 @@ void hsv_to_rgb(i32 hue, f32 saturation, f32 value, RGB *rgb) {
     f32 rr, gg, bb;
     f32 c = value * saturation;
     f32 h_prime = (hue / (f32)60.0f);
-    // f32 x = c * (1 - semath_abs(semath_remainder(h_prime,2) - 1));
-    f32 x = c * (1 - semath_abs((i32)h_prime % 2 - 1));
+    // f32 x = c * (1 - se_math_abs(se_math_remainder(h_prime,2) - 1));
+    f32 x = c * (1 - se_math_abs((i32)h_prime % 2 - 1));
     // f32 max = value;
     // f32 min = max - c;
     // f32 x = min + h_prime * c;

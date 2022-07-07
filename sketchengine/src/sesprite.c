@@ -7,19 +7,19 @@
 /// TEXTURE
 ///
 
-void setexture_load(SE_Texture *texture, const char *filepath) {
+void se_texture_load(SE_Texture *texture, const char *filepath) {
     texture->loaded = true;
 
     ubyte *image_data = stbi_load(filepath, &texture->width, &texture->height, &texture->channel_count, 0);
     if (image_data != NULL) {
-        setexture_load_data(texture, image_data);
+        se_texture_load_data(texture, image_data);
     } else {
         printf("ERROR: cannot load %s (%s)\n", filepath, stbi_failure_reason());
         texture->loaded = false;
     }
 }
 
-void setexture_load_data(SE_Texture *texture, ubyte *image_data) {
+void se_texture_load_data(SE_Texture *texture, ubyte *image_data) {
     texture->loaded = true;
     glGenTextures(1, &texture->id);
 
@@ -45,19 +45,19 @@ void setexture_load_data(SE_Texture *texture, ubyte *image_data) {
     stbi_image_free(image_data);
 }
 
-void setexture_unload(SE_Texture *texture) {
+void se_texture_unload(SE_Texture *texture) {
     if (texture->loaded) {
         glDeleteTextures(1, &texture->id);
     }
 }
 
-void setexture_bind(const SE_Texture *texture, u32 index) { // @TODO change index to an enum of different texture types that map to an index internally
+void se_texture_bind(const SE_Texture *texture, u32 index) { // @TODO change index to an enum of different texture types that map to an index internally
     SDL_assert(texture->loaded == true && "texture was not loaded so we can't bind");
     glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_2D, texture->id);
 }
 
-void setexture_unbind() {
+void se_texture_unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -65,7 +65,7 @@ void setexture_unbind() {
 /// IMAGE
 ///
 
-void seimage_load_empty(SE_Image *image, i32 width, i32 height, i32 channel_count) {
+void se_image_load_empty(SE_Image *image, i32 width, i32 height, i32 channel_count) {
     if (image == NULL || width == 0 || height == 0 || channel_count == 0) return;
     image->loaded = true;
     image->width = width;
@@ -74,7 +74,7 @@ void seimage_load_empty(SE_Image *image, i32 width, i32 height, i32 channel_coun
     image->data = (ubyte*) malloc(sizeof(ubyte) * width * height * channel_count);
 }
 
-void seimage_load(SE_Image *image, const char *filepath) {
+void se_image_load(SE_Image *image, const char *filepath) {
     image->loaded = true;
     image->data = NULL;
     image->data = stbi_load(filepath, &image->width, &image->height, &image->channel_count, 0);
@@ -87,7 +87,7 @@ void seimage_load(SE_Image *image, const char *filepath) {
     }
 }
 
-void seimage_unload(SE_Image *image) {
+void se_image_unload(SE_Image *image) {
     image->loaded = false;
     stbi_image_free(image->data); // this is just free so works with empty image
     image->data = NULL;
@@ -96,20 +96,20 @@ void seimage_unload(SE_Image *image) {
     image->channel_count = 0;
 }
 
-void seimage_to_texture(const SE_Image *image, SE_Texture *texture) {
+void se_image_to_texture(const SE_Image *image, SE_Texture *texture) {
     if (image->loaded) {
         texture->channel_count = image->channel_count;
         texture->height = image->height;
         texture->width  = image->width;
-        setexture_load_data(texture, image->data);
+        se_texture_load_data(texture, image->data);
     }
 }
 
-void seimage_blit(SE_Image *dst, const SE_Image *src, i32 x, i32 y) {
-    seimage_blit_data(dst, src->data, src->width, src->height, x, y);
+void se_image_blit(SE_Image *dst, const SE_Image *src, i32 x, i32 y) {
+    se_image_blit_data(dst, src->data, src->width, src->height, x, y);
 }
 
-void seimage_blit_data(SE_Image *dst, ubyte *data, i32 data_width, i32 data_height, i32 x, i32 y) {
+void se_image_blit_data(SE_Image *dst, ubyte *data, i32 data_width, i32 data_height, i32 x, i32 y) {
     if (data != NULL && dst->loaded) {
         for (u32 j = 0; j < data_height; j++) {
             u32 dst_y = j + y;
@@ -146,38 +146,38 @@ void seimage_blit_data(SE_Image *dst, ubyte *data, i32 data_width, i32 data_heig
 /// TEXTURE ATLAS
 ///
 
-void setexture_atlas_load(SE_Texture_Atlas *texture_atlas, const char *filepath, u32 columns, u32 rows) {
-    setexture_load(&texture_atlas->texture, filepath);
+void se_texture_atlas_load(SE_Texture_Atlas *texture_atlas, const char *filepath, u32 columns, u32 rows) {
+    se_texture_load(&texture_atlas->texture, filepath);
     if (texture_atlas->texture.loaded) {
         texture_atlas->columns = columns;
         texture_atlas->rows = rows;
     }
 }
 
-void setexture_atlas_unload(SE_Texture_Atlas *texture_atlas) {
-    setexture_unload(&texture_atlas->texture);
+void se_texture_atlas_unload(SE_Texture_Atlas *texture_atlas) {
+    se_texture_unload(&texture_atlas->texture);
     texture_atlas->columns = 0;
     texture_atlas->rows = 0;
 }
 
-void setexture_atlas_bind(SE_Texture_Atlas *texture_atlas) {
-    setexture_bind(&texture_atlas->texture, 0);
+void se_texture_atlas_bind(SE_Texture_Atlas *texture_atlas) {
+    se_texture_bind(&texture_atlas->texture, 0);
 }
 
-void setexture_atlas_unbind() {
-    setexture_unbind();
+void se_texture_atlas_unbind() {
+    se_texture_unbind();
 }
 
 /// SPRITES
 
-b8 sesprite_load(SE_Sprite *sprite, const char *filepath) {
-    setexture_load(&sprite->texture, filepath);
+b8 se_sprite_load(SE_Sprite *sprite, const char *filepath) {
+    se_texture_load(&sprite->texture, filepath);
     sprite->frame = 0;
     sprite->columns = 0;
     sprite->rows = 0;
     return sprite->texture.loaded;
 }
 
-void sesprite_unload(SE_Sprite *sprite) {
-    setexture_unload(&sprite->texture);
+void se_sprite_unload(SE_Sprite *sprite) {
+    se_texture_unload(&sprite->texture);
 }

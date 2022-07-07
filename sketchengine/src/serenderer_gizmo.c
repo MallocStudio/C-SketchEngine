@@ -5,14 +5,14 @@ void se_gizmo_renderer_init(SE_Gizmo_Renderer *renderer, SE_Camera3D *current_ca
     renderer->current_camera = current_camera;
 
         //- Shaders
-    seshader_init_from(&renderer->shader_mesh, "core/shaders/gizmo.vsd", "core/shaders/gizmo.fsd");
-    seshader_init_from(&renderer->shader_sprite, "core/shaders/gizmo.vsd", "core/shaders/gizmo.fsd");
+    se_shader_init_from(&renderer->shader_mesh, "core/shaders/gizmo.vsd", "core/shaders/gizmo.fsd");
+    se_shader_init_from(&renderer->shader_sprite, "core/shaders/gizmo.vsd", "core/shaders/gizmo.fsd");
 }
 
 void se_gizmo_renderer_deinit(SE_Gizmo_Renderer *renderer) {
         //- Shaders
-    seshader_deinit(&renderer->shader_mesh);
-    seshader_deinit(&renderer->shader_sprite);
+    se_shader_deinit(&renderer->shader_mesh);
+    se_shader_deinit(&renderer->shader_sprite);
 
     for (u32 i = 0; i < renderer->shapes_count; ++i) {
         glDeleteVertexArrays(1, &renderer->shapes[i].vao);
@@ -24,24 +24,24 @@ void se_gizmo_renderer_deinit(SE_Gizmo_Renderer *renderer) {
 
 static void setup_mesh_shader(SE_Gizmo_Renderer *renderer, SE_Gizmo_Shape *shape, Mat4 transform) {
     SE_Shader *shader = &renderer->shader_mesh;
-    seshader_use(shader);
+    se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
-    seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
-    seshader_set_uniform_rgba(shader, "base_colour", shape->base_colour);
+    se_shader_set_uniform_mat4(shader, "projection_view_model", pvm);
+    se_shader_set_uniform_rgba(shader, "base_colour", shape->base_colour);
 }
 
 static void setup_sprite_shader(SE_Gizmo_Renderer *renderer, Mat4 transform) {
         //@incomplete
     SE_Shader *shader = &renderer->shader_sprite;
-    seshader_use(shader);
+    se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
-    seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
+    se_shader_set_uniform_mat4(shader, "projection_view_model", pvm);
 }
 
 void se_gizmo_render_index(SE_Gizmo_Renderer *renderer, u32 shape_index, Mat4 transform) {

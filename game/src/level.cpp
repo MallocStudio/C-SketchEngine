@@ -48,7 +48,7 @@ bool Level::load(const char *filepath) {
             if (has_name) {
                 char name[1024];
                 file >> name;
-                sestring_init(&entities.name[entity], name);
+                se_string_init(&entities.name[entity], name);
             }
 
                 //- transforms
@@ -111,7 +111,7 @@ bool Level::save(const char *filepath) {
                 //- name
             file << entities.has_name[i] << std::endl;
             if (entities.has_name[i]) {
-                if (sestring_replace_space_with_underscore(&entities.name[i])) {
+                if (se_string_replace_space_with_underscore(&entities.name[i])) {
                     SE_WARNING("We are saving out entity's name and we found space characters. We replaced them with underscores ( _ ) because we cannot have spaces in names that are saved to files");
                 }
                 file << entities.name[i].buffer << std::endl;

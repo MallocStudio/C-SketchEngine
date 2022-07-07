@@ -34,13 +34,13 @@
 
 
 /// initialise input once! allocates memory
- void seinput_init(SE_Input *input) {
+ void se_input_init(SE_Input *input) {
     // set all values to zero to begin with
     memset(input, 0, sizeof(SE_Input));
 }
 
 /// note that mouse pos will be relative to top left position of window
- void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Window *window) {
+ void se_input_update(SE_Input *input, Mat4 otho_projection_world, SDL_Window *window) {
     Vec2i window_size;
     SDL_GetWindowSize(window, &window_size.x, &window_size.y);
     input->window = window;
@@ -132,33 +132,33 @@
     }
 }
 
- b8 seinput_is_mouse_left_pressed (const SE_Input *input) {
+ b8 se_input_is_mouse_left_pressed (const SE_Input *input) {
     return input->is_left_mouse_clicked;
 }
 
- b8 seinput_is_mouse_left_released (const SE_Input *input) {
+ b8 se_input_is_mouse_left_released (const SE_Input *input) {
     return (input->was_mouse_left_down && !input->is_mouse_left_down);
 }
 
- b8 seinput_is_mouse_right_pressed (const SE_Input *input) {
+ b8 se_input_is_mouse_right_pressed (const SE_Input *input) {
     return (input->is_mouse_right_handled == false
             && input->is_mouse_right_down
             && !input->was_mouse_right_down);
 }
 
- b8 seinput_is_mouse_right_released (const SE_Input *input) {
+ b8 se_input_is_mouse_right_released (const SE_Input *input) {
     return (input->was_mouse_right_down && !input->is_mouse_right_down);
 }
 
- b8 seinput_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode) {
+ b8 se_input_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode) {
     return (input->keyboard[sdl_scancode] == 1 && input->keyboard_previous_frame[sdl_scancode] == 0);
 }
 
- b8 seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode) {
+ b8 se_input_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode) {
     return input->keyboard[sdl_scancode] == 1;
 }
 
- void seinput_text_input_activate(SE_Input *input, SE_String *stream_to, b8 only_numeric) {
+ void se_input_text_input_activate(SE_Input *input, SE_String *stream_to, b8 only_numeric) {
     if (stream_to != NULL) {
         input->is_text_input_activated = true;
         input->text_input_stream = stream_to;
@@ -167,13 +167,13 @@
     }
 }
 
- void seinput_text_input_deactivate(SE_Input *input) {
+ void se_input_text_input_deactivate(SE_Input *input) {
     input->is_text_input_activated = false;
     input->text_input_stream = NULL;
     SDL_StopTextInput();
 }
 
- void seui_mouse_fps_activate(SE_Input *input) {
+ void se_ui_mouse_fps_activate(SE_Input *input) {
     if (input->is_mouse_fps_activated) return;
 
     input->is_mouse_fps_activated = true;
@@ -185,7 +185,7 @@
     SDL_WarpMouseInWindow(input->window, window_size.x * 0.5f, window_size.y * 0.5f);
 }
 
- void seui_mouse_fps_deactivate(SE_Input *input) {
+ void se_ui_mouse_fps_deactivate(SE_Input *input) {
     if (!input->is_mouse_fps_activated) return;
     input->is_mouse_fps_activated = false;
     SDL_SetRelativeMouseMode(false);

@@ -47,7 +47,7 @@ typedef struct SE_Input {
     b8 is_mouse_fps_activated;
 
     /* text input */
-    b8 is_text_input_activated; // use seinput_text_input_activate()
+    b8 is_text_input_activated; // use se_input_text_input_activate()
     SE_String *text_input_stream; // not owned. When this is not null and text_input is activated, stream to this string
     b8 is_text_input_only_numeric;
     // u32 text_input_selection_index;
@@ -67,28 +67,28 @@ typedef struct SE_Input {
 } SE_Input;
 
 /// initialise input once! allocates memory
- void seinput_init(SE_Input *input);
+ void se_input_init(SE_Input *input);
 
 /// note that mouse pos will be relative to top left position of window
- void seinput_update(SE_Input *input, Mat4 otho_projection_world, SDL_Window *window);
+ void se_input_update(SE_Input *input, Mat4 otho_projection_world, SDL_Window *window);
 
- b8 seinput_is_mouse_left_pressed (const SE_Input *input);
+ b8 se_input_is_mouse_left_pressed (const SE_Input *input);
 
- b8 seinput_is_mouse_left_released (const SE_Input *input);
+ b8 se_input_is_mouse_left_released (const SE_Input *input);
 
- b8 seinput_is_mouse_right_pressed (const SE_Input *input);
+ b8 se_input_is_mouse_right_pressed (const SE_Input *input);
 
- b8 seinput_is_mouse_right_released (const SE_Input *input);
+ b8 se_input_is_mouse_right_released (const SE_Input *input);
 
- b8 seinput_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode);
+ b8 se_input_is_key_pressed(const SE_Input *input, SDL_Scancode sdl_scancode);
 
- b8 seinput_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode);
+ b8 se_input_is_key_down(const SE_Input *input, SDL_Scancode sdl_scancode);
 
- void seinput_text_input_activate(SE_Input *input, SE_String *stream_to, b8 only_numeric);
+ void se_input_text_input_activate(SE_Input *input, SE_String *stream_to, b8 only_numeric);
 
- void seinput_text_input_deactivate(SE_Input *input);
+ void se_input_text_input_deactivate(SE_Input *input);
 
- void seui_mouse_fps_activate(SE_Input *input);
+ void se_ui_mouse_fps_activate(SE_Input *input);
 
- void seui_mouse_fps_deactivate(SE_Input *input);
+ void se_ui_mouse_fps_deactivate(SE_Input *input);
 #endif // SEINPUT_H

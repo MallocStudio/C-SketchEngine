@@ -1,39 +1,39 @@
 #include "semath.h"
 #include <math.h>
 
-f32 semath_abs(f32 x) {
+f32 se_math_abs(f32 x) {
     return fabsf(x);
 }
 
-f32 semath_remainder(f32 x, f32 denominator) {
+f32 se_math_remainder(f32 x, f32 denominator) {
     return remainderf(x, denominator);
 }
 
-f32 semath_tan(f32 x) {
+f32 se_math_tan(f32 x) {
     return tanf(x);
 }
 
-f32 semath_sin(f32 x) {
+f32 se_math_sin(f32 x) {
     return sinf(x);
 }
 
-f32 semath_cos(f32 x) {
+f32 se_math_cos(f32 x) {
     return cosf(x);
 }
 
-f32 semath_acos(f32 x) {
+f32 se_math_acos(f32 x) {
     return acosf(x);
 }
 
-f32 semath_asin(f32 x) {
+f32 se_math_asin(f32 x) {
     return asinf(x);
 }
 
-f32 semath_sqrt(f32 x) {
+f32 se_math_sqrt(f32 x) {
     return sqrtf(x);
 }
 
-f32 semath_power(f32 base, f32 p) {
+f32 se_math_power(f32 base, f32 p) {
     return powf(base, p);
 }
 
@@ -41,7 +41,7 @@ b8 is_power_of_2(i32 value) {
     return ((value != 0) && ((value) & (value - 1)) == 0);
 }
 
-f32 semath_round(f32 x) {
+f32 se_math_round(f32 x) {
     return roundf(x);
 }
 
@@ -134,8 +134,8 @@ f32 semath_round(f32 x) {
 }
 
  Vec2 vec2_rotated(Vec2 v, f32 angle_radians) { // @check
-    f32 cos = semath_cos(angle_radians);
-    f32 sin = semath_sin(angle_radians);
+    f32 cos = se_math_cos(angle_radians);
+    f32 sin = se_math_sin(angle_radians);
     f32 tx = v.x;
     f32 ty = v.y;
     return (Vec2) {
@@ -153,7 +153,7 @@ f32 semath_round(f32 x) {
 
 /// returns magnitude / length of the provided vector
  f32 vec2_magnitude(Vec2 vec) {
-    return semath_sqrt(vec2_magnitude_squared(vec));
+    return se_math_sqrt(vec2_magnitude_squared(vec));
 }
 
 /// normalises the provided vector in place to a unit vector
@@ -174,11 +174,11 @@ f32 semath_round(f32 x) {
 /// find the angle of the given vec2
  f32 vec2_angle(Vec2 v) {
     vec2_normalise(&v);
-    return semath_acos(v.x);
+    return se_math_acos(v.x);
 }
 
  f32 vec2_angle_between(Vec2 v1, Vec2 v2) {
-    f32 angle = semath_acos((vec2_dot(v1, v2)) / (vec2_magnitude(v1) * vec2_magnitude(v2)));
+    f32 angle = se_math_acos((vec2_dot(v1, v2)) / (vec2_magnitude(v1) * vec2_magnitude(v2)));
     return angle;
 }
 
@@ -186,10 +186,10 @@ f32 semath_round(f32 x) {
 /// tolerance is typically SEMATH_FLOAT_EPSILON or similiar
 /// returns true if within tolerance
  b8 vec2_compare(Vec2 v1, Vec2 v2, f32 tolerance) {
-    if (semath_abs(v1.x - v2.x) > tolerance) {
+    if (se_math_abs(v1.x - v2.x) > tolerance) {
         return false;
     }
-    if (semath_abs(v1.y - v2.y) > tolerance) {
+    if (se_math_abs(v1.y - v2.y) > tolerance) {
         return false;
     }
     return true;
@@ -306,7 +306,7 @@ f32 semath_round(f32 x) {
 
 /// Returns the magnitude / length of the provided vector
  f32 vec3_magnitude(Vec3 v) {
-    return semath_sqrt(vec3_magnitude_squared(v));
+    return se_math_sqrt(vec3_magnitude_squared(v));
 }
 
 /// Normalises the provided vector in place to a unit vector
@@ -342,13 +342,13 @@ f32 semath_round(f32 x) {
 /// tolerance is typically SEMATH_FLOAT_EPSILON or similar
 /// returns true if within tolerance
  b8 vec3_compare(Vec3 v1, Vec3 v2, f32 tolerance) {
-    if (semath_abs(v1.x - v2.x) > tolerance) {
+    if (se_math_abs(v1.x - v2.x) > tolerance) {
         return false;
     }
-    if (semath_abs(v1.y - v2.y) > tolerance) {
+    if (se_math_abs(v1.y - v2.y) > tolerance) {
         return false;
     }
-    if (semath_abs(v1.z - v2.z) > tolerance) {
+    if (se_math_abs(v1.z - v2.z) > tolerance) {
         return false;
     }
     return true;
@@ -429,10 +429,10 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
 
 /// returns true if the two provided mat2s are identitcal
  b8 mat2_compare(Mat2 m1, Mat2 m2, f32 tolerance) {
-    if (semath_abs(m1.m0 - m2.m0) > tolerance) return false;
-    if (semath_abs(m1.m1 - m2.m1) > tolerance) return false;
-    if (semath_abs(m1.m2 - m2.m2) > tolerance) return false;
-    if (semath_abs(m1.m3 - m2.m3) > tolerance) return false;
+    if (se_math_abs(m1.m0 - m2.m0) > tolerance) return false;
+    if (se_math_abs(m1.m1 - m2.m1) > tolerance) return false;
+    if (se_math_abs(m1.m2 - m2.m2) > tolerance) return false;
+    if (se_math_abs(m1.m3 - m2.m3) > tolerance) return false;
     return true;
 }
 
@@ -577,7 +577,7 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
 /// @param near_clip The near clipping plane distance.
 /// @param far_clip The far clipping plane distance.
  Mat4 mat4_perspective(f32 fov_radians, f32 aspect_ratio, f32 near_clip, f32 far_clip) {
-    f32 half_tan_fov = semath_tan(fov_radians * 0.5f);
+    f32 half_tan_fov = se_math_tan(fov_radians * 0.5f);
     Mat4 result;
     memset(result.data, 0, sizeof(f32) * 16);
     result.data[0] = 1.0f / (aspect_ratio * half_tan_fov);
@@ -762,8 +762,8 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
 /// creates and returns a rotation Mat4 from the provided x angle
  Mat4 mat4_euler_x(f32 angle_radians) {
     Mat4 result = mat4_identity();
-    f32 c = semath_cos(angle_radians);
-    f32 s = semath_sin(angle_radians);
+    f32 c = se_math_cos(angle_radians);
+    f32 s = se_math_sin(angle_radians);
     result.data[5] = c;
     result.data[6] = s;
     result.data[9] = -s;
@@ -774,8 +774,8 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
 /// creates and returns a rotation Mat4 from the provided y angle
  Mat4 mat4_euler_y(f32 angle_radians) {
     Mat4 result = mat4_identity();
-    f32 c = semath_cos(angle_radians);
-    f32 s = semath_sin(angle_radians);
+    f32 c = se_math_cos(angle_radians);
+    f32 s = se_math_sin(angle_radians);
     result.data[0] = c;
     result.data[2] = -s;
     result.data[8] = s;
@@ -786,8 +786,8 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
 /// creates and returns a rotation Mat4 from the provided z angle
  Mat4 mat4_euler_z(f32 angle_radians) {
     Mat4 result = mat4_identity();
-    f32 c = semath_cos(angle_radians);
-    f32 s = semath_sin(angle_radians);
+    f32 c = se_math_cos(angle_radians);
+    f32 s = se_math_sin(angle_radians);
     result.data[0] = c;
     result.data[1] = s;
     result.data[4] = -s;
@@ -900,7 +900,7 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
  * @return The normal of the provided quaternion.
  */
  f32 quat_normal(Quat q) {
-    return semath_sqrt(
+    return se_math_sqrt(
         q.x * q.x +
         q.y * q.y +
         q.z * q.z +
@@ -1097,8 +1097,8 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
  */
  Quat quat_from_axis_angle(Vec3 axis, f32 radians, b8 normalize) {
     const f32 half_angle = 0.5f * radians;
-    f32 s = semath_sin(half_angle);
-    f32 c = semath_cos(half_angle);
+    f32 s = se_math_sin(half_angle);
+    f32 c = se_math_cos(half_angle);
 
     Quat q = (Quat){s * axis.x, s * axis.y, s * axis.z, c};
     if (normalize) {
@@ -1153,12 +1153,12 @@ void vec3_calculate_tangent_bitangent(Vec3 v, Vec3 *tangent, Vec3 *bitangent) {
     }
 
     // Since dot is in range [0, DOT_THRESHOLD], acos is safe
-    f32 theta_0 = semath_cos(dot);          // theta_0 = angle between input vectors
+    f32 theta_0 = se_math_cos(dot);          // theta_0 = angle between input vectors
     f32 theta = theta_0 * percentage;  // theta = angle between v0 and result
-    f32 sin_theta = semath_sin(theta);       // compute this value only once
-    f32 sin_theta_0 = semath_sin(theta_0);   // compute this value only once
+    f32 sin_theta = se_math_sin(theta);       // compute this value only once
+    f32 sin_theta_0 = se_math_sin(theta_0);   // compute this value only once
 
-    f32 s0 = semath_cos(theta) - dot * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
+    f32 s0 = se_math_cos(theta) - dot * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
     f32 s1 = sin_theta / sin_theta_0;
 
     return (Quat){
@@ -1223,7 +1223,7 @@ b8 point_overlaps_circle(Vec2 point, Vec2 center, f32 radius) {
 }
 
 b8 ray_overlaps_sphere(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, Vec3 sphere_origin, f32 sphere_radius, f32 *hit_distance) {
-    for (u32 i = 0; i < max_distance; i += (u32)semath_round(sphere_radius)) {
+    for (u32 i = 0; i < max_distance; i += (u32)se_math_round(sphere_radius)) {
         Vec3 point = v3f(
             ray_origin.x + ray_direction.x * i,
             ray_origin.y + ray_direction.y * i,

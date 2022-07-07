@@ -54,7 +54,7 @@ static void setup_text_opengl_data(SE_Text *text) {
 static b8 load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsize) {
     Vec2 texture_size = {1024, 1024}; // must be a multiple of 4
     SE_Image image;
-    seimage_load_empty(&image, texture_size.x, texture_size.y, 1);
+    se_image_load_empty(&image, texture_size.x, texture_size.y, 1);
 
     glGenTextures(1, &text->glyph_atlas);
     glBindTexture(GL_TEXTURE_2D, text->glyph_atlas);
@@ -88,7 +88,7 @@ static b8 load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsize
         };
 
         // slap the bitmap on top of the image
-        seimage_blit_data(&image, text->face->glyph->bitmap.buffer, bitmap_size.x, bitmap_size.y, cursor.x, cursor.y);
+        se_image_blit_data(&image, text->face->glyph->bitmap.buffer, bitmap_size.x, bitmap_size.y, cursor.x, cursor.y);
 
         // now store glyph for later use
         SE_Text_Glyph *glyph = &text->glyphs[(i32)c];
@@ -122,7 +122,7 @@ static b8 load_glyphs_to_atlas(SE_Text *text, const char *fontpath, u32 fontsize
             0, GL_RED, GL_UNSIGNED_BYTE, image.data);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    seimage_unload(&image);
+    se_image_unload(&image);
     return true;
 }
 
@@ -147,7 +147,7 @@ Vec2 se_size_text(SE_Text *text, const char *string) {
     return size;
 }
 
-b8 se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport, f32 min_depth, f32 max_depth) {
+b8 se_text_init(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport, f32 min_depth, f32 max_depth) {
     text->initialised = false;
     if (FT_Init_FreeType(&text->library)) {
         printf("ERROR:FREETYPE: Could not init freetype library\n");
@@ -155,7 +155,7 @@ b8 se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport
     }
 
     /* shader */
-    seshader_init_from_string(&text->shader_program, vertex_shader_src, fragment_shader_src, "Text Vertex Shader", "Text Fragment Shader");
+    se_shader_init_from_string(&text->shader_program, vertex_shader_src, fragment_shader_src, "Text Vertex Shader", "Text Fragment Shader");
 
     /* load glyphs to atlas */
     load_glyphs_to_atlas(text, fontpath, fontsize);
@@ -173,14 +173,14 @@ b8 se_init_text(SE_Text *text, const char *fontpath, u32 fontsize, Rect viewport
     return text->initialised;
 }
 
-b8 se_init_text_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth) {
-    return se_init_text(text, DEFAULT_FONT_PATH, 20, viewport, min_depth, max_depth);
+b8 se_text_init_default(SE_Text *text, Rect viewport, f32 min_depth, f32 max_depth) {
+    return se_text_init(text, DEFAULT_FONT_PATH, 20, viewport, min_depth, max_depth);
 }
 
-void se_deinit_text(SE_Text *text) {
+void se_text_deinit(SE_Text *text) {
     if (text->initialised) {
         /* shader */
-        seshader_deinit(&text->shader_program);
+        se_shader_deinit(&text->shader_program);
 
         /* opengl */
         glDeleteBuffers(1, &text->vbo);
@@ -201,20 +201,20 @@ void se_render_text(SE_Text *text) {
     glEnable(GL_BLEND);
 
     /* shader */
-    seshader_use(&text->shader_program);
-    seshader_set_uniform_mat4(&text->shader_program, "projection", text->shader_projection_matrix);
+    se_shader_use(&text->shader_program);
+    se_shader_set_uniform_mat4(&text->shader_program, "projection", text->shader_projection_matrix);
 
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(text->vao);
 
     glBindTexture(GL_TEXTURE_2D, text->glyph_atlas);
-    seshader_set_uniform_i32(&text->shader_program, "atlas", 0);
+    se_shader_set_uniform_i32(&text->shader_program, "atlas", 0);
 
     glEnable(GL_SCISSOR_TEST);
 
     for (u32 q = 0; q < text->render_queue_size; ++q) { // go through every queue item
         SE_Text_Render_Queue queue = text->render_queue[q];
-        seshader_set_uniform_vec3(&text->shader_program, "textColor", queue.colour);
+        se_shader_set_uniform_vec3(&text->shader_program, "textColor", queue.colour);
         const f32 scale = 1;
         f32 x = queue.rect.x;
         f32 y = queue.rect.y;

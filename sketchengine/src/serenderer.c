@@ -39,9 +39,9 @@ void debug_print_animation(const SE_Skeletal_Animation *anim, const SE_Bone_Anim
 ///
 
 void sematerial_deinit(SE_Material *material) {
-    if (material->texture_diffuse.loaded)  setexture_unload(&material->texture_diffuse);
-    if (material->texture_specular.loaded) setexture_unload(&material->texture_specular);
-    if (material->texture_normal.loaded)   setexture_unload(&material->texture_normal);
+    if (material->texture_diffuse.loaded)  se_texture_unload(&material->texture_diffuse);
+    if (material->texture_specular.loaded) se_texture_unload(&material->texture_specular);
+    if (material->texture_normal.loaded)   se_texture_unload(&material->texture_normal);
 }
 
 ///
@@ -813,19 +813,19 @@ static void semesh_construct_material // only meant to be called form se_render3
 (SE_Material *material, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     // find the directory part of filepath
     SE_String filepath_string;
-    sestring_init(&filepath_string, filepath);
+    se_string_init(&filepath_string, filepath);
 
     SE_String dir;
-    sestring_init(&dir, "");
+    se_string_init(&dir, "");
 
-    u32 slash_index = sestring_lastof(&filepath_string, '/');
+    u32 slash_index = se_string_lastof(&filepath_string, '/');
     if (slash_index == SESTRING_MAX_SIZE) {
-        sestring_append(&dir, "/");
+        se_string_append(&dir, "/");
     } else if (slash_index == 0) {
-        sestring_append(&dir, ".");
+        se_string_append(&dir, ".");
     } else {
-        sestring_append_length(&dir, filepath, slash_index);
-        sestring_append(&dir, "/");
+        se_string_append_length(&dir, filepath, slash_index);
+        se_string_append(&dir, "/");
     }
 
     // now add the texture path to directory
@@ -835,9 +835,9 @@ static void semesh_construct_material // only meant to be called form se_render3
     SE_String specular_path;
     SE_String normal_path;
 
-    sestring_init(&diffuse_path, dir.buffer);
-    sestring_init(&specular_path, dir.buffer);
-    sestring_init(&normal_path, dir.buffer);
+    se_string_init(&diffuse_path, dir.buffer);
+    se_string_init(&specular_path, dir.buffer);
+    se_string_init(&normal_path, dir.buffer);
 
     struct aiString *ai_texture_path_diffuse  = NEW(struct aiString);
     struct aiString *ai_texture_path_specular = NEW(struct aiString);
@@ -862,34 +862,34 @@ static void semesh_construct_material // only meant to be called form se_render3
     /* diffuse */
     material->base_diffuse = (Vec4) {1, 1, 1, 1};
     if (has_diffuse) {
-        sestring_append(&diffuse_path, ai_texture_path_diffuse->data);
-        setexture_load(&material->texture_diffuse , diffuse_path.buffer);
+        se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
+        se_texture_load(&material->texture_diffuse , diffuse_path.buffer);
     } else {
-        setexture_load(&material->texture_diffuse, default_diffuse_filepath);
+        se_texture_load(&material->texture_diffuse, default_diffuse_filepath);
     }
     free(ai_texture_path_diffuse);
 
     /* specular */
     if (has_specular) {
-        sestring_append(&specular_path, ai_texture_path_specular->data);
-        setexture_load(&material->texture_specular, specular_path.buffer);
+        se_string_append(&specular_path, ai_texture_path_specular->data);
+        se_texture_load(&material->texture_specular, specular_path.buffer);
     }
     free(ai_texture_path_specular);
 
     /* normal */
     if (has_normal) {
-        sestring_append(&normal_path, ai_texture_path_normal->data);
-        setexture_load(&material->texture_normal  , normal_path.buffer);
+        se_string_append(&normal_path, ai_texture_path_normal->data);
+        se_texture_load(&material->texture_normal  , normal_path.buffer);
     } else {
-        setexture_load(&material->texture_diffuse, default_normal_filepath);
+        se_texture_load(&material->texture_diffuse, default_normal_filepath);
     }
     free(ai_texture_path_normal);
 
-    sestring_deinit(&diffuse_path);
-    sestring_deinit(&specular_path);
-    sestring_deinit(&normal_path);
+    se_string_deinit(&diffuse_path);
+    se_string_deinit(&specular_path);
+    se_string_deinit(&normal_path);
 
-    sestring_deinit(&dir);
+    se_string_deinit(&dir);
 }
 
 static void semesh_construct_normal_mesh // only meant to be called from se_render3d_load_mesh
@@ -977,9 +977,9 @@ static void recursive_read_bone_heirarchy
     b8 found_in_bones = false;
     b8 already_exists = false;
     SE_String src_name;
-    sestring_init(&src_name, src->mName.data);
+    se_string_init(&src_name, src->mName.data);
     for (u32 i = 0; i < skeleton->bone_count; ++i) {
-        if (sestring_compare(&skeleton->bones_info[i].name, &src_name)) {
+        if (se_string_compare(&skeleton->bones_info[i].name, &src_name)) {
             found_in_bones = true;
             break;
         }
@@ -988,14 +988,14 @@ static void recursive_read_bone_heirarchy
     if (found_in_bones) {
             // now look to see if we've already added this to bone nodes or not
         for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
-            if (sestring_compare(&skeleton->bone_nodes[i].name, &src_name)) {
+            if (se_string_compare(&skeleton->bone_nodes[i].name, &src_name)) {
                 already_exists = true;  // we already have this in here,
                 break;
             }
         }
     }
 
-    sestring_deinit(&src_name);
+    se_string_deinit(&src_name);
 
         // if this node is a bone node AND it has not already been added to bone nodes, add it to the skeleton's node heirarchy
     SE_Bone_Node *new_bone_node = NULL;
@@ -1006,7 +1006,7 @@ static void recursive_read_bone_heirarchy
         skeleton->bone_node_count++;
 
         new_bone_node->parent = parent_id;
-        sestring_init(&new_bone_node->name, src->mName.data);
+        se_string_init(&new_bone_node->name, src->mName.data);
         copy_ai_matrix_to_mat4(src->mTransformation, &new_bone_node->local_transform);
             //- inverse model space transform of the bone
         model_space_transform_of_this_node = mat4_mul(parent_model_space_transform, new_bone_node->local_transform);
@@ -1039,11 +1039,11 @@ static void seload_skeleton_additively
                 // add bone to skeleton
             i32 bone_id = -1;
             SE_String ai_mesh_bone_name;
-            sestring_init(&ai_mesh_bone_name,ai_mesh->mBones[bone_index]->mName.data);
+            se_string_init(&ai_mesh_bone_name,ai_mesh->mBones[bone_index]->mName.data);
 
             b8 bone_found = false;
             for (u32 i = 0; i < skeleton->bone_count; ++i) {
-                if (sestring_compare(&skeleton->bones_info[i].name, &ai_mesh_bone_name)) {
+                if (se_string_compare(&skeleton->bones_info[i].name, &ai_mesh_bone_name)) {
                         //- Found the bone
                     bone_found = true;
                     bone_id = skeleton->bones_info[i].id;
@@ -1051,14 +1051,14 @@ static void seload_skeleton_additively
                 }
             }
 
-            sestring_deinit(&ai_mesh_bone_name);
+            se_string_deinit(&ai_mesh_bone_name);
 
             if (!bone_found) {
                     //- copy the bone info over
                 SE_Bone_Info *bone = &skeleton->bones_info[bone_index];
                 bone->id = skeleton->bone_count;
                 copy_ai_matrix_to_mat4(ai_mesh->mBones[bone_index]->mOffsetMatrix, &bone->offset);
-                sestring_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
+                se_string_init(&bone->name, ai_mesh->mBones[bone_index]->mName.data); // @leak we never deinit this string
 
                 bone_id = bone->id;
                 skeleton->bone_count++;
@@ -1262,7 +1262,7 @@ static Mat4 get_interpolated_bone_transform(SE_Bone_Animations *bone, f32 animat
 
 static void bone_animations_deinit(SE_Bone_Animations *bone) {
     // bone->bone_node_index = -1;
-    sestring_deinit(&bone->name);
+    se_string_deinit(&bone->name);
     free(bone->positions);
     free(bone->rotations);
     free(bone->scales);
@@ -1277,7 +1277,7 @@ static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAn
     bone->position_count  = channel->mNumPositionKeys;
     bone->rotation_count  = channel->mNumRotationKeys;
     bone->scale_count     = channel->mNumScalingKeys;
-    sestring_init(&bone->name, channel->mNodeName.data);
+    se_string_init(&bone->name, channel->mNodeName.data);
 
         // allocate memory for the arrays
     bone->positions = malloc(sizeof(Vec3) * bone->position_count);
@@ -1323,7 +1323,7 @@ static void recursive_calculate_bone_pose // calculate the pose of the given bon
 
     SE_Bone_Animations *animated_bone = NULL;
     for (u32 i = 0; i < animation->animated_bones_count; ++i) {
-        if (sestring_compare(&animation->animated_bones[i].name, &node->name)) { // @performance: change this from a string compare to a hash compare
+        if (se_string_compare(&animation->animated_bones[i].name, &node->name)) { // @performance: change this from a string compare to a hash compare
             animated_bone = &animation->animated_bones[i];
             break;
         }
@@ -1369,7 +1369,7 @@ void seskeleton_calculate_pose
 
 static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     u32 shader = renderer->shader_lit;
-    seshader_use(renderer->shaders[shader]);
+    se_shader_use(renderer->shaders[shader]);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
@@ -1377,65 +1377,65 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     // the good old days when debugging:
     // material->texture_diffuse.width = 100;
     /* vertex */
-    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
-    seshader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
+    se_shader_set_uniform_vec3(renderer->shaders[shader], "camera_pos", renderer->current_camera->position);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "light_space_matrix", renderer->light_space_matrix);
 
     /* material uniforms */
-    seshader_set_uniform_f32 (renderer->shaders[shader], "material.shininess", 0.1f);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "material.diffuse", 0);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "material.specular", 1);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "material.normal", 2);
-    seshader_set_uniform_vec4(renderer->shaders[shader], "material.base_diffuse", material->base_diffuse);
+    se_shader_set_uniform_f32 (renderer->shaders[shader], "material.shininess", 0.1f);
+    se_shader_set_uniform_i32 (renderer->shaders[shader], "material.diffuse", 0);
+    se_shader_set_uniform_i32 (renderer->shaders[shader], "material.specular", 1);
+    se_shader_set_uniform_i32 (renderer->shaders[shader], "material.normal", 2);
+    se_shader_set_uniform_vec4(renderer->shaders[shader], "material.base_diffuse", material->base_diffuse);
 
     // directional light uniforms
-    seshader_set_uniform_vec3(renderer->shaders[shader], "dir_light.direction", renderer->light_directional.direction);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.ambient", renderer->light_directional.ambient);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.diffuse", renderer->light_directional.diffuse);
-    seshader_set_uniform_rgb (renderer->shaders[shader], "dir_light.specular", (RGB) {0, 0, 0});
-    seshader_set_uniform_f32 (renderer->shaders[shader], "dir_light.intensity", renderer->light_directional.intensity);
-    seshader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
+    se_shader_set_uniform_vec3(renderer->shaders[shader], "dir_light.direction", renderer->light_directional.direction);
+    se_shader_set_uniform_rgb (renderer->shaders[shader], "dir_light.ambient", renderer->light_directional.ambient);
+    se_shader_set_uniform_rgb (renderer->shaders[shader], "dir_light.diffuse", renderer->light_directional.diffuse);
+    se_shader_set_uniform_rgb (renderer->shaders[shader], "dir_light.specular", (RGB) {0, 0, 0});
+    se_shader_set_uniform_f32 (renderer->shaders[shader], "dir_light.intensity", renderer->light_directional.intensity);
+    se_shader_set_uniform_i32 (renderer->shaders[shader], "shadow_map", 3);
 
     // point light uniforms
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
         char buf[100];
         SDL_snprintf(buf, 100, "point_lights[%i].position", i);
-        seshader_set_uniform_vec3(renderer->shaders[shader], buf, renderer->point_lights[i].position);
+        se_shader_set_uniform_vec3(renderer->shaders[shader], buf, renderer->point_lights[i].position);
         SDL_snprintf(buf, 100, "point_lights[%i].ambient", i);
-        seshader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].ambient);
+        se_shader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].ambient);
         SDL_snprintf(buf, 100, "point_lights[%i].diffuse", i);
-        seshader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].diffuse);
+        se_shader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].diffuse);
         SDL_snprintf(buf, 100, "point_lights[%i].specular", i);
-        seshader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].specular);
+        se_shader_set_uniform_rgb (renderer->shaders[shader], buf, renderer->point_lights[i].specular);
         SDL_snprintf(buf, 100, "point_lights[%i].constant", i);
-        seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].constant);
+        se_shader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].constant);
         SDL_snprintf(buf, 100, "point_lights[%i].linear", i);
-        seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].linear);
+        se_shader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].linear);
         SDL_snprintf(buf, 100, "point_lights[%i].quadratic", i);
-        seshader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].quadratic);
+        se_shader_set_uniform_f32 (renderer->shaders[shader], buf, renderer->point_lights[i].quadratic);
         SDL_snprintf(buf, 100, "point_lights[%i].far_plane", i);
-        seshader_set_uniform_f32 (renderer->shaders[shader], buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
+        se_shader_set_uniform_f32 (renderer->shaders[shader], buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
     }
-    seshader_set_uniform_i32 (renderer->shaders[shader], "num_of_point_lights", renderer->point_lights_count);
+    se_shader_set_uniform_i32 (renderer->shaders[shader], "num_of_point_lights", renderer->point_lights_count);
 
     /* textures */
     if (material->texture_diffuse.loaded) {
-        setexture_bind(&material->texture_diffuse, 0);
+        se_texture_bind(&material->texture_diffuse, 0);
     } else {
-        setexture_bind(&renderer->texture_default_diffuse, 0);
+        se_texture_bind(&renderer->texture_default_diffuse, 0);
     }
 
     if (material->texture_specular.loaded) {
-        setexture_bind(&material->texture_specular, 1);
+        se_texture_bind(&material->texture_specular, 1);
     } else {
-        setexture_bind(&renderer->texture_default_specular, 1);
+        se_texture_bind(&renderer->texture_default_specular, 1);
     }
 
     if (material->texture_normal.loaded) {
-        setexture_bind(&material->texture_normal, 2);
+        se_texture_bind(&material->texture_normal, 2);
     } else {
-        setexture_bind(&renderer->texture_default_normal, 2);
+        se_texture_bind(&renderer->texture_default_normal, 2);
     }
 
         // - Directional Shadow Map
@@ -1446,7 +1446,7 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
     for (u32 i = 0; i < SERENDERER3D_MAX_POINT_LIGHTS; ++i) {
         char buf[100];
         SDL_snprintf(buf, 100, "point_lights[%i].shadow_map", i);
-        seshader_set_uniform_i32 (renderer->shaders[shader], buf, 4+i);
+        se_shader_set_uniform_i32 (renderer->shaders[shader], buf, 4+i);
     }
         // ! NOTE: Might want to consider merging the below for loop with the above. I'm not sure which one
         // ! has what kind of a performance impact.
@@ -1458,18 +1458,18 @@ static void serender3d_render_set_material_uniforms_lit(const SE_Renderer3D *ren
 
 static void serender3d_render_set_material_uniforms_lines(const SE_Renderer3D *renderer, Mat4 transform) {
     u32 shader = renderer->shader_lines;
-    seshader_use(renderer->shaders[shader]);
+    se_shader_use(renderer->shaders[shader]);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
     /* vertex */
-    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
 }
 
 static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     u32 shader = renderer->shader_sprite;
-    seshader_use(renderer->shaders[shader]);
+    se_shader_use(renderer->shaders[shader]);
 
     /* always look at the camera */
     // Mat4 look_at_camera = mat4_lookat(mat4_get_translation(transform), renderer->current_camera->position, renderer->current_camera->up);
@@ -1479,17 +1479,17 @@ static void serender3d_render_set_material_uniforms_sprite(const SE_Renderer3D *
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
     /* vertex */
-    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
 
     /* material */
-    seshader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
-    seshader_set_uniform_i32(renderer->shaders[shader], "sprite_texture", 0);
+    se_shader_set_uniform_vec4(renderer->shaders[shader], "base_diffuse", material->base_diffuse);
+    se_shader_set_uniform_i32(renderer->shaders[shader], "sprite_texture", 0);
 
     /* textures */
     if (material->sprite.texture.loaded) {
-        setexture_bind(&material->sprite.texture, 0);
+        se_texture_bind(&material->sprite.texture, 0);
     } else {
-        setexture_bind(&renderer->texture_default_diffuse, 0);
+        se_texture_bind(&renderer->texture_default_diffuse, 0);
     }
 }
 
@@ -1510,7 +1510,7 @@ static void load_animation(SE_Skeleton *skeleton, const struct aiScene *scene) {
             // update the data of animation
         anim->duration = scene->mAnimations[i]->mDuration;
         anim->ticks_per_second = scene->mAnimations[i]->mTicksPerSecond;
-        sestring_init(&anim->name, scene->mAnimations[i]->mName.data); // @leak we need to free anim->name (deinit)
+        se_string_init(&anim->name, scene->mAnimations[i]->mName.data); // @leak we need to free anim->name (deinit)
 
             // load the data of each animated bone
         anim->animated_bones_count = scene->mAnimations[i]->mNumChannels;
@@ -1611,71 +1611,71 @@ static void
 serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     u32 shader_index = renderer->shader_skinned_mesh;
     SE_Shader *shader = renderer->shaders[shader_index];
-    seshader_use(shader);
+    se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
      /* vertex */
-    seshader_set_uniform_mat4(shader, "projection_view_model", pvm);
-    seshader_set_uniform_mat4(shader, "model_matrix", transform);
-    seshader_set_uniform_vec3(shader, "camera_pos", renderer->current_camera->position);
-    seshader_set_uniform_mat4(shader, "light_space_matrix", renderer->light_space_matrix);
+    se_shader_set_uniform_mat4(shader, "projection_view_model", pvm);
+    se_shader_set_uniform_mat4(shader, "model_matrix", transform);
+    se_shader_set_uniform_vec3(shader, "camera_pos", renderer->current_camera->position);
+    se_shader_set_uniform_mat4(shader, "light_space_matrix", renderer->light_space_matrix);
 
     /* material uniforms */
-    seshader_set_uniform_f32 (shader, "material.shininess", 0.1f);
-    seshader_set_uniform_i32 (shader, "material.diffuse", 0);
-    seshader_set_uniform_i32 (shader, "material.specular", 1);
-    seshader_set_uniform_i32 (shader, "material.normal", 2);
-    seshader_set_uniform_vec4(shader, "material.base_diffuse", material->base_diffuse);
+    se_shader_set_uniform_f32 (shader, "material.shininess", 0.1f);
+    se_shader_set_uniform_i32 (shader, "material.diffuse", 0);
+    se_shader_set_uniform_i32 (shader, "material.specular", 1);
+    se_shader_set_uniform_i32 (shader, "material.normal", 2);
+    se_shader_set_uniform_vec4(shader, "material.base_diffuse", material->base_diffuse);
 
     // directional light uniforms
-    seshader_set_uniform_vec3(shader, "dir_light.direction", renderer->light_directional.direction);
-    seshader_set_uniform_rgb (shader, "dir_light.ambient", renderer->light_directional.ambient);
-    seshader_set_uniform_rgb (shader, "dir_light.diffuse", renderer->light_directional.diffuse);
-    seshader_set_uniform_rgb (shader, "dir_light.specular", (RGB) {0, 0, 0});
-    seshader_set_uniform_f32 (shader, "dir_light.intensity", renderer->light_directional.intensity);
-    seshader_set_uniform_i32 (shader, "shadow_map", 3);
+    se_shader_set_uniform_vec3(shader, "dir_light.direction", renderer->light_directional.direction);
+    se_shader_set_uniform_rgb (shader, "dir_light.ambient", renderer->light_directional.ambient);
+    se_shader_set_uniform_rgb (shader, "dir_light.diffuse", renderer->light_directional.diffuse);
+    se_shader_set_uniform_rgb (shader, "dir_light.specular", (RGB) {0, 0, 0});
+    se_shader_set_uniform_f32 (shader, "dir_light.intensity", renderer->light_directional.intensity);
+    se_shader_set_uniform_i32 (shader, "shadow_map", 3);
 
     // point light uniforms
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
         char buf[100];
         SDL_snprintf(buf, 100, "point_lights[%i].position", i);
-        seshader_set_uniform_vec3(shader, buf, renderer->point_lights[i].position);
+        se_shader_set_uniform_vec3(shader, buf, renderer->point_lights[i].position);
         SDL_snprintf(buf, 100, "point_lights[%i].ambient", i);
-        seshader_set_uniform_rgb (shader, buf, renderer->point_lights[i].ambient);
+        se_shader_set_uniform_rgb (shader, buf, renderer->point_lights[i].ambient);
         SDL_snprintf(buf, 100, "point_lights[%i].diffuse", i);
-        seshader_set_uniform_rgb (shader, buf, renderer->point_lights[i].diffuse);
+        se_shader_set_uniform_rgb (shader, buf, renderer->point_lights[i].diffuse);
         SDL_snprintf(buf, 100, "point_lights[%i].specular", i);
-        seshader_set_uniform_rgb (shader, buf, renderer->point_lights[i].specular);
+        se_shader_set_uniform_rgb (shader, buf, renderer->point_lights[i].specular);
         SDL_snprintf(buf, 100, "point_lights[%i].constant", i);
-        seshader_set_uniform_f32 (shader, buf, renderer->point_lights[i].constant);
+        se_shader_set_uniform_f32 (shader, buf, renderer->point_lights[i].constant);
         SDL_snprintf(buf, 100, "point_lights[%i].linear", i);
-        seshader_set_uniform_f32 (shader, buf, renderer->point_lights[i].linear);
+        se_shader_set_uniform_f32 (shader, buf, renderer->point_lights[i].linear);
         SDL_snprintf(buf, 100, "point_lights[%i].quadratic", i);
-        seshader_set_uniform_f32 (shader, buf, renderer->point_lights[i].quadratic);
+        se_shader_set_uniform_f32 (shader, buf, renderer->point_lights[i].quadratic);
         SDL_snprintf(buf, 100, "point_lights[%i].far_plane", i);
-        seshader_set_uniform_f32 (shader, buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
+        se_shader_set_uniform_f32 (shader, buf, 25.0f); // @temp magic value set to the projection far plane when calculating the shadow maps (cube texture)
     }
-    seshader_set_uniform_i32 (shader, "num_of_point_lights", renderer->point_lights_count);
+    se_shader_set_uniform_i32 (shader, "num_of_point_lights", renderer->point_lights_count);
 
     /* textures */
     if (material->texture_diffuse.loaded) {
-        setexture_bind(&material->texture_diffuse, 0);
+        se_texture_bind(&material->texture_diffuse, 0);
     } else {
-        setexture_bind(&renderer->texture_default_diffuse, 0);
+        se_texture_bind(&renderer->texture_default_diffuse, 0);
     }
 
     if (material->texture_specular.loaded) {
-        setexture_bind(&material->texture_specular, 1);
+        se_texture_bind(&material->texture_specular, 1);
     } else {
-        setexture_bind(&renderer->texture_default_specular, 1);
+        se_texture_bind(&renderer->texture_default_specular, 1);
     }
 
     if (material->texture_normal.loaded) {
-        setexture_bind(&material->texture_normal, 2);
+        se_texture_bind(&material->texture_normal, 2);
     } else {
-        setexture_bind(&renderer->texture_default_normal, 2);
+        se_texture_bind(&renderer->texture_default_normal, 2);
     }
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
@@ -1685,7 +1685,7 @@ serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, c
     for (u32 i = 0; i < SERENDERER3D_MAX_POINT_LIGHTS; ++i) {
         char buf[100];
         SDL_snprintf(buf, 100, "point_lights[%i].shadow_map", i);
-        seshader_set_uniform_i32 (shader, buf, 4+i);
+        se_shader_set_uniform_i32 (shader, buf, 4+i);
     }
         // ! NOTE: Might want to consider merging the below for loop with the above. I'm not sure which one
         // ! has what kind of a performance impact.
@@ -1698,17 +1698,17 @@ serender3d_render_set_material_uniforms_skinned(const SE_Renderer3D *renderer, c
 static void
 serender3d_render_set_material_uniforms_skinned_skeleton(const SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     u32 shader = renderer->shader_skinned_mesh_skeleton;
-    seshader_use(renderer->shaders[shader]);
+    se_shader_use(renderer->shaders[shader]);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
     pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
      /* vertex */
-    seshader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
-    seshader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "projection_view_model", pvm);
+    se_shader_set_uniform_mat4(renderer->shaders[shader], "model_matrix", transform);
 
     /* material uniforms */
-    seshader_set_uniform_vec3 (renderer->shaders[shader], "base_diffuse", v3f(1, 0, 0));
+    se_shader_set_uniform_vec3 (renderer->shaders[shader], "base_diffuse", v3f(1, 0, 0));
 }
 
 void se_render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
@@ -1728,7 +1728,7 @@ void se_render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform
         if (mesh->skeleton != NULL && mesh->skeleton->animations_count > 0) {
                 // used for animated skeleton
             serender3d_render_set_material_uniforms_skinned_skeleton(renderer, material, transform);
-            seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh_skeleton], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+            se_shader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh_skeleton], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
         } else {
                 // render the line without animation
             serender3d_render_set_material_uniforms_lines(renderer, transform);
@@ -1750,7 +1750,7 @@ void se_render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform
         // for (u32 i = 0; i < SE_SKELETON_BONES_CAPACITY; ++i) { // @temp // @debug for debugging purposes
         //     mesh->skeleton->final_pose[i] = mat4_identity();
         // }
-        seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+        se_shader_set_uniform_mat4_array(renderer->shaders[renderer->shader_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
     } else
         //- POINT
     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
@@ -1773,7 +1773,7 @@ void se_render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform
 void se_render_mesh_with_shader
 (const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader) {
     se_render3d_reset_render_config(); // Reset configs to their default values
-    seshader_use(shader);
+    se_shader_use(shader);
     i32 primitive = GL_TRIANGLES;
 
         //- LINE
@@ -1823,17 +1823,17 @@ void se_render3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_ind
 
     { // setup the shader
         u32 shader = renderer->shader_outline;
-        seshader_use(renderer->shaders[shader]); // use the outline shader
+        se_shader_use(renderer->shaders[shader]); // use the outline shader
 
         Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
         pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
-        seshader_set_uniform_mat4(renderer->shaders[shader], "_pvm", pvm);
-        seshader_set_uniform_f32(renderer->shaders[shader], "_outline_width", 0.02f);
-        seshader_set_uniform_rgb(renderer->shaders[shader], "_outline_colour", (RGB) {255, 255, 255});
+        se_shader_set_uniform_mat4(renderer->shaders[shader], "_pvm", pvm);
+        se_shader_set_uniform_f32(renderer->shaders[shader], "_outline_width", 0.02f);
+        se_shader_set_uniform_rgb(renderer->shaders[shader], "_outline_colour", (RGB) {255, 255, 255});
         static f32 time = 0;
         time += 0.167;
-        seshader_set_uniform_f32(renderer->shaders[shader], "_time", time);
+        se_shader_set_uniform_f32(renderer->shaders[shader], "_time", time);
     }
 
     glBindVertexArray(mesh->vao);
@@ -1855,15 +1855,15 @@ static void se_render_directional_shadow_map_for_mesh
     SE_Mesh *mesh = renderer->meshes[mesh_index];
 
     if (mesh->type == SE_MESH_TYPE_NORMAL) {
-        seshader_use(renderer->shaders[renderer->shader_shadow_calc]);
-        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
-        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "model", model_mat);
+        se_shader_use(renderer->shaders[renderer->shader_shadow_calc]);
+        se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
+        se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc], "model", model_mat);
     } else
     if (mesh->type == SE_MESH_TYPE_SKINNED) {
-        seshader_use(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh]);
-        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "light_space_matrix", light_space_mat);
-        seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "model", model_mat);
-        seshader_set_uniform_mat4_array(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+        se_shader_use(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh]);
+        se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "light_space_matrix", light_space_mat);
+        se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "model", model_mat);
+        se_shader_set_uniform_mat4_array(renderer->shaders[renderer->shader_shadow_calc_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
     }
 
     glBindVertexArray(mesh->vao);
@@ -2037,24 +2037,24 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
                     shadow_proj);
 
                 // configure shader
-                seshader_use(renderer->shaders[renderer->shader_shadow_omnidir_calc]);
+                se_shader_use(renderer->shaders[renderer->shader_shadow_omnidir_calc]);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
-                seshader_set_uniform_f32 (renderer->shaders[renderer->shader_shadow_omnidir_calc], "far_plane", far);
-                seshader_set_uniform_vec3(renderer->shaders[renderer->shader_shadow_omnidir_calc], "light_pos", point_light->position);
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[0]", shadow_transforms[0]);
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[1]", shadow_transforms[1]);
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[2]", shadow_transforms[2]);
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[3]", shadow_transforms[3]);
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[4]", shadow_transforms[4]);
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[5]", shadow_transforms[5]);
+                se_shader_set_uniform_f32 (renderer->shaders[renderer->shader_shadow_omnidir_calc], "far_plane", far);
+                se_shader_set_uniform_vec3(renderer->shaders[renderer->shader_shadow_omnidir_calc], "light_pos", point_light->position);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[0]", shadow_transforms[0]);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[1]", shadow_transforms[1]);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[2]", shadow_transforms[2]);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[3]", shadow_transforms[3]);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[4]", shadow_transforms[4]);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "shadow_matrices[5]", shadow_transforms[5]);
             }
             // render scene
             for (u32 i = 0; i < transforms_count; ++i) {
                 SE_Mesh *mesh = renderer->meshes[i];
                 Mat4 model_mat = transforms[i];
 
-                seshader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "model", model_mat);
+                se_shader_set_uniform_mat4(renderer->shaders[renderer->shader_shadow_omnidir_calc], "model", model_mat);
 
                 glBindVertexArray(mesh->vao);
                 if (mesh->indexed) {
@@ -2079,7 +2079,7 @@ static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const ch
     // add a default shader
     u32 shader = renderer->shaders_count;
     renderer->shaders[shader] = NEW (SE_Shader);
-    seshader_init_from_with_geometry(renderer->shaders[shader], vsd, fsd, gsd);
+    se_shader_init_from_with_geometry(renderer->shaders[shader], vsd, fsd, gsd);
     renderer->shaders_count++;
     return shader;
 }
@@ -2088,7 +2088,7 @@ u32 se_render3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char 
     // add a default shader
     u32 shader = renderer->shaders_count;
     renderer->shaders[shader] = NEW (SE_Shader);
-    seshader_init_from(renderer->shaders[shader], vsd, fsd);
+    se_shader_init_from(renderer->shaders[shader], vsd, fsd);
     renderer->shaders_count++;
     return shader;
 }
@@ -2113,9 +2113,9 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->material_lines = se_render3d_add_material(renderer);
     renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
 
-    setexture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
-    setexture_load(&renderer->texture_default_normal, default_normal_filepath);
-    setexture_load(&renderer->texture_default_specular, default_specular_filepath);
+    se_texture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
+    se_texture_load(&renderer->texture_default_normal, default_normal_filepath);
+    se_texture_load(&renderer->texture_default_specular, default_specular_filepath);
 
     /* shadow mapping */
     f32 shadow_w = 1024;
@@ -2158,7 +2158,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     renderer->meshes_count = 0;
 
     for (u32 i = 0; i < renderer->shaders_count; ++i) {
-        seshader_deinit(renderer->shaders[i]);
+        se_shader_deinit(renderer->shaders[i]);
     }
     renderer->shaders_count = 0;
 
@@ -2171,9 +2171,9 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     serender_target_deinit(&renderer->shadow_render_target);
 
     /* default stuff */
-    setexture_unload(&renderer->texture_default_diffuse);
-    setexture_unload(&renderer->texture_default_normal);
-    setexture_unload(&renderer->texture_default_specular);
+    se_texture_unload(&renderer->texture_default_diffuse);
+    se_texture_unload(&renderer->texture_default_normal);
+    se_texture_unload(&renderer->texture_default_specular);
 }
 
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {

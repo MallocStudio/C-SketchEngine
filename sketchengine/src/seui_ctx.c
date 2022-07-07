@@ -96,12 +96,12 @@ void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 ma
 
     ctx->viewport = viewport;
     serender2d_init(&ctx->renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
-    se_init_text_default(&ctx->txt_renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
+    se_text_init_default(&ctx->txt_renderer, ctx->viewport, ctx->min_depth_available, ctx->max_depth_available);
 
     seui_theme_default(&ctx->theme);
 
-    // setexture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
-    setexture_atlas_load(&ctx->icon_atlas, "core/textures/ui_icons_atlas.png", 4, 4);
+    // se_texture_atlas_load(&ctx->icon_atlas, "assets/UI/icons/ui_icons_atlas.png", 4, 4);
+    se_texture_atlas_load(&ctx->icon_atlas, "core/textures/ui_icons_atlas.png", 4, 4);
 
     /* panels */
     ctx->current_panel = NULL;
@@ -121,16 +121,16 @@ void seui_init(SE_UI *ctx, SE_Input *input, Rect viewport, f32 min_depth, f32 ma
     ctx->panel_container_count = 0;
     memset(ctx->panel_containers, -1, sizeof(i32) * SEUI_PANEL_CONTAINER_CAPACITY);
 
-    sestring_init(&ctx->text_input_cache, "");
-    sestring_init(&ctx->text_input, "");
+    se_string_init(&ctx->text_input_cache, "");
+    se_string_init(&ctx->text_input, "");
 }
 
 void seui_deinit(SE_UI *ctx) {
     serender2d_deinit(&ctx->renderer);
-    se_deinit_text(&ctx->txt_renderer);
-    sestring_deinit(&ctx->text_input_cache);
-    sestring_deinit(&ctx->text_input);
-    setexture_atlas_unload(&ctx->icon_atlas);
+    se_text_deinit(&ctx->txt_renderer);
+    se_string_deinit(&ctx->text_input_cache);
+    se_string_deinit(&ctx->text_input);
+    se_texture_atlas_unload(&ctx->icon_atlas);
     free(ctx->panels);
     ctx->panel_count = 0;
 }
@@ -785,13 +785,13 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
 
             // allow for increasing and decreasing numerical values while hovering
             if (ctx->text_input_only_numerical && ctx->active != id) { // if we are hovering but have not selected the text input to edit with keyboard
-                f32 numerical_value = sestring_as_f32(text);
+                f32 numerical_value = se_string_as_f32(text);
                 if (ctx->input->mouse_wheel != 0) {
                     char value_as_string[SESTRING_MAX_NUM_OF_DIGITS];
                     numerical_value += ctx->input->mouse_wheel;
                     sprintf(value_as_string, "%i", (i32)numerical_value);
-                    sestring_clear(text);
-                    sestring_append(text, value_as_string);
+                    se_string_clear(text);
+                    se_string_append(text, value_as_string);
                 }
             }
 
@@ -800,8 +800,8 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
             if (ctx->active != id) {
                 // make this the current active widget
                 ctx->active = id;
-                sestring_duplicate(text, &ctx->text_input); // prepare the cache for new data
-                seinput_text_input_activate(input, &ctx->text_input, ctx->text_input_only_numerical);
+                se_string_duplicate(text, &ctx->text_input); // prepare the cache for new data
+                se_input_text_input_activate(input, &ctx->text_input, ctx->text_input_only_numerical);
             }
         } break;
     }
@@ -811,13 +811,13 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         colour = RGBA_BLACK;
 
         // allow for deleting characters
-        if (seinput_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
-            sestring_delete_from_end(&ctx->text_input, 1);
+        if (se_input_is_key_pressed(input, SDL_SCANCODE_BACKSPACE)) {
+            se_string_delete_from_end(&ctx->text_input, 1);
         }
 
         // clear when double clicked on
         if (ctx->input->is_mouse_left_down && rect_overlaps_point(rect, ctx->input->mouse_screen_pos)) {
-            sestring_clear(&ctx->text_input);
+            se_string_clear(&ctx->text_input);
         }
 
             // render the input cursor
@@ -830,24 +830,24 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
         // RGBA cursor_colour = RGBA_WHITE;
         // static f32 alpha = 0;
         // alpha += 0.167; // @incomplete dummy delta
-        // cursor_colour.a = semath_sin(alpha);
+        // cursor_colour.a = se_math_sin(alpha);
         // if (alpha > 1000) alpha = 0;
         // serender2d_add_rect(renderer, cursor, get_depth_foreground(ctx), cursor_colour);
 
         /* accept */
-        if ((seinput_is_mouse_left_pressed(ctx->input) || seinput_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM // clicked outside
-            || seinput_is_key_pressed(ctx->input, SDL_SCANCODE_RETURN)) {
+        if ((se_input_is_mouse_left_pressed(ctx->input) || se_input_is_mouse_right_pressed(input)) && ui_state != UI_STATE_WARM // clicked outside
+            || se_input_is_key_pressed(ctx->input, SDL_SCANCODE_RETURN)) {
             // copy the input text data over to text
-            sestring_clear(text); // get rid of what was there and put in the new edited text
-            sestring_duplicate(&ctx->text_input, text);
+            se_string_clear(text); // get rid of what was there and put in the new edited text
+            se_string_duplicate(&ctx->text_input, text);
             ctx->active = SEUI_ID_NULL;
-            seinput_text_input_deactivate(input);
+            se_input_text_input_deactivate(input);
         } else
         /* cancel */
-        if (seinput_is_key_pressed(ctx->input, SDL_SCANCODE_ESCAPE)) {
+        if (se_input_is_key_pressed(ctx->input, SDL_SCANCODE_ESCAPE)) {
             // DON'T copy the input text data over to text
             ctx->active = SEUI_ID_NULL;
-            seinput_text_input_deactivate(input);
+            se_input_text_input_deactivate(input);
         }
     }
 
@@ -908,22 +908,22 @@ void seui_hsv_picker(SE_UI *ctx, HSV *hsv) {
 #if 0   // colour triangle
             { /* colour triangle */
                 serender2d_add_hsv_triangle(&ctx->renderer, center, radius, get_depth_middleground(ctx), angle);
-                if (seinput_is_key_down(ctx->input, SDL_SCANCODE_H)) {
+                if (se_input_is_key_down(ctx->input, SDL_SCANCODE_H)) {
                     hsv->h += 5;
                 }
             }
             { /* the cursor on the triangle */
                 Vec2 colour_tip = {
-                    semath_cos(angle) * radius + center.x,
-                    semath_sin(angle) * radius + center.y,
+                    se_math_cos(angle) * radius + center.x,
+                    se_math_sin(angle) * radius + center.y,
                 };
                 Vec2 white_tip = {
-                    semath_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-                    semath_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                    se_math_cos(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    se_math_sin(angle + 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
                 };
                 Vec2 black_tip = {
-                    semath_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
-                    semath_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
+                    se_math_cos(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.x,
+                    se_math_sin(angle - 120 * SEMATH_DEG2RAD_MULTIPLIER) * radius + center.y,
                 };
                 Vec2 hsv_point = colour_tip;
 
@@ -1102,10 +1102,10 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
         ctx->current_panel->config_item_minimised = previous_item_minimised_config;
 
         sprintf(label_buffer, "%.2f", value->x);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->x = sestring_as_f32(&ctx->text_input_cache);
+        value->x = se_string_as_f32(&ctx->text_input_cache);
 
             //- Y
         ctx->current_panel->config_item_minimised = true;
@@ -1114,10 +1114,10 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
         ctx->current_panel->config_item_minimised = previous_item_minimised_config;
 
         sprintf(label_buffer, "%.2f", value->y);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->y = sestring_as_f32(&ctx->text_input_cache);
+        value->y = se_string_as_f32(&ctx->text_input_cache);
 
             //- Z
         ctx->current_panel->config_item_minimised = true;
@@ -1126,10 +1126,10 @@ void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable) {
         ctx->current_panel->config_item_minimised = previous_item_minimised_config;
 
         sprintf(label_buffer, "%.2f", value->z);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->z = sestring_as_f32(&ctx->text_input_cache);
+        value->z = se_string_as_f32(&ctx->text_input_cache);
 
         ctx->current_panel->config_item_centered = previous_item_centered_config;
 
@@ -1163,10 +1163,10 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%i", value->h);
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->h = (i32)sestring_as_f32(&ctx->text_input_cache);
+        value->h = (i32)se_string_as_f32(&ctx->text_input_cache);
         if (value->h < 0) value->h = 359;
         if (value->h > 359) value->h = 0;
 
@@ -1174,10 +1174,10 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%i", (i32)(value->s * 100));
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->s = sestring_as_f32(&ctx->text_input_cache) / 100.0f;
+        value->s = se_string_as_f32(&ctx->text_input_cache) / 100.0f;
         if (value->s < 0) value->s = 0;
         if (value->s > 1) value->s = 1;
 
@@ -1185,10 +1185,10 @@ void seui_label_hsv(SE_UI *ctx, const char *title, HSV *value, b8 editable) {
         seui_label(ctx, label_buffer);
 
         sprintf(label_buffer, "%i", (i32)(value->v * 100));
-        sestring_clear(&ctx->text_input_cache);
-        sestring_append(&ctx->text_input_cache, label_buffer);
+        se_string_clear(&ctx->text_input_cache);
+        se_string_append(&ctx->text_input_cache, label_buffer);
         seui_input_text(ctx, &ctx->text_input_cache);
-        value->v = sestring_as_f32(&ctx->text_input_cache) / 100.0f;
+        value->v = se_string_as_f32(&ctx->text_input_cache) / 100.0f;
         if (value->v < 0) value->v = 0;
         if (value->v > 1) value->v = 1;
 
