@@ -32,13 +32,13 @@ App::App(SDL_Window *window) {
     this->init_application(window);
         //- Start with Engine Mode
     this->init_engine();
-    debug_raycast_visual = serender3d_add_mesh_empty(&m_renderer);
-    world_aabb_mesh = serender3d_add_mesh_empty(&m_renderer);
+    debug_raycast_visual = se_render3d_add_mesh_empty(&m_renderer);
+    world_aabb_mesh = se_render3d_add_mesh_empty(&m_renderer);
 }
 
 App::~App() {
     free(ctx);
-    serender3d_deinit(&m_renderer);
+    se_render3d_deinit(&m_renderer);
     se_gizmo_renderer_deinit(&m_gizmo_renderer);
 }
 
@@ -68,7 +68,7 @@ void App::init_application(SDL_Window *window) {
         //- Renderer
     m_camera_count = 0;
     main_camera = this->add_camera();
-    serender3d_init(&m_renderer, &m_cameras[main_camera]);
+    se_render3d_init(&m_renderer, &m_cameras[main_camera]);
     m_renderer.light_directional.direction = {-1, -1, -1};
     vec3_normalise(&m_renderer.light_directional.direction);
     m_renderer.light_directional.ambient   = {50, 50, 50};
@@ -86,23 +86,23 @@ void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
         // @temp TODO: MOVE TO LOADER
-    mesh_soulspear = serender3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
+    mesh_soulspear = se_render3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
 
-    // mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
-    mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/Sitting Laughing.fbx", true);
+    // mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
+    mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/Sitting Laughing.fbx", true);
 
-    // mesh_guy = serender3d_load_mesh(&m_renderer, "game/meshes/changedPrizm2.fbx", true);
-    // mesh_guy = serender3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
+    // mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/changedPrizm2.fbx", true);
+    // mesh_guy = se_render3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
 
-    mesh_skeleton = serender3d_add_mesh_empty(&m_renderer);
-    semesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
-    // semesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
+    mesh_skeleton = se_render3d_add_mesh_empty(&m_renderer);
+    se_mesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
+    // se_mesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
 
     animation.current_frame = 0;
     animation.duration = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->duration;
     animation.speed = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
 
-    mesh_plane = serender3d_add_plane(&m_renderer, v3f(10, 10, 10));
+    mesh_plane = se_render3d_add_plane(&m_renderer, v3f(10, 10, 10));
 
     mesh_gizmos_translate = se_gizmo_add_coordniates(&m_gizmo_renderer);
     m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
@@ -110,8 +110,8 @@ void App::init_engine() {
     mesh_light_pos_gizmos = se_gizmo_add_coordniates(&m_gizmo_renderer);
     m_gizmo_renderer.shapes[mesh_light_pos_gizmos].base_colour = lit;
 
-    u32 point_light_1 = serender3d_add_point_light(&m_renderer);
-    current_obj_aabb = serender3d_add_mesh_empty(&m_renderer);
+    u32 point_light_1 = se_render3d_add_point_light(&m_renderer);
+    current_obj_aabb = se_render3d_add_mesh_empty(&m_renderer);
 
 #if 0 // manually create entities
     // @temp add entities, Change this to a function that says: generate_default_level
@@ -233,7 +233,7 @@ void App::render() {
         //- Shadows
     {
         AABB3D world_aabb = aabb3d_calculate_from_array(m_level.entities.aabb_transformed, m_level.entities.count);
-        semesh_generate_gizmos_aabb(m_renderer.meshes[world_aabb_mesh], world_aabb.min, world_aabb.max, 2);
+        se_mesh_generate_gizmos_aabb(m_renderer.meshes[world_aabb_mesh], world_aabb.min, world_aabb.max, 2);
         se_render_directional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count, world_aabb);
     }
     se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.transform, m_level.entities.count);
@@ -249,16 +249,16 @@ void App::render() {
 
         // aabb of selected entity
     if (m_selected_entity >= 0) {
-        semesh_generate_gizmos_aabb(m_renderer.meshes[current_obj_aabb],
+        se_mesh_generate_gizmos_aabb(m_renderer.meshes[current_obj_aabb],
             m_level.entities.aabb[m_selected_entity].min,
             m_level.entities.aabb[m_selected_entity].max,
             2);
 
-        serender_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
+        se_render_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
     }
         // skeleton mesh
-    serender_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
-    serender_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());
+    se_render_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
+    se_render_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());
 
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -284,7 +284,7 @@ void App::render() {
         se_gizmo_render_index(&m_gizmo_renderer, mesh_light_pos_gizmos, transform);
     }
 
-    serender_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
+    se_render_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
 
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -311,7 +311,7 @@ i32 App::raycast_to_select_entity() {
         }
     }
 
-    semesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin,
+    se_mesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin,
         vec3_add(raycast_origin, vec3_mul_scalar(raycast_dir, 100)), 2, {255, 0,0, 255});
 
     return result;
@@ -380,7 +380,7 @@ void App::load() {
         //! we have that feature done.
     // {   //- Load the actual asset data
     //     for (u32 i = 0; i < m_mesh_assets_count; ++i) {
-    //         serender3d_load_mesh(&m_renderer, m_mesh_assets[i].buffer, false);
+    //         se_render3d_load_mesh(&m_renderer, m_mesh_assets[i].buffer, false);
     //     }
     // }
 

@@ -54,7 +54,7 @@ static void sedefault_mesh(SE_Mesh *mesh) {
     mesh->skeleton = NULL;
 }
 
-void semesh_deinit(SE_Mesh *mesh) {
+void se_mesh_deinit(SE_Mesh *mesh) {
     glDeleteVertexArrays(1, &mesh->vao);
     glDeleteBuffers(1, &mesh->vbo);
     glDeleteBuffers(1, &mesh->ibo);
@@ -64,7 +64,7 @@ void semesh_deinit(SE_Mesh *mesh) {
     }
 }
 
-void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
+void se_mesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
     sedefault_mesh(mesh);
     SE_Vertex3D verts[4];
 
@@ -99,10 +99,10 @@ void semesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
         2, 3, 0
     };
 
-    semesh_generate(mesh, 4, verts, 6, indices);
+    se_mesh_generate(mesh, 4, verts, 6, indices);
 }
 
-void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
+void se_mesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_SPRITE;
     SE_Vertex3D verts[4];
@@ -138,10 +138,10 @@ void semesh_generate_sprite(SE_Mesh *mesh, Vec2 scale) {
         2, 3, 0
     };
 
-    semesh_generate(mesh, 4, verts, 6, indices);
+    se_mesh_generate(mesh, 4, verts, 6, indices);
 }
 
-void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
+void se_mesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
     sedefault_mesh(mesh);
     SE_Vertex3D verts[8] = {0};
 
@@ -180,7 +180,7 @@ void semesh_generate_cube(SE_Mesh *mesh, Vec3 scale) {
         2, 7, 3,
         3, 7, 4
     };
-    semesh_generate(mesh, 8, verts, 12 * 3, indices);
+    se_mesh_generate(mesh, 8, verts, 12 * 3, indices);
 }
 
 void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
@@ -218,10 +218,10 @@ void semesh_generate_plane(SE_Mesh *mesh, Vec3 scale) {
         2, 3, 0
     };
 
-    semesh_generate(mesh, 4, verts, 6, indices);
+    se_mesh_generate(mesh, 4, verts, 6, indices);
 }
 
-void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
+void se_mesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
@@ -237,10 +237,10 @@ void semesh_generate_line(SE_Mesh *mesh, Vec3 pos1, Vec3 pos2, f32 width, RGBA c
     u32 indices[2] = {
         0, 1
     };
-    semesh_generate(mesh, 2, verts, 2, indices);
+    se_mesh_generate(mesh, 2, verts, 2, indices);
 }
 
-void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 positions_count, f32 line_width) {
+void se_mesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 positions_count, f32 line_width) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = line_width;
@@ -259,13 +259,13 @@ void semesh_generate_line_fan(SE_Mesh *mesh, Vec3 origin, Vec3 *positions, u32 p
         indices[i + 1] = index;
         ++index;
     }
-    semesh_generate(mesh, positions_count + 1, verts, positions_count * 2, indices);
+    se_mesh_generate(mesh, positions_count + 1, verts, positions_count * 2, indices);
 
     free(verts);
     free(indices);
 }
 
-void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width) {
+void se_mesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_width) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = line_width;
@@ -305,10 +305,10 @@ void semesh_generate_gizmos_aabb(SE_Mesh *mesh, Vec3 min, Vec3 max, f32 line_wid
         7, 6,
         7, 4
     };
-    semesh_generate(mesh, 8, verts, 24, indices);
+    se_mesh_generate(mesh, 8, verts, 24, indices);
 }
 
-void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 width) {
+void se_mesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 width) {
     sedefault_mesh(mesh);
     mesh->type = SE_MESH_TYPE_LINE;
     mesh->line_width = width;
@@ -339,10 +339,10 @@ void semesh_generate_gizmos_coordinates(SE_Mesh *mesh, f32 width) {
         2, 3, // y
         4, 5, // z
     };
-    semesh_generate(mesh, 6, verts, 6, indices);
+    se_mesh_generate(mesh, 6, verts, 6, indices);
 }
 
-static void semesh_generate_skinned // same as semesh_generate but for skinned vertices
+static void semesh_generate_skinned // same as se_mesh_generate but for skinned vertices
 (SE_Mesh *mesh, u32 vert_count, const SE_Skinned_Vertex *vertices, u32 index_count, u32 *indices) {
     // generate buffers
     glGenBuffers(1, &mesh->vbo);
@@ -472,7 +472,7 @@ static void recursive_generate_skeleton_verts_as_points
     }
 }
 
-void semesh_generate_static_skeleton
+void se_mesh_generate_static_skeleton
 (SE_Mesh *mesh, const SE_Skeleton *skeleton) {
         // generate buffers
     glGenBuffers(1, &mesh->vbo);
@@ -534,7 +534,7 @@ void semesh_generate_static_skeleton
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void semesh_generate_skinned_skeleton
+void se_mesh_generate_skinned_skeleton
 (SE_Mesh *mesh, SE_Skeleton *skeleton, b8 line, b8 with_animation) {
         // generate buffers
     glGenBuffers(1, &mesh->vbo);
@@ -617,7 +617,7 @@ void semesh_generate_skinned_skeleton
     mesh->skeleton = skeleton;
 }
 
-void semesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
+void se_mesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices, u32 index_count, u32 *indices) {
     // generate buffers
     glGenBuffers(1, &mesh->vbo);
     glGenVertexArrays(1, &mesh->vao);
@@ -809,7 +809,7 @@ static void copy_ai_matrix_to_mat4(struct aiMatrix4x4 aiMat, Mat4 *mat4) {
     mat4->data[3] = aiMat.d1; mat4->data[7] = aiMat.d2; mat4->data[11] = aiMat.d3; mat4->data[15] = aiMat.d4;
 }
 
-static void semesh_construct_material // only meant to be called form serender3d_load_mesh
+static void semesh_construct_material // only meant to be called form se_render3d_load_mesh
 (SE_Material *material, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     // find the directory part of filepath
     SE_String filepath_string;
@@ -892,7 +892,7 @@ static void semesh_construct_material // only meant to be called form serender3d
     sestring_deinit(&dir);
 }
 
-static void semesh_construct_normal_mesh // only meant to be called from serender3d_load_mesh
+static void semesh_construct_normal_mesh // only meant to be called from se_render3d_load_mesh
 (SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     sedefault_mesh(mesh);
     u32 verts_count = 0;
@@ -948,7 +948,7 @@ static void semesh_construct_normal_mesh // only meant to be called from serende
         index_count += 3;
     }
 
-    semesh_generate(mesh, verts_count, verts, index_count, indices);
+    se_mesh_generate(mesh, verts_count, verts, index_count, indices);
 
     free(verts);
     free(indices);
@@ -1096,7 +1096,7 @@ static void seload_skeleton_additively
     }
 }
 
-static void semesh_construct_skinned_mesh // only meant to be called from serender3d_load_mesh
+static void semesh_construct_skinned_mesh // only meant to be called from se_render3d_load_mesh
 (SE_Mesh *mesh, SE_Skeleton *skeleton, const struct aiMesh *ai_mesh, const struct aiScene *scene) {
     sedefault_mesh(mesh);
     u32 verts_count = 0;
@@ -1536,7 +1536,7 @@ static void load_animation_from_file(SE_Skeleton *skeleton, const char *model_fi
     aiReleaseImport(scene);
 }
 
-u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_skeleton) {
+u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_skeleton) {
     u32 result = -1;
         // load scene from file
     const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -1574,7 +1574,7 @@ u32 serender3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8
 
             //- load the material of this mesh
         if (scene->mNumMaterials > 0) { // -- materials
-            u32 material_index = serender3d_add_material(renderer);
+            u32 material_index = se_render3d_add_material(renderer);
             renderer->meshes[renderer->meshes_count]->material_index = material_index;
 
             semesh_construct_material(renderer->materials[material_index], ai_mesh, model_filepath, scene);
@@ -1711,8 +1711,8 @@ serender3d_render_set_material_uniforms_skinned_skeleton(const SE_Renderer3D *re
     seshader_set_uniform_vec3 (renderer->shaders[shader], "base_diffuse", v3f(1, 0, 0));
 }
 
-void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
-    serender3d_reset_render_config(); // Reset configs to their default values
+void se_render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
+    se_render3d_reset_render_config(); // Reset configs to their default values
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
@@ -1770,9 +1770,9 @@ void serender_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform)
     glBindVertexArray(0);
 }
 
-void serender_mesh_with_shader
+void se_render_mesh_with_shader
 (const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader) {
-    serender3d_reset_render_config(); // Reset configs to their default values
+    se_render3d_reset_render_config(); // Reset configs to their default values
     seshader_use(shader);
     i32 primitive = GL_TRIANGLES;
 
@@ -1799,17 +1799,17 @@ void serender_mesh_with_shader
 }
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
-void serender_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+void se_render_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
-    serender_mesh(renderer, mesh, transform);
+    se_render_mesh(renderer, mesh, transform);
 
     // if (mesh->next_mesh_index > -1 && mesh->type != SE_MESH_TYPE_SKINNED) { // @temp checking if it's not skinned because for some reason the other mesh does not get a proper skeleton final pose
     if (mesh->next_mesh_index > -1) {
-        serender_mesh_index(renderer, mesh->next_mesh_index, transform);
+        se_render_mesh_index(renderer, mesh->next_mesh_index, transform);
     }
 }
 
-void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+void se_render3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
     if (mesh->type == SE_MESH_TYPE_LINE) return;
     // take the mesh (world space) and project it to view space
@@ -1818,8 +1818,8 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
 
     SE_Mesh outline_mesh;
     outline_mesh.material_index = renderer->material_lines;
-    semesh_generate_gizmos_aabb(&outline_mesh, mesh->aabb.min, mesh->aabb.max, 2);
-    serender_mesh(renderer, &outline_mesh, transform);
+    se_mesh_generate_gizmos_aabb(&outline_mesh, mesh->aabb.min, mesh->aabb.max, 2);
+    se_render_mesh(renderer, &outline_mesh, transform);
 
     { // setup the shader
         u32 shader = renderer->shader_outline;
@@ -1847,7 +1847,7 @@ void serender3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_inde
 
     glBindVertexArray(0);
 
-    semesh_deinit(&outline_mesh);
+    se_mesh_deinit(&outline_mesh);
 }
 
 static void se_render_directional_shadow_map_for_mesh
@@ -2067,7 +2067,7 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
     }
 }
 
-void serender3d_reset_render_config() {
+void se_render3d_reset_render_config() {
     /* default */
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
@@ -2084,7 +2084,7 @@ static u32 serender3d_add_shader_with_geometry(SE_Renderer3D *renderer, const ch
     return shader;
 }
 
-u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
+u32 se_render3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd) {
     // add a default shader
     u32 shader = renderer->shaders_count;
     renderer->shaders[shader] = NEW (SE_Shader);
@@ -2093,24 +2093,24 @@ u32 serender3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *
     return shader;
 }
 
-void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
+void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     memset(renderer, 0, sizeof(SE_Renderer3D)); // default everything to zero
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
 
-    renderer->shader_lit = serender3d_add_shader(renderer, "core/shaders/lit.vsd","core/shaders/lit_better.fsd");
-    renderer->shader_shadow_calc = serender3d_add_shader(renderer, "core/shaders/shadow_calc.vsd","core/shaders/shadow_calc.fsd");
-    renderer->shader_shadow_calc_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/shadow_calc_skinned_mesh.vsd","core/shaders/shadow_calc.fsd");
+    renderer->shader_lit = se_render3d_add_shader(renderer, "core/shaders/lit.vsd","core/shaders/lit_better.fsd");
+    renderer->shader_shadow_calc = se_render3d_add_shader(renderer, "core/shaders/shadow_calc.vsd","core/shaders/shadow_calc.fsd");
+    renderer->shader_shadow_calc_skinned_mesh = se_render3d_add_shader(renderer, "core/shaders/shadow_calc_skinned_mesh.vsd","core/shaders/shadow_calc.fsd");
     renderer->shader_shadow_omnidir_calc = serender3d_add_shader_with_geometry(renderer, "core/shaders/shadow_omni_calc.vsd","core/shaders/shadow_omni_calc.fsd", "core/shaders/shadow_omni_calc.gsd");
-    renderer->shader_lines = serender3d_add_shader(renderer, "core/shaders/lines.vsd","core/shaders/lines.fsd");
-    renderer->shader_outline = serender3d_add_shader(renderer, "core/shaders/outline.vsd","core/shaders/outline.fsd");
-    renderer->shader_sprite = serender3d_add_shader(renderer, "core/shaders/sprite.vsd","core/shaders/sprite.fsd");
-    renderer->shader_skinned_mesh = serender3d_add_shader(renderer, "core/shaders/skinned_vertex.vsd","core/shaders/lit_better.fsd");
-    renderer->shader_skinned_mesh_skeleton = serender3d_add_shader(renderer, "core/shaders/skinned_skeleton_lines.vsd","core/shaders/lines.fsd");
-    renderer->shader_mouse_picking = serender3d_add_shader(renderer, "core/shaders/mouse_picking.vsd", "core/shaders/mouse_picking.fsd");
+    renderer->shader_lines = se_render3d_add_shader(renderer, "core/shaders/lines.vsd","core/shaders/lines.fsd");
+    renderer->shader_outline = se_render3d_add_shader(renderer, "core/shaders/outline.vsd","core/shaders/outline.fsd");
+    renderer->shader_sprite = se_render3d_add_shader(renderer, "core/shaders/sprite.vsd","core/shaders/sprite.fsd");
+    renderer->shader_skinned_mesh = se_render3d_add_shader(renderer, "core/shaders/skinned_vertex.vsd","core/shaders/lit_better.fsd");
+    renderer->shader_skinned_mesh_skeleton = se_render3d_add_shader(renderer, "core/shaders/skinned_skeleton_lines.vsd","core/shaders/lines.fsd");
+    renderer->shader_mouse_picking = se_render3d_add_shader(renderer, "core/shaders/mouse_picking.vsd", "core/shaders/mouse_picking.fsd");
 
     /* default materials */
-    renderer->material_lines = serender3d_add_material(renderer);
+    renderer->material_lines = se_render3d_add_material(renderer);
     renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
 
     setexture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
@@ -2151,9 +2151,9 @@ void serender3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     }
 }
 
-void serender3d_deinit(SE_Renderer3D *renderer) {
+void se_render3d_deinit(SE_Renderer3D *renderer) {
     for (u32 i = 0; i < renderer->meshes_count; ++i) {
-        semesh_deinit(renderer->meshes[i]);
+        se_mesh_deinit(renderer->meshes[i]);
     }
     renderer->meshes_count = 0;
 
@@ -2176,7 +2176,7 @@ void serender3d_deinit(SE_Renderer3D *renderer) {
     setexture_unload(&renderer->texture_default_specular);
 }
 
-u32 serender3d_add_point_light(SE_Renderer3D *renderer) {
+u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {
     se_assert(renderer->point_lights_count < SERENDERER3D_MAX_POINT_LIGHTS);
 
     u32 result = renderer->point_lights_count;
@@ -2196,7 +2196,7 @@ u32 serender3d_add_point_light(SE_Renderer3D *renderer) {
     return result;
 }
 
-u32 serender3d_add_material(SE_Renderer3D *renderer) {
+u32 se_render3d_add_material(SE_Renderer3D *renderer) {
     renderer->materials[renderer->materials_count] = NEW(SE_Material);
     memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
     u32 material_index = renderer->materials_count;
@@ -2204,18 +2204,18 @@ u32 serender3d_add_material(SE_Renderer3D *renderer) {
     return material_index;
 }
 
-u32 serender3d_add_cube(SE_Renderer3D *renderer) {
+u32 se_render3d_add_cube(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_cube(renderer->meshes[renderer->meshes_count], vec3_one());
+    se_mesh_generate_cube(renderer->meshes[renderer->meshes_count], vec3_one());
 
     renderer->meshes_count++;
     return result;
 }
 
-u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
+u32 se_render3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
@@ -2226,29 +2226,29 @@ u32 serender3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     return result;
 }
 
-u32 serender3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
+u32 se_render3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_sprite(renderer->meshes[renderer->meshes_count], scale);
+    se_mesh_generate_sprite(renderer->meshes[renderer->meshes_count], scale);
 
     renderer->meshes_count++;
     return result;
 }
 
-u32 serender3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
+u32 se_render3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width, colour);
+    se_mesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width, colour);
 
     renderer->meshes_count++;
     return result;
 }
 
-u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
+u32 se_render3d_add_mesh_empty(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
@@ -2257,31 +2257,31 @@ u32 serender3d_add_mesh_empty(SE_Renderer3D *renderer) {
     return result;
 }
 
-u32 serender3d_add_gizmos_coordniates(SE_Renderer3D *renderer) {
+u32 se_render3d_add_gizmos_coordniates(SE_Renderer3D *renderer) {
     u32 result = renderer->meshes_count;
     f32 width = 3;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], width);
+    se_mesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], width);
 
     renderer->meshes_count++;
     return result;
 }
 
-u32 serender3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
+u32 se_render3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
     u32 result = renderer->meshes_count;
 
     renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
     memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_gizmos_aabb(renderer->meshes[renderer->meshes_count], min, max, line_width);
+    se_mesh_generate_gizmos_aabb(renderer->meshes[renderer->meshes_count], min, max, line_width);
 
     renderer->meshes_count++;
     return result;
 }
 
-void serender3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
+void se_render3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
 
     memset(renderer->meshes[mesh_index], 0, sizeof(SE_Mesh));
-    semesh_generate_gizmos_aabb(renderer->meshes[mesh_index], min, max, line_width);
+    se_mesh_generate_gizmos_aabb(renderer->meshes[mesh_index], min, max, line_width);
 }
