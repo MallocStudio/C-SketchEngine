@@ -33,7 +33,7 @@ void Entities::update(SE_Renderer3D *renderer, f32 delta_time) {
 
             //- AABB
         if (this->has_mesh[i]) {
-            this->aabb[i] = renderer->meshes[this->mesh_index[i]]->aabb;
+            this->aabb[i] = renderer->user_meshes[this->mesh_index[i]]->aabb;
         }
 
         this->aabb_transformed[i] = transform_aabb3d(this->aabb[i], this->position[i], this->scale[i]);

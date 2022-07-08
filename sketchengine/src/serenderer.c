@@ -1551,7 +1551,7 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
         return result;
     }
         //- load meshes within the scene
-    result = renderer->meshes_count; // the first mesh in the chain
+    result = renderer->user_meshes_count; // the first mesh in the chain
 
     SE_Skeleton *skeleton = NULL;
     if (with_skeleton) {
@@ -1564,51 +1564,51 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
         struct aiMesh *ai_mesh = scene->mMeshes[i];
 
         // add a mesh to the renderer
-        renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-        memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
+        renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+        memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
 
             //- load the skeleton of this mesh
         if (with_skeleton && ai_mesh->mNumBones > 0) {
                 // load a skinned mesh ready to be animated
-            SE_Mesh *mesh = renderer->meshes[renderer->meshes_count];
+            SE_Mesh *mesh = renderer->user_meshes[renderer->user_meshes_count];
             semesh_construct_skinned_mesh(mesh, skeleton, ai_mesh, scene);
         } else {
                 // load normal static mesh
-            semesh_construct_normal_mesh(renderer->meshes[renderer->meshes_count], ai_mesh, model_filepath, scene);
+            semesh_construct_normal_mesh(renderer->user_meshes[renderer->user_meshes_count], ai_mesh, model_filepath, scene);
         }
 
             //- load the material of this mesh
         if (scene->mNumMaterials > 0) { // -- materials
             u32 material_index = se_render3d_add_material(renderer);
-            renderer->meshes[renderer->meshes_count]->material_index = material_index;
+            renderer->user_meshes[renderer->user_meshes_count]->material_index = material_index;
 
-            semesh_construct_material(renderer->materials[material_index], ai_mesh, model_filepath, scene);
+            semesh_construct_material(renderer->user_materials[material_index], ai_mesh, model_filepath, scene);
         }
 
             //- Link meshes together: If there are multiple meshes within this scene, add them on in a linked list
         if (i > 0) {
-            renderer->meshes[renderer->meshes_count-1]->next_mesh_index = result + i;
+            renderer->user_meshes[renderer->user_meshes_count-1]->next_mesh_index = result + i;
         }
-        renderer->meshes_count++;
+        renderer->user_meshes_count++;
     }
 
         //- load animations associated with this mesh
-    if (renderer->meshes[result]->skeleton != NULL && scene->mNumAnimations > 0) {
+    if (renderer->user_meshes[result]->skeleton != NULL && scene->mNumAnimations > 0) {
         i32 current_mesh = result;
         while (current_mesh >= 0) {
-            load_animation(renderer->meshes[current_mesh]->skeleton, scene);
+            load_animation(renderer->user_meshes[current_mesh]->skeleton, scene);
 #if 0 // debug
             printf("-------------------------------\n");
             for (u32 i = 0; i < renderer->meshes[result]->skeleton->animations[0]->animated_bones_count; i++) {
                 printf("%i: parent name: %s\n", i, renderer->meshes[result]->skeleton->animations[0]->animated_bones[i].name.buffer);
             }
 #endif
-            current_mesh = renderer->meshes[current_mesh]->next_mesh_index;
+            current_mesh = renderer->user_meshes[current_mesh]->next_mesh_index;
         }
     }
 
         //- the final mesh in the linked list has no next (signified by -1 next_mesh_index)
-    renderer->meshes[renderer->meshes_count - 1]->next_mesh_index = -1;
+    renderer->user_meshes[renderer->user_meshes_count - 1]->next_mesh_index = -1;
 
     aiReleaseImport(scene);
     return result;
@@ -1724,7 +1724,7 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     // then pass that final projection matrix and give it to the shader
 
     i32 primitive = GL_TRIANGLES;
-    SE_Material *material = renderer->materials[mesh->material_index];
+    SE_Material *material = renderer->user_materials[mesh->material_index];
 
     /* configs for this mesh */
         //- LINE / ANIMATED LINES
@@ -1806,7 +1806,7 @@ void se_render_mesh_with_shader
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
 void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
-    SE_Mesh *mesh = renderer->meshes[mesh_index];
+    SE_Mesh *mesh = renderer->user_meshes[mesh_index];
     se_render_mesh(renderer, mesh, transform);
 
     // if (mesh->next_mesh_index > -1 && mesh->type != SE_MESH_TYPE_SKINNED) { // @temp checking if it's not skinned because for some reason the other mesh does not get a proper skeleton final pose
@@ -1816,7 +1816,7 @@ void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transfor
 }
 
 void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
-    SE_Mesh *mesh = renderer->meshes[mesh_index];
+    SE_Mesh *mesh = renderer->user_meshes[mesh_index];
     if (mesh->type == SE_MESH_TYPE_LINE || mesh->type == SE_MESH_TYPE_POINT) return;
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
@@ -1851,7 +1851,7 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
 
 static void se_render_directional_shadow_map_for_mesh
 (SE_Renderer3D *renderer, u32 mesh_index, Mat4 model_mat, Mat4 light_space_mat) {
-    SE_Mesh *mesh = renderer->meshes[mesh_index];
+    SE_Mesh *mesh = renderer->user_meshes[mesh_index];
 
     if (mesh->type == SE_MESH_TYPE_NORMAL) {
         se_shader_use(&renderer->shader_shadow_calc);
@@ -1874,7 +1874,7 @@ static void se_render_directional_shadow_map_for_mesh
 }
 
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 transforms_count, AABB3D world_aabb) {
-    se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
+    se_assert(transforms_count <= renderer->user_meshes_count && "the number of transforms must be less than or equal to the number of meshes");
     SE_Light *light = &renderer->light_directional;
         // -- shadow mapping
     /* calculate the matrices */
@@ -1979,9 +1979,9 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
 
         for (u32 i = 0; i < transforms_count; ++i) {
             u32 mesh_index = mesh_indices[i];
-            if (mesh_index >= renderer->meshes_count) continue; // this mesh does not exist
+            if (mesh_index >= renderer->user_meshes_count) continue; // this mesh does not exist
             Mat4 model_mat = transforms[i];
-            SE_Mesh *mesh = renderer->meshes[mesh_index];
+            SE_Mesh *mesh = renderer->user_meshes[mesh_index];
 
             se_render_directional_shadow_map_for_mesh(renderer, mesh_index, model_mat, light_space_mat);
             if (mesh->next_mesh_index >= 0) {
@@ -2001,7 +2001,7 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
 }
 
 void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 transforms_count) {
-    se_assert(transforms_count <= renderer->meshes_count && "the number of transforms must be less than or equal to the number of meshes");
+    se_assert(transforms_count <= renderer->user_meshes_count && "the number of transforms must be less than or equal to the number of meshes");
 
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
         SE_Light_Point *point_light = &renderer->point_lights[i];
@@ -2050,7 +2050,7 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
             }
             // render scene
             for (u32 i = 0; i < transforms_count; ++i) {
-                SE_Mesh *mesh = renderer->meshes[i];
+                SE_Mesh *mesh = renderer->user_meshes[i];
                 Mat4 model_mat = transforms[i];
 
                 se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "model", model_mat);
@@ -2149,10 +2149,10 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
 
 void se_render3d_deinit(SE_Renderer3D *renderer) {
         //- User meshes
-    for (u32 i = 0; i < renderer->meshes_count; ++i) {
-        se_mesh_deinit(renderer->meshes[i]);
+    for (u32 i = 0; i < renderer->user_meshes_count; ++i) {
+        se_mesh_deinit(renderer->user_meshes[i]);
     }
-    renderer->meshes_count = 0;
+    renderer->user_meshes_count = 0;
 
     // for (u32 i = 0; i < renderer->shaders_count; ++i) {
     //     se_shader_deinit(renderer->shaders[i]);
@@ -2171,10 +2171,10 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     se_shader_deinit(&renderer->shader_mouse_picking);
 
         //- User materials
-    for (u32 i = 0; i < renderer->materials_count; ++i) {
-        se_material_deinit(renderer->materials[i]);
+    for (u32 i = 0; i < renderer->user_materials_count; ++i) {
+        se_material_deinit(renderer->user_materials[i]);
     }
-    renderer->materials_count = 0;
+    renderer->user_materials_count = 0;
 
         //- Shadow mapping
     serender_target_deinit(&renderer->shadow_render_target);
@@ -2206,91 +2206,91 @@ u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {
 }
 
 u32 se_render3d_add_material(SE_Renderer3D *renderer) {
-    renderer->materials[renderer->materials_count] = NEW(SE_Material);
-    memset(renderer->materials[renderer->materials_count], 0, sizeof(SE_Material));
-    u32 material_index = renderer->materials_count;
-    renderer->materials_count++;
+    renderer->user_materials[renderer->user_materials_count] = NEW(SE_Material);
+    memset(renderer->user_materials[renderer->user_materials_count], 0, sizeof(SE_Material));
+    u32 material_index = renderer->user_materials_count;
+    renderer->user_materials_count++;
     return material_index;
 }
 
 u32 se_render3d_add_cube(SE_Renderer3D *renderer) {
-    u32 result = renderer->meshes_count;
+    u32 result = renderer->user_meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    se_mesh_generate_cube(renderer->meshes[renderer->meshes_count], vec3_one());
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    se_mesh_generate_cube(renderer->user_meshes[renderer->user_meshes_count], vec3_one());
 
-    renderer->meshes_count++;
+    renderer->user_meshes_count++;
     return result;
 }
 
 u32 se_render3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
-    u32 result = renderer->meshes_count;
+    u32 result = renderer->user_meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_plane(renderer->meshes[renderer->meshes_count], scale);
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    semesh_generate_plane(renderer->user_meshes[renderer->user_meshes_count], scale);
 
-    renderer->meshes_count++;
+    renderer->user_meshes_count++;
     return result;
 }
 
 u32 se_render3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale) {
-    u32 result = renderer->meshes_count;
+    u32 result = renderer->user_meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    se_mesh_generate_sprite(renderer->meshes[renderer->meshes_count], scale);
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    se_mesh_generate_sprite(renderer->user_meshes[renderer->user_meshes_count], scale);
 
-    renderer->meshes_count++;
+    renderer->user_meshes_count++;
     return result;
 }
 
 u32 se_render3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour) {
-    u32 result = renderer->meshes_count;
+    u32 result = renderer->user_meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    se_mesh_generate_line(renderer->meshes[renderer->meshes_count], pos1, pos2, width, colour);
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    se_mesh_generate_line(renderer->user_meshes[renderer->user_meshes_count], pos1, pos2, width, colour);
 
-    renderer->meshes_count++;
+    renderer->user_meshes_count++;
     return result;
 }
 
 u32 se_render3d_add_mesh_empty(SE_Renderer3D *renderer) {
-    u32 result = renderer->meshes_count;
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    sedefault_mesh(renderer->meshes[renderer->meshes_count]);
-    renderer->meshes_count++;
+    u32 result = renderer->user_meshes_count;
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    sedefault_mesh(renderer->user_meshes[renderer->user_meshes_count]);
+    renderer->user_meshes_count++;
     return result;
 }
 
 u32 se_render3d_add_gizmos_coordniates(SE_Renderer3D *renderer) {
-    u32 result = renderer->meshes_count;
+    u32 result = renderer->user_meshes_count;
     f32 width = 3;
 
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    se_mesh_generate_gizmos_coordinates(renderer->meshes[renderer->meshes_count], width);
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    se_mesh_generate_gizmos_coordinates(renderer->user_meshes[renderer->user_meshes_count], width);
 
-    renderer->meshes_count++;
+    renderer->user_meshes_count++;
     return result;
 }
 
 u32 se_render3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
-    u32 result = renderer->meshes_count;
+    u32 result = renderer->user_meshes_count;
 
-    renderer->meshes[renderer->meshes_count] = NEW(SE_Mesh);
-    memset(renderer->meshes[renderer->meshes_count], 0, sizeof(SE_Mesh));
-    se_mesh_generate_gizmos_aabb(renderer->meshes[renderer->meshes_count], min, max, line_width);
+    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+    se_mesh_generate_gizmos_aabb(renderer->user_meshes[renderer->user_meshes_count], min, max, line_width);
 
-    renderer->meshes_count++;
+    renderer->user_meshes_count++;
     return result;
 }
 
 void se_render3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
 
-    memset(renderer->meshes[mesh_index], 0, sizeof(SE_Mesh));
-    se_mesh_generate_gizmos_aabb(renderer->meshes[mesh_index], min, max, line_width);
+    memset(renderer->user_meshes[mesh_index], 0, sizeof(SE_Mesh));
+    se_mesh_generate_gizmos_aabb(renderer->user_meshes[mesh_index], min, max, line_width);
 }

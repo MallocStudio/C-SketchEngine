@@ -40,7 +40,7 @@ public:
 
         /// Update all of the components data if they require it
     void update(SE_Renderer3D *renderer, f32 delta_time);
-        /// Render entities' meshes or other renderable components
+        /// Render entities' user_meshes or other renderable components
     void render(SE_Renderer3D *renderer);
 
         /// Sets all entity data to their default values

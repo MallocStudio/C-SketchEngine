@@ -57,10 +57,10 @@ void App::init_application(SDL_Window *window) {
         //- Gizmo Renderer
     se_gizmo_renderer_init(&m_gizmo_renderer, &m_cameras[main_camera]);
 
-        //- Load meshes
+        //- Load user_meshes
     m_mesh_assets_count = 0;
     memset(m_mesh_assets, 0, sizeof(m_mesh_assets));
-    // TODO Add the loader of all meshes used in the game here.
+    // TODO Add the loader of all user_meshes used in the game here.
 }
 
 void App::init_engine() {
@@ -99,7 +99,7 @@ void App::update(f32 delta_time) {
         //- Entities
     m_level.entities.update(&m_renderer, delta_time);
     se_animation_update(&animation, delta_time);
-    se_skeleton_calculate_pose(m_renderer.meshes[mesh_guy]->skeleton, animation.current_frame);
+    se_skeleton_calculate_pose(m_renderer.user_meshes[mesh_guy]->skeleton, animation.current_frame);
 
         // select entities
     if (se_input_is_mouse_left_released(&m_input) && se_input_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -157,7 +157,7 @@ void App::render() {
         //- Shadows
     {
         AABB3D world_aabb = aabb3d_calculate_from_array(m_level.entities.aabb_transformed, m_level.entities.count);
-        se_mesh_generate_gizmos_aabb(m_renderer.meshes[world_aabb_mesh], world_aabb.min, world_aabb.max, 2);
+        se_mesh_generate_gizmos_aabb(m_renderer.user_meshes[world_aabb_mesh], world_aabb.min, world_aabb.max, 2);
         se_render_directional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count, world_aabb);
     }
     se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.transform, m_level.entities.count);
@@ -173,7 +173,7 @@ void App::render() {
 
         // aabb of selected entity
     if (m_selected_entity >= 0) {
-        se_mesh_generate_gizmos_aabb(m_renderer.meshes[current_obj_aabb],
+        se_mesh_generate_gizmos_aabb(m_renderer.user_meshes[current_obj_aabb],
             m_level.entities.aabb[m_selected_entity].min,
             m_level.entities.aabb[m_selected_entity].max,
             2);
@@ -235,7 +235,7 @@ i32 App::raycast_to_select_entity() {
         }
     }
 
-    se_mesh_generate_line(m_renderer.meshes[debug_raycast_visual], raycast_origin,
+    se_mesh_generate_line(m_renderer.user_meshes[debug_raycast_visual], raycast_origin,
         vec3_add(raycast_origin, vec3_mul_scalar(raycast_dir, 100)), 2, {255, 0,0, 255});
 
     return result;
@@ -300,7 +300,7 @@ void App::load() {
     }
 
         //! the reason I can't do this right now is because we don't have an abstract mesh file type.
-        //! this is important because we sometimes generate our own custom meshes. So We'll wait until
+        //! this is important because we sometimes generate our own custom user_meshes. So We'll wait until
         //! we have that feature done.
     // {   //- Load the actual asset data
     //     for (u32 i = 0; i < m_mesh_assets_count; ++i) {

@@ -42,7 +42,7 @@ void Widget_Entity::construct_panel(SE_UI *ctx, SE_Renderer3D *mesh_renderer) {
 
                 seui_panel_row(ctx, 32, 2);
                 seui_label(ctx, "mesh index:");
-                // seui_selector(ctx, (i32*)mesh_index, 0, mesh_renderer->meshes_count-1);
+                // seui_selector(ctx, (i32*)mesh_index, 0, mesh_renderer->user_meshes_count-1);
 
                 SE_String mesh_index_string;
                 se_string_init_i32(&mesh_index_string, *mesh_index);

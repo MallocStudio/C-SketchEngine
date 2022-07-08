@@ -45,12 +45,12 @@ void App::util_load_meshes_from_disk() {
     // mesh_guy = se_render3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
 
     mesh_skeleton = se_render3d_add_mesh_empty(&m_renderer);
-    se_mesh_generate_skinned_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton, true, true);
+    se_mesh_generate_skinned_skeleton(m_renderer.user_meshes[mesh_skeleton], m_renderer.user_meshes[mesh_guy]->skeleton, true, true);
     // se_mesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
 
     animation.current_frame = 0;
-    animation.duration = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->duration;
-    animation.speed = m_renderer.meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
+    animation.duration = m_renderer.user_meshes[mesh_guy]->skeleton->animations[0]->duration;
+    animation.speed = m_renderer.user_meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
 
     mesh_plane = se_render3d_add_plane(&m_renderer, v3f(10, 10, 10));
 

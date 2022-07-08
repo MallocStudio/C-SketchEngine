@@ -222,14 +222,14 @@ typedef struct SE_Renderer3D {
         //- USER Meshes
 // ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MESH. Because the user would like to save and
 // ! load from the disk. Adding meshes on init() time will cause exponential duplicates.
-    u32 meshes_count;
-    SE_Mesh *meshes[SERENDERER3D_MAX_MESHES];
+    u32 user_meshes_count;
+    SE_Mesh *user_meshes[SERENDERER3D_MAX_MESHES];
 
         //- USER Materials
 // ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MATERIAL. Because the user would like to save and
 // ! load from the disk. Adding materials on init() time will cause exponential duplicates.
-    u32 materials_count;
-    SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
+    u32 user_materials_count;
+    SE_Material *user_materials[SERENDERER3D_MAX_MATERIALS];
 
         //- ENGINE Materials
 
