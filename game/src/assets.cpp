@@ -5,6 +5,7 @@
 #define LEVEL_SAVE_DATA_VERSION 1
 
 bool Assets::save_renderer3D(SE_Renderer3D *renderer, const char *filepath) {
+
     return true;
 }
 

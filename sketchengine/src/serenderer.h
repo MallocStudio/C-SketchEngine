@@ -214,18 +214,25 @@ typedef struct SE_Light_Point {
 #define SERENDERER3D_MAX_MATERIALS 100
 #define SERENDERER3D_MAX_POINT_LIGHTS 4
 
+
 typedef struct SE_Renderer3D {
     // ! NOTE THAT EVERYTHING IS SET TO ZERO AT THE BEGINNING OF INIT()
     // ! LOOK AT se_render3d_init TO SEE THE DEFAULT VALUES
 
-        //- Meshes
+        //- USER Meshes
+// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MESH. Because the user would like to save and
+// ! load from the disk. Adding meshes on init() time will cause exponential duplicates.
     u32 meshes_count;
     SE_Mesh *meshes[SERENDERER3D_MAX_MESHES];
 
-        //- Materials
+        //- USER Materials
+// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MATERIAL. Because the user would like to save and
+// ! load from the disk. Adding materials on init() time will cause exponential duplicates.
     u32 materials_count;
     SE_Material *materials[SERENDERER3D_MAX_MATERIALS];
-    u32 material_lines;  // default line material (white lines)
+
+        //- ENGINE Materials
+
     SE_Texture texture_default_diffuse;
     SE_Texture texture_default_normal;
     SE_Texture texture_default_specular;

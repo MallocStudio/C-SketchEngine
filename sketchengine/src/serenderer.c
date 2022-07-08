@@ -1818,15 +1818,10 @@ void se_render_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 tr
 
 void se_render3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
     SE_Mesh *mesh = renderer->meshes[mesh_index];
-    if (mesh->type == SE_MESH_TYPE_LINE) return;
+    if (mesh->type == SE_MESH_TYPE_LINE || mesh->type == SE_MESH_TYPE_POINT) return;
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
-
-    SE_Mesh outline_mesh;
-    outline_mesh.material_index = renderer->material_lines;
-    se_mesh_generate_gizmos_aabb(&outline_mesh, mesh->aabb.min, mesh->aabb.max, 2);
-    se_render_mesh(renderer, &outline_mesh, transform);
 
     { // setup the shader
         u32 shader = renderer->shader_outline;
@@ -1853,8 +1848,6 @@ void se_render3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_ind
     glCullFace(GL_BACK);
 
     glBindVertexArray(0);
-
-    se_mesh_deinit(&outline_mesh);
 }
 
 static void se_render_directional_shadow_map_for_mesh
@@ -2117,9 +2110,6 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->shader_mouse_picking = se_render3d_add_shader(renderer, "core/shaders/mouse_picking.vsd", "core/shaders/mouse_picking.fsd");
 
     /* default materials */
-    renderer->material_lines = se_render3d_add_material(renderer);
-    renderer->materials[renderer->material_lines]->base_diffuse = (Vec4) {1, 1, 1, 1};
-
     se_texture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
     se_texture_load(&renderer->texture_default_normal, default_normal_filepath);
     se_texture_load(&renderer->texture_default_specular, default_specular_filepath);

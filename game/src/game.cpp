@@ -68,7 +68,7 @@ void App::init_engine() {
     m_mode = GAME_MODES::ENGINE;
     util_load_meshes_from_disk();
 
-#if 0 /// manually create entities
+#if 1 /// manually create entities
     util_create_default_scene();
     this->save();
 #else /// load from file
