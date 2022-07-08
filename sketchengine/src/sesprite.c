@@ -52,7 +52,7 @@ void se_texture_unload(SE_Texture *texture) {
 }
 
 void se_texture_bind(const SE_Texture *texture, u32 index) { // @TODO change index to an enum of different texture types that map to an index internally
-    SDL_assert(texture->loaded == true && "texture was not loaded so we can't bind");
+    se_assert(texture->loaded == true && "texture was not loaded so we can't bind");
     glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_2D, texture->id);
 }

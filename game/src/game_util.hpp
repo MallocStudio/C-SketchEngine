@@ -16,6 +16,7 @@ u32 mesh_guy = -1;
 u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 mesh_light_pos_gizmos = -1;
+u32 mesh_cube = -1;
 u32 current_obj_aabb = -1;
 u32 world_aabb_mesh = -1;
 u32 point_light_1 = -1;
@@ -61,7 +62,12 @@ void App::util_load_meshes_from_disk() {
     m_gizmo_renderer.shapes[mesh_light_pos_gizmos].base_colour = lit;
 
     point_light_1 = se_render3d_add_point_light(&m_renderer);
+    point_light_1 = se_render3d_add_point_light(&m_renderer);
+    point_light_1 = se_render3d_add_point_light(&m_renderer);
+    point_light_1 = se_render3d_add_point_light(&m_renderer);
     current_obj_aabb = se_render3d_add_mesh_empty(&m_renderer);
+
+    mesh_cube = se_render3d_load_mesh(&m_renderer, "core/meshes/cube.fbx", false);
 }
 
 void App::util_create_default_scene() {
@@ -95,4 +101,11 @@ void App::util_create_default_scene() {
     m_level.entities.position           [point_light_1_entity] = v3f(0, 1, 0);
     m_level.entities.has_light          [point_light_1_entity] = true;
     m_level.entities.light_index        [point_light_1_entity] = point_light_1;
+
+    u32 cube_entity = m_level.add_entity();
+    m_level.entities.has_name[cube_entity] = false;
+    m_level.entities.position[cube_entity] = v3f(0, 0.5f, 1);
+    m_level.entities.has_mesh[cube_entity] = true;
+    m_level.entities.should_render_mesh[cube_entity] = true;
+    m_level.entities.mesh_index[cube_entity] = mesh_cube;
 }

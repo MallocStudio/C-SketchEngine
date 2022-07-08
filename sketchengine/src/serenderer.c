@@ -849,17 +849,17 @@ static void semesh_construct_material // only meant to be called form se_render3
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_diffuse = false;
-        printf("WARNING: ASSIMP unable to load dffiuse for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+        printf("WARNING: ASSIMP unable to load dffiuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
     }
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_specular = false;
-        printf("WARNING: ASSIMP unable to load specular for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+        printf("WARNING: ASSIMP unable to load specular\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
     }
 
     if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
         has_normal = false;
-        printf("WARNING: ASSIMP unable to load normals for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+        printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
     }
 
     /* diffuse */
@@ -868,7 +868,7 @@ static void semesh_construct_material // only meant to be called form se_render3
         se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
         se_texture_load(&material->texture_diffuse , diffuse_path.buffer);
     } else {
-        se_texture_load(&material->texture_diffuse, default_diffuse_filepath);
+        // se_texture_load(&material->texture_diffuse, default_diffuse_filepath);
     }
     free(ai_texture_path_diffuse);
 
@@ -884,7 +884,7 @@ static void semesh_construct_material // only meant to be called form se_render3
         se_string_append(&normal_path, ai_texture_path_normal->data);
         se_texture_load(&material->texture_normal  , normal_path.buffer);
     } else {
-        se_texture_load(&material->texture_diffuse, default_normal_filepath);
+        // se_texture_load(&material->texture_diffuse, default_normal_filepath);
     }
     free(ai_texture_path_normal);
 
