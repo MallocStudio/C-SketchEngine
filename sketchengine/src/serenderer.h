@@ -238,19 +238,19 @@ typedef struct SE_Renderer3D {
     SE_Texture texture_default_specular;
 
         //- Shaders
-    u32 shaders_count;
-    SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
+    // u32 shaders_count;
+    // SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
 
-    u32 shader_lit;                     // handles static meshes affected by light and the material system
-    u32 shader_skinned_mesh;            // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
-    u32 shader_shadow_calc;             // handles directional light shadow calulation
-    u32 shader_shadow_calc_skinned_mesh;// handles directional light shadow calulation
-    u32 shader_shadow_omnidir_calc;     // handls point light shadow calculation
-    u32 shader_lines;                   // handles rendering lines
-    u32 shader_outline;                 // handles rendering outlines of static meshes
-    u32 shader_sprite;                  // handles rendering sprites
-    u32 shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
-    u32 shader_mouse_picking;           // render the mesh with a given ID as colour so we can retrieve the colour under the mouse for picking purposes
+    SE_Shader shader_lit;                     // handles static meshes affected by light and the material system
+    SE_Shader shader_skinned_mesh;            // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
+    SE_Shader shader_shadow_calc;             // handles directional light shadow calulation
+    SE_Shader shader_shadow_calc_skinned_mesh;// handles directional light shadow calulation
+    SE_Shader shader_shadow_omnidir_calc;     // handls point light shadow calculation
+    SE_Shader shader_lines;                   // handles rendering lines
+    SE_Shader shader_outline;                 // handles rendering outlines of static meshes
+    SE_Shader shader_sprite;                  // handles rendering sprites
+    SE_Shader shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
+    SE_Shader shader_mouse_picking;           // render the mesh with a given ID as colour so we can retrieve the colour under the mouse for picking purposes
 
         //- Camera and Light
     SE_Camera3D *current_camera;
@@ -282,7 +282,7 @@ u32 se_render3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32
 u32 se_render3d_add_mesh_empty(SE_Renderer3D *renderer);
 void se_render3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index);
 /// Load a shader program and att it to the renderer. Returns the index of that shader.
-u32 se_render3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
+// u32 se_render3d_add_shader(SE_Renderer3D *renderer, const char *vsd, const char *fsd);
 /// Add an empty material to the renderer
 u32 se_render3d_add_material(SE_Renderer3D *renderer);
     /// Add an uninitialised skeleton to the renderer
@@ -291,12 +291,12 @@ u32 se_render3d_add_skeletal_animation(SE_Renderer3D *renderer);
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer);
 /// Setup renderer for rendering (set the configurations to their default values)
 void se_render3d_reset_render_config();
-void se_render_mesh_index(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
-void se_render_mesh(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
+void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
     /// Render the given mesh with the given shader. The called must be passing the uniforms to the shader and make sure
     /// that everything lines up
-void se_render_mesh_with_shader(const SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
-void se_render3d_render_mesh_outline(const SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+void se_render_mesh_with_shader(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
+void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
     /// Render a directional shadow map to the renderer.
     /// "transforms_count" must be equal to or less than the number of meshes in the renderer.
     /// This procedure will render each mesh based on the given array of transforms.
