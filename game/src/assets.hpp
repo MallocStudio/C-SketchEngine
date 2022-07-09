@@ -15,4 +15,5 @@ namespace Assets {
     bool load_renderer3D(SE_Renderer3D *renderer, const char *filepath);
     bool save_level(Level *level, const char *filepath);
     bool load_level(Level *level, const char *filepath);
+    void update_level_camera_settings(Level *level, SE_Camera3D camera);
 };

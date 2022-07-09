@@ -20,11 +20,10 @@ bool Assets::save_level(Level *level, const char *filepath) {
         SE_ERROR(filepath);
         return false;
     }
+        // version
+    file << LEVEL_SAVE_DATA_VERSION << std::endl;
 
     {   //- Entities
-            // version
-        file << LEVEL_SAVE_DATA_VERSION << std::endl;
-
             // count
         file << level->entities.count << std::endl;
 
@@ -75,6 +74,17 @@ bool Assets::save_level(Level *level, const char *filepath) {
         }
     }
 
+    {   //- Camera settings
+        file << level->main_camera_settings.position.x << " ";
+        file << level->main_camera_settings.position.y << " ";
+        file << level->main_camera_settings.position.z << std::endl;
+        file << level->main_camera_settings.up.x << " ";
+        file << level->main_camera_settings.up.y << " ";
+        file << level->main_camera_settings.up.z << std::endl;
+        file << level->main_camera_settings.yaw << std::endl;
+        file << level->main_camera_settings.pitch << std::endl;
+    }
+
     file.close();
     return true;
 }
@@ -89,11 +99,11 @@ bool Assets::load_level(Level *level, const char *filepath) {
         return false;
     }
 
-    {   //- Entities
-            // version
-        u32 version;
-        file >> version;
+        // version
+    u32 version;
+    file >> version;
 
+    {   //- Entities
             // count
         u32 count;
         file >> count;
@@ -148,6 +158,21 @@ bool Assets::load_level(Level *level, const char *filepath) {
         }
     }
 
+    {   //- Camera settings
+        file >> level->main_camera_settings.position.x;
+        file >> level->main_camera_settings.position.y;
+        file >> level->main_camera_settings.position.z;
+        file >> level->main_camera_settings.up.x;
+        file >> level->main_camera_settings.up.y;
+        file >> level->main_camera_settings.up.z;
+        file >> level->main_camera_settings.yaw;
+        file >> level->main_camera_settings.pitch;
+    }
+
     file.close();
     return true;
+}
+
+void Assets::update_level_camera_settings(Level *level, SE_Camera3D camera) {
+    level->main_camera_settings = camera;
 }

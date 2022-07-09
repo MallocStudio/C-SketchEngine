@@ -19,9 +19,9 @@ https://github.com/jkuhlmann/cgltf
 //----------------- THINGS TO DO BEFORE DEMO -----------------
 Done:
 [/] Figure out why the plane has the soulspear's texture
+[/] Store the camera properties in the level and save and load it from the disk
 
 NOW:
-[ ] Store the camera properties in the level and save and load it from the disk
 
 Bucket:
 [ ] Load embedded textures properly

@@ -68,11 +68,12 @@ void App::init_engine() {
     m_mode = GAME_MODES::ENGINE;
     util_load_meshes_from_disk();
 
-#if 1 /// manually create entities
+#if 0 /// manually create entities
     util_create_default_scene();
     this->save();
 #else /// load from file
     this->load();
+    this->m_cameras[main_camera] = m_level.main_camera_settings;
 #endif
 }
 
@@ -134,7 +135,11 @@ void App::update(f32 delta_time) {
 
         // save
     if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
-        Assets::save_level(&m_level, SAVE_FILE_NAME);
+        this->save();
+    }
+        // save camera settings
+    if (seui_button_at(ctx, "save camera", {128, 0, 200, 32})) {
+        Assets::update_level_camera_settings(&m_level, m_cameras[main_camera]);
     }
 
     seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);

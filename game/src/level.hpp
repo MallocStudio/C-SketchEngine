@@ -20,4 +20,5 @@ public:
 
         /// The array of entities. This is where all the entity data lives
     Entities entities;
+    SE_Camera3D main_camera_settings;
 };
