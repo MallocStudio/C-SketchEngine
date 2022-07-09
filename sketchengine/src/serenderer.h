@@ -113,7 +113,9 @@ typedef struct SE_Skeleton {
 void se_skeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
 
 //// MATERIAL ////
-
+    // The default material is stored at the zero'th element during init() of renderer3D.
+    // It must be zero because by default all meshes point to that index
+#define SE_DEFAULT_MATERIAL_INDEX 0
 typedef struct SE_Material {
     /* lit, line, sprite */
     Vec4 base_diffuse; // ! [0, 1] range !
@@ -230,12 +232,6 @@ typedef struct SE_Renderer3D {
 // ! load from the disk. Adding materials on init() time will cause exponential duplicates.
     u32 user_materials_count;
     SE_Material *user_materials[SERENDERER3D_MAX_MATERIALS];
-
-        //- ENGINE Materials
-
-    SE_Texture texture_default_diffuse;
-    SE_Texture texture_default_normal;
-    SE_Texture texture_default_specular;
 
         //- Shaders
     // u32 shaders_count;

@@ -257,8 +257,6 @@ static void semesh_construct_material // only meant to be called form se_render3
     if (has_diffuse) {
         se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
         se_texture_load(&material->texture_diffuse , diffuse_path.buffer);
-    } else {
-        // se_texture_load(&material->texture_diffuse, default_diffuse_filepath);
     }
     free(ai_texture_path_diffuse);
 
@@ -273,8 +271,6 @@ static void semesh_construct_material // only meant to be called form se_render3
     if (has_normal) {
         se_string_append(&normal_path, ai_texture_path_normal->data);
         se_texture_load(&material->texture_normal  , normal_path.buffer);
-    } else {
-        // se_texture_load(&material->texture_diffuse, default_normal_filepath);
     }
     free(ai_texture_path_normal);
 
@@ -750,7 +746,7 @@ static void recursive_calc_skeleton_pose_without_animation(SE_Skeleton *skeleton
     }
 }
 
-static void serender3d_render_set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+static void util_serender3d_render_set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     SE_Shader *shader = &renderer->shader_lit;
     se_shader_use(shader);
 
@@ -803,22 +799,24 @@ static void serender3d_render_set_material_uniforms_lit(SE_Renderer3D *renderer,
     se_shader_set_uniform_i32 (shader, "num_of_point_lights", renderer->point_lights_count);
 
     /* textures */
+    // Note that by defaut meshes point to SE_DEFAULT_MATERIAL_INDEX, so by default it'll have
+    // the default textures.
     if (material->texture_diffuse.loaded) {
         se_texture_bind(&material->texture_diffuse, 0);
     } else {
-        se_texture_bind(&renderer->texture_default_diffuse, 0);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_diffuse, 0);
     }
 
     if (material->texture_specular.loaded) {
         se_texture_bind(&material->texture_specular, 1);
     } else {
-        se_texture_bind(&renderer->texture_default_specular, 1);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_specular, 1);
     }
 
     if (material->texture_normal.loaded) {
         se_texture_bind(&material->texture_normal, 2);
     } else {
-        se_texture_bind(&renderer->texture_default_normal, 2);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_normal, 2);
     }
 
         // - Directional Shadow Map
@@ -872,7 +870,7 @@ static void serender3d_render_set_material_uniforms_sprite(SE_Renderer3D *render
     if (material->sprite.texture.loaded) {
         se_texture_bind(&material->sprite.texture, 0);
     } else {
-        se_texture_bind(&renderer->texture_default_diffuse, 0);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_diffuse, 0);
     }
 }
 
@@ -972,22 +970,24 @@ set_material_uniforms_skinned
     se_shader_set_uniform_i32 (shader, "num_of_point_lights", renderer->point_lights_count);
 
     /* textures */
+    // Note that by defaut meshes point to SE_DEFAULT_MATERIAL_INDEX, so by default it'll have
+    // the default textures.
     if (material->texture_diffuse.loaded) {
         se_texture_bind(&material->texture_diffuse, 0);
     } else {
-        se_texture_bind(&renderer->texture_default_diffuse, 0);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_diffuse, 0);
     }
 
     if (material->texture_specular.loaded) {
         se_texture_bind(&material->texture_specular, 1);
     } else {
-        se_texture_bind(&renderer->texture_default_specular, 1);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_specular, 1);
     }
 
     if (material->texture_normal.loaded) {
         se_texture_bind(&material->texture_normal, 2);
     } else {
-        se_texture_bind(&renderer->texture_default_normal, 2);
+        se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_normal, 2);
     }
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map

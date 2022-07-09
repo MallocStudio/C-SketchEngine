@@ -1,27 +1,3 @@
-11 / 2 / 2022:
-[/] working physics collision check between circle and aabb (with debug rendering)
-[/] working physics collision check between circle and circle (with debug rendering)
-
-12 / 2 / 2022:
-[/] render a quad with color
-
-13 / 2 / 2022:
-[/] include freetype library and link and build correctly
-[~in progress: following https://learnopengl.com/In-Practice/Text-Rendering] render text (ttf)
-
-14 / 2 / 2022:
-[~in progress] working physics collision check between circle and plane (with debug rendering) // @question ask for Finn's help with this problem
-
-17 / 2 / 2022:
-[/] port part of the ui library from the game to sketchengine
-
-18 / 2 / 2022:
-[ ] add text rendering to the ui library
-
-LATER:
-[ ] render a quad tree on a flocking algorithm with boids
-[ ] aabb and plane // do during class time where Finn is around
-[ ] get a physics simulation of objects going. (to be able to add physics shapes to entities, or have shapes be the entities or etc. TBD)
 
 ARTICLES and RESOURCES:
 https://erikonarheim.com/posts/understanding-collision-constraint-solvers/
@@ -39,3 +15,26 @@ checkout the tool Valgrind (has a tool which tells you if you write memory that 
 More resources about loading obj and glTF
 https://github.com/syoyo/tinygltf
 https://github.com/jkuhlmann/cgltf
+
+//----------------- THINGS TO DO BEFORE DEMO -----------------
+Done:
+[/] Figure out why the plane has the soulspear's texture
+
+NOW:
+[ ] Store the camera properties in the level and save and load it from the disk
+
+Bucket:
+[ ] Load embedded textures properly
+[ ] Save and load asset data (mesh and materials) from disk
+[ ] Create the level editor UI widget that allows you to write pixels to a grid
+[ ] Program a player entity that traverses the world
+[ ] Create a floor that occupies the floor grid
+[ ] Display the world grid
+[ ] Create a button that displays the level editor mode
+[ ] Create a button that displays the game play mode
+[ ] Create a button that displays the inspector mode (allows you to select entities and view their properties)
+? [ ] Create a mesh loader UI widget that displays the contents of the mesh and what we want to load
+[ ] Store the light properties in the level and save and load it from the disk
+! [ ] Design and think about how the timeline mechanic works and should look like for the demo
+[ ] Develop a level around the timeline mechanic of the game
+[ ] Make the demo scene as pretty as possible

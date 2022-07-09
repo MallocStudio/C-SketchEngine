@@ -740,7 +740,7 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         //- STATIC MESH
-        serender3d_render_set_material_uniforms_lit(renderer, material, transform);
+        util_serender3d_render_set_material_uniforms_lit(renderer, material, transform);
     } else
     if (mesh->type == SE_MESH_TYPE_SPRITE) { // SPRITE
         //- SPRITE
@@ -1047,6 +1047,7 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
 
+        //- SHADERS
     se_shader_init_from(&renderer->shader_lit,
         shader_filename_lit_vsd, shader_filename_lit_fsd);
 
@@ -1087,17 +1088,26 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shader_filename_mouse_picking_vsd,
         shader_filename_mouse_picking_fsd);
 
-    /* default materials */
-    se_texture_load(&renderer->texture_default_diffuse, default_diffuse_filepath);
-    se_texture_load(&renderer->texture_default_normal, default_normal_filepath);
-    se_texture_load(&renderer->texture_default_specular, default_specular_filepath);
+        //- MATERIALS
+    //! We must have a default material at index zero.
+    //! Because by default meshes point to the zero'th material.
+    //! So we create one default material here and we refer to it.
+    u32 default_material_index = se_render3d_add_material(renderer);
+    se_assert(default_material_index == SE_DEFAULT_MATERIAL_INDEX && "The default material index that was created in the init() of renderer3D did not match what we expected");
+    renderer->user_materials[default_material_index]->base_diffuse = (Vec4) {1, 1, 1, 1};
+    se_texture_load(&renderer->user_materials[default_material_index]->texture_diffuse,
+                    default_diffuse_filepath);
+    se_texture_load(&renderer->user_materials[default_material_index]->texture_normal,
+                    default_normal_filepath);
+    se_texture_load(&renderer->user_materials[default_material_index]->texture_specular,
+                    default_specular_filepath);
 
-    /* shadow mapping */
+        //- SHADOW MAPPING
     f32 shadow_w = 1024;
     f32 shadow_h = 1024;
     serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true, true);
 
-    { /* omnidirectional shadow mapping */
+    {   // - POINT LIGHT SHADOW MAPPING
         for (u32 L = 0; L < SERENDERER3D_MAX_POINT_LIGHTS; ++L) {
             SE_Light_Point *point_light = &renderer->point_lights[L];
             glGenTextures(1, &point_light->depth_cube_map); // @leak
@@ -1157,11 +1167,6 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
 
         //- Shadow mapping
     serender_target_deinit(&renderer->shadow_render_target);
-
-        //- Default textures
-    se_texture_unload(&renderer->texture_default_diffuse);
-    se_texture_unload(&renderer->texture_default_normal);
-    se_texture_unload(&renderer->texture_default_specular);
 }
 
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {
@@ -1205,12 +1210,12 @@ u32 se_render3d_add_cube(SE_Renderer3D *renderer) {
 
 u32 se_render3d_add_plane(SE_Renderer3D *renderer, Vec3 scale) {
     u32 result = renderer->user_meshes_count;
-
-    renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
-    memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
-    semesh_generate_plane(renderer->user_meshes[renderer->user_meshes_count], scale);
-
     renderer->user_meshes_count++;
+
+    renderer->user_meshes[result] = NEW(SE_Mesh);
+    memset(renderer->user_meshes[result], 0, sizeof(SE_Mesh));
+    semesh_generate_plane(renderer->user_meshes[result], scale);
+
     return result;
 }
 
