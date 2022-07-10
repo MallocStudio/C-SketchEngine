@@ -22,14 +22,13 @@ Done:
 [/] Store the camera properties in the level and save and load it from the disk
 
 NOW:
+[ ] Save and load asset data (mesh and materials) from disk
 
 Bucket:
-[ ] Load embedded textures properly
-[ ] Save and load asset data (mesh and materials) from disk
-[ ] Create the level editor UI widget that allows you to write pixels to a grid
 [ ] Program a player entity that traverses the world
 [ ] Create a floor that occupies the floor grid
 [ ] Display the world grid
+[ ] Create the level editor UI widget that allows you to write pixels to a grid
 [ ] Create a button that displays the level editor mode
 [ ] Create a button that displays the game play mode
 [ ] Create a button that displays the inspector mode (allows you to select entities and view their properties)
@@ -38,3 +37,4 @@ Bucket:
 ! [ ] Design and think about how the timeline mechanic works and should look like for the demo
 [ ] Develop a level around the timeline mechanic of the game
 [ ] Make the demo scene as pretty as possible
+[ ] Load embedded textures properly
