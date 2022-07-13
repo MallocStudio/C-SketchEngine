@@ -59,4 +59,10 @@ private:
     ///
     void util_load_meshes_from_disk();
     void util_create_default_scene();
+
+    void util_update_game_mode(f32 delta_time);
+    void util_update_engine_mode(f32 delta_time);
+
+    void util_render_game_mode();
+    void util_render_engine_mode();
 };

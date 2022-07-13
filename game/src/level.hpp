@@ -12,6 +12,7 @@ public:
 
         /// Add an entity to the entities array and return its index.
     u32 add_entity();
+    u32 get_player();
 
         // @incomplete
     // void add_action();
@@ -21,4 +22,6 @@ public:
         /// The array of entities. This is where all the entity data lives
     Entities entities;
     SE_Camera3D main_camera_settings;
+    Player *m_player;
+    f32 cell_size;
 };

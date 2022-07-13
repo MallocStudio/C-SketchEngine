@@ -1,8 +1,8 @@
 #include "game.hpp"
 #include <iostream>         // used for writing save files
 #include <fstream>          // used for writing save files
-#include "game_util.hpp"    // utility functions
 #include "assets.hpp"       // saving and loading assets
+#include "game_util.hpp"    // utility functions
 
 #define SAVE_FILE_NAME "test_save_level.level"
 #define SAVE_FILE_ASSETS_NAME "test_save_assets.assets"
@@ -68,7 +68,7 @@ void App::init_engine() {
     m_mode = GAME_MODES::ENGINE;
     util_load_meshes_from_disk();
 
-#if 0 /// manually create entities
+#if 1 /// manually create entities
     util_create_default_scene();
     this->save();
 #else /// load from file
@@ -94,55 +94,14 @@ void App::update(f32 delta_time) {
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
     seui_resize(ctx, window_w, window_h);
 
-        //- 3D Movement
-    se_camera3d_input(&m_cameras[main_camera], &m_input);
-
-        //- Entities
-    m_level.entities.update(&m_renderer, delta_time);
-    se_animation_update(&animation, delta_time);
-    se_skeleton_calculate_pose(m_renderer.user_meshes[mesh_guy]->skeleton, animation.current_frame);
-
-        // select entities
-    if (se_input_is_mouse_left_released(&m_input) && se_input_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
-        printf("checking\n"); // @debug
-        m_selected_entity = this->raycast_to_select_entity();
-        m_widget_entity.entity = m_selected_entity;
-
-        if (m_selected_entity >= 0) {   // @debug
-            printf("hit %i\n", m_selected_entity);
-        }
+    if (m_mode == GAME_MODES::GAME) {
+            //- GAME INPUT
+        util_update_game_mode(delta_time);
+    } else
+    if (m_mode == GAME_MODES::ENGINE) {
+            //- ENGINE INPUT
+        util_update_engine_mode(delta_time);
     }
-
-    if (m_selected_entity >= 0) {   // @temp
-        Vec3 dir;
-        Vec3 origin;
-        se_camera3d_get_raycast(&m_cameras[main_camera], m_window, &dir, &origin);
-        if (ray_overlaps_sphere(origin, dir, 100, m_level.entities.position[m_selected_entity], 0.5f, NULL)) {
-            m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = lit;
-        } else {
-            m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
-        }
-    }
-        //- UI
-    seui_reset(ctx);
-    m_widget_entity.construct_panel(ctx, &m_renderer);
-    m_selected_entity = m_widget_entity.entity;
-
-        // make entity widget pop up
-    if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_SPACE)) {
-        m_widget_entity.toggle_visibility(ctx);
-    }
-
-        // save
-    if (seui_button_at(ctx, "save", {0, 0, 128, 32})) {
-        this->save();
-    }
-        // save camera settings
-    if (seui_button_at(ctx, "save camera", {128, 0, 200, 32})) {
-        Assets::update_level_camera_settings(&m_level, m_cameras[main_camera]);
-    }
-
-    seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
 }
 
 void App::render() {
@@ -176,50 +135,18 @@ void App::render() {
         //- Render Entities
     m_level.entities.render(&m_renderer);
 
-        // aabb of selected entity
-    if (m_selected_entity >= 0) {
-        se_mesh_generate_gizmos_aabb(m_renderer.user_meshes[current_obj_aabb],
-            m_level.entities.aabb[m_selected_entity].min,
-            m_level.entities.aabb[m_selected_entity].max,
-            2);
-
-        se_render_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
+    if (m_mode == GAME_MODES::GAME) {
+        //- GAME SPECIFIC
+        util_render_game_mode();
+    } else
+    if (m_mode == GAME_MODES::ENGINE) {
+        //- ENGINE SPECIFIC
+        util_render_engine_mode();
     }
-        // skeleton mesh
-    se_render_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
-    se_render_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());
-
-        //- Gizmos
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-        // selected entity
-    if (m_selected_entity >= 0) {
-        se_assert(m_selected_entity < m_level.entities.count);
-            // calculate transfrom without scale
-        Vec3 pos   = m_level.entities.position[m_selected_entity];
-        Vec3 rot   = m_level.entities.oriantation[m_selected_entity];
-
-        Mat4 transform = mat4_identity();
-        transform = mat4_mul(transform, mat4_euler_xyz(rot.x, rot.y, rot.z));
-        transform = mat4_mul(transform, mat4_translation(pos));
-
-        se_gizmo_render_index(&m_gizmo_renderer, mesh_gizmos_translate, transform);
-    }
-        // @debug directional light pos
-    {
-        Vec3 pos = m_renderer.light_directional.calculated_position;
-        Mat4 transform = mat4_identity();
-        transform = mat4_mul(transform, mat4_translation(pos));
-        se_gizmo_render_index(&m_gizmo_renderer, mesh_light_pos_gizmos, transform);
-    }
-
-    se_render_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
 
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
-
-    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 i32 App::raycast_to_select_entity() {

@@ -50,3 +50,25 @@ public:
         /// Note that this is called in the destructor
     void clear();
 };
+
+
+/// Player struct is a helper struct that stores an "Entities" list and the "index" that corresponds to the player entity.
+/// The player entity does not need special memory management and only stores references to the "Entities" struct.
+struct Player {
+public:
+    Player(Entities *entities, u32 index, f32 cell_size);
+    ~Player() = default;
+
+///
+/// PUBLIC PROCEDURES
+///
+
+    void move(Vec3 direction);
+
+///
+/// FIELDS
+///
+    Entities *m_entities; // ! not owned
+    u32 m_index;
+    f32 m_cell_size;
+};

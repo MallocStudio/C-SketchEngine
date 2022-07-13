@@ -78,3 +78,17 @@ void Entities::set_to_default() {
         this->light_index        [i] = -1;
     }
 }
+
+///
+///     PLAYER
+///
+
+Player::Player(Entities *entities, u32 index, f32 cell_size) {
+    m_entities = entities;
+    m_index = index;
+    m_cell_size = cell_size;
+}
+
+void Player::move(Vec3 direction) {
+    m_entities->position[m_index] = vec3_add(m_entities->position[m_index], direction);
+}

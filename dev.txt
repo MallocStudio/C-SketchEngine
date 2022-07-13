@@ -20,12 +20,12 @@ https://github.com/jkuhlmann/cgltf
 Done:
 [/] Figure out why the plane has the soulspear's texture
 [/] Store the camera properties in the level and save and load it from the disk
+[ ] Program a player entity that traverses the world
 
 NOW:
-[ ] Save and load asset data (mesh and materials) from disk
 
 Bucket:
-[ ] Program a player entity that traverses the world
+[ ] Save and load asset data (mesh and materials) from disk
 [ ] Create a floor that occupies the floor grid
 [ ] Display the world grid
 [ ] Create the level editor UI widget that allows you to write pixels to a grid
