@@ -712,6 +712,33 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
     return result;
 }
 
+void se_mesh_raw_data_deinit(SE_Mesh_Raw_Data *raw_data) {
+    free(raw_data->verts);
+    raw_data->vert_count = 0;
+}
+
+SE_Mesh_Raw_Data se_load_mesh_raw_data(const char *save_file) {
+    SE_Mesh_Raw_Data raw_data;
+    FILE *file;
+    file = fopen(save_file, "rb"); // read binary
+        // read how many verts are in the file
+        fread(&raw_data.vert_count, sizeof(raw_data.vert_count), 1, file);
+        // make space for the verts and load them from file
+        raw_data.verts = malloc(sizeof(SE_Vertex3D) * raw_data.vert_count);
+        fread(raw_data.verts, sizeof(SE_Vertex3D) * raw_data.vert_count, 1, file);
+    fclose(file);
+    return raw_data;
+}
+
+u32 se_render3d_load_mesh_from_save_data(SE_Renderer3D *renderer, SE_Mesh_Raw_Data raw_data) {
+    return -1;
+}
+
+void se_save_mesh_raw_data_to_disk(SE_Mesh_Raw_Data raw_data, const char *save_file) {
+
+}
+
+
 void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     se_render3d_reset_render_config(); // Reset configs to their default values
     // take the mesh (world space) and project it to view space

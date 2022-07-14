@@ -146,10 +146,30 @@ typedef enum SE_MESH_TYPES {
 /// data associated with what makes up a mesh.
 /// This is used for saving and loading meshes to and from disk
 typedef struct SE_Mesh_Raw_Data {
+        //- Verts
     u32 vert_count;
     SE_Vertex3D *verts; // array of verts
-
+        //- Shape
+    f32 line_width;
+    f32 point_radius;
+    SE_MESH_TYPES type;
+    b8 is_indexed;
+    AABB3D aabb;
+        //- Material
+    SE_String texture_diffuse_filepath;
+    SE_String texture_specular_filepath;
+    SE_String texture_normal_filepath;
+        //- Skeleton
+        // @TODO
 } SE_Mesh_Raw_Data;
+
+    /// Free the memory resources used by the "raw_data"
+void se_mesh_raw_data_deinit(SE_Mesh_Raw_Data *raw_data);
+    /// Load SE_Mesh_Raw_Data from "save_file" and load a SE_Mesh from that. Returns the index of the loaded mesh.
+    //! The user must manage memory. Call "se_mesh_raw_data_deinit" to properly manage the data's memory
+SE_Mesh_Raw_Data se_load_mesh_raw_data(const char *save_file);
+    /// Saves the given SE_Mesh_Raw_Data to disk.
+void se_save_mesh_raw_data_to_disk(SE_Mesh_Raw_Data raw_data, const char *save_file);
 
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
@@ -280,12 +300,16 @@ typedef struct SE_Renderer3D {
 
 void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera);
 void se_render3d_deinit(SE_Renderer3D *renderer);
-/// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
-u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_animation);
 u32 se_render3d_add_cube(SE_Renderer3D *renderer);
 u32 se_render3d_add_plane(SE_Renderer3D *renderer, Vec3 scale);
 u32 se_render3d_add_sprite_mesh(SE_Renderer3D *renderer, Vec2 scale);
 u32 se_render3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 width, RGBA colour);
+
+    //- SAVING AND LOADING MESHES
+    /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
+u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_animation);
+    /// Generates a SE_Mesh from SE_Mesh_Raw_Data and returns the index of the loaded mesh.
+u32 se_render3d_load_mesh_from_save_data(SE_Renderer3D *renderer, SE_Mesh_Raw_Data raw_data);
 
 /// Create one of those 3D coordinate gizmos that show the directions
 u32 se_render3d_add_gizmos_coordniates(SE_Renderer3D *renderer);

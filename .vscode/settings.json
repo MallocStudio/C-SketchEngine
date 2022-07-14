@@ -59,6 +59,7 @@
         "streambuf": "cpp",
         "memory": "c",
         "atomic": "cpp",
-        "xlocinfo": "cpp"
+        "xlocinfo": "cpp",
+        "serenderer_util.h": "c"
     }
 }

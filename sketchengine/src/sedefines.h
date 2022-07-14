@@ -32,10 +32,7 @@ typedef double f64;
 typedef unsigned char ubyte;
 typedef short i8;
 typedef unsigned short u8;
-// typedef enum bool {
-//     false, true
-// } bool;
-typedef unsigned short b8;
+typedef unsigned short b8; // boolean
 #ifndef __cplusplus
     #define false 0
     #define true 1
