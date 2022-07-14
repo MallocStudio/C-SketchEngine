@@ -61,12 +61,12 @@ void App::init_application(SDL_Window *window) {
     m_mesh_assets_count = 0;
     memset(m_mesh_assets, 0, sizeof(m_mesh_assets));
     // TODO Add the loader of all user_meshes used in the game here.
+    util_load_meshes_from_disk(); // @temp
 }
 
 void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
-    util_load_meshes_from_disk();
 
 #if 1 /// manually create entities
     util_create_default_scene();
@@ -80,6 +80,8 @@ void App::init_engine() {
 void App::init_game() {
     this->clear();
     m_mode = GAME_MODES::GAME;
+    this->load_assets_and_level();
+    this->m_cameras[main_camera] = m_level.main_camera_settings;
 }
 
 void App::clear() {
@@ -92,7 +94,9 @@ void App::update(f32 delta_time) {
     SDL_GetWindowSize(m_window, &window_w, &window_h);
     se_camera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
+
     seui_resize(ctx, window_w, window_h);
+    seui_reset(ctx);
 
     if (m_mode == GAME_MODES::GAME) {
             //- GAME INPUT
@@ -102,6 +106,7 @@ void App::update(f32 delta_time) {
             //- ENGINE INPUT
         util_update_engine_mode(delta_time);
     }
+
 }
 
 void App::render() {
@@ -207,7 +212,7 @@ void App::save() {
     Assets::save_level(&m_level, SAVE_FILE_NAME);
 }
 
-void App::load() {
+void App::load_assets_and_level() {
     {   //- Assets From Save File
         std::ifstream file(SAVE_FILE_ASSETS_NAME);
         if (!file.is_open()) {

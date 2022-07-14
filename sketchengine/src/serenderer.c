@@ -19,9 +19,7 @@ void se_mesh_deinit(SE_Mesh *mesh) {
     glDeleteBuffers(1, &mesh->vbo);
     glDeleteBuffers(1, &mesh->ibo);
     mesh->material_index = 0;
-    if (mesh->type == SE_MESH_TYPE_SKINNED) {
-        free(mesh->skeleton);
-    }
+    mesh->skeleton = NULL;
 }
 
 void se_mesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
@@ -656,9 +654,8 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
 
     SE_Skeleton *skeleton = NULL;
     if (with_skeleton) {
-        skeleton = NEW (SE_Skeleton);
-            // it's important for bone_nodes.children_count be zero and so should the other things
-        memset(skeleton, 0, sizeof(SE_Skeleton));
+        u32 skeleton_index = se_render3d_add_skeleton(renderer);
+        skeleton = renderer->user_skeletons[skeleton_index];
     }
 
     for (u32 i = 0; i < scene->mNumMeshes; ++i) {
@@ -1143,10 +1140,11 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     }
     renderer->user_meshes_count = 0;
 
-    // for (u32 i = 0; i < renderer->shaders_count; ++i) {
-    //     se_shader_deinit(renderer->shaders[i]);
-    // }
-    // renderer->shaders_count = 0;
+        //- User skeletons
+    for (u32 i = 0; i < renderer->user_skeletons_count; ++i) {
+        free(renderer->user_skeletons[i]); // @leak check if skeleton needs to free things. If so add se_skeleton_deinit
+    }
+
         //- Default shaders
     se_shader_deinit(&renderer->shader_lit);
     se_shader_deinit(&renderer->shader_skinned_mesh);
@@ -1190,11 +1188,22 @@ u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {
 }
 
 u32 se_render3d_add_material(SE_Renderer3D *renderer) {
+    se_assert(renderer->user_materials_count < SERENDERER3D_MAX_MATERIALS);
     renderer->user_materials[renderer->user_materials_count] = NEW(SE_Material);
     memset(renderer->user_materials[renderer->user_materials_count], 0, sizeof(SE_Material));
     u32 material_index = renderer->user_materials_count;
     renderer->user_materials_count++;
     return material_index;
+}
+
+u32 se_render3d_add_skeleton(SE_Renderer3D *renderer) {
+    se_assert(renderer->user_skeletons_count < SERENDERER3D_MAX_SKELETONS);
+    u32 result = renderer->user_skeletons_count;
+    renderer->user_skeletons_count++;
+    renderer->user_skeletons[result] = NEW (SE_Skeleton);
+        // it's important for bone_nodes.children_count be zero and so should the other things
+    memset(renderer->user_skeletons[result], 0, sizeof(SE_Skeleton));
+    return result;
 }
 
 u32 se_render3d_add_cube(SE_Renderer3D *renderer) {
@@ -1262,7 +1271,8 @@ u32 se_render3d_add_gizmos_coordniates(SE_Renderer3D *renderer) {
     return result;
 }
 
-u32 se_render3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
+u32 se_render3d_add_gizmos_aabb
+(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width) {
     u32 result = renderer->user_meshes_count;
 
     renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
@@ -1273,8 +1283,8 @@ u32 se_render3d_add_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32
     return result;
 }
 
-void se_render3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
-
+void se_render3d_update_gizmos_aabb
+(SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
     memset(renderer->user_meshes[mesh_index], 0, sizeof(SE_Mesh));
     se_mesh_generate_gizmos_aabb(renderer->user_meshes[mesh_index], min, max, line_width);
 }

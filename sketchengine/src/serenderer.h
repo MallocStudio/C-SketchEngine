@@ -142,6 +142,15 @@ typedef enum SE_MESH_TYPES {
     SE_MESH_TYPES_COUNT
 } SE_MESH_TYPES;
 
+/// A temporary struct that holds the vertices, indices, and all the raw
+/// data associated with what makes up a mesh.
+/// This is used for saving and loading meshes to and from disk
+typedef struct SE_Mesh_Raw_Data {
+    u32 vert_count;
+    SE_Vertex3D *verts; // array of verts
+
+} SE_Mesh_Raw_Data;
+
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
     i32 next_mesh_index; // a link to the next mesh (a mesh can consist of multiple meshes) if set to -1, then there is no other mesh
@@ -162,9 +171,7 @@ typedef struct SE_Mesh {
     f32 point_radius;
 
     /* skinned */
-    // u32 bone_count;
-    // kh_bone_info_t *bone_info;
-    SE_Skeleton *skeleton; // if this mesh is skinned, this will not be nulled and must be freed
+    SE_Skeleton *skeleton; // ! not owned. // @TODO change to a u32 index into SE_Renderer3D user_skeletons array
 } SE_Mesh;
 
 /// delete vao, vbo, ibo
@@ -212,31 +219,40 @@ typedef struct SE_Light_Point {
 //// RENDERER ////
 
 #define SERENDERER3D_MAX_MESHES 100
+#define SERENDERER3D_MAX_SKELETONS SERENDERER3D_MAX_MESHES
 #define SERENDERER3D_MAX_SHADERS 100
 #define SERENDERER3D_MAX_MATERIALS 100
 #define SERENDERER3D_MAX_POINT_LIGHTS 4
-
 
 typedef struct SE_Renderer3D {
     // ! NOTE THAT EVERYTHING IS SET TO ZERO AT THE BEGINNING OF INIT()
     // ! LOOK AT se_render3d_init TO SEE THE DEFAULT VALUES
 
-        //- USER Meshes
-// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MESH. Because the user would like to save and
-// ! load from the disk. Adding meshes on init() time will cause exponential duplicates.
+        //- USER MESHES
+// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MESH.
+// ! Because the user would like to save and load from the disk.
+// ! Adding meshes on init() will cause exponential duplicates.
+// ! Because they will get saved and loaded from the disk.
     u32 user_meshes_count;
     SE_Mesh *user_meshes[SERENDERER3D_MAX_MESHES];
 
-        //- USER Materials
-// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MATERIAL. Because the user would like to save and
-// ! load from the disk. Adding materials on init() time will cause exponential duplicates.
+        //- USER MATERIALS
+// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT MATERIAL.
+// ! Because the user would like to save and
+// ! load from the disk. Adding materials on init() will cause exponential duplicates.
+// ! Because they will get saved and loaded from the disk.
     u32 user_materials_count;
     SE_Material *user_materials[SERENDERER3D_MAX_MATERIALS];
 
-        //- Shaders
-    // u32 shaders_count;
-    // SE_Shader *shaders[SERENDERER3D_MAX_SHADERS];
+        //- USER SKELETONS
+// ! IMPORTANT NOTE AND WARNING. THE RENDERER SHOULD NOT LOAD ANY DEFAULT SKELETONS.
+// ! Because the user would like to save and load from the disk.
+// ! Adding meshes on init() will cause exponential duplicates.
+// ! Because they will get saved and loaded from the disk.
+    u32 user_skeletons_count;
+    SE_Skeleton *user_skeletons[SERENDERER3D_MAX_SKELETONS];
 
+        //- SHADERS
     SE_Shader shader_lit;                     // handles static meshes affected by light and the material system
     SE_Shader shader_skinned_mesh;            // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
     SE_Shader shader_shadow_calc;             // handles directional light shadow calulation
@@ -282,7 +298,7 @@ void se_render3d_update_gizmos_aabb(SE_Renderer3D *renderer, Vec3 min, Vec3 max,
 /// Add an empty material to the renderer
 u32 se_render3d_add_material(SE_Renderer3D *renderer);
     /// Add an uninitialised skeleton to the renderer
-u32 se_render3d_add_skeletal_animation(SE_Renderer3D *renderer);
+u32 se_render3d_add_skeleton(SE_Renderer3D *renderer);
     /// Add a point light to the renderer
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer);
 /// Setup renderer for rendering (set the configurations to their default values)

@@ -42,7 +42,7 @@ private:
         /// Save level data, assets data
     void save();
         /// Load level data, assets data
-    void load();
+    void load_assets_and_level();
 
     u32 add_camera();
         /// Raycasts into the scene to see if the user is trying to select an entiy.
@@ -65,4 +65,6 @@ private:
 
     void util_render_game_mode();
     void util_render_engine_mode();
+
+    void util_switch_mode(GAME_MODES mode);
 };

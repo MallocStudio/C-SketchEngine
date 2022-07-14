@@ -20,9 +20,11 @@ https://github.com/jkuhlmann/cgltf
 Done:
 [/] Figure out why the plane has the soulspear's texture
 [/] Store the camera properties in the level and save and load it from the disk
-[ ] Program a player entity that traverses the world
+[/] Program a player entity that traverses the world
+[/] Fix the issue with segfault that's related to how we store mesh skeletons
 
 NOW:
+[ ] Create a button that displays the game play mode
 
 Bucket:
 [ ] Save and load asset data (mesh and materials) from disk
@@ -30,7 +32,6 @@ Bucket:
 [ ] Display the world grid
 [ ] Create the level editor UI widget that allows you to write pixels to a grid
 [ ] Create a button that displays the level editor mode
-[ ] Create a button that displays the game play mode
 [ ] Create a button that displays the inspector mode (allows you to select entities and view their properties)
 ? [ ] Create a mesh loader UI widget that displays the contents of the mesh and what we want to load
 [ ] Store the light properties in the level and save and load it from the disk
