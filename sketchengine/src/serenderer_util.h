@@ -281,6 +281,64 @@ static void semesh_construct_material // only meant to be called form se_render3
     se_string_deinit(&dir);
 }
 
+static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data_Meshes *save_data) {
+    save_data->meshes_count = scene->mNumMeshes;
+    save_data->meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
+    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
+        struct aiMesh *ai_mesh = scene->mMeshes[i];
+        SE_Mesh_Raw_Data *mesh = &save_data->meshes[i];
+        memset(mesh, 0, sizeof(SE_Mesh_Raw_Data));
+
+        mesh->verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
+        mesh->indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
+        mesh->type = SE_MESH_TYPE_NORMAL;
+
+        for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
+            SE_Vertex3D vertex = {0};
+
+            // -- pos
+            vertex.position.x = ai_mesh->mVertices[i].x;
+            vertex.position.y = ai_mesh->mVertices[i].y;
+            vertex.position.z = ai_mesh->mVertices[i].z;
+
+            // -- normals
+            vertex.normal.x = ai_mesh->mNormals[i].x;
+            vertex.normal.y = ai_mesh->mNormals[i].y;
+            vertex.normal.z = ai_mesh->mNormals[i].z;
+
+            // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
+            vertex.tangent.x = ai_mesh->mTangents[i].x;
+            vertex.tangent.y = ai_mesh->mTangents[i].y;
+            vertex.tangent.z = ai_mesh->mTangents[i].z;
+
+            // -- bi-tangents
+            vertex.bitangent.x = ai_mesh->mBitangents[i].x;
+            vertex.bitangent.y = ai_mesh->mBitangents[i].y;
+            vertex.bitangent.z = ai_mesh->mBitangents[i].z;
+
+            // -- uvs
+            if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
+                vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
+                vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
+            } else {
+                vertex.texture_coord = v2f(0, 0);
+            }
+
+            mesh->verts[mesh->vert_count] = vertex;
+            mesh->vert_count++;
+        }
+
+            // indices
+        for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
+            // ! we triangulate on import, so every face has three vertices
+            mesh->indices[mesh->index_count+0] = ai_mesh->mFaces[i].mIndices[0];
+            mesh->indices[mesh->index_count+1] = ai_mesh->mFaces[i].mIndices[1];
+            mesh->indices[mesh->index_count+2] = ai_mesh->mFaces[i].mIndices[2];
+            mesh->index_count += 3;
+        }
+    }
+}
+
 static void semesh_construct_normal_mesh // only meant to be called from se_render3d_load_mesh
 (SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     sedefault_mesh(mesh);
@@ -338,14 +396,14 @@ static void semesh_construct_normal_mesh // only meant to be called from se_rend
     }
 
 #if 1 // @debug test if saving and loading works
-    SE_Save_Struct_Meshes save_data = {0};
+    SE_Save_Data_Meshes save_data = {0};
     save_data.meshes_count = 1;
     save_data.meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data.meshes_count);
     se_mesh_to_raw_data(mesh, verts, verts_count, indices, index_count, &save_data.meshes[0]);
     se_save_data_write_mesh(&save_data, "test_mesh_save_file.mesh");
     se_save_data_mesh_deinit(&save_data);
 
-    SE_Save_Struct_Meshes loaded_raw_data = {0};
+    SE_Save_Data_Meshes loaded_raw_data = {0};
     se_save_data_read_mesh(&loaded_raw_data, "test_mesh_save_file.mesh");
     se_raw_data_to_mesh(&loaded_raw_data.meshes[0], mesh);
     se_save_data_mesh_deinit(&loaded_raw_data);

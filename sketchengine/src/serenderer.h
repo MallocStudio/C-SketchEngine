@@ -150,8 +150,11 @@ typedef struct SE_Mesh_Raw_Data {
         //- Headers
     SE_MESH_TYPES type;
         //- Verts
+    // note that depending on the "type" one of
+    // SE_Vertex3D or SE_Skinned_Vertex will be used and not NULL
     u32 vert_count;
     SE_Vertex3D *verts; // array of verts
+    SE_Skinned_Vertex *skinned_verts; // array of skinned verts
     u32 index_count;
     u32 *indices;       // array of indices
         //- Shape
@@ -168,20 +171,20 @@ typedef struct SE_Mesh_Raw_Data {
         // @TODO
 } SE_Mesh_Raw_Data;
 
-typedef struct SE_Save_Struct_Meshes {
+typedef struct SE_Save_Data_Meshes {
     u32 meshes_count;     // number of meshes in this file that are linked together
     SE_Mesh_Raw_Data *meshes; // array of raw data
-} SE_Save_Struct_Meshes;
+} SE_Save_Data_Meshes;
 
     /// Free the memory resources used by the "raw_data"
-void se_save_data_mesh_deinit(SE_Save_Struct_Meshes *save_data);
+void se_save_data_mesh_deinit(SE_Save_Data_Meshes *save_data);
     /// Load SE_Mesh_Raw_Data from "save_file" and load a SE_Mesh from that.
     /// Returns the index of the loaded mesh.
     //! The user must manage memory. Call "se_save_data_mesh_deinit" to
     //! properly manage the data's memory
-void se_save_data_read_mesh(SE_Save_Struct_Meshes *save_data, const char *save_file);
+void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_file);
     /// Saves the given SE_Mesh_Raw_Data to disk.
-void se_save_data_write_mesh(const SE_Save_Struct_Meshes *save_data, const char *save_file);
+void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *save_file);
 
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {

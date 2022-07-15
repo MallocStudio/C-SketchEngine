@@ -4,18 +4,13 @@
 			"path": "sketchengine/src/serenderer.c",
 			"bookmarks": [
 				{
-					"line": 724,
-					"column": 0,
+					"line": 642,
+					"column": 4,
 					"label": ""
-				}
-			]
-		},
-		{
-			"path": "sketchengine/src/serenderer_util.h",
-			"bookmarks": [
+				},
 				{
-					"line": 339,
-					"column": 48,
+					"line": 759,
+					"column": 0,
 					"label": ""
 				}
 			]

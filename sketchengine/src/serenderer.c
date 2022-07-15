@@ -649,6 +649,40 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
         printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
         return result;
     }
+
+#if 1 // new version
+        //- Trun scene into a save file
+    SE_Save_Data_Meshes save_data = {0};
+    ai_scene_to_mesh_save_data(scene, &save_data);
+
+        //- Save to disk for later use
+    SE_String save_data_filepath;
+    se_string_init(&save_data_filepath, model_filepath);
+    se_string_append(&save_data_filepath, ".mesh");
+    se_save_data_write_mesh(&save_data, save_data_filepath.buffer);
+    se_string_deinit(&save_data_filepath);
+
+
+        //- Generate meshes from save data
+    result = renderer->user_meshes_count;
+    for (u32 i = 0; i < save_data.meshes_count; ++i) {
+        renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+        memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+
+        SE_Mesh *new_mesh = renderer->user_meshes[renderer->user_meshes_count];
+
+        se_raw_data_to_mesh(&save_data.meshes[i], new_mesh);
+
+            // connect the link
+        new_mesh->next_mesh_index = -1;
+        if (i > 0) {
+            renderer->user_meshes[renderer->user_meshes_count-1]->next_mesh_index = result + i;
+        }
+        renderer->user_meshes_count++;
+    }
+
+
+#else // old version // @temp after the new version is operational, remove the old version
         //- load meshes within the scene
     result = renderer->user_meshes_count; // the first mesh in the chain
 
@@ -707,12 +741,13 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
 
         //- the final mesh in the linked list has no next (signified by -1 next_mesh_index)
     renderer->user_meshes[renderer->user_meshes_count - 1]->next_mesh_index = -1;
-
+#endif
     aiReleaseImport(scene);
     return result;
+
 }
 
-void se_save_data_mesh_deinit(SE_Save_Struct_Meshes *save_data) {
+void se_save_data_mesh_deinit(SE_Save_Data_Meshes *save_data) {
     for (u32 i = 0; i < save_data->meshes_count; ++i) {
         SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
         free(raw_data->verts);
@@ -722,7 +757,7 @@ void se_save_data_mesh_deinit(SE_Save_Struct_Meshes *save_data) {
     save_data->meshes_count = 0;
 }
 
-void se_save_data_read_mesh(SE_Save_Struct_Meshes *save_data, const char *save_file) {
+void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_file) {
     FILE *file;
     file = fopen(save_file, "rb"); // read binary
         fread(&save_data->meshes_count, sizeof(u32), 1, file);
@@ -732,11 +767,21 @@ void se_save_data_read_mesh(SE_Save_Struct_Meshes *save_data, const char *save_f
                 //- Header
             fread(&raw_data->type, sizeof(SE_MESH_TYPES), 1, file);
                 //- Verts
-            // read how many verts are in the file
-            // make space for the verts and load them from file
+                // read how many verts are in the file
+                // make space for the verts and load them from file
             fread(&raw_data->vert_count, sizeof(u32), 1, file);
-            raw_data->verts = malloc(sizeof(SE_Vertex3D) * raw_data->vert_count);
-            fread(raw_data->verts, sizeof(SE_Vertex3D), raw_data->vert_count, file);
+
+            raw_data->skinned_verts = NULL;
+            raw_data->verts = NULL;
+
+            if (raw_data->type == SE_MESH_TYPE_SKINNED) {
+                raw_data->skinned_verts = malloc(sizeof(SE_Skinned_Vertex) * raw_data->vert_count);
+                fread(raw_data->skinned_verts, sizeof(SE_Skinned_Vertex), raw_data->vert_count, file);
+            } else {
+                raw_data->verts = malloc(sizeof(SE_Vertex3D) * raw_data->vert_count);
+                fread(raw_data->verts, sizeof(SE_Vertex3D), raw_data->vert_count, file);
+            }
+
             // make space for indices
             fread(&raw_data->index_count, sizeof(u32), 1, file);
             raw_data->indices = malloc(sizeof(u32) * raw_data->index_count);
@@ -750,7 +795,7 @@ void se_save_data_read_mesh(SE_Save_Struct_Meshes *save_data, const char *save_f
     fclose(file);
 }
 
-void se_save_data_write_mesh(const SE_Save_Struct_Meshes *save_data, const char *save_file) {
+void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *save_file) {
     FILE *file;
     file = fopen(save_file, "wb"); // write binary
         fwrite(&save_data->meshes_count, sizeof(u32), 1, file);
@@ -760,7 +805,15 @@ void se_save_data_write_mesh(const SE_Save_Struct_Meshes *save_data, const char 
             fwrite(&raw_data->type, sizeof(SE_MESH_TYPES), 1, file);
                 //- Verts
             fwrite(&raw_data->vert_count, sizeof(u32), 1, file);
-            fwrite(raw_data->verts, sizeof(SE_Vertex3D), raw_data->vert_count, file);
+            if (raw_data->type == SE_MESH_TYPE_SKINNED) {
+                // then write skinned_verts data
+                fwrite(raw_data->skinned_verts, sizeof(SE_Skinned_Vertex), raw_data->vert_count, file);
+            } else {
+                // write verts data
+                // then write skinned_verts as null / what's already stored
+                fwrite(raw_data->verts, sizeof(SE_Vertex3D), raw_data->vert_count, file);
+            }
+
             fwrite(&raw_data->index_count, sizeof(u32), 1, file);
             fwrite(raw_data->indices, sizeof(u32), raw_data->index_count, file);
                 //- Shape
@@ -774,7 +827,11 @@ void se_save_data_write_mesh(const SE_Save_Struct_Meshes *save_data, const char 
 
 void se_raw_data_to_mesh
 (const SE_Mesh_Raw_Data *raw_data, SE_Mesh *mesh) {
+        // settings
+    mesh->next_mesh_index = -1;
     mesh->type = raw_data->type;
+
+        // generate vao
     se_mesh_generate(mesh, raw_data->vert_count, raw_data->verts, raw_data->index_count, raw_data->indices);
 }
 

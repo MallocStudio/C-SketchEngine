@@ -5,6 +5,7 @@
 
 #define SESTRING_MAX_SIZE 0xffffffff // from <limits.h> for UINT_MAX
 
+/// Stores a null termninated array of characters
 typedef struct SE_String {
     char *buffer;
     u32 size;
