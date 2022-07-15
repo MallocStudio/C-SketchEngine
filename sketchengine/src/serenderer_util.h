@@ -281,9 +281,11 @@ static void semesh_construct_material // only meant to be called form se_render3
     se_string_deinit(&dir);
 }
 
-static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data_Meshes *save_data) {
+static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data_Meshes *save_data, const char *filepath) {
     save_data->meshes_count = scene->mNumMeshes;
     save_data->meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
+
+        // go through every mesh in the scene and add it to "save_data"
     for (u32 i = 0; i < scene->mNumMeshes; ++i) {
         struct aiMesh *ai_mesh = scene->mMeshes[i];
         SE_Mesh_Raw_Data *mesh = &save_data->meshes[i];
@@ -293,6 +295,7 @@ static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data
         mesh->indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
         mesh->type = SE_MESH_TYPE_NORMAL;
 
+            //- vertices
         for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
             SE_Vertex3D vertex = {0};
 
@@ -328,7 +331,7 @@ static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data
             mesh->vert_count++;
         }
 
-            // indices
+            //- indices
         for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
             // ! we triangulate on import, so every face has three vertices
             mesh->indices[mesh->index_count+0] = ai_mesh->mFaces[i].mIndices[0];
@@ -336,7 +339,89 @@ static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data
             mesh->indices[mesh->index_count+2] = ai_mesh->mFaces[i].mIndices[2];
             mesh->index_count += 3;
         }
+
+        {   //- materials
+            // find the directory part of filepath
+            SE_String filepath_string;
+            se_string_init(&filepath_string, filepath);
+
+            SE_String dir;
+            se_string_init(&dir, "");
+
+            u32 slash_index = se_string_lastof(&filepath_string, '/');
+            if (slash_index == SESTRING_MAX_SIZE) {
+                se_string_append(&dir, "/");
+            } else if (slash_index == 0) {
+                se_string_append(&dir, ".");
+            } else {
+                se_string_append_length(&dir, filepath, slash_index);
+                se_string_append(&dir, "/");
+            }
+
+            // now add the texture path to directory
+            const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+
+            SE_String diffuse_path;
+            SE_String specular_path;
+            SE_String normal_path;
+
+            se_string_init(&diffuse_path, dir.buffer);
+            se_string_init(&specular_path, dir.buffer);
+            se_string_init(&normal_path, dir.buffer);
+
+            struct aiString *ai_texture_path_diffuse  = NEW(struct aiString);
+            struct aiString *ai_texture_path_specular = NEW(struct aiString);
+            struct aiString *ai_texture_path_normal   = NEW(struct aiString);
+
+            b8 has_diffuse  = true;
+            b8 has_specular = true;
+            b8 has_normal   = true;
+
+            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
+                has_diffuse = false;
+                printf("WARNING: ASSIMP unable to load dffiuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
+            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
+                has_specular = false;
+                printf("WARNING: ASSIMP unable to load specular\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
+            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
+                has_normal = false;
+                printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
+            /* diffuse */
+            if (has_diffuse) {
+                se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
+            }
+            free(ai_texture_path_diffuse);
+
+            /* specular */
+            if (has_specular) {
+                se_string_append(&specular_path, ai_texture_path_specular->data);
+            }
+            free(ai_texture_path_specular);
+
+            /* normal */
+            if (has_normal) {
+                se_string_append(&normal_path, ai_texture_path_normal->data);
+            }
+            free(ai_texture_path_normal);
+
+            se_string_init(&mesh->texture_diffuse_filepath, diffuse_path.buffer);
+            se_string_init(&mesh->texture_specular_filepath, specular_path.buffer);
+            se_string_init(&mesh->texture_normal_filepath, normal_path.buffer);
+
+            se_string_deinit(&diffuse_path);
+            se_string_deinit(&specular_path);
+            se_string_deinit(&normal_path);
+
+            se_string_deinit(&dir);
+        }
     }
+
 }
 
 static void semesh_construct_normal_mesh // only meant to be called from se_render3d_load_mesh
@@ -395,7 +480,7 @@ static void semesh_construct_normal_mesh // only meant to be called from se_rend
         index_count += 3;
     }
 
-#if 1 // @debug test if saving and loading works
+#if 0 // @debug test if saving and loading works
     SE_Save_Data_Meshes save_data = {0};
     save_data.meshes_count = 1;
     save_data.meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data.meshes_count);

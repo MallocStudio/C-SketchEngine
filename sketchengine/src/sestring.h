@@ -16,7 +16,7 @@ typedef struct SE_String {
 void se_string_init(SE_String *sestring, const char *buffer);
 void se_string_init_i32(SE_String *sestring, i32 value);
 void se_string_init_f32(SE_String *sestring, f32 value);
-/// Frees potentially allocated memory
+/// Potentially frees allocated memory
 void se_string_deinit(SE_String *sestring);
 /// Duplicates string1's content to string2's content.
 void se_string_duplicate(SE_String *src, SE_String *dest);
