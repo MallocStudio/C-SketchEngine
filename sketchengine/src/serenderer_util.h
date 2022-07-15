@@ -395,24 +395,23 @@ static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data
             /* diffuse */
             if (has_diffuse) {
                 se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
+                se_string_init(&mesh->texture_diffuse_filepath, diffuse_path.buffer);
             }
             free(ai_texture_path_diffuse);
 
             /* specular */
             if (has_specular) {
                 se_string_append(&specular_path, ai_texture_path_specular->data);
+                se_string_init(&mesh->texture_specular_filepath, specular_path.buffer);
             }
             free(ai_texture_path_specular);
 
             /* normal */
             if (has_normal) {
                 se_string_append(&normal_path, ai_texture_path_normal->data);
+                se_string_init(&mesh->texture_normal_filepath, normal_path.buffer);
             }
             free(ai_texture_path_normal);
-
-            se_string_init(&mesh->texture_diffuse_filepath, diffuse_path.buffer);
-            se_string_init(&mesh->texture_specular_filepath, specular_path.buffer);
-            se_string_init(&mesh->texture_normal_filepath, normal_path.buffer);
 
             se_string_deinit(&diffuse_path);
             se_string_deinit(&specular_path);

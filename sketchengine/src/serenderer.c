@@ -811,19 +811,21 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
             fread(&specular_buffer_size, sizeof(u32), 1, file);
             fread(&normal_buffer_size, sizeof(u32), 1, file);
 
-            char diffuse_buffer[1024];
-            char specular_buffer[1024];
-            char normal_buffer[1024];
             if (diffuse_buffer_size > 0) {
-                fread(&diffuse_buffer, sizeof(char), diffuse_buffer_size, file);
+                char diffuse_buffer[1024];
+                fread(&diffuse_buffer, sizeof(char), diffuse_buffer_size + 1, file);
                 se_string_init(&raw_data->texture_diffuse_filepath, diffuse_buffer);
             }
+
             if (specular_buffer_size > 0) {
-                fread(&specular_buffer, sizeof(char), specular_buffer_size, file);
+                char specular_buffer[1024];
+                fread(&specular_buffer, sizeof(char), specular_buffer_size + 1, file);
                 se_string_init(&raw_data->texture_specular_filepath, specular_buffer);
             }
+
             if (normal_buffer_size > 0) {
-                fread(&normal_buffer, sizeof(char), normal_buffer_size, file);
+                char normal_buffer[1024];
+                fread(&normal_buffer, sizeof(char), normal_buffer_size + 1, file);
                 se_string_init(&raw_data->texture_normal_filepath, normal_buffer);
             }
         }
@@ -859,21 +861,23 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
             fwrite(&raw_data->aabb, sizeof(AABB3D), 1, file);
 
                 //- Material
-            fwrite(&raw_data->texture_diffuse_filepath.size, sizeof(char), 1, file);
-            fwrite(&raw_data->texture_specular_filepath.size, sizeof(char), 1, file);
-            fwrite(&raw_data->texture_normal_filepath.size, sizeof(char), 1, file);
+            fwrite(&raw_data->texture_diffuse_filepath.size, sizeof(u32), 1, file);
+            fwrite(&raw_data->texture_specular_filepath.size, sizeof(u32), 1, file);
+            fwrite(&raw_data->texture_normal_filepath.size, sizeof(u32), 1, file);
 
             if (raw_data->texture_diffuse_filepath.size > 0) {
-                fwrite(&raw_data->texture_diffuse_filepath,
-                        sizeof(char), raw_data->texture_diffuse_filepath.size, file);
+                fwrite(raw_data->texture_diffuse_filepath.buffer,
+                        sizeof(char), raw_data->texture_diffuse_filepath.size + 1, file);
             }
+
             if (raw_data->texture_specular_filepath.size > 0) {
-                fwrite(&raw_data->texture_specular_filepath,
-                        sizeof(char), raw_data->texture_specular_filepath.size, file);
+                fwrite(raw_data->texture_specular_filepath.buffer,
+                        sizeof(char), raw_data->texture_specular_filepath.size + 1, file);
             }
+
             if (raw_data->texture_normal_filepath.size > 0) {
-                fwrite(&raw_data->texture_normal_filepath,
-                        sizeof(char), raw_data->texture_normal_filepath.size, file);
+                fwrite(raw_data->texture_normal_filepath.buffer,
+                        sizeof(char), raw_data->texture_normal_filepath.size + 1, file);
             }
         }
     fclose(file);
@@ -891,6 +895,7 @@ void se_raw_data_to_mesh
         // materials
 
     u32 material_index = se_render3d_add_material(renderer);
+    mesh->material_index = material_index;
 
     SE_Material *material = renderer->user_materials[material_index];
     material->base_diffuse = (Vec4) {1, 1, 1, 1};
