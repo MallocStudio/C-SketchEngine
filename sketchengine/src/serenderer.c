@@ -332,7 +332,7 @@ void se_mesh_generate_static_skeleton
 #endif
 
         //- mesh settings
-    mesh->vert_count = index_count;
+    mesh->element_count = index_count;
     mesh->indexed = true;
     mesh->aabb = (AABB3D) {0};
 #ifdef DEBUG_BONE_INVERSE_NEUTRAL_TRANSFORM
@@ -396,7 +396,7 @@ void se_mesh_generate_skinned_skeleton
         // se_assert(vert_count == skeleton->bone_count); @debug
 #endif
             // mesh settings
-        mesh->vert_count = index_count;
+        mesh->element_count = index_count;
         mesh->indexed = true;
         mesh->aabb = (AABB3D) {0};
         mesh->line_width = 2;
@@ -412,7 +412,7 @@ void se_mesh_generate_skinned_skeleton
         se_assert(index_count == skeleton->bone_node_count);
 
             // mesh settings
-        mesh->vert_count = index_count;
+        mesh->element_count = index_count;
         mesh->indexed = true;
         mesh->point_radius = 8;
         mesh->aabb = (AABB3D) {0};
@@ -494,7 +494,7 @@ void se_mesh_generate(SE_Mesh *mesh, u32 vert_count, const SE_Vertex3D *vertices
         se_assert(false && "mesh type was something other than normal, line, or sprite but we tried to generate one");
     }
 
-    mesh->vert_count = index_count;
+    mesh->element_count = index_count;
     mesh->indexed = true;
     mesh->aabb = se_mesh_calc_aabb(vertices, vert_count);
 
@@ -712,32 +712,89 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
     return result;
 }
 
-void se_mesh_raw_data_deinit(SE_Mesh_Raw_Data *raw_data) {
-    free(raw_data->verts);
-    raw_data->vert_count = 0;
+void se_save_data_mesh_deinit(SE_Save_Struct_Meshes *save_data) {
+    for (u32 i = 0; i < save_data->meshes_count; ++i) {
+        SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
+        free(raw_data->verts);
+        raw_data->vert_count = 0;
+    }
+    free(save_data->meshes);
+    save_data->meshes_count = 0;
 }
 
-SE_Mesh_Raw_Data se_load_mesh_raw_data(const char *save_file) {
-    SE_Mesh_Raw_Data raw_data;
+void se_save_data_read_mesh(SE_Save_Struct_Meshes *save_data, const char *save_file) {
     FILE *file;
     file = fopen(save_file, "rb"); // read binary
-        // read how many verts are in the file
-        fread(&raw_data.vert_count, sizeof(raw_data.vert_count), 1, file);
-        // make space for the verts and load them from file
-        raw_data.verts = malloc(sizeof(SE_Vertex3D) * raw_data.vert_count);
-        fread(raw_data.verts, sizeof(SE_Vertex3D) * raw_data.vert_count, 1, file);
+        fread(&save_data->meshes_count, sizeof(u32), 1, file);
+        save_data->meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
+        for (u32 i = 0; i < save_data->meshes_count; ++i) {
+            SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
+                //- Header
+            fread(&raw_data->type, sizeof(SE_MESH_TYPES), 1, file);
+                //- Verts
+            // read how many verts are in the file
+            // make space for the verts and load them from file
+            fread(&raw_data->vert_count, sizeof(u32), 1, file);
+            raw_data->verts = malloc(sizeof(SE_Vertex3D) * raw_data->vert_count);
+            fread(raw_data->verts, sizeof(SE_Vertex3D), raw_data->vert_count, file);
+            // make space for indices
+            fread(&raw_data->index_count, sizeof(u32), 1, file);
+            raw_data->indices = malloc(sizeof(u32) * raw_data->index_count);
+            fread(raw_data->indices, sizeof(u32), raw_data->index_count, file);
+                //- Shape
+            fread(&raw_data->line_width, sizeof(f32), 1, file);
+            fread(&raw_data->point_radius, sizeof(f32), 1, file);
+            fread(&raw_data->is_indexed, sizeof(b8), 1, file);
+            fread(&raw_data->aabb, sizeof(AABB3D), 1, file);
+        }
     fclose(file);
-    return raw_data;
 }
 
-u32 se_render3d_load_mesh_from_save_data(SE_Renderer3D *renderer, SE_Mesh_Raw_Data raw_data) {
-    return -1;
+void se_save_data_write_mesh(const SE_Save_Struct_Meshes *save_data, const char *save_file) {
+    FILE *file;
+    file = fopen(save_file, "wb"); // write binary
+        fwrite(&save_data->meshes_count, sizeof(u32), 1, file);
+        for (u32 i = 0; i < save_data->meshes_count; ++i) {
+            SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
+                //- Header
+            fwrite(&raw_data->type, sizeof(SE_MESH_TYPES), 1, file);
+                //- Verts
+            fwrite(&raw_data->vert_count, sizeof(u32), 1, file);
+            fwrite(raw_data->verts, sizeof(SE_Vertex3D), raw_data->vert_count, file);
+            fwrite(&raw_data->index_count, sizeof(u32), 1, file);
+            fwrite(raw_data->indices, sizeof(u32), raw_data->index_count, file);
+                //- Shape
+            fwrite(&raw_data->line_width, sizeof(f32), 1, file);
+            fwrite(&raw_data->point_radius, sizeof(f32), 1, file);
+            fwrite(&raw_data->is_indexed, sizeof(b8), 1, file);
+            fwrite(&raw_data->aabb, sizeof(AABB3D), 1, file);
+        }
+    fclose(file);
 }
 
-void se_save_mesh_raw_data_to_disk(SE_Mesh_Raw_Data raw_data, const char *save_file) {
-
+void se_raw_data_to_mesh
+(const SE_Mesh_Raw_Data *raw_data, SE_Mesh *mesh) {
+    mesh->type = raw_data->type;
+    se_mesh_generate(mesh, raw_data->vert_count, raw_data->verts, raw_data->index_count, raw_data->indices);
 }
 
+void se_mesh_to_raw_data
+(const SE_Mesh *mesh, SE_Vertex3D *verts, u32 vert_count, u32 *indices, u32 index_count, SE_Mesh_Raw_Data *result) {
+    result->verts = malloc(sizeof(SE_Vertex3D) * vert_count);
+    result->indices = malloc(sizeof(u32) * index_count);
+    result->vert_count  = vert_count;
+    result->index_count = index_count;
+    memcpy(result->verts, verts, sizeof(SE_Vertex3D) * vert_count);
+    memcpy(result->indices, indices, sizeof(u32) * index_count);
+
+    result->is_indexed = mesh->indexed;
+    result->aabb = mesh->aabb;
+    result->line_width = mesh->line_width;
+    result->point_radius = mesh->point_radius;
+    result->type = mesh->type;
+
+    // @TODO ...
+}
 
 void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     se_render3d_reset_render_config(); // Reset configs to their default values
@@ -787,9 +844,9 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
         //- Draw Call
     glBindVertexArray(mesh->vao);
     if (mesh->indexed) {
-        glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(primitive, mesh->element_count, GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(primitive, 0, mesh->vert_count);
+        glDrawArrays(primitive, 0, mesh->element_count);
     }
 
     glBindVertexArray(0);
@@ -815,9 +872,9 @@ void se_render_mesh_with_shader
         //- Draw Call
     glBindVertexArray(mesh->vao);
     if (mesh->indexed) {
-        glDrawElements(primitive, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(primitive, mesh->element_count, GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(primitive, 0, mesh->vert_count);
+        glDrawArrays(primitive, 0, mesh->element_count);
     }
 
     glBindVertexArray(0);
@@ -859,9 +916,9 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
     glBindVertexArray(mesh->vao);
     glCullFace(GL_FRONT);
     if (mesh->indexed) {
-        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+        glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
     }
     glCullFace(GL_BACK);
 
@@ -1049,9 +1106,9 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
 
                 glBindVertexArray(mesh->vao);
                 if (mesh->indexed) {
-                    glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+                    glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
                 } else {
-                    glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+                    glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
                 }
             }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

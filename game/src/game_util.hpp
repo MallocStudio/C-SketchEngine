@@ -38,13 +38,11 @@ u32 main_camera = -1;
 void App::util_load_meshes_from_disk() {
         // @temp TODO: MOVE TO LOADER
     mesh_soulspear = se_render3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
-
+#if 0
     // mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
     mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/Sitting Laughing.fbx", true);
-
     // mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/changedPrizm2.fbx", true);
     // mesh_guy = se_render3d_load_mesh(&m_renderer, "core/meshes/TriangularPrism.fbx", true);
-
     mesh_skeleton = se_render3d_add_mesh_empty(&m_renderer);
     se_mesh_generate_skinned_skeleton(m_renderer.user_meshes[mesh_skeleton], m_renderer.user_meshes[mesh_guy]->skeleton, true, true);
     // se_mesh_generate_static_skeleton(m_renderer.meshes[mesh_skeleton], m_renderer.meshes[mesh_guy]->skeleton);
@@ -52,6 +50,7 @@ void App::util_load_meshes_from_disk() {
     animation.current_frame = 0;
     animation.duration = m_renderer.user_meshes[mesh_guy]->skeleton->animations[0]->duration;
     animation.speed = m_renderer.user_meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
+#endif
 
     mesh_plane = se_render3d_add_plane(&m_renderer, v3f(10, 10, 10));
 
@@ -81,7 +80,7 @@ void App::util_create_default_scene() {
     se_string_init(&m_level.entities.name[soulspear], "soulspear_entity");
     m_level.entities.position[soulspear] = v3f(3, 1, 0);
 
-        //- PLAYER
+#if 0        //- PLAYER
     u32 guy = m_level.add_entity();
     m_level.entities.mesh_index[guy] = mesh_guy;
     m_level.entities.has_mesh[guy] = true;
@@ -90,7 +89,7 @@ void App::util_create_default_scene() {
     se_string_init(&m_level.entities.name[guy], "guy");
     m_level.entities.position[guy] = v3f(0, 0, 0);
     m_level.entities.scale[guy]    = v3f(0.1f, 0.1f, 0.1f);
-
+#endif
         //- FLOOR
     u32 plane = m_level.add_entity();
     m_level.entities.mesh_index[plane] = mesh_plane;
@@ -163,9 +162,10 @@ void App::util_update_engine_mode(f32 delta_time) {
 
         //- Entities
     m_level.entities.update(&m_renderer, delta_time);
+#if 0
     se_animation_update(&animation, delta_time);
     se_skeleton_calculate_pose(m_renderer.user_meshes[mesh_guy]->skeleton, animation.current_frame);
-
+#endif
 
         // select entities
     if (se_input_is_mouse_left_released(&m_input) && se_input_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
@@ -222,7 +222,9 @@ void App::util_render_engine_mode() {
     }
 
         //- skeleton mesh
+#if 0   // @debug
     se_render_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
+#endif
     se_render_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());
 
         //- Gizmos

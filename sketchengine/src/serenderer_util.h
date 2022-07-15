@@ -101,7 +101,7 @@ static void semesh_generate_skinned // same as se_mesh_generate but for skinned 
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(SE_Skinned_Vertex), (void*)offsetof(SE_Skinned_Vertex, bone_weights));
 
-    mesh->vert_count = index_count;
+    mesh->element_count = index_count;
     mesh->indexed = true;
     // mesh->aabb = (AABB3D) {0}; //se_mesh_calc_aabb(vertices, vert_count);
     mesh->aabb = se_mesh_calc_aabb_skinned(vertices, vert_count);
@@ -337,7 +337,21 @@ static void semesh_construct_normal_mesh // only meant to be called from se_rend
         index_count += 3;
     }
 
+#if 1 // @debug test if saving and loading works
+    SE_Save_Struct_Meshes save_data = {0};
+    save_data.meshes_count = 1;
+    save_data.meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data.meshes_count);
+    se_mesh_to_raw_data(mesh, verts, verts_count, indices, index_count, &save_data.meshes[0]);
+    se_save_data_write_mesh(&save_data, "test_mesh_save_file.mesh");
+    se_save_data_mesh_deinit(&save_data);
+
+    SE_Save_Struct_Meshes loaded_raw_data = {0};
+    se_save_data_read_mesh(&loaded_raw_data, "test_mesh_save_file.mesh");
+    se_raw_data_to_mesh(&loaded_raw_data.meshes[0], mesh);
+    se_save_data_mesh_deinit(&loaded_raw_data);
+#else
     se_mesh_generate(mesh, verts_count, verts, index_count, indices);
+#endif
 
     free(verts);
     free(indices);
@@ -1045,9 +1059,9 @@ static void recursive_render_directional_shadow_map_for_mesh
 
     glBindVertexArray(mesh->vao);
     if (mesh->indexed) {
-        glDrawElements(GL_TRIANGLES, mesh->vert_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh->vert_count);
+        glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
     }
 
     if (mesh->next_mesh_index >= 0) {

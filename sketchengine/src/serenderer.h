@@ -142,39 +142,51 @@ typedef enum SE_MESH_TYPES {
     SE_MESH_TYPES_COUNT
 } SE_MESH_TYPES;
 
+
 /// A temporary struct that holds the vertices, indices, and all the raw
 /// data associated with what makes up a mesh.
 /// This is used for saving and loading meshes to and from disk
 typedef struct SE_Mesh_Raw_Data {
+        //- Headers
+    SE_MESH_TYPES type;
         //- Verts
     u32 vert_count;
     SE_Vertex3D *verts; // array of verts
+    u32 index_count;
+    u32 *indices;       // array of indices
         //- Shape
     f32 line_width;
     f32 point_radius;
-    SE_MESH_TYPES type;
     b8 is_indexed;
     AABB3D aabb;
         //- Material
-    SE_String texture_diffuse_filepath;
-    SE_String texture_specular_filepath;
-    SE_String texture_normal_filepath;
+        // @TODO
+    // SE_String texture_diffuse_filepath;
+    // SE_String texture_specular_filepath;
+    // SE_String texture_normal_filepath;
         //- Skeleton
         // @TODO
 } SE_Mesh_Raw_Data;
 
+typedef struct SE_Save_Struct_Meshes {
+    u32 meshes_count;     // number of meshes in this file that are linked together
+    SE_Mesh_Raw_Data *meshes; // array of raw data
+} SE_Save_Struct_Meshes;
+
     /// Free the memory resources used by the "raw_data"
-void se_mesh_raw_data_deinit(SE_Mesh_Raw_Data *raw_data);
-    /// Load SE_Mesh_Raw_Data from "save_file" and load a SE_Mesh from that. Returns the index of the loaded mesh.
-    //! The user must manage memory. Call "se_mesh_raw_data_deinit" to properly manage the data's memory
-SE_Mesh_Raw_Data se_load_mesh_raw_data(const char *save_file);
+void se_save_data_mesh_deinit(SE_Save_Struct_Meshes *save_data);
+    /// Load SE_Mesh_Raw_Data from "save_file" and load a SE_Mesh from that.
+    /// Returns the index of the loaded mesh.
+    //! The user must manage memory. Call "se_save_data_mesh_deinit" to
+    //! properly manage the data's memory
+void se_save_data_read_mesh(SE_Save_Struct_Meshes *save_data, const char *save_file);
     /// Saves the given SE_Mesh_Raw_Data to disk.
-void se_save_mesh_raw_data_to_disk(SE_Mesh_Raw_Data raw_data, const char *save_file);
+void se_save_data_write_mesh(const SE_Save_Struct_Meshes *save_data, const char *save_file);
 
 #define SE_MESH_VERTICES_MAX 10000
 typedef struct SE_Mesh {
     i32 next_mesh_index; // a link to the next mesh (a mesh can consist of multiple meshes) if set to -1, then there is no other mesh
-    u32 vert_count;
+    u32 element_count;
     u32 vao;      // vertex array object
     u32 vbo;      // vertex buffer object
     u32 ibo;      // index buffer object
@@ -196,6 +208,7 @@ typedef struct SE_Mesh {
 
 /// delete vao, vbo, ibo
 void se_mesh_deinit(SE_Mesh *mesh);
+void se_mesh_to_raw_data(const SE_Mesh *mesh, SE_Vertex3D *verts, u32 vert_count, u32 *indices, u32 index_count, SE_Mesh_Raw_Data *result);
 /// generate a quad. The mesh better be uninitialised because this function assumes there are no previous data stored on the mesh
 void se_mesh_generate_quad(SE_Mesh *mesh, Vec2 scale); // 2D plane
 void se_mesh_generate_sprite(SE_Mesh *mesh, Vec2 scale);
@@ -309,7 +322,7 @@ u32 se_render3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 widt
     /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
 u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_animation);
     /// Generates a SE_Mesh from SE_Mesh_Raw_Data and returns the index of the loaded mesh.
-u32 se_render3d_load_mesh_from_save_data(SE_Renderer3D *renderer, SE_Mesh_Raw_Data raw_data);
+void se_raw_data_to_mesh(const SE_Mesh_Raw_Data *raw_data, SE_Mesh *mesh);
 
 /// Create one of those 3D coordinate gizmos that show the directions
 u32 se_render3d_add_gizmos_coordniates(SE_Renderer3D *renderer);
