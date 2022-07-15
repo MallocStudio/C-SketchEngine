@@ -715,6 +715,79 @@ static void semesh_construct_skinned_mesh // only meant to be called from se_ren
     free(indices);
 }
 
+static void skeleton_deep_copy(SE_Skeleton *dest, const SE_Skeleton *src) {
+        //- Bone Info
+    dest->bone_count = src->bone_count;
+    for (u32 i = 0; i < dest->bone_count; ++i) {
+        dest->bones_info[i].id = src->bones_info[i].id;
+        dest->bones_info[i].offset = src->bones_info[i].offset;
+        se_string_init(&dest->bones_info[i].name, src->bones_info[i].name.buffer);
+    }
+
+        //- Bone Nodes
+    dest->bone_node_count = src->bone_node_count;
+    for (u32 i = 0; i < dest->bone_node_count; ++i) {
+        se_string_init(&dest->bone_nodes[i].name, src->bone_nodes[i].name.buffer);
+        dest->bone_nodes[i].bones_info_index = src->bone_nodes[i].bones_info_index;
+
+        dest->bone_nodes[i].children_count = src->bone_nodes[i].children_count;
+        memcpy( dest->bone_nodes[i].children,
+                src->bone_nodes[i].children,
+                sizeof(i32) * dest->bone_nodes[i].children_count);
+
+        dest->bone_nodes[i].parent = src->bone_nodes[i].parent;
+        dest->bone_nodes[i].local_transform = src->bone_nodes[i].local_transform;
+        dest->bone_nodes[i].inverse_neutral_transform = src->bone_nodes[i].inverse_neutral_transform;
+    }
+
+        //- Animations
+    dest->animations_count = src->animations_count;
+    dest->current_animation = src->current_animation;
+    for (u32 i = 0; i < dest->animations_count; ++i) {
+        se_string_init(&dest->animations[i]->name, src->animations[i]->name.buffer);
+
+        dest->animations[i]->animated_bones_count = src->animations[i]->animated_bones_count;
+        dest->animations[i]->animated_bones = malloc(sizeof(SE_Bone_Animations) *
+                                                dest->animations[i]->animated_bones_count);
+
+        for (u32 i = 0; i < dest->animations[i]->animated_bones_count; ++i) {
+            SE_Bone_Animations *src_animated_bone = &src->animations[i]->animated_bones[i];
+            SE_Bone_Animations *dest_animated_bone = &dest->animations[i]->animated_bones[i];
+
+            se_string_init(&dest_animated_bone->name, src_animated_bone->name.buffer);
+
+            dest_animated_bone->position_count = src_animated_bone->position_count;
+            dest_animated_bone->rotation_count = src_animated_bone->rotation_count;
+            dest_animated_bone->scale_count    = src_animated_bone->scale_count;
+
+            dest_animated_bone->positions = malloc(sizeof(Vec3) * dest_animated_bone->position_count);
+            dest_animated_bone->rotations = malloc(sizeof(Quat) * dest_animated_bone->rotation_count);
+            dest_animated_bone->scales    = malloc(sizeof(Vec3) * dest_animated_bone->scale_count);
+
+            dest_animated_bone->position_time_stamps = malloc(sizeof(f32) * dest_animated_bone->position_count);
+            dest_animated_bone->rotation_time_stamps = malloc(sizeof(f32) * dest_animated_bone->rotation_count);
+            dest_animated_bone->scale_time_stamps    = malloc(sizeof(f32) * dest_animated_bone->scale_count);
+
+            memcpy( dest_animated_bone->positions, src_animated_bone->positions, sizeof(Vec3) *
+                    dest_animated_bone->position_count);
+            memcpy( dest_animated_bone->rotations, src_animated_bone->rotations, sizeof(Quat) *
+                    dest_animated_bone->rotation_count);
+            memcpy( dest_animated_bone->scales, src_animated_bone->scales, sizeof(Vec3) *
+                    dest_animated_bone->scale_count);
+
+            memcpy( dest_animated_bone->position_time_stamps, src_animated_bone->position_time_stamps,
+                    sizeof(f32) * dest_animated_bone->position_count);
+            memcpy( dest_animated_bone->rotation_time_stamps, src_animated_bone->rotation_time_stamps,
+                    sizeof(f32) * dest_animated_bone->rotation_count);
+            memcpy( dest_animated_bone->scale_time_stamps, src_animated_bone->scale_time_stamps,
+                    sizeof(f32) * dest_animated_bone->scale_count);
+        }
+    }
+
+        //- Final Pose
+    memcpy(dest->final_pose, src->final_pose, sizeof(Mat4) * SE_SKELETON_BONES_CAPACITY);
+}
+
 //// ANIMATION BONES ////
 
     /// Gets the normalised value of 'amount' for lerp and slerp

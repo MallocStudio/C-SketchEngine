@@ -885,28 +885,37 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
 
 void se_raw_data_to_mesh
 (SE_Renderer3D *renderer, const SE_Mesh_Raw_Data *raw_data, SE_Mesh *mesh) {
-        // settings
+        //- settings
     mesh->next_mesh_index = -1;
     mesh->type = raw_data->type;
 
-        // generate vao
+        //- generate vao
     se_mesh_generate(mesh, raw_data->vert_count, raw_data->verts, raw_data->index_count, raw_data->indices);
 
-        // materials
-
+        //- materials
     u32 material_index = se_render3d_add_material(renderer);
     mesh->material_index = material_index;
 
     SE_Material *material = renderer->user_materials[material_index];
     material->base_diffuse = (Vec4) {1, 1, 1, 1};
+
     if (raw_data->texture_diffuse_filepath.buffer != NULL) {
         se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer);
     }
+
     if (raw_data->texture_specular_filepath.buffer != NULL) {
         se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer);
     }
+
     if (raw_data->texture_normal_filepath.buffer != NULL) {
         se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer);
+    }
+
+        //- skeleton
+    if (raw_data->skeleton_data) {
+        u32 skeleton_index = se_render3d_add_skeleton(renderer);
+        mesh->skeleton = renderer->user_skeletons[skeleton_index]; // @TODO change to index like material
+        skeleton_deep_copy(mesh->skeleton, raw_data->skeleton_data);
     }
 }
 

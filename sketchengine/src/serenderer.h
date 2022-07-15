@@ -167,7 +167,7 @@ typedef struct SE_Mesh_Raw_Data {
     SE_String texture_specular_filepath;
     SE_String texture_normal_filepath;
         //- Skeleton
-        // @TODO
+    SE_Skeleton *skeleton_data;
 } SE_Mesh_Raw_Data;
 
 typedef struct SE_Save_Data_Meshes {
