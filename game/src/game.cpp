@@ -68,11 +68,11 @@ void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
 
-#if 1 /// manually create entities
+#if 0 /// manually create entities
     util_create_default_scene();
     this->save();
 #else /// load from file
-    this->load();
+    this->load_assets_and_level();
     this->m_cameras[main_camera] = m_level.main_camera_settings;
 #endif
 }
