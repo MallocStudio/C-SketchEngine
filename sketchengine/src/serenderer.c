@@ -772,6 +772,8 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
     file = fopen(save_file, "rb"); // read binary
         fread(&save_data->meshes_count, sizeof(u32), 1, file);
         save_data->meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
+        memset(save_data->meshes, 0, sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
+
         for (u32 i = 0; i < save_data->meshes_count; ++i) {
             SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
                 //- Header
@@ -828,6 +830,9 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
                 fread(normal_buffer, sizeof(char), normal_buffer_size + 1, file);
                 se_string_init(&raw_data->texture_normal_filepath, normal_buffer);
             }
+
+                //- Skeleton
+            read_skeleton_from_disk_binary(raw_data->skeleton_data, file);
         }
     fclose(file);
 }
@@ -879,6 +884,9 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
                 fwrite(raw_data->texture_normal_filepath.buffer,
                         sizeof(char), raw_data->texture_normal_filepath.size + 1, file);
             }
+
+                //- Skeleton
+            write_skeleton_to_disk_binary(raw_data->skeleton_data, file);
         }
     fclose(file);
 }
@@ -912,7 +920,7 @@ void se_raw_data_to_mesh
     }
 
         //- skeleton
-    if (raw_data->skeleton_data) {
+    if (raw_data->skeleton_data != NULL) {
         u32 skeleton_index = se_render3d_add_skeleton(renderer);
         mesh->skeleton = renderer->user_skeletons[skeleton_index]; // @TODO change to index like material
         skeleton_deep_copy(mesh->skeleton, raw_data->skeleton_data);

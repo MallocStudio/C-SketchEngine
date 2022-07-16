@@ -715,7 +715,8 @@ static void semesh_construct_skinned_mesh // only meant to be called from se_ren
     free(indices);
 }
 
-static void skeleton_deep_copy(SE_Skeleton *dest, const SE_Skeleton *src) {
+static void skeleton_deep_copy
+(SE_Skeleton *dest, const SE_Skeleton *src) {
         //- Bone Info
     dest->bone_count = src->bone_count;
     for (u32 i = 0; i < dest->bone_count; ++i) {
@@ -786,6 +787,25 @@ static void skeleton_deep_copy(SE_Skeleton *dest, const SE_Skeleton *src) {
 
         //- Final Pose
     memcpy(dest->final_pose, src->final_pose, sizeof(Mat4) * SE_SKELETON_BONES_CAPACITY);
+}
+
+/// Assumes that the "file" is opened. This procedure does not handle closing the file.
+/// Writes the given skeleton to the disk in binary mode
+static void write_skeleton_to_disk_binary
+(const SE_Skeleton *skeleton, FILE *file) {
+        //- Bone Info
+    for (u32 i = 0; i < skeleton->bone_count; ++i) {
+        fwrite(&skeleton->bones_info[i].id, sizeof(i32), 1, file);
+        fwrite(&skeleton->bones_info[i].offset, sizeof(Mat4), 1, file);
+        se_string_write_to_disk_binary(&skeleton->bones_info[i].name, file);
+    }
+}
+
+/// Assumes that the "file" is opened. This procedure does not handle closing the file.
+/// Reads the given skeleton from the disk in binary mode
+static void read_skeleton_from_disk_binary
+(SE_Skeleton *skeleton, FILE *file) {
+
 }
 
 //// ANIMATION BONES ////

@@ -44,4 +44,12 @@ b8 se_string_compare(const SE_String *string1, const SE_String *string2);
     /// Replaces all space characters to '_'
     /// Returns true if it found any space characters to convert.
 b8 se_string_replace_space_with_underscore(SE_String *sestring);
+
+    /// Writes the given string to disk in binary mode
+    /// Assumes the file is open, and does not handle closing it
+void se_string_write_to_disk_binary(const SE_String *string, struct _iobuf *file);
+
+    /// Reads the given string from disk in binary mode
+    /// Assumes the file is open, and does not handle closing it
+void se_string_read_from_disk_binary(SE_String *string_buffer, struct _iobuf *file);
 #endif // SESTRING_H

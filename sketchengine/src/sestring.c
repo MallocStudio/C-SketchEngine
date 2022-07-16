@@ -1,6 +1,8 @@
 #include "sestring.h"
 #include "memory.h"
 #include "semath.h"
+#include "stdio.h"
+
 void se_string_init(SE_String *sestring, const char *buffer) {
     if (buffer != NULL) {
         sestring->size = SDL_strlen(buffer);
@@ -185,4 +187,26 @@ b8 se_string_replace_space_with_underscore(SE_String *string_buffer) {
         }
     }
     return found;
+}
+
+void se_string_write_to_disk_binary(const SE_String *string_buffer, struct _iobuf *file) {
+    fwrite(&string_buffer->size, sizeof(u32), 1, file);
+    fwrite(&string_buffer->buffer, sizeof(char), string_buffer->size + 1, file);
+}
+
+void se_string_read_from_disk_binary(SE_String *string_buffer, struct _iobuf *file) {
+    if (string_buffer->buffer != NULL || string_buffer->size > 0) {
+        se_string_deinit(string_buffer);
+    }
+
+    char *buffer;
+    u32 size;
+
+    fread(&size, sizeof(u32), 1, file);
+    buffer = malloc(sizeof(char) * size);
+
+    fread(buffer, sizeof(char), size + 1, file);
+    se_string_init(string_buffer, buffer);
+
+    free(buffer);
 }
