@@ -832,7 +832,11 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
             }
 
                 //- Skeleton
-            read_skeleton_from_disk_binary(raw_data->skeleton_data, file);
+            //- Skeleton
+            if (raw_data->type == SE_MESH_TYPE_SKINNED) {
+                raw_data->skeleton_data = malloc(sizeof(SE_Skeleton));
+                read_skeleton_from_disk_binary(raw_data->skeleton_data, file);
+            }
         }
     fclose(file);
 }
@@ -886,7 +890,9 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
             }
 
                 //- Skeleton
-            write_skeleton_to_disk_binary(raw_data->skeleton_data, file);
+            if (raw_data->type == SE_MESH_TYPE_SKINNED && raw_data->skeleton_data) {
+                write_skeleton_to_disk_binary(raw_data->skeleton_data, file);
+            }
         }
     fclose(file);
 }

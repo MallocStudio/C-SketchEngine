@@ -3,6 +3,7 @@
 Level::Level() {
     // in entities constructor everything is set to default
     cell_size = 1.0f;
+    m_player = nullptr;
 }
 
 Level::~Level() {

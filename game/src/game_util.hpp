@@ -80,8 +80,8 @@ void App::util_create_default_scene() {
     se_string_init(&m_level.entities.name[soulspear], "soulspear_entity");
     m_level.entities.position[soulspear] = v3f(3, 1, 0);
 
-#if 0        //- PLAYER
-    u32 guy = m_level.add_entity();
+#if 1        //- PLAYER
+    u32 guy = m_level.get_player();
     m_level.entities.mesh_index[guy] = mesh_guy;
     m_level.entities.has_mesh[guy] = true;
     m_level.entities.should_render_mesh[guy] = true;
@@ -107,7 +107,7 @@ void App::util_create_default_scene() {
     m_level.entities.light_index        [point_light_1_entity] = point_light_1;
 
         //- CUBE
-    u32 cube_entity = m_level.get_player();
+    u32 cube_entity = m_level.add_entity();
     m_level.entities.has_name[cube_entity] = false;
     m_level.entities.position[cube_entity] = v3f(0, 0.5f, 1);
     m_level.entities.has_mesh[cube_entity] = true;

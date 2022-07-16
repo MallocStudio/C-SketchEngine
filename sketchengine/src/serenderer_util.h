@@ -751,9 +751,9 @@ static void skeleton_deep_copy
         dest->animations[i]->animated_bones = malloc(sizeof(SE_Bone_Animations) *
                                                 dest->animations[i]->animated_bones_count);
 
-        for (u32 i = 0; i < dest->animations[i]->animated_bones_count; ++i) {
-            SE_Bone_Animations *src_animated_bone = &src->animations[i]->animated_bones[i];
-            SE_Bone_Animations *dest_animated_bone = &dest->animations[i]->animated_bones[i];
+        for (u32 j = 0; j < dest->animations[i]->animated_bones_count; ++j) {
+            SE_Bone_Animations *src_animated_bone = &src->animations[i]->animated_bones[j];
+            SE_Bone_Animations *dest_animated_bone = &dest->animations[i]->animated_bones[j];
 
             se_string_init(&dest_animated_bone->name, src_animated_bone->name.buffer);
 
@@ -782,7 +782,10 @@ static void skeleton_deep_copy
                     sizeof(f32) * dest_animated_bone->rotation_count);
             memcpy( dest_animated_bone->scale_time_stamps, src_animated_bone->scale_time_stamps,
                     sizeof(f32) * dest_animated_bone->scale_count);
+
         }
+        dest->animations[i]->duration = src->animations[i]->duration;
+        dest->animations[i]->ticks_per_second = src->animations[i]->ticks_per_second;
     }
 
         //- Final Pose
@@ -799,13 +802,108 @@ static void write_skeleton_to_disk_binary
         fwrite(&skeleton->bones_info[i].offset, sizeof(Mat4), 1, file);
         se_string_write_to_disk_binary(&skeleton->bones_info[i].name, file);
     }
+
+        //- Bone Nodes
+    for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
+        se_string_write_to_disk_binary(&skeleton->bone_nodes[i].name, file);
+        fwrite(&skeleton->bone_nodes[i].bones_info_index, sizeof(i32), 1, file);
+        fwrite(&skeleton->bone_nodes[i].children_count, sizeof(u32), 1, file);
+        fwrite(skeleton->bone_nodes[i].children, sizeof(i32), skeleton->bone_nodes[i].children_count, file);
+        fwrite(&skeleton->bone_nodes[i].parent, sizeof(i32), 1, file);
+        fwrite(&skeleton->bone_nodes[i].local_transform, sizeof(Mat4), 1, file);
+        fwrite(&skeleton->bone_nodes[i].inverse_neutral_transform, sizeof(Mat4), 1, file);
+    }
+
+        //- Animations
+    fwrite(&skeleton->animations_count, sizeof(u32), 1, file);
+    for (u32 i = 0; i < skeleton->animations_count; ++i) {
+        se_string_write_to_disk_binary(&skeleton->animations[i]->name, file);
+
+        fwrite(&skeleton->animations[i]->animated_bones_count, sizeof(u32), 1, file);
+        for (u32 j = 0; j < skeleton->animations[i]->animated_bones_count; ++j) {
+            SE_Bone_Animations *animated_bone = &skeleton->animations[i]->animated_bones[j];
+
+            se_string_write_to_disk_binary(&animated_bone->name, file);
+
+            fwrite(&animated_bone->position_count, sizeof(u32), 1, file);
+            fwrite(&animated_bone->rotation_count, sizeof(u32), 1, file);
+            fwrite(&animated_bone->scale_count, sizeof(u32), 1, file);
+
+            fwrite(animated_bone->positions, sizeof(Vec3), animated_bone->position_count, file);
+            fwrite(animated_bone->rotations, sizeof(Quat), animated_bone->rotation_count, file);
+            fwrite(animated_bone->scales, sizeof(Vec3), animated_bone->scale_count, file);
+
+            fwrite(animated_bone->position_time_stamps, sizeof(f32), animated_bone->position_count, file);
+            fwrite(animated_bone->rotation_time_stamps, sizeof(f32), animated_bone->rotation_count, file);
+            fwrite(animated_bone->scale_time_stamps, sizeof(f32), animated_bone->scale_count, file);
+        }
+
+        fwrite(&skeleton->animations[i]->duration, sizeof(f32), 1, file);
+        fwrite(&skeleton->animations[i]->ticks_per_second, sizeof(f32), 1, file);
+    }
+        //- Final Pose
+    fwrite(skeleton->final_pose, sizeof(Mat4), SE_SKELETON_BONES_CAPACITY, file);
 }
 
 /// Assumes that the "file" is opened. This procedure does not handle closing the file.
 /// Reads the given skeleton from the disk in binary mode
 static void read_skeleton_from_disk_binary
 (SE_Skeleton *skeleton, FILE *file) {
+        //- Bone Info
+    for (u32 i = 0; i < skeleton->bone_count; ++i) {
+        fread(&skeleton->bones_info[i].id, sizeof(i32), 1, file);
+        fread(&skeleton->bones_info[i].offset, sizeof(Mat4), 1, file);
+        se_string_read_from_disk_binary(&skeleton->bones_info[i].name, file);
+    }
 
+        //- Bone Nodes
+    for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
+        se_string_read_from_disk_binary(&skeleton->bone_nodes[i].name, file);
+        fread(&skeleton->bone_nodes[i].bones_info_index, sizeof(i32), 1, file);
+        fread(&skeleton->bone_nodes[i].children_count, sizeof(u32), 1, file);
+        fread(skeleton->bone_nodes[i].children, sizeof(i32), skeleton->bone_nodes[i].children_count, file);
+        fread(&skeleton->bone_nodes[i].parent, sizeof(i32), 1, file);
+        fread(&skeleton->bone_nodes[i].local_transform, sizeof(Mat4), 1, file);
+        fread(&skeleton->bone_nodes[i].inverse_neutral_transform, sizeof(Mat4), 1, file);
+    }
+
+        //- Animations
+    fread(&skeleton->animations_count, sizeof(u32), 1, file);
+    for (u32 i = 0; i < skeleton->animations_count; ++i) {
+        se_string_read_from_disk_binary(&skeleton->animations[i]->name, file);
+
+        fread(&skeleton->animations[i]->animated_bones_count, sizeof(u32), 1, file);
+        for (u32 j = 0; j < skeleton->animations[i]->animated_bones_count; ++j) {
+            SE_Bone_Animations *animated_bone = &skeleton->animations[i]->animated_bones[j];
+
+            se_string_read_from_disk_binary(&animated_bone->name, file);
+
+            fread(&animated_bone->position_count, sizeof(u32), 1, file);
+            fread(&animated_bone->rotation_count, sizeof(u32), 1, file);
+            fread(&animated_bone->scale_count, sizeof(u32), 1, file);
+
+            animated_bone->positions = malloc(sizeof(Vec3) * animated_bone->position_count);
+            animated_bone->rotations = malloc(sizeof(Quat) * animated_bone->rotation_count);
+            animated_bone->scales    = malloc(sizeof(Vec3) * animated_bone->scale_count);
+
+            animated_bone->position_time_stamps = malloc(sizeof(f32) * animated_bone->position_count);
+            animated_bone->rotation_time_stamps = malloc(sizeof(f32) * animated_bone->rotation_count);
+            animated_bone->scale_time_stamps = malloc(sizeof(f32) * animated_bone->scale_count);
+
+            fread(animated_bone->positions, sizeof(Vec3), animated_bone->position_count, file);
+            fread(animated_bone->rotations, sizeof(Quat), animated_bone->rotation_count, file);
+            fread(animated_bone->scales, sizeof(Vec3), animated_bone->scale_count, file);
+
+            fread(animated_bone->position_time_stamps, sizeof(f32), animated_bone->position_count, file);
+            fread(animated_bone->rotation_time_stamps, sizeof(f32), animated_bone->rotation_count, file);
+            fread(animated_bone->scale_time_stamps, sizeof(f32), animated_bone->scale_count, file);
+        }
+
+        fread(&skeleton->animations[i]->duration, sizeof(f32), 1, file);
+        fread(&skeleton->animations[i]->ticks_per_second, sizeof(f32), 1, file);
+    }
+        //- Final Pose
+    fread(skeleton->final_pose, sizeof(Mat4), SE_SKELETON_BONES_CAPACITY, file);
 }
 
 //// ANIMATION BONES ////
