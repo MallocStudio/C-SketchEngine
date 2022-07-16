@@ -661,36 +661,56 @@ void se_skeleton_calculate_pose
 
 u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_skeleton) {
     u32 result = -1;
-        // load scene from file
-    const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
-    if (scene == NULL) {
-        printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
-        return result;
+    // check if a generated mesh file has already been generated for this mesh.
+    // if not generate it and load it.
+    {
+        FILE *file;
+        SE_String save_data_filepath;
+        se_string_init(&save_data_filepath, model_filepath);
+        se_string_append(&save_data_filepath, ".mesh");
+
+        if (file = fopen(save_data_filepath.buffer, "rb")) {
+            fclose(file);
+            // file was found. So we don't need to regenrate it.
+            printf("file: %s has already been generated.\n", model_filepath);
+        } else {
+            printf("file: %s has NOT been generated. So we're generating it.\n", model_filepath);
+            // file was not found. So we need to generate a mesh file.
+                // load scene from file
+            const struct aiScene *scene = aiImportFile(model_filepath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+            if (scene == NULL) {
+                printf("ERROR: could not mesh from %s (%s)\n", model_filepath, aiGetErrorString());
+                return result;
+            }
+
+            {    //- Trun scene into a save file
+                SE_Save_Data_Meshes save_data = {0};
+                ai_scene_to_mesh_save_data(scene, &save_data, model_filepath);
+                    //- Save to disk for later use
+                se_save_data_write_mesh(&save_data, save_data_filepath.buffer);
+                se_save_data_mesh_deinit(&save_data);
+            }
+
+            aiReleaseImport(scene);
+        }
+
+        se_string_deinit(&save_data_filepath);
     }
 
     SE_String save_data_filepath;
-    {    //- Trun scene into a save file
-        SE_Save_Data_Meshes save_data = {0};
-        ai_scene_to_mesh_save_data(scene, &save_data, model_filepath);
-
-            //- Save to disk for later use
         se_string_init(&save_data_filepath, model_filepath);
         se_string_append(&save_data_filepath, ".mesh");
-        se_save_data_write_mesh(&save_data, save_data_filepath.buffer);
 
-        se_save_data_mesh_deinit(&save_data);
-    }
-
-    SE_Save_Data_Meshes save_data = {0};
-
-    se_save_data_read_mesh(&save_data, save_data_filepath.buffer);
+        SE_Save_Data_Meshes save_data = {0};
+        se_save_data_read_mesh(&save_data, save_data_filepath.buffer);
     se_string_deinit(&save_data_filepath);
 
         //- Generate meshes from save data
     result = se_save_data_mesh_to_mesh(renderer, &save_data);
 
-    aiReleaseImport(scene);
+    se_save_data_mesh_deinit(&save_data);
     return result;
 }
 

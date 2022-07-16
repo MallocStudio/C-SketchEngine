@@ -13,7 +13,7 @@
 #include "sestring.h"
 
 #include "seinput.h" // for camera
-#include "stdio.h" // @temp for debugging
+#include "stdio.h" // for file management
 
 ///
 ///     DEFINES
