@@ -38,7 +38,7 @@ u32 main_camera = -1;
 void App::util_load_meshes_from_disk() {
         // @temp TODO: MOVE TO LOADER
     mesh_soulspear = se_render3d_load_mesh(&m_renderer, "game/meshes/soulspear/soulspear.obj", false);
-#if 0
+#if 1
     // mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/Booty Hip Hop Dance.fbx", true);
     mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/Sitting Laughing.fbx", true);
     // mesh_guy = se_render3d_load_mesh(&m_renderer, "game/meshes/changedPrizm2.fbx", true);
@@ -81,7 +81,7 @@ void App::util_create_default_scene() {
     m_level.entities.position[soulspear] = v3f(3, 1, 0);
 
 #if 1        //- PLAYER
-    u32 guy = m_level.get_player();
+    u32 guy = m_level.add_entity();
     m_level.entities.mesh_index[guy] = mesh_guy;
     m_level.entities.has_mesh[guy] = true;
     m_level.entities.should_render_mesh[guy] = true;
@@ -162,7 +162,7 @@ void App::util_update_engine_mode(f32 delta_time) {
 
         //- Entities
     m_level.entities.update(&m_renderer, delta_time);
-#if 0
+#if 1
     se_animation_update(&animation, delta_time);
     se_skeleton_calculate_pose(m_renderer.user_meshes[mesh_guy]->skeleton, animation.current_frame);
 #endif
@@ -222,7 +222,7 @@ void App::util_render_engine_mode() {
     }
 
         //- skeleton mesh
-#if 0   // @debug
+#if 1   // @debug
     se_render_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
 #endif
     se_render_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());

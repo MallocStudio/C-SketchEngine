@@ -323,8 +323,9 @@ u32 se_render3d_add_line(SE_Renderer3D *renderer, Vec3 pos1, Vec3 pos2, f32 widt
     //- SAVING AND LOADING MESHES
     /// Load a mesh and add it to the renderer. Returns the index of that loaded mesh.
 u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_animation);
-    /// Generates a "SE_Mesh" based on the given "SE_Mesh_Raw_Data". Materials and Skeletons are also generated.
-void se_raw_data_to_mesh(SE_Renderer3D *renderer, const SE_Mesh_Raw_Data *raw_data, SE_Mesh *mesh);
+    /// Generates "SE_Mesh" and adds it to the renderer based on the given save file.
+    /// Returns the index of the generated mesh.
+u32 se_save_data_mesh_to_mesh(SE_Renderer3D *renderer, const SE_Save_Data_Meshes *save_data);
 
     /// Create one of those 3D coordinate gizmos that show the directions
 u32 se_render3d_add_gizmos_coordniates(SE_Renderer3D *renderer);

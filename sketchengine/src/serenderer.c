@@ -670,24 +670,7 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
     se_string_deinit(&save_data_filepath);
 
         //- Generate meshes from save data
-    result = renderer->user_meshes_count;
-    for (u32 i = 0; i < save_data.meshes_count; ++i) {
-        renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
-        memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
-
-        SE_Mesh *new_mesh = renderer->user_meshes[renderer->user_meshes_count];
-
-        se_raw_data_to_mesh(renderer, &save_data.meshes[i], new_mesh);
-
-            // connect the link
-        new_mesh->next_mesh_index = -1;
-        if (i > 0) {
-            renderer->user_meshes[renderer->user_meshes_count-1]->next_mesh_index = result + i;
-        }
-        renderer->user_meshes_count++;
-    }
-
-
+    result = se_save_data_mesh_to_mesh(renderer, &save_data);
 #else // old version // @temp after the new version is operational, remove the old version
         //- load meshes within the scene
     result = renderer->user_meshes_count; // the first mesh in the chain
@@ -832,9 +815,9 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
             }
 
                 //- Skeleton
-            //- Skeleton
             if (raw_data->type == SE_MESH_TYPE_SKINNED) {
                 raw_data->skeleton_data = malloc(sizeof(SE_Skeleton));
+                memset(raw_data->skeleton_data, 0, sizeof(SE_Skeleton));
                 read_skeleton_from_disk_binary(raw_data->skeleton_data, file);
             }
         }
@@ -897,40 +880,70 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
     fclose(file);
 }
 
-void se_raw_data_to_mesh
-(SE_Renderer3D *renderer, const SE_Mesh_Raw_Data *raw_data, SE_Mesh *mesh) {
-        //- settings
-    mesh->next_mesh_index = -1;
-    mesh->type = raw_data->type;
-
-        //- generate vao
-    se_mesh_generate(mesh, raw_data->vert_count, raw_data->verts, raw_data->index_count, raw_data->indices);
-
-        //- materials
-    u32 material_index = se_render3d_add_material(renderer);
-    mesh->material_index = material_index;
-
-    SE_Material *material = renderer->user_materials[material_index];
-    material->base_diffuse = (Vec4) {1, 1, 1, 1};
-
-    if (raw_data->texture_diffuse_filepath.buffer != NULL) {
-        se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer);
-    }
-
-    if (raw_data->texture_specular_filepath.buffer != NULL) {
-        se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer);
-    }
-
-    if (raw_data->texture_normal_filepath.buffer != NULL) {
-        se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer);
-    }
-
-        //- skeleton
-    if (raw_data->skeleton_data != NULL) {
+u32 se_save_data_mesh_to_mesh
+(SE_Renderer3D *renderer, const SE_Save_Data_Meshes *save_data) {
+        //- Should we add a skeleton?
+    SE_Skeleton *skeleton;
+    if (save_data->meshes_count > 0 && save_data->meshes[0].skeleton_data != NULL) {
         u32 skeleton_index = se_render3d_add_skeleton(renderer);
-        mesh->skeleton = renderer->user_skeletons[skeleton_index]; // @TODO change to index like material
-        skeleton_deep_copy(mesh->skeleton, raw_data->skeleton_data);
+        skeleton = renderer->user_skeletons[skeleton_index];
     }
+
+    u32 result = renderer->user_meshes_count;
+
+    for (u32 i = 0; i < save_data->meshes_count; ++i) {
+        renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
+        memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
+        SE_Mesh *mesh = renderer->user_meshes[renderer->user_meshes_count];
+
+        {   //- generate the mesh
+                //- settings
+            SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
+            mesh->next_mesh_index = -1;
+            mesh->type = raw_data->type;
+
+                //- generate vao
+            if (mesh->type == SE_MESH_TYPE_SKINNED) {
+                se_mesh_generate_skinned(mesh, raw_data->vert_count, raw_data->skinned_verts, raw_data->index_count, raw_data->indices);
+            } else {
+                se_mesh_generate(mesh, raw_data->vert_count, raw_data->verts, raw_data->index_count, raw_data->indices);
+            }
+
+                //- materials
+            u32 material_index = se_render3d_add_material(renderer);
+            mesh->material_index = material_index;
+
+            SE_Material *material = renderer->user_materials[material_index];
+            material->base_diffuse = (Vec4) {1, 1, 1, 1};
+
+            if (raw_data->texture_diffuse_filepath.buffer != NULL) {
+                se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer);
+            }
+
+            if (raw_data->texture_specular_filepath.buffer != NULL) {
+                se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer);
+            }
+
+            if (raw_data->texture_normal_filepath.buffer != NULL) {
+                se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer);
+            }
+
+                //- skeleton and animations
+            if (raw_data->skeleton_data != NULL) {
+                mesh->skeleton = skeleton; // @TODO change to index like material
+                skeleton_deep_copy(mesh->skeleton, raw_data->skeleton_data);
+            }
+        }
+
+            // connect the link
+        mesh->next_mesh_index = -1;
+        if (i > 0) {
+            renderer->user_meshes[renderer->user_meshes_count-1]->next_mesh_index = result + i;
+        }
+        renderer->user_meshes_count++;
+    }
+
+    return result;
 }
 
 void se_mesh_to_raw_data

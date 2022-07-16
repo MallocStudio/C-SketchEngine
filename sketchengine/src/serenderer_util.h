@@ -62,7 +62,7 @@ static void sedefault_mesh(SE_Mesh *mesh) {
     mesh->skeleton = NULL;
 }
 
-static void semesh_generate_skinned // same as se_mesh_generate but for skinned vertices
+static void se_mesh_generate_skinned // same as se_mesh_generate but for skinned vertices
 (SE_Mesh *mesh, u32 vert_count, const SE_Skinned_Vertex *vertices, u32 index_count, u32 *indices) {
     // generate buffers
     glGenBuffers(1, &mesh->vbo);
@@ -281,148 +281,6 @@ static void semesh_construct_material // only meant to be called form se_render3
     se_string_deinit(&dir);
 }
 
-static void ai_scene_to_mesh_save_data(const struct aiScene *scene, SE_Save_Data_Meshes *save_data, const char *filepath) {
-    save_data->meshes_count = scene->mNumMeshes;
-    save_data->meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
-
-        // go through every mesh in the scene and add it to "save_data"
-    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
-        struct aiMesh *ai_mesh = scene->mMeshes[i];
-        SE_Mesh_Raw_Data *mesh = &save_data->meshes[i];
-        memset(mesh, 0, sizeof(SE_Mesh_Raw_Data));
-
-        mesh->verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
-        mesh->indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
-        mesh->type = SE_MESH_TYPE_NORMAL;
-
-            //- vertices
-        for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
-            SE_Vertex3D vertex = {0};
-
-            // -- pos
-            vertex.position.x = ai_mesh->mVertices[i].x;
-            vertex.position.y = ai_mesh->mVertices[i].y;
-            vertex.position.z = ai_mesh->mVertices[i].z;
-
-            // -- normals
-            vertex.normal.x = ai_mesh->mNormals[i].x;
-            vertex.normal.y = ai_mesh->mNormals[i].y;
-            vertex.normal.z = ai_mesh->mNormals[i].z;
-
-            // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
-            vertex.tangent.x = ai_mesh->mTangents[i].x;
-            vertex.tangent.y = ai_mesh->mTangents[i].y;
-            vertex.tangent.z = ai_mesh->mTangents[i].z;
-
-            // -- bi-tangents
-            vertex.bitangent.x = ai_mesh->mBitangents[i].x;
-            vertex.bitangent.y = ai_mesh->mBitangents[i].y;
-            vertex.bitangent.z = ai_mesh->mBitangents[i].z;
-
-            // -- uvs
-            if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
-                vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
-                vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
-            } else {
-                vertex.texture_coord = v2f(0, 0);
-            }
-
-            mesh->verts[mesh->vert_count] = vertex;
-            mesh->vert_count++;
-        }
-
-            //- indices
-        for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
-            // ! we triangulate on import, so every face has three vertices
-            mesh->indices[mesh->index_count+0] = ai_mesh->mFaces[i].mIndices[0];
-            mesh->indices[mesh->index_count+1] = ai_mesh->mFaces[i].mIndices[1];
-            mesh->indices[mesh->index_count+2] = ai_mesh->mFaces[i].mIndices[2];
-            mesh->index_count += 3;
-        }
-
-        {   //- materials
-            // find the directory part of filepath
-            SE_String filepath_string;
-            se_string_init(&filepath_string, filepath);
-
-            SE_String dir;
-            se_string_init(&dir, "");
-
-            u32 slash_index = se_string_lastof(&filepath_string, '/');
-            if (slash_index == SESTRING_MAX_SIZE) {
-                se_string_append(&dir, "/");
-            } else if (slash_index == 0) {
-                se_string_append(&dir, ".");
-            } else {
-                se_string_append_length(&dir, filepath, slash_index);
-                se_string_append(&dir, "/");
-            }
-
-            // now add the texture path to directory
-            const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
-
-            SE_String diffuse_path;
-            SE_String specular_path;
-            SE_String normal_path;
-
-            se_string_init(&diffuse_path, dir.buffer);
-            se_string_init(&specular_path, dir.buffer);
-            se_string_init(&normal_path, dir.buffer);
-
-            struct aiString *ai_texture_path_diffuse  = NEW(struct aiString);
-            struct aiString *ai_texture_path_specular = NEW(struct aiString);
-            struct aiString *ai_texture_path_normal   = NEW(struct aiString);
-
-            b8 has_diffuse  = true;
-            b8 has_specular = true;
-            b8 has_normal   = true;
-
-            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
-                has_diffuse = false;
-                printf("WARNING: ASSIMP unable to load dffiuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
-            }
-
-            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
-                has_specular = false;
-                printf("WARNING: ASSIMP unable to load specular\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
-            }
-
-            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
-                has_normal = false;
-                printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
-            }
-
-            /* diffuse */
-            if (has_diffuse) {
-                se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
-                se_string_init(&mesh->texture_diffuse_filepath, diffuse_path.buffer);
-            }
-            free(ai_texture_path_diffuse);
-
-            /* specular */
-            if (has_specular) {
-                se_string_append(&specular_path, ai_texture_path_specular->data);
-                se_string_init(&mesh->texture_specular_filepath, specular_path.buffer);
-            }
-            free(ai_texture_path_specular);
-
-            /* normal */
-            if (has_normal) {
-                se_string_append(&normal_path, ai_texture_path_normal->data);
-                se_string_init(&mesh->texture_normal_filepath, normal_path.buffer);
-            }
-            free(ai_texture_path_normal);
-
-            se_string_deinit(&diffuse_path);
-            se_string_deinit(&specular_path);
-            se_string_deinit(&normal_path);
-
-            se_string_deinit(&dir);
-        }
-    }
-
-}
-
 static void semesh_construct_normal_mesh // only meant to be called from se_render3d_load_mesh
 (SE_Mesh *mesh, const struct aiMesh *ai_mesh, const char *filepath, const struct aiScene *scene) {
     sedefault_mesh(mesh);
@@ -563,7 +421,7 @@ static void recursive_read_bone_heirarchy
             skeleton->bone_nodes[parent_id].children_count++;
         }
 
-#if 0 // debug
+#if 1 // debug
         printf("CREATING A NEW BONE NODE WITH ID %i\n", new_bone_node->bones_info_index);
 #endif
     }
@@ -580,6 +438,9 @@ static void recursive_read_bone_heirarchy
     /// Extract the bone info of the given assimp mesh and ADD it to the given skeleton
 static void seload_skeleton_additively
 (const struct aiMesh *ai_mesh, SE_Skeleton *skeleton, SE_Skinned_Vertex *verts, u32 verts_count, const struct aiScene *scene) {
+    static i32 dsajhdsdfs = 0;
+    printf("reading additively for %i times\n", dsajhdsdfs);
+    dsajhdsdfs++;
     {   //- extract bone info for each vertex
             // copy the bone data to skeleton
         for (i32 bone_index = 0; bone_index < ai_mesh->mNumBones; ++bone_index) {
@@ -612,8 +473,6 @@ static void seload_skeleton_additively
             }
             se_assert(bone_id != -1);
 
-            // @debug: The problem with our skinned mesh rendering lies in here.
-            // I don't think we're loading the weights and bone_ids correctly and assigning it to their corresponding vertices.
             for (i32 weight_index = 0; weight_index < ai_mesh->mBones[bone_index]->mNumWeights; ++weight_index) {
                 i32 vertex_id = ai_mesh->mBones[bone_index]->mWeights[weight_index].mVertexId;
                 f32 weight = ai_mesh->mBones[bone_index]->mWeights[weight_index].mWeight;
@@ -638,6 +497,299 @@ static void seload_skeleton_additively
         {   // @debug
             for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
                 se_assert(skeleton->bone_nodes[i].bones_info_index >= 0 && skeleton->bone_nodes[i].bones_info_index < skeleton->bone_count);
+            }
+        }
+    }
+}
+
+
+    /// Populates the given bone with animation data
+static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAnim *channel) {
+    // bone->bone_node_index = bone_node_index;
+    bone->position_count  = channel->mNumPositionKeys;
+    bone->rotation_count  = channel->mNumRotationKeys;
+    bone->scale_count     = channel->mNumScalingKeys;
+    se_string_init(&bone->name, channel->mNodeName.data);
+
+        // allocate memory for the arrays
+    bone->positions = malloc(sizeof(Vec3) * bone->position_count);
+    bone->rotations = malloc(sizeof(Quat) * bone->rotation_count);
+    bone->scales    = malloc(sizeof(Vec3) * bone->scale_count);
+    bone->position_time_stamps = malloc(sizeof(f32) * bone->position_count);
+    bone->rotation_time_stamps = malloc(sizeof(f32) * bone->rotation_count);
+    bone->scale_time_stamps    = malloc(sizeof(f32) * bone->scale_count);
+
+        // copy the data over
+    for (u32 i = 0; i < bone->position_count; ++i) {
+        bone->positions[i] = (Vec3) {
+            .x = channel->mPositionKeys[i].mValue.x,
+            .y = channel->mPositionKeys[i].mValue.y,
+            .z = channel->mPositionKeys[i].mValue.z
+        };
+        bone->position_time_stamps[i] = (f32) channel->mPositionKeys[i].mTime;
+    }
+
+    for (u32 i = 0; i < bone->rotation_count; ++i) {
+        bone->rotations[i] = (Quat) {
+            .x = channel->mRotationKeys[i].mValue.x,
+            .y = channel->mRotationKeys[i].mValue.y,
+            .z = channel->mRotationKeys[i].mValue.z,
+            .w = channel->mRotationKeys[i].mValue.w
+        };
+        bone->rotation_time_stamps[i] = (f32) channel->mRotationKeys[i].mTime;
+    }
+
+    for (u32 i = 0; i < bone->scale_count; ++i) {
+        bone->scales[i] = (Vec3) {
+            .x = channel->mScalingKeys[i].mValue.x,
+            .y = channel->mScalingKeys[i].mValue.y,
+            .z = channel->mScalingKeys[i].mValue.z
+        };
+        bone->scale_time_stamps[i] = (f32) channel->mScalingKeys[i].mTime;
+    }
+}
+
+static u32 add_animation_to_skeleton(SE_Skeleton *skeleton) {
+    u32 anim = skeleton->animations_count;
+    skeleton->animations_count++;
+
+    skeleton->animations[anim] = NEW(SE_Skeletal_Animation);
+    memset(skeleton->animations[anim], 0, sizeof(SE_Skeletal_Animation));
+    return anim;
+}
+
+static void load_animation(SE_Skeleton *skeleton, const struct aiScene *scene) {
+    for (u32 i = 0; i < scene->mNumAnimations; ++i) {
+            // add the animation to skeleton
+        u32 anim_index = add_animation_to_skeleton(skeleton);
+        SE_Skeletal_Animation *anim = skeleton->animations[anim_index];
+            // update the data of animation
+        anim->duration = scene->mAnimations[i]->mDuration;
+        anim->ticks_per_second = scene->mAnimations[i]->mTicksPerSecond;
+        se_string_init(&anim->name, scene->mAnimations[i]->mName.data); // @leak we need to free anim->name (deinit)
+
+            // load the data of each animated bone
+        anim->animated_bones_count = scene->mAnimations[i]->mNumChannels;
+        anim->animated_bones = malloc(sizeof(SE_Bone_Animations) * anim->animated_bones_count);
+        for (u32 c = 0; c < scene->mAnimations[i]->mNumChannels; ++c) {
+            SE_Bone_Animations *animated_bone = &anim->animated_bones[c];
+            bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[c]);
+        }
+    }
+}
+
+static void ai_scene_to_mesh_save_data
+(const struct aiScene *scene, SE_Save_Data_Meshes *save_data, const char *filepath) {
+    save_data->meshes_count = scene->mNumMeshes;
+    save_data->meshes = malloc(sizeof(SE_Mesh_Raw_Data) * save_data->meshes_count);
+
+    SE_Skeleton *skeleton = NULL;
+    b8 is_skeleton_generated = false;
+        // go through every mesh in the scene and add it to "save_data"
+    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
+        struct aiMesh *ai_mesh = scene->mMeshes[i];
+        SE_Mesh_Raw_Data *mesh = &save_data->meshes[i];
+        memset(mesh, 0, sizeof(SE_Mesh_Raw_Data));
+        {   //- Vertices
+            if (ai_mesh->mNumBones > 0) {
+                //- skinned mesh
+
+                if (!is_skeleton_generated) { // generate the skeleton only once
+                    is_skeleton_generated = true;
+                    skeleton = NEW (SE_Skeleton);
+                    memset(skeleton, 0, sizeof(SE_Skeleton));
+                }
+
+                mesh->skinned_verts = malloc(sizeof(SE_Skinned_Vertex) * ai_mesh->mNumVertices);
+                mesh->type = SE_MESH_TYPE_SKINNED;
+
+                for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
+                    SE_Skinned_Vertex vertex = {0};
+                    for (i32 j = 0; j < SE_MAX_BONE_WEIGHTS; ++j) {
+                            // NOTE(Matin): we set vertex.bone_ids and vertex.bone_weights later on during the
+                            // extraction of bone vertex ids and bone weights from the ai_mesh further down...
+                        vertex.bone_ids[j] = -1;
+                        vertex.bone_weights[j] = 0.0f;
+                    }
+                        // pos
+                    vertex.vert.position.x = ai_mesh->mVertices[i].x;
+                    vertex.vert.position.y = ai_mesh->mVertices[i].y;
+                    vertex.vert.position.z = ai_mesh->mVertices[i].z;
+
+                        // normals
+                    vertex.vert.normal.x = ai_mesh->mNormals[i].x;
+                    vertex.vert.normal.y = ai_mesh->mNormals[i].y;
+                    vertex.vert.normal.z = ai_mesh->mNormals[i].z;
+
+                        // tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
+                    vertex.vert.tangent.x = ai_mesh->mTangents[i].x;
+                    vertex.vert.tangent.y = ai_mesh->mTangents[i].y;
+                    vertex.vert.tangent.z = ai_mesh->mTangents[i].z;
+
+                        // bi-tangents
+                    vertex.vert.bitangent.x = ai_mesh->mBitangents[i].x;
+                    vertex.vert.bitangent.y = ai_mesh->mBitangents[i].y;
+                    vertex.vert.bitangent.z = ai_mesh->mBitangents[i].z;
+
+                        // uvs
+                    if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
+                        vertex.vert.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
+                        vertex.vert.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
+                    } else {
+                        vertex.vert.texture_coord = v2f(0, 0);
+                    }
+
+                    mesh->skinned_verts[mesh->vert_count] = vertex;
+                    mesh->vert_count++;
+                }
+            } else {
+                //- normal mesh
+                mesh->verts = malloc(sizeof(SE_Vertex3D) * ai_mesh->mNumVertices);
+                mesh->type = SE_MESH_TYPE_NORMAL;
+
+                    //- vertices
+                for (u32 i = 0; i < ai_mesh->mNumVertices; ++i) {
+                    SE_Vertex3D vertex = {0};
+
+                    // -- pos
+                    vertex.position.x = ai_mesh->mVertices[i].x;
+                    vertex.position.y = ai_mesh->mVertices[i].y;
+                    vertex.position.z = ai_mesh->mVertices[i].z;
+
+                    // -- normals
+                    vertex.normal.x = ai_mesh->mNormals[i].x;
+                    vertex.normal.y = ai_mesh->mNormals[i].y;
+                    vertex.normal.z = ai_mesh->mNormals[i].z;
+
+                    // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
+                    vertex.tangent.x = ai_mesh->mTangents[i].x;
+                    vertex.tangent.y = ai_mesh->mTangents[i].y;
+                    vertex.tangent.z = ai_mesh->mTangents[i].z;
+
+                    // -- bi-tangents
+                    vertex.bitangent.x = ai_mesh->mBitangents[i].x;
+                    vertex.bitangent.y = ai_mesh->mBitangents[i].y;
+                    vertex.bitangent.z = ai_mesh->mBitangents[i].z;
+
+                    // -- uvs
+                    if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping
+                        vertex.texture_coord.x = ai_mesh->mTextureCoords[0][i].x;
+                        vertex.texture_coord.y = ai_mesh->mTextureCoords[0][i].y;
+                    } else {
+                        vertex.texture_coord = v2f(0, 0);
+                    }
+
+                    mesh->verts[mesh->vert_count] = vertex;
+                    mesh->vert_count++;
+                }
+            }
+        }
+
+        mesh->indices = malloc(sizeof(u32) * ai_mesh->mNumFaces * 3);
+            //- indices
+        for (u32 i = 0; i < ai_mesh->mNumFaces; ++i) {
+            // ! we triangulate on import, so every face has three vertices
+            mesh->indices[mesh->index_count+0] = ai_mesh->mFaces[i].mIndices[0];
+            mesh->indices[mesh->index_count+1] = ai_mesh->mFaces[i].mIndices[1];
+            mesh->indices[mesh->index_count+2] = ai_mesh->mFaces[i].mIndices[2];
+            mesh->index_count += 3;
+        }
+
+
+        {   //- materials
+            // find the directory part of filepath
+            SE_String filepath_string;
+            se_string_init(&filepath_string, filepath);
+
+            SE_String dir;
+            se_string_init(&dir, "");
+
+            u32 slash_index = se_string_lastof(&filepath_string, '/');
+            if (slash_index == SESTRING_MAX_SIZE) {
+                se_string_append(&dir, "/");
+            } else if (slash_index == 0) {
+                se_string_append(&dir, ".");
+            } else {
+                se_string_append_length(&dir, filepath, slash_index);
+                se_string_append(&dir, "/");
+            }
+
+            // now add the texture path to directory
+            const struct aiMaterial *ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+
+            SE_String diffuse_path;
+            SE_String specular_path;
+            SE_String normal_path;
+
+            se_string_init(&diffuse_path, dir.buffer);
+            se_string_init(&specular_path, dir.buffer);
+            se_string_init(&normal_path, dir.buffer);
+
+            struct aiString *ai_texture_path_diffuse  = NEW(struct aiString);
+            struct aiString *ai_texture_path_specular = NEW(struct aiString);
+            struct aiString *ai_texture_path_normal   = NEW(struct aiString);
+
+            b8 has_diffuse  = true;
+            b8 has_specular = true;
+            b8 has_normal   = true;
+
+            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
+                has_diffuse = false;
+                printf("WARNING: ASSIMP unable to load dffiuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
+            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
+                has_specular = false;
+                printf("WARNING: ASSIMP unable to load specular\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
+            if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
+                has_normal = false;
+                printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
+            /* diffuse */
+            if (has_diffuse) {
+                se_string_append(&diffuse_path, ai_texture_path_diffuse->data);
+                se_string_init(&mesh->texture_diffuse_filepath, diffuse_path.buffer);
+            }
+            free(ai_texture_path_diffuse);
+
+            /* specular */
+            if (has_specular) {
+                se_string_append(&specular_path, ai_texture_path_specular->data);
+                se_string_init(&mesh->texture_specular_filepath, specular_path.buffer);
+            }
+            free(ai_texture_path_specular);
+
+            /* normal */
+            if (has_normal) {
+                se_string_append(&normal_path, ai_texture_path_normal->data);
+                se_string_init(&mesh->texture_normal_filepath, normal_path.buffer);
+            }
+            free(ai_texture_path_normal);
+
+            se_string_deinit(&diffuse_path);
+            se_string_deinit(&specular_path);
+            se_string_deinit(&normal_path);
+
+            se_string_deinit(&dir);
+        }
+
+        {   //- skeleton
+            if (mesh->type == SE_MESH_TYPE_SKINNED) {
+                seload_skeleton_additively( ai_mesh,
+                                            skeleton,
+                                            mesh->skinned_verts,
+                                            mesh->vert_count,
+                                            scene);
+                mesh->skeleton_data = skeleton;
+            }
+        }
+
+        {   //- animations
+            if (skeleton != NULL && scene->mNumAnimations > 0) {
+                load_animation(skeleton, scene);
             }
         }
     }
@@ -709,7 +861,7 @@ static void semesh_construct_skinned_mesh // only meant to be called from se_ren
     seload_skeleton_additively(ai_mesh, skeleton, verts, verts_count, scene);
 
         // generate the vao
-    semesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
+    se_mesh_generate_skinned(mesh, verts_count, verts, index_count, indices);
 
     free(verts);
     free(indices);
@@ -745,11 +897,17 @@ static void skeleton_deep_copy
     dest->animations_count = src->animations_count;
     dest->current_animation = src->current_animation;
     for (u32 i = 0; i < dest->animations_count; ++i) {
+        dest->animations[i] = malloc(sizeof(SE_Skeletal_Animation));
+        memset(dest->animations[i], 0, sizeof(SE_Skeletal_Animation));
+
         se_string_init(&dest->animations[i]->name, src->animations[i]->name.buffer);
 
         dest->animations[i]->animated_bones_count = src->animations[i]->animated_bones_count;
         dest->animations[i]->animated_bones = malloc(sizeof(SE_Bone_Animations) *
                                                 dest->animations[i]->animated_bones_count);
+        memset( dest->animations[i]->animated_bones, 0,
+                sizeof(SE_Bone_Animations) *
+                dest->animations[i]->animated_bones_count);
 
         for (u32 j = 0; j < dest->animations[i]->animated_bones_count; ++j) {
             SE_Bone_Animations *src_animated_bone = &src->animations[i]->animated_bones[j];
@@ -797,6 +955,7 @@ static void skeleton_deep_copy
 static void write_skeleton_to_disk_binary
 (const SE_Skeleton *skeleton, FILE *file) {
         //- Bone Info
+    fwrite(&skeleton->bone_count, sizeof(u32), 1, file);
     for (u32 i = 0; i < skeleton->bone_count; ++i) {
         fwrite(&skeleton->bones_info[i].id, sizeof(i32), 1, file);
         fwrite(&skeleton->bones_info[i].offset, sizeof(Mat4), 1, file);
@@ -804,6 +963,7 @@ static void write_skeleton_to_disk_binary
     }
 
         //- Bone Nodes
+    fwrite(&skeleton->bone_node_count, sizeof(u32), 1, file);
     for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
         se_string_write_to_disk_binary(&skeleton->bone_nodes[i].name, file);
         fwrite(&skeleton->bone_nodes[i].bones_info_index, sizeof(i32), 1, file);
@@ -850,6 +1010,7 @@ static void write_skeleton_to_disk_binary
 static void read_skeleton_from_disk_binary
 (SE_Skeleton *skeleton, FILE *file) {
         //- Bone Info
+    fread(&skeleton->bone_count, sizeof(u32), 1, file);
     for (u32 i = 0; i < skeleton->bone_count; ++i) {
         fread(&skeleton->bones_info[i].id, sizeof(i32), 1, file);
         fread(&skeleton->bones_info[i].offset, sizeof(Mat4), 1, file);
@@ -857,6 +1018,7 @@ static void read_skeleton_from_disk_binary
     }
 
         //- Bone Nodes
+    fread(&skeleton->bone_node_count, sizeof(u32), 1, file);
     for (u32 i = 0; i < skeleton->bone_node_count; ++i) {
         se_string_read_from_disk_binary(&skeleton->bone_nodes[i].name, file);
         fread(&skeleton->bone_nodes[i].bones_info_index, sizeof(i32), 1, file);
@@ -870,9 +1032,19 @@ static void read_skeleton_from_disk_binary
         //- Animations
     fread(&skeleton->animations_count, sizeof(u32), 1, file);
     for (u32 i = 0; i < skeleton->animations_count; ++i) {
+        skeleton->animations[i] = malloc(sizeof(SE_Skeletal_Animation));
+        memset(skeleton->animations[i], 0, sizeof(SE_Skeletal_Animation));
+
         se_string_read_from_disk_binary(&skeleton->animations[i]->name, file);
 
         fread(&skeleton->animations[i]->animated_bones_count, sizeof(u32), 1, file);
+        skeleton->animations[i]->animated_bones = malloc(
+                    sizeof(SE_Bone_Animations) *
+                    skeleton->animations[i]->animated_bones_count);
+        memset(skeleton->animations[i]->animated_bones, 0,
+                    sizeof(SE_Bone_Animations) *
+                    skeleton->animations[i]->animated_bones_count);
+
         for (u32 j = 0; j < skeleton->animations[i]->animated_bones_count; ++j) {
             SE_Bone_Animations *animated_bone = &skeleton->animations[i]->animated_bones[j];
 
@@ -1007,52 +1179,6 @@ static void bone_animations_deinit(SE_Bone_Animations *bone) {
     free(bone->position_time_stamps);
     free(bone->rotation_time_stamps);
     free(bone->scale_time_stamps);
-}
-
-    /// Populates the given bone with animation data
-static void bone_animations_init(SE_Bone_Animations *bone, const struct aiNodeAnim *channel) {
-    // bone->bone_node_index = bone_node_index;
-    bone->position_count  = channel->mNumPositionKeys;
-    bone->rotation_count  = channel->mNumRotationKeys;
-    bone->scale_count     = channel->mNumScalingKeys;
-    se_string_init(&bone->name, channel->mNodeName.data);
-
-        // allocate memory for the arrays
-    bone->positions = malloc(sizeof(Vec3) * bone->position_count);
-    bone->rotations = malloc(sizeof(Quat) * bone->rotation_count);
-    bone->scales    = malloc(sizeof(Vec3) * bone->scale_count);
-    bone->position_time_stamps = malloc(sizeof(f32) * bone->position_count);
-    bone->rotation_time_stamps = malloc(sizeof(f32) * bone->rotation_count);
-    bone->scale_time_stamps    = malloc(sizeof(f32) * bone->scale_count);
-
-        // copy the data over
-    for (u32 i = 0; i < bone->position_count; ++i) {
-        bone->positions[i] = (Vec3) {
-            .x = channel->mPositionKeys[i].mValue.x,
-            .y = channel->mPositionKeys[i].mValue.y,
-            .z = channel->mPositionKeys[i].mValue.z
-        };
-        bone->position_time_stamps[i] = (f32) channel->mPositionKeys[i].mTime;
-    }
-
-    for (u32 i = 0; i < bone->rotation_count; ++i) {
-        bone->rotations[i] = (Quat) {
-            .x = channel->mRotationKeys[i].mValue.x,
-            .y = channel->mRotationKeys[i].mValue.y,
-            .z = channel->mRotationKeys[i].mValue.z,
-            .w = channel->mRotationKeys[i].mValue.w
-        };
-        bone->rotation_time_stamps[i] = (f32) channel->mRotationKeys[i].mTime;
-    }
-
-    for (u32 i = 0; i < bone->scale_count; ++i) {
-        bone->scales[i] = (Vec3) {
-            .x = channel->mScalingKeys[i].mValue.x,
-            .y = channel->mScalingKeys[i].mValue.y,
-            .z = channel->mScalingKeys[i].mValue.z
-        };
-        bone->scale_time_stamps[i] = (f32) channel->mScalingKeys[i].mTime;
-    }
 }
 
 static void recursive_calculate_bone_pose // calculate the pose of the given bone based on the animation, do the same for its children
@@ -1218,35 +1344,6 @@ static void serender3d_render_set_material_uniforms_sprite(SE_Renderer3D *render
         se_texture_bind(&material->sprite.texture, 0);
     } else {
         se_texture_bind(&renderer->user_materials[SE_DEFAULT_MATERIAL_INDEX]->texture_diffuse, 0);
-    }
-}
-
-static u32 add_animation_to_skeleton(SE_Skeleton *skeleton) {
-    u32 anim = skeleton->animations_count;
-    skeleton->animations_count++;
-
-    skeleton->animations[anim] = NEW(SE_Skeletal_Animation);
-    memset(skeleton->animations[anim], 0, sizeof(SE_Skeletal_Animation));
-    return anim;
-}
-
-static void load_animation(SE_Skeleton *skeleton, const struct aiScene *scene) {
-        for (u32 i = 0; i < scene->mNumAnimations; ++i) {
-            // add the animation to skeleton
-        u32 anim_index = add_animation_to_skeleton(skeleton);
-        SE_Skeletal_Animation *anim = skeleton->animations[anim_index];
-            // update the data of animation
-        anim->duration = scene->mAnimations[i]->mDuration;
-        anim->ticks_per_second = scene->mAnimations[i]->mTicksPerSecond;
-        se_string_init(&anim->name, scene->mAnimations[i]->mName.data); // @leak we need to free anim->name (deinit)
-
-            // load the data of each animated bone
-        anim->animated_bones_count = scene->mAnimations[i]->mNumChannels;
-        anim->animated_bones = malloc(sizeof(SE_Bone_Animations) * anim->animated_bones_count);
-        for (u32 c = 0; c < scene->mAnimations[i]->mNumChannels; ++c) {
-            SE_Bone_Animations *animated_bone = &anim->animated_bones[c];
-            bone_animations_init(animated_bone, scene->mAnimations[i]->mChannels[c]);
-        }
     }
 }
 
