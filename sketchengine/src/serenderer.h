@@ -111,6 +111,7 @@ typedef struct SE_Skeleton {
     /// Based on the given skeleton, skeleton->current_animation, and animation_time, we update the pose of the skeleton.
     /// The result is stored in final_bone_transforms and final_bone_transforms_count.
 void se_skeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
+void se_skeleton_deinit(SE_Skeleton *skeleton);
 
 //// MATERIAL ////
     // The default material is stored at the zero'th element during init() of renderer3D.

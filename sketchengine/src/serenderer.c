@@ -19,7 +19,7 @@ void se_mesh_deinit(SE_Mesh *mesh) {
     glDeleteBuffers(1, &mesh->vbo);
     glDeleteBuffers(1, &mesh->ibo);
     mesh->material_index = 0;
-    mesh->skeleton = NULL;
+    mesh->skeleton = NULL; // because we don't own the skeleton
 }
 
 void se_mesh_generate_quad(SE_Mesh *mesh, Vec2 scale) { // 2d plane
@@ -630,14 +630,33 @@ AABB3D aabb3d_calc(const AABB3D *aabbs, u32 aabb_count) {
     return result;
 }
 
+void se_skeleton_deinit(SE_Skeleton *skeleton) {
+    for (u32 i = 0; i < skeleton->animations_count; ++i) {
+        for (u32 j = 0; j < skeleton->animations[i]->animated_bones_count; ++j) {
+            free(skeleton->animations[i]->animated_bones[j].positions);
+            free(skeleton->animations[i]->animated_bones[j].rotations);
+            free(skeleton->animations[i]->animated_bones[j].scales);
+            free(skeleton->animations[i]->animated_bones[j].position_time_stamps);
+            free(skeleton->animations[i]->animated_bones[j].rotation_time_stamps);
+            free(skeleton->animations[i]->animated_bones[j].scale_time_stamps);
+        }
+        free(skeleton->animations[i]->animated_bones);
+        free(skeleton->animations[i]);
+    }
+
+    skeleton->animations_count = 0;
+    skeleton->bone_count = 0;
+    skeleton->bone_node_count = 0;
+}
+
 void se_skeleton_calculate_pose
 (SE_Skeleton *skeleton, f32 frame) {
     se_assert(skeleton->animations_count > 0);
-    // if (skeleton->animations_count > 0) {
+    if (skeleton->animations_count > 0) {
         recursive_calculate_bone_pose(skeleton, skeleton->animations[skeleton->current_animation], frame, &skeleton->bone_nodes[0], mat4_identity());
-    // } else {
-        // recursive_calc_skeleton_pose_without_animation(skeleton);
-    // }
+    } else {
+        recursive_calc_skeleton_pose_without_animation(skeleton);
+    }
 }
 
 u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b8 with_skeleton) {
@@ -673,18 +692,38 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
 
     aiReleaseImport(scene);
     return result;
-
 }
 
 void se_save_data_mesh_deinit(SE_Save_Data_Meshes *save_data) {
+    b8 is_skeleton_freed = false;
+
     for (u32 i = 0; i < save_data->meshes_count; ++i) {
         SE_Mesh_Raw_Data *raw_data = &save_data->meshes[i];
-        free(raw_data->verts);
+
+            //- Vertices
+        if (raw_data->type == SE_MESH_TYPE_SKINNED) {
+            free(raw_data->skinned_verts);
+        } else {
+            free(raw_data->verts);
+        }
         raw_data->vert_count = 0;
 
+            //- Indices
+        free(raw_data->indices);
+        raw_data->index_count = 0;
+
+            //- Material
         se_string_deinit(&raw_data->texture_diffuse_filepath);
         se_string_deinit(&raw_data->texture_specular_filepath);
         se_string_deinit(&raw_data->texture_normal_filepath);
+
+            //- Skeleton and animations
+        if (raw_data->skeleton_data && !is_skeleton_freed) {
+            is_skeleton_freed = true;
+            se_skeleton_deinit(raw_data->skeleton_data);
+            free(raw_data->skeleton_data);
+        }
+        raw_data->skeleton_data = NULL;
     }
     free(save_data->meshes);
     save_data->meshes_count = 0;
@@ -1316,6 +1355,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
 
         //- User skeletons
     for (u32 i = 0; i < renderer->user_skeletons_count; ++i) {
+        se_skeleton_deinit(renderer->user_skeletons[i]);
         free(renderer->user_skeletons[i]); // @leak check if skeleton needs to free things. If so add se_skeleton_deinit
     }
 

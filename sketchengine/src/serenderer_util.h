@@ -263,7 +263,7 @@ static void recursive_read_bone_heirarchy
             skeleton->bone_nodes[parent_id].children_count++;
         }
 
-#if 1 // debug
+#if 1 // @debug
         printf("CREATING A NEW BONE NODE WITH ID %i\n", new_bone_node->bones_info_index);
 #endif
     }
