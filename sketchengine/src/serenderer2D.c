@@ -442,3 +442,29 @@ void serender2d_add_rect_textured (SE_Renderer2D *renderer, Rect rect, f32 depth
     renderer->shape_textured_rects[renderer->shape_textured_rect_count].uv_max            = uv_max;
     renderer->shape_textured_rect_count++;
 }
+
+void serender2d_add_grid_display
+(SE_Renderer2D *renderer, Rect rect, f32 depth, const SE_Grid *grid, RGBA value_mappings[SE_GRID_MAX_VALUE]) {
+    // draw the grid
+    Vec2 cell_size;
+    cell_size.x = rect.w / grid->w;
+    cell_size.y = rect.h / grid->h;
+
+    for (u32 i = 0; i < grid->h + 1; ++i) {
+            Vec2 pos1 = v2f(rect.x,          rect.y + i * cell_size.y);
+            Vec2 pos2 = v2f(rect.x + rect.w, rect.y + i * cell_size.y);
+            serender2d_add_line(renderer, pos1, pos2, depth+0.1f, RGBA_WHITE, 1);
+    }
+    for (u32 i = 0; i < grid->w + 1; ++i) {
+            Vec2 pos1 = v2f(rect.x + i * cell_size.x, rect.y);
+            Vec2 pos2 = v2f(rect.x + i * cell_size.x, rect.y + rect.h);
+            serender2d_add_line(renderer, pos1, pos2, depth+0.1f, RGBA_WHITE, 1);
+    }
+    // draw the values
+    for (u32 x = 0; x < grid->w; ++x) {
+        for (u32 y = 0; y < grid->h; ++y) {
+            u32 value = se_grid_get(grid, x, y);
+            serender2d_add_rect(renderer, (Rect) {rect.x + x * cell_size.x, rect.y + y * cell_size.y, cell_size.x, cell_size.y}, depth, value_mappings[value]);
+        }
+    }
+}

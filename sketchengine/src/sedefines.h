@@ -82,6 +82,20 @@ void hsv_to_rgba(i32 hue, f32 saturation, f32 value, RGBA *rgb);
 #define RGBA_WHITE (RGBA){255, 255, 255, 255}
 #define RGBA_BLACK (RGBA){0, 0, 0, 255}
 
+RGBA se_rgba_brighten(RGBA rgba);
+
+#define SE_GRID_MAX_VALUE 32
+typedef struct SE_Grid {
+    u32 w;
+    u32 h;
+    u32 *value;
+} SE_Grid;
+
+void se_grid_init(SE_Grid *grid, u32 width, u32 height);
+void se_grid_deinit(SE_Grid *grid);
+void se_grid_set(SE_Grid *grid, u32 x, u32 y, u32 value);
+u32 se_grid_get(const SE_Grid *grid, u32 x, u32 y);
+
 typedef struct SE_Array_F32 {
     u32 count;
     u32 capacity;

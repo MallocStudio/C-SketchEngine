@@ -21,6 +21,10 @@ u32 current_obj_aabb = -1;
 u32 world_aabb_mesh = -1;
 u32 point_light_1 = -1;
 
+    //@temp
+SE_Grid grid;
+RGBA value_mappings[SE_GRID_MAX_VALUE];
+
 SE_Animation animation;
 
 RGBA dim = {100, 100, 100, 255};
@@ -208,6 +212,7 @@ void App::util_update_engine_mode(f32 delta_time) {
 
     // @debug
     // seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
+    seui_grid_editor(ctx, &grid, value_mappings);
 }
 
 void App::util_render_engine_mode() {
@@ -230,9 +235,8 @@ void App::util_render_engine_mode() {
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);
 
-           //- selected entity
-    if (m_selected_entity >= 0) {
-        se_assert(m_selected_entity < m_level.entities.count);
+        //- selected entity
+    if (m_selected_entity >= 0 && m_selected_entity < m_level.entities.count) {
             // calculate transfrom without scale
         Vec3 pos   = m_level.entities.position[m_selected_entity];
         Vec3 rot   = m_level.entities.oriantation[m_selected_entity];

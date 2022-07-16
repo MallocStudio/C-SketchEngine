@@ -156,10 +156,47 @@ void hsv_to_rgb(i32 hue, f32 saturation, f32 value, RGB *rgb) {
     // rgb->b = b * 255;
 }
 
+RGBA se_rgba_brighten(RGBA rgba) {
+    RGBA result = rgba;
+    result.r += 10;
+    result.g += 10;
+    result.b += 10;
+    if (result.r < rgba.r) result.r = 255;
+    if (result.g < rgba.g) result.g = 255;
+    if (result.b < rgba.b) result.b = 255;
+    return result;
+}
+
 void hsv_to_rgba(i32 hue, f32 saturation, f32 value, RGBA *rgba) {
     RGB rgb;
     hsv_to_rgb(hue, saturation, value, &rgb);
     rgba->r = rgb.r;
     rgba->g = rgb.g;
     rgba->b = rgb.b;
+}
+
+void se_grid_init(SE_Grid *grid, u32 width, u32 height) {
+    grid->w = width;
+    grid->h = height;
+    grid->value = malloc(sizeof(u32) * grid->w * grid->h);
+    memset(grid->value, 0, sizeof(u32) * grid->w * grid->h);
+}
+
+void se_grid_deinit(SE_Grid *grid) {
+    grid->w = 0;
+    grid->h = 0;
+    free(grid->value);
+}
+
+void se_grid_set(SE_Grid *grid, u32 x, u32 y, u32 value) {
+    u32 index = y * grid->w + x;
+    if (value < 0) value = 0;
+    if (value > SE_GRID_MAX_VALUE) value = SE_GRID_MAX_VALUE;
+    grid->value[index] = value;
+}
+
+u32 se_grid_get(const SE_Grid *grid, u32 x, u32 y) {
+    u32 index = y * grid->w + x;
+    if (index >= grid->h * grid->w) return 0;
+    return grid->value[index];
 }

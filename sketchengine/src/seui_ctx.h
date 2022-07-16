@@ -227,10 +227,13 @@ void seui_texture_viewer(SE_UI *ctx, u32 texture_id); // texture_index refers to
 /// creates a place holder for a panel to be dropped on
 void seui_panel_container(SE_UI *ctx);
 
+/// Displays a grid and a colour palette that can be used to draw on the grid.
+/// This is used for a simple top down level editor.
+void seui_grid_editor(SE_UI *ctx, SE_Grid *grid, RGBA value_mappings[SE_GRID_MAX_VALUE]);
+
 ///
 /// WIDGETS INSIDE OF PANELS
 ///
-/// DEFINED IN seui_widgets.c
 
 void seui_label(SE_UI *ctx, const char *text);
 void seui_label_vec3(SE_UI *ctx, const char *title, Vec3 *value, b8 editable);

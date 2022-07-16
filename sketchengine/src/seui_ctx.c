@@ -1046,7 +1046,60 @@ void seui_panel_container(SE_UI *ctx) {
     }
 }
 
-//// ADVANCED WIDGETS ////
+void seui_grid_editor(SE_UI *ctx, SE_Grid *grid, RGBA value_mappings[SE_GRID_MAX_VALUE]) {
+    if (seui_panel(ctx, "grid ediitor")) {
+        Rect rect = ctx->current_panel->cached_rect;
+        rect.h -= 48;
+        rect.y += 16;
+        ctx->current_panel->fit_size = v2f(128, 128);
+
+        if (rect.h > rect.w) {
+            rect.h = rect.w;
+        }
+        if (rect.w > rect.h) {
+            rect.w = rect.h;
+        }
+
+            //- grid
+        serender2d_add_grid_display(&ctx->renderer, rect, get_depth_middleground(ctx), grid, value_mappings);
+
+        {   //- cursor
+            Vec2 mouse_pos = get_mouse_pos(NULL, NULL);
+            mouse_pos.y = ctx->viewport.h - mouse_pos.y;
+            Vec2 cell_size;
+            cell_size.x = rect.w / grid->w;
+            cell_size.y = rect.h / grid->h;
+            Rect grid_rect = rect;
+            grid_rect.w = cell_size.x * grid->w;
+            grid_rect.h = cell_size.y * grid->h;
+
+            if (rect_overlaps_point(grid_rect, mouse_pos)) {
+                i32 cell_pos_x = mouse_pos.x / cell_size.x;
+                i32 cell_pos_y = mouse_pos.y / cell_size.y;
+
+                u32 value = se_grid_get(grid, cell_pos_x, cell_pos_y);
+
+                RGBA colour;
+                if (value == 0) {
+                    colour = (RGBA) {0, 0, 0, 255};
+                } else {
+                    colour = value_mappings[value];
+                }
+
+                colour = se_rgba_brighten(colour);
+
+                serender2d_add_rect(&ctx->renderer,
+                    (Rect) {
+                        cell_pos_x * cell_size.x,
+                        cell_pos_y * cell_size.y,
+                        cell_size.x,
+                        cell_size.y},
+                    get_depth_middleground(ctx) + 0.2f,
+                    colour);
+            }
+        }
+    }
+}
 
 /// -----------------------------------------
 ///                WIDGETS

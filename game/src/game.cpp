@@ -9,6 +9,17 @@
 #define ASSETS_SAVE_DATA_VERSION 1
 
 App::App(SDL_Window *window) {
+    se_grid_init(&grid, 10, 10);
+    value_mappings[0] = {0, 0, 0, 0};
+    value_mappings[1] = {255, 255, 255, 255};
+    value_mappings[2] = {0  , 0  , 0  , 255};
+    value_mappings[3] = {255, 0  , 0  , 255};
+    value_mappings[4] = {0  , 255, 0  , 255};
+    value_mappings[5] = {0  , 0  , 255, 255};
+    se_grid_set(&grid, 0, 0, 1);
+    se_grid_set(&grid, 3, 0, 3);
+    se_grid_set(&grid, 2, 1, 4);
+
     this->init_application(window);
         //- Start with Engine Mode
     this->init_engine();
@@ -68,7 +79,7 @@ void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
 
-#if 0 /// manually create entities
+#if 1 /// manually create entities
     util_create_default_scene();
     this->save();
 #else /// load from file
