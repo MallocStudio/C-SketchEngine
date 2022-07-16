@@ -210,7 +210,6 @@ typedef struct SE_Mesh {
 
 /// delete vao, vbo, ibo
 void se_mesh_deinit(SE_Mesh *mesh);
-void se_mesh_to_raw_data(const SE_Mesh *mesh, SE_Vertex3D *verts, u32 vert_count, u32 *indices, u32 index_count, SE_Mesh_Raw_Data *result);
 /// generate a quad. The mesh better be uninitialised because this function assumes there are no previous data stored on the mesh
 void se_mesh_generate_quad(SE_Mesh *mesh, Vec2 scale); // 2D plane
 void se_mesh_generate_sprite(SE_Mesh *mesh, Vec2 scale);

@@ -650,7 +650,6 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
         return result;
     }
 
-#if 1 // new version
     SE_String save_data_filepath;
     {    //- Trun scene into a save file
         SE_Save_Data_Meshes save_data = {0};
@@ -671,66 +670,7 @@ u32 se_render3d_load_mesh(SE_Renderer3D *renderer, const char *model_filepath, b
 
         //- Generate meshes from save data
     result = se_save_data_mesh_to_mesh(renderer, &save_data);
-#else // old version // @temp after the new version is operational, remove the old version
-        //- load meshes within the scene
-    result = renderer->user_meshes_count; // the first mesh in the chain
 
-    SE_Skeleton *skeleton = NULL;
-    if (with_skeleton) {
-        u32 skeleton_index = se_render3d_add_skeleton(renderer);
-        skeleton = renderer->user_skeletons[skeleton_index];
-    }
-
-    for (u32 i = 0; i < scene->mNumMeshes; ++i) {
-        struct aiMesh *ai_mesh = scene->mMeshes[i];
-
-        // add a mesh to the renderer
-        renderer->user_meshes[renderer->user_meshes_count] = NEW(SE_Mesh);
-        memset(renderer->user_meshes[renderer->user_meshes_count], 0, sizeof(SE_Mesh));
-
-            //- load the skeleton of this mesh
-        if (with_skeleton && ai_mesh->mNumBones > 0) {
-                // load a skinned mesh ready to be animated
-            SE_Mesh *mesh = renderer->user_meshes[renderer->user_meshes_count];
-            semesh_construct_skinned_mesh(mesh, skeleton, ai_mesh, scene);
-        } else {
-                // load normal static mesh
-            semesh_construct_normal_mesh(renderer->user_meshes[renderer->user_meshes_count], ai_mesh, model_filepath, scene);
-        }
-
-            //- load the material of this mesh
-        if (scene->mNumMaterials > 0) { // -- materials
-            u32 material_index = se_render3d_add_material(renderer);
-            renderer->user_meshes[renderer->user_meshes_count]->material_index = material_index;
-
-            semesh_construct_material(renderer->user_materials[material_index], ai_mesh, model_filepath, scene);
-        }
-
-            //- Link meshes together: If there are multiple meshes within this scene, add them on in a linked list
-        if (i > 0) {
-            renderer->user_meshes[renderer->user_meshes_count-1]->next_mesh_index = result + i;
-        }
-        renderer->user_meshes_count++;
-    }
-
-        //- load animations associated with this mesh
-    if (renderer->user_meshes[result]->skeleton != NULL && scene->mNumAnimations > 0) {
-        i32 current_mesh = result;
-        while (current_mesh >= 0) {
-            load_animation(renderer->user_meshes[current_mesh]->skeleton, scene);
-#if 0 // debug
-            printf("-------------------------------\n");
-            for (u32 i = 0; i < renderer->meshes[result]->skeleton->animations[0]->animated_bones_count; i++) {
-                printf("%i: parent name: %s\n", i, renderer->meshes[result]->skeleton->animations[0]->animated_bones[i].name.buffer);
-            }
-#endif
-            current_mesh = renderer->user_meshes[current_mesh]->next_mesh_index;
-        }
-    }
-
-        //- the final mesh in the linked list has no next (signified by -1 next_mesh_index)
-    renderer->user_meshes[renderer->user_meshes_count - 1]->next_mesh_index = -1;
-#endif
     aiReleaseImport(scene);
     return result;
 
@@ -944,24 +884,6 @@ u32 se_save_data_mesh_to_mesh
     }
 
     return result;
-}
-
-void se_mesh_to_raw_data
-(const SE_Mesh *mesh, SE_Vertex3D *verts, u32 vert_count, u32 *indices, u32 index_count, SE_Mesh_Raw_Data *result) {
-    result->verts = malloc(sizeof(SE_Vertex3D) * vert_count);
-    result->indices = malloc(sizeof(u32) * index_count);
-    result->vert_count  = vert_count;
-    result->index_count = index_count;
-    memcpy(result->verts, verts, sizeof(SE_Vertex3D) * vert_count);
-    memcpy(result->indices, indices, sizeof(u32) * index_count);
-
-    result->is_indexed = mesh->indexed;
-    result->aabb = mesh->aabb;
-    result->line_width = mesh->line_width;
-    result->point_radius = mesh->point_radius;
-    result->type = mesh->type;
-
-    // @TODO ...
 }
 
 void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
