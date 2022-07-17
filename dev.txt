@@ -39,3 +39,22 @@ Bucket:
 [ ] Develop a level around the timeline mechanic of the game
 [ ] Make the demo scene as pretty as possible
 [ ] Load embedded textures properly
+
+/// @remove
+Beta access request.
+
+Hi Mr Blow. I hope this email finds you well.
+
+I am looking to find a way to help out with the beta testing of the compiler, and to learn along the way.
+Currently I am a uni student that's gone way overboard. Here's a link to my current project: ...
+
+I've been working on a custom game engine / framework in C called SketchEngine. Even though I'm planning on rewriting this framework, the idea is to have a very thin layer that enables me to prototype my ideas outside of "off the shelf engines", but not having to rewrite mesh loading everytime for example. And now I'm using that framework to build a game in c++ for my final school assignment that's due in 6 months. I had never done any graphics programming but have finally managed to get opengl up and running, gettings all sorts of shadow mapping to work along with skinned mesh rendering. You can find a terrible demo of my game and game editor in the above link. I've learnt so much from your livestreams and have tried to adopt some of your programming styles and thinking.
+
+What I'm trying to say is that I'm way past a "hello world" program. I work on my project from both windows and linux. On the side (part-time) I would like to attempt to recreate my framework in Jai. I can work on the project both in a windows and a linux environment. I've found not being able to work on a project in different environments as straightforward as I had hoped to be a bummer. I hope it won't be as painful to setup in Jai. That's something I would like to report on.
+
+Here are my contact details in case you find my skillsets acceptible:
+Name: ...
+Discord: ...
+Github: ...
+
+Thank you for your time.
