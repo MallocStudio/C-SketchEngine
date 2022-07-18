@@ -31,6 +31,7 @@ typedef struct SE_Image {
 } SE_Image;
 
 void se_image_load(SE_Image *image, const char *filepath);
+void se_image_load_ext(SE_Image *image, const char *filepath, i32 channels_to_load);
 void se_image_unload(SE_Image *image);
 void se_image_to_texture(const SE_Image *image, SE_Texture *texture);
 /// src and destination must be loaded

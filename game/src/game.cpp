@@ -79,8 +79,11 @@ void App::init_engine() {
     this->clear();
     m_mode = GAME_MODES::ENGINE;
 
-#if 1 /// manually create entities
+#if 0 /// manually create entities
     util_create_default_scene();
+    this->save();
+#elif 1 /// load scene from image
+    util_create_scene_from_image("game/levels/test_level.png");
     this->save();
 #else /// load from file
     this->load_assets_and_level();

@@ -56,7 +56,7 @@ void App::util_load_meshes_from_disk() {
     animation.speed = m_renderer.user_meshes[mesh_guy]->skeleton->animations[0]->ticks_per_second;
 #endif
 
-    mesh_plane = se_render3d_add_plane(&m_renderer, v3f(10, 10, 10));
+    mesh_plane = se_render3d_add_plane(&m_renderer, v3f(1, 1, 1));
 
     mesh_gizmos_translate = se_gizmo_add_coordniates(&m_gizmo_renderer);
     m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
@@ -269,5 +269,46 @@ void App::util_switch_mode(GAME_MODES mode) {
             //... setup
             m_mode = mode;
         } break;
+    }
+}
+
+void App::util_create_scene_from_image(const char *filepath) {
+    {   //- Ground
+        u32 entity = m_level.add_entity();
+        m_level.entities.mesh_index[entity] = mesh_plane;
+        m_level.entities.has_mesh[entity] = true;
+        m_level.entities.should_render_mesh[entity] = true;
+        m_level.entities.position[entity] = v3f(0, 0, 0);
+        m_level.entities.scale[entity] = vec3_one();
+    }
+
+    {   //- Entities from image
+        SE_Image image;
+        se_image_load_ext(&image, filepath, 1);
+
+        SE_Grid grid;
+        se_grid_init(&grid, image.width, image.height);
+
+        for (u32 x = 0; x < grid.w; ++x) {
+            for (u32 y = 0; y < grid.h; ++y) {
+                u32 index = y * grid.w + x;
+                se_grid_set(&grid, x, y, (u32)image.data[index]);
+
+                if (se_grid_get(&grid, x, y) != 0) {
+                    u32 entity_index = m_level.add_entity();
+                    m_level.entities.mesh_index[entity_index] = mesh_cube;
+                    m_level.entities.has_mesh[entity_index] = true;
+                    m_level.entities.should_render_mesh[entity_index] = true;
+                    m_level.entities.position[entity_index] = v3f(
+                        x * m_level.cell_size,
+                        0,
+                        y * m_level.cell_size
+                    );
+                }
+            }
+        }
+
+        se_grid_deinit(&grid);
+        se_image_unload(&image);
     }
 }

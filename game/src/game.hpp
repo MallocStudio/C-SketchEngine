@@ -59,6 +59,7 @@ private:
     ///
     void util_load_meshes_from_disk();
     void util_create_default_scene();
+    void util_create_scene_from_image(const char *filepath);
 
     void util_update_game_mode(f32 delta_time);
     void util_update_engine_mode(f32 delta_time);

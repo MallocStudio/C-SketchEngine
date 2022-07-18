@@ -1085,19 +1085,23 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
     f32 top    = world_aabb.max.y;
     f32 near   = world_aabb.min.z;
     f32 far    = world_aabb.max.z;
-    // Vec3 light_pos = v3f(10,0,10);
-    // light->calculated_position = v3f(
-    //     -light->direction.x,
-    //     -light->direction.y,
-    //     // -renderer->light_directional.direction.z,
-    //     0
-    // );
-    // light->calculated_position = vec3_mul_scalar(light->calculated_position, (far) * 0.5f);
+
+    // method A
+    Vec3 light_pos = v3f(10,0,10);
     light->calculated_position = v3f(
-        right * 0.99f * -light->direction.x,
-        top   * 0.99f * -light->direction.y,
-        far   * 0.99f * -light->direction.z
+        -light->direction.x,
+        -light->direction.y,
+        // -renderer->light_directional.direction.z,
+        0
     );
+    light->calculated_position = vec3_mul_scalar(light->calculated_position, (far) * 0.5f);
+
+    // method B
+    // light->calculated_position = v3f(
+    //     right * 0.99f * -light->direction.x,
+    //     top   * 0.99f * -light->direction.y,
+    //     far   * 0.99f * -light->direction.z
+    // );
 
     Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
     Vec3 light_target = vec3_add(renderer->light_directional.direction, light->calculated_position);

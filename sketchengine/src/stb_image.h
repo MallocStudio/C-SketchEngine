@@ -112,7 +112,7 @@ RECENT REVISION HISTORY:
     Baldur Karlsson         Kevin Schmidt      JR Smith             github:Michaelangel007
                             Brad Weinberger    Matvey Cherevko      [reserved]
     Luca Sas                Alexander Veselov  Zack Middleton       [reserved]
-    Ryan C. Gordon          [reserved]                              [reserved]
+    Ryan C. Gordon          Matin Kamali ;p                         [reserved]
                      DO NOT ADD YOUR NAME HERE
 
   To add your name to the credits, pick a random blank space in the middle and fill it.

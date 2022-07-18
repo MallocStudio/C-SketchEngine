@@ -74,17 +74,22 @@ void se_image_load_empty(SE_Image *image, i32 width, i32 height, i32 channel_cou
     image->data = (ubyte*) malloc(sizeof(ubyte) * width * height * channel_count);
 }
 
-void se_image_load(SE_Image *image, const char *filepath) {
+void se_image_load_ext(SE_Image *image, const char *filepath, i32 channels_to_load) {
     image->loaded = true;
     image->data = NULL;
-    image->data = stbi_load(filepath, &image->width, &image->height, &image->channel_count, 0);
+    image->data = stbi_load(filepath, &image->width, &image->height, &image->channel_count, channels_to_load);
     if (image->data != NULL) {
         // seimage_load_data(image, image->data);
         // image loaded successfully
+        if (channels_to_load < image->channel_count) image->channel_count = channels_to_load;
     } else {
         printf("ERROR: cannot load %s (%s)\n", filepath, stbi_failure_reason());
         image->loaded = false;
     }
+}
+
+void se_image_load(SE_Image *image, const char *filepath) {
+    se_image_load_ext(image, filepath, 0);
 }
 
 void se_image_unload(SE_Image *image) {
