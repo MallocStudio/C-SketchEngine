@@ -1,13 +1,10 @@
 #include "entity.hpp"
 
 static AABB3D transform_aabb3d(AABB3D aabb, Vec3 pos, Vec3 scale) {
-    // Vec3 translation = mat4_get_translation(transform);
-    // aabb.min = vec3_add(aabb.min, translation);
-    // aabb.max = vec3_add(aabb.max, translation);
-    aabb.min = vec3_add(aabb.min, pos);
-    aabb.max = vec3_add(aabb.max, pos);
     aabb.min = vec3_mul(aabb.min, scale);
     aabb.max = vec3_mul(aabb.max, scale);
+    aabb.min = vec3_add(aabb.min, pos);
+    aabb.max = vec3_add(aabb.max, pos);
     return aabb;
 }
 
