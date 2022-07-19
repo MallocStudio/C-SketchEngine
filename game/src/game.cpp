@@ -58,6 +58,7 @@ void App::init_application(SDL_Window *window) {
 
         //- Renderer
     m_camera_count = 0;
+    m_has_queued_for_change_of_mode = false;
     main_camera = this->add_camera();
     se_render3d_init(&m_renderer, &m_cameras[main_camera]);
     m_renderer.light_directional.direction = {-1, -1, -1};
@@ -73,29 +74,23 @@ void App::init_application(SDL_Window *window) {
     memset(m_mesh_assets, 0, sizeof(m_mesh_assets));
     // TODO Add the loader of all user_meshes used in the game here.
     util_load_meshes_from_disk(); // @temp
-}
-
-void App::init_engine() {
-    this->clear();
-    m_mode = GAME_MODES::ENGINE;
 
 #if 0 /// manually create entities
-    util_create_default_scene();
+    // util_create_default_scene();
+    this->load_assets_and_level();
     this->save();
-#elif 1 /// load scene from image
+#else /// load scene from image
     util_create_scene_from_image("game/levels/test_level.png");
     this->save();
-#else /// load from file
-    this->load_assets_and_level();
-    this->m_cameras[main_camera] = m_level.main_camera_settings;
 #endif
 }
 
+void App::init_engine() {
+    m_mode = GAME_MODES::ENGINE;
+}
+
 void App::init_game() {
-    this->clear();
     m_mode = GAME_MODES::GAME;
-    this->load_assets_and_level();
-    this->m_cameras[main_camera] = m_level.main_camera_settings;
 }
 
 void App::clear() {
@@ -120,7 +115,6 @@ void App::update(f32 delta_time) {
             //- ENGINE INPUT
         util_update_engine_mode(delta_time);
     }
-
 }
 
 void App::render() {
@@ -143,10 +137,11 @@ void App::render() {
         se_mesh_generate_gizmos_aabb(m_renderer.user_meshes[world_aabb_mesh], world_aabb.min, world_aabb.max, 2);
         se_render_directional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count, world_aabb);
     }
-    se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.transform, m_level.entities.count);
+    se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count);
 
         //- Clear Previous Frame
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    // glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    glClearColor(130 / 255.0f, 161 / 255.0f, 171 / 255.0f, 1.0f);
     glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, window_w, window_h);
@@ -166,6 +161,26 @@ void App::render() {
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
+}
+
+void App::end_of_frame() {
+    if (m_has_queued_for_change_of_mode) {
+        m_has_queued_for_change_of_mode = false;
+
+        switch (m_queued_mode) {
+            this->save();
+            case GAME_MODES::GAME: {
+                //... setup
+                m_mode = m_queued_mode;
+                init_game();
+            } break;
+            case GAME_MODES::ENGINE: {
+                //... setup
+                m_mode = m_queued_mode;
+                init_engine();
+            } break;
+        }
+    }
 }
 
 i32 App::raycast_to_select_entity() {
@@ -261,4 +276,5 @@ void App::load_assets_and_level() {
 
         //- Level
     Assets::load_level(&m_level, SAVE_FILE_NAME);
+    this->m_cameras[main_camera] = m_level.main_camera_settings;
 }

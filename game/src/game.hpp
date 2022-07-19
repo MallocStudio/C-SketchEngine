@@ -31,6 +31,7 @@ public:
 
     void update(f32 delta_time);
     void render();
+    void end_of_frame();
 
 private:
     void init_application(SDL_Window *window);
@@ -52,6 +53,8 @@ private:
     Widget_Entity m_widget_entity;
     u32 m_mesh_assets_count;
     SE_String m_mesh_assets[MAX_NUM_ASSETS]; // @TODO change this to a dynamic array
+    bool m_has_queued_for_change_of_mode;
+    GAME_MODES m_queued_mode;
 
 
     ///

@@ -129,19 +129,20 @@ void App::util_update_game_mode(f32 delta_time) {
     se_animation_update(&animation, delta_time);
     se_skeleton_calculate_pose(m_renderer.user_meshes[mesh_guy]->skeleton, animation.current_frame);
 
-
         //- PLAYER MOVEMENT
-    if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_D)) {
-        m_level.m_player->move(vec3_right());
-    }
-    if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_A)) {
-        m_level.m_player->move(vec3_left());
-    }
-    if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_W)) {
-        m_level.m_player->move(vec3_forward());
-    }
-    if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_S)) {
-        m_level.m_player->move(vec3_backward());
+    if (m_level.m_player) {
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_D)) {
+            m_level.m_player->move(vec3_right());
+        }
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_A)) {
+            m_level.m_player->move(vec3_left());
+        }
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_W)) {
+            m_level.m_player->move(vec3_forward());
+        }
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_S)) {
+            m_level.m_player->move(vec3_backward());
+        }
     }
 
         //- UI
@@ -260,16 +261,8 @@ void App::util_render_engine_mode() {
 }
 
 void App::util_switch_mode(GAME_MODES mode) {
-    switch (mode) {
-        case GAME_MODES::GAME: {
-            //... setup
-            m_mode = mode;
-        } break;
-        case GAME_MODES::ENGINE: {
-            //... setup
-            m_mode = mode;
-        } break;
-    }
+    m_has_queued_for_change_of_mode = true;
+    m_queued_mode = mode;
 }
 
 void App::util_create_scene_from_image(const char *filepath) {
@@ -278,8 +271,18 @@ void App::util_create_scene_from_image(const char *filepath) {
         m_level.entities.mesh_index[entity] = mesh_plane;
         m_level.entities.has_mesh[entity] = true;
         m_level.entities.should_render_mesh[entity] = true;
-        m_level.entities.position[entity] = v3f(0, 0, 0);
-        m_level.entities.scale[entity] = vec3_one();
+        m_level.entities.position[entity] = v3f(5, -1, 5);
+        m_level.entities.scale[entity] = v3f(11, 1, 11);
+    }
+
+    {   //- Player
+        u32 player = m_level.get_player();
+        m_level.entities.mesh_index[player] = mesh_guy;
+        m_level.entities.has_mesh[player] = true;
+        m_level.entities.should_render_mesh[player] = true;
+        m_level.entities.position[player] = v3f(5, 0, 5);
+        // @temp
+        m_level.entities.scale[player] = v3f(0.05f,0.05f,0.05f);
     }
 
     {   //- Entities from image

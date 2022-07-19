@@ -106,6 +106,7 @@ int main() {
         delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
         game->update((f32)delta_time);
         game->render();
+        game->end_of_frame();
 
         SDL_GL_SwapWindow(window);
     }

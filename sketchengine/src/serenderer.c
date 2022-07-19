@@ -1202,7 +1202,7 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
     renderer->light_space_matrix = light_space_mat;
 }
 
-void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transforms, u32 count) {
+void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count) {
     se_assert(count <= renderer->user_meshes_count && "the number of transforms must be less than or equal to the number of meshes");
 
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
@@ -1252,7 +1252,7 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, Mat4 *transfo
             }
             // render scene
             for (u32 i = 0; i < count; ++i) {
-                SE_Mesh *mesh = renderer->user_meshes[i];
+                SE_Mesh *mesh = renderer->user_meshes[mesh_indices[i]];
                 Mat4 model_mat = transforms[i];
 
                 se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "model", model_mat);
