@@ -141,7 +141,12 @@ void App::render() {
 
         //- Clear Previous Frame
     // glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    glClearColor(130 / 255.0f, 161 / 255.0f, 171 / 255.0f, 1.0f);
+    // glClearColor(130 / 255.0f, 161 / 255.0f, 171 / 255.0f, 1.0f);
+    glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
+                 m_renderer.light_directional.ambient.g / 255.0f,
+                 m_renderer.light_directional.ambient.b / 255.0f,
+                 1.0f);
+
     glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, window_w, window_h);

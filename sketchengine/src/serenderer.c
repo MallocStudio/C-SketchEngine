@@ -1187,10 +1187,7 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
         for (u32 i = 0; i < count; ++i) {
             u32 mesh_index = mesh_indices[i];
             if (mesh_index >= renderer->user_meshes_count) continue; // this mesh does not exist
-            if (renderer->user_meshes[mesh_index]->should_cast_shadow == false) continue;
             Mat4 model_mat = transforms[i];
-            SE_Mesh *mesh = renderer->user_meshes[mesh_index];
-
 
             recursive_render_directional_shadow_map_for_mesh(renderer, mesh_index, model_mat, light_space_mat);
         }
@@ -1211,14 +1208,14 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_ind
         glViewport(0, 0, 1024, 1024);
         glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
             glClear(GL_DEPTH_BUFFER_BIT);
+            Mat4 shadow_transforms[6];
+            f32 far  = 25.0f;
             { // configure shader and matrices
                 // projection
                 f32 aspect = 1024 / (f32) 1024;
                 f32 near = 1.0f;
-                f32 far  = 25.0f;
                 Mat4 shadow_proj = mat4_perspective(SEMATH_DEG2RAD_MULTIPLIER * 90.0f, aspect, near, far);
                 // views for each face
-                Mat4 shadow_transforms[6];
                 shadow_transforms[0] = mat4_mul(
                     mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(1, 0, 0)), vec3_down()),
                     shadow_proj);
@@ -1237,36 +1234,13 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_ind
                 shadow_transforms[5] = mat4_mul(
                     mat4_lookat(point_light->position, vec3_add(point_light->position, v3f(0, 0, -1)), vec3_down()),
                     shadow_proj);
-
-                // configure shader
-                se_shader_use(&renderer->shader_shadow_omnidir_calc);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
-                se_shader_set_uniform_f32 (&renderer->shader_shadow_omnidir_calc, "far_plane", far);
-                se_shader_set_uniform_vec3(&renderer->shader_shadow_omnidir_calc, "light_pos", point_light->position);
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "shadow_matrices[0]", shadow_transforms[0]);
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "shadow_matrices[1]", shadow_transforms[1]);
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "shadow_matrices[2]", shadow_transforms[2]);
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "shadow_matrices[3]", shadow_transforms[3]);
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "shadow_matrices[4]", shadow_transforms[4]);
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "shadow_matrices[5]", shadow_transforms[5]);
             }
             // render scene
             for (u32 i = 0; i < count; ++i) {
                 u32 mesh_index = mesh_indices[i];
                 if (mesh_index >= renderer->user_meshes_count) continue; // this mesh does not exist
-                SE_Mesh *mesh = renderer->user_meshes[mesh_index];
-                if (mesh->should_cast_shadow == false) continue;
                 Mat4 model_mat = transforms[i];
-
-                se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "model", model_mat);
-
-                glBindVertexArray(mesh->vao);
-                if (mesh->indexed) {
-                    glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
-                } else {
-                    glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
-                }
+                recursive_render_omnidir_shadow_map_for_mesh(renderer, mesh_index, model_mat, point_light, shadow_transforms, far);
             }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -1322,6 +1296,9 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     const char *shadow_calc_omnidir_gsd_files[1] = {
         shader_filename_shadow_calc_omnidir_gsd
     };
+    const char *shadow_calc_omnidir_skinned_vsd_files[1] = {
+        shader_filename_shadow_calc_omnidir_skinned_mesh_vsd
+    };
 
         // lines
     const char *lines_vsd_files[1] = {
@@ -1371,6 +1348,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shadow_calc_omnidir_vsd_files, 1,
         shadow_calc_omnidir_fsd_files, 1,
         shadow_calc_omnidir_gsd_files, 1);
+
+    se_shader_init_from_files(&renderer->shader_shadow_omnidir_calc_skinned_mesh,
+                            shadow_calc_omnidir_skinned_vsd_files, 1,
+                            shadow_calc_omnidir_fsd_files, 1,
+                            shadow_calc_omnidir_gsd_files, 1);
 
     se_shader_init_from_files(&renderer->shader_lines,
         lines_vsd_files, 1,
@@ -1468,6 +1450,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     se_shader_deinit(&renderer->shader_lines);
     se_shader_deinit(&renderer->shader_outline);
     se_shader_deinit(&renderer->shader_sprite);
+    se_shader_deinit(&renderer->shader_shadow_omnidir_calc_skinned_mesh);
 
         //- User materials
     for (u32 i = 0; i < renderer->user_materials_count; ++i) {

@@ -291,15 +291,16 @@ typedef struct SE_Renderer3D {
     SE_Skeleton *user_skeletons[SERENDERER3D_MAX_SKELETONS];
 
         //- SHADERS
-    SE_Shader shader_lit;                     // handles static meshes affected by light and the material system
-    SE_Shader shader_skinned_mesh;            // handles skinned meshes (uses a special vertex shader but the same fragment shader as shader_lit)
-    SE_Shader shader_shadow_calc;             // handles directional light shadow calulation
-    SE_Shader shader_shadow_calc_skinned_mesh;// handles directional light shadow calulation
-    SE_Shader shader_shadow_omnidir_calc;     // handls point light shadow calculation
-    SE_Shader shader_lines;                   // handles rendering lines
-    SE_Shader shader_outline;                 // handles rendering outlines of static meshes
-    SE_Shader shader_sprite;                  // handles rendering sprites
-    SE_Shader shader_skinned_mesh_skeleton;   // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
+    SE_Shader shader_lit;                      // handles static meshes affected by light and the material system
+    SE_Shader shader_skinned_mesh;             // handles skinned meshes
+    SE_Shader shader_shadow_calc;              // handles directional light shadow calulation
+    SE_Shader shader_shadow_calc_skinned_mesh; // handles directional light shadow calulation
+    SE_Shader shader_shadow_omnidir_calc;      // handls point light shadow calculation
+    SE_Shader shader_lines;                    // handles rendering lines
+    SE_Shader shader_outline;                  // handles rendering outlines of static meshes
+    SE_Shader shader_sprite;                   // handles rendering sprites
+    SE_Shader shader_skinned_mesh_skeleton;    // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
+    SE_Shader shader_shadow_omnidir_calc_skinned_mesh; // handles point light shadow calculation for skinned meshes
 
         //- Camera and Light
     SE_Camera3D *current_camera;

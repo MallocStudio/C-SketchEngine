@@ -1,0 +1,29 @@
+#version 450
+
+layout ( location = 0 ) in vec3 Position; // model space
+
+layout ( location = 5 ) in ivec4 bone_ids;
+layout ( location = 6 ) in vec4 bone_weights;
+
+uniform mat4 model;
+
+const int MAX_BONES = 100; // must match with SE_SKELETON_BONES_CAPACITY of SE_Skeleton
+const int MAX_BONE_WEIGHTS = 4;
+uniform mat4 bones[MAX_BONES];
+
+void main () {
+    vec4 total_position = vec4(0.0f); // the position of the vertex in the current animation
+
+    for (int i = 0; i < MAX_BONE_WEIGHTS; i++) {
+        if (bone_ids[i] == -1) continue;
+        if (bone_ids[i] >= MAX_BONES) {
+            total_position = vec4(Position, 1.0f);
+            break;
+        }
+
+        vec4 local_pos = bones[bone_ids[i]] * vec4(Position, 1.0f);
+        total_position += local_pos * bone_weights[i];
+    }
+
+    gl_Position = model * total_position;
+}

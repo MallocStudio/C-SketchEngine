@@ -31,12 +31,14 @@
 #define shader_filename_lit_header_fsd "core/shaders/3D/lit_header.fsd"
 #define shader_filename_lit_footer_fsd "core/shaders/3D/lit_footer.fsd"
 
-#define shader_filename_shadow_calc_directional_vsd "core/shaders/3D/shadow_calc.vsd"
-#define shader_filename_shadow_calc_directional_fsd "core/shaders/3D/shadow_calc.fsd"
-#define shader_filename_shadow_calc_directional_skinned_mesh_vsd "core/shaders/3D/shadow_calc_skinned_mesh.vsd"
-#define shader_filename_shadow_calc_omnidir_vsd "core/shaders/3D/shadow_omni_calc.vsd"
-#define shader_filename_shadow_calc_omnidir_fsd "core/shaders/3D/shadow_omni_calc.fsd"
-#define shader_filename_shadow_calc_omnidir_gsd "core/shaders/3D/shadow_omni_calc.gsd"
+#define shader_filename_shadow_calc_directional_vsd "core/shaders/3D/shadow_calc/shadow_calc.vsd"
+#define shader_filename_shadow_calc_directional_fsd "core/shaders/3D/shadow_calc/shadow_calc.fsd"
+#define shader_filename_shadow_calc_directional_skinned_mesh_vsd "core/shaders/3D/shadow_calc/shadow_calc_skinned_mesh.vsd"
+#define shader_filename_shadow_calc_omnidir_vsd "core/shaders/3D/shadow_calc/shadow_omni_calc.vsd"
+#define shader_filename_shadow_calc_omnidir_fsd "core/shaders/3D/shadow_calc/shadow_omni_calc.fsd"
+#define shader_filename_shadow_calc_omnidir_gsd "core/shaders/3D/shadow_calc/shadow_omni_calc.gsd"
+#define shader_filename_shadow_calc_omnidir_skinned_mesh_vsd "core/shaders/3D/shadow_calc/shadow_omni_calc_skinned_mesh.vsd"
+
 #define shader_filename_lines_vsd "core/shaders/3D/lines.vsd"
 #define shader_filename_lines_fsd "core/shaders/3D/lines.fsd"
 #define shader_filename_outline_vsd "core/shaders/3D/outline.vsd"
@@ -1291,28 +1293,73 @@ static void recursive_render_directional_shadow_map_for_mesh
 (SE_Renderer3D *renderer, u32 mesh_index, Mat4 model_mat, Mat4 light_space_mat) {
     SE_Mesh *mesh = renderer->user_meshes[mesh_index];
 
-    if (mesh->type == SE_MESH_TYPE_NORMAL) {
-        se_shader_use(&renderer->shader_shadow_calc);
-        se_shader_set_uniform_mat4(&renderer->shader_shadow_calc, "light_space_matrix", light_space_mat);
-        se_shader_set_uniform_mat4(&renderer->shader_shadow_calc, "model", model_mat);
-    } else
-    if (mesh->type == SE_MESH_TYPE_SKINNED) {
-        se_shader_use(&renderer->shader_shadow_calc_skinned_mesh);
-        se_shader_set_uniform_mat4(&renderer->shader_shadow_calc_skinned_mesh, "light_space_matrix", light_space_mat);
-        se_shader_set_uniform_mat4(&renderer->shader_shadow_calc_skinned_mesh, "model", model_mat);
-        se_shader_set_uniform_mat4_array(&renderer->shader_shadow_calc_skinned_mesh, "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+    if (mesh->should_cast_shadow) {
+        if (mesh->type == SE_MESH_TYPE_NORMAL) {
+            se_shader_use(&renderer->shader_shadow_calc);
+            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc, "light_space_matrix", light_space_mat);
+            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc, "model", model_mat);
+        } else
+        if (mesh->type == SE_MESH_TYPE_SKINNED) {
+            se_shader_use(&renderer->shader_shadow_calc_skinned_mesh);
+            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc_skinned_mesh, "light_space_matrix", light_space_mat);
+            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc_skinned_mesh, "model", model_mat);
+            se_shader_set_uniform_mat4_array(&renderer->shader_shadow_calc_skinned_mesh, "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+        }
+
+        glBindVertexArray(mesh->vao);
+        if (mesh->indexed) {
+            glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
+        } else {
+            glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
+        }
     }
 
-    glBindVertexArray(mesh->vao);
-    if (mesh->indexed) {
-        glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
-    } else {
-        glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
-    }
-
+        // continue for children meshes if they exist
     if (mesh->next_mesh_index >= 0) {
         recursive_render_directional_shadow_map_for_mesh(renderer, mesh->next_mesh_index, model_mat, light_space_mat);
     }
 }
 
+static void recursive_render_omnidir_shadow_map_for_mesh
+(SE_Renderer3D *renderer, u32 mesh_index, Mat4 model_mat, SE_Light_Point *point_light, Mat4 shadow_transforms[6], f32 far) {
+    SE_Mesh *mesh = renderer->user_meshes[mesh_index];
+
+    if (mesh->should_cast_shadow) {
+        // configure shader
+        SE_Shader *shader = &renderer->shader_shadow_omnidir_calc;
+        if (mesh->type == SE_MESH_TYPE_SKINNED) {
+            shader = &renderer->shader_shadow_omnidir_calc_skinned_mesh;
+        }
+
+        se_shader_use(shader);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
+        se_shader_set_uniform_f32 (shader, "far_plane", far);
+        se_shader_set_uniform_vec3(shader, "light_pos", point_light->position);
+        se_shader_set_uniform_mat4(shader, "shadow_matrices[0]", shadow_transforms[0]);
+        se_shader_set_uniform_mat4(shader, "shadow_matrices[1]", shadow_transforms[1]);
+        se_shader_set_uniform_mat4(shader, "shadow_matrices[2]", shadow_transforms[2]);
+        se_shader_set_uniform_mat4(shader, "shadow_matrices[3]", shadow_transforms[3]);
+        se_shader_set_uniform_mat4(shader, "shadow_matrices[4]", shadow_transforms[4]);
+        se_shader_set_uniform_mat4(shader, "shadow_matrices[5]", shadow_transforms[5]);
+        se_shader_set_uniform_mat4(shader, "model", model_mat);
+
+        if (mesh->type == SE_MESH_TYPE_SKINNED) {
+            se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc_skinned_mesh, "model", model_mat);
+            se_shader_set_uniform_mat4_array(&renderer->shader_shadow_omnidir_calc_skinned_mesh, "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+        }
+
+        glBindVertexArray(mesh->vao);
+        if (mesh->indexed) {
+            glDrawElements(GL_TRIANGLES, mesh->element_count, GL_UNSIGNED_INT, 0);
+        } else {
+            glDrawArrays(GL_TRIANGLES, 0, mesh->element_count);
+        }
+    }
+
+        // continue for children meshes if they exist
+    if (mesh->next_mesh_index >= 0) {
+        recursive_render_omnidir_shadow_map_for_mesh(renderer, mesh->next_mesh_index, model_mat, point_light, shadow_transforms, far);
+    }
+}
 #endif // SE_RENDERER_3D_UTIL
