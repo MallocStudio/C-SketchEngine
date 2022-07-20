@@ -75,7 +75,7 @@ void App::init_application(SDL_Window *window) {
     // TODO Add the loader of all user_meshes used in the game here.
     util_load_meshes_from_disk(); // @temp
 
-#if 1 /// load from save
+#if 0 /// load from save
     // util_create_default_scene();
     this->load_assets_and_level();
     this->save();

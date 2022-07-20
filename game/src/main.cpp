@@ -47,6 +47,8 @@ int main() {
     Uint64 now  = SDL_GetPerformanceCounter();
     Uint64 last = 0;
     f64 delta_time = 0;
+    Uint32 ticks = SDL_GetTicks();
+    Uint32 initial_tick = ticks;
 
         //- main loop
     while (!game->should_quit) {
@@ -104,6 +106,10 @@ int main() {
         last = now;
         now = SDL_GetPerformanceCounter();
         delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
+
+        ticks = SDL_GetTicks();
+        game->fps = ticks - initial_tick;
+
         game->update((f32)delta_time);
         game->render();
         game->end_of_frame();

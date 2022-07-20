@@ -1079,21 +1079,9 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
     SE_Light *light = &renderer->light_directional;
         // -- shadow mapping
     /* calculate the matrices */
-    // f32 left   = world_aabb.min.x - 10;
-    // f32 right  = world_aabb.max.x + 10;
-    // f32 bottom = world_aabb.min.y - 10;
-    // f32 top    = world_aabb.max.y + 10;
-    // f32 near   = world_aabb.min.z - 10;
-    // f32 far    = world_aabb.max.z + 10;
     f32 world_aabb_width  = se_math_abs(world_aabb.min.x) + se_math_abs(world_aabb.max.x);
     f32 world_aabb_height = se_math_abs(world_aabb.min.z) + se_math_abs(world_aabb.max.z);
     f32 world_aabb_size = se_math_max(world_aabb_width, world_aabb_height);
-    // f32 left   = -11;
-    // f32 right  = +11;
-    // f32 bottom = -11;
-    // f32 top    = +11;
-    // f32 near   = -11;
-    // f32 far    = +11;
     f32 left   = -world_aabb_size;
     f32 right  = +world_aabb_size;
     f32 bottom = -world_aabb_size;
@@ -1101,9 +1089,6 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
     f32 near   = -world_aabb_size;
     f32 far    = +world_aabb_size;
 
-    // light->calculated_position = v3f(-2.0f, 4.0f, -1.0f);
-
-    // method A
     light->calculated_position = v3f(
         -light->direction.x,
         -light->direction.y,
@@ -1111,16 +1096,8 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
         // 0
     );
 
-    // method B
-    // light->calculated_position = v3f(
-    //     right * 0.99f * -light->direction.x,
-    //     top   * 0.99f * -light->direction.y,
-    //     far   * 0.99f * -light->direction.z
-    // );
-
     Mat4 light_proj = mat4_ortho(left, right, bottom, top, near, far);
     Vec3 light_target = vec3_add(renderer->light_directional.direction, light->calculated_position);
-    // Vec3 light_target = vec3_sub(light->calculated_position, renderer->light_directional.direction);
     Mat4 light_view = mat4_lookat(light->calculated_position, light_target, vec3_up());
     Mat4 light_space_mat = mat4_mul(light_view, light_proj);
 

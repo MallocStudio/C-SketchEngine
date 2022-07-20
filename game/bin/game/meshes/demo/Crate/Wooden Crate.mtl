@@ -1,0 +1,16 @@
+# Blender 3.1.0 MTL File: 'Wooden Crate.blend'
+# www.blender.org
+
+newmtl Material.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.122081 0.122081 0.122081
+Ke 0.000000 0.000000 0.000000
+Ni 1.330000
+d 1.000000
+illum 2
+map_Kd  Textures\2048\Wooden Crate_Crate_BaseColor.png
+map_Ns  Textures\2048\Wooden Crate_Crate_Roughness.png
+map_refl  Textures\2048\Wooden Crate_Crate_Metallic.png
+map_Bump  -bm 0.600000 Textures\2048\Wooden Crate_Crate_Normal.png

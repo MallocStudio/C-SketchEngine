@@ -20,7 +20,7 @@ Vec3 se_camera3d_get_front(const SE_Camera3D *cam);
 Mat4 se_camera3d_get_view(const SE_Camera3D *cam);
     /// updates the given camera's view and projection
 void se_camera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h);
-void se_camera3d_input(SE_Camera3D *camera, struct SE_Input *seinput);
+void se_camera3d_input(SE_Camera3D *camera, struct SE_Input *seinput, f32 delta_time);
 
 void se_camera3d_get_raycast(SE_Camera3D *camera, SDL_Window *window, Vec3 *raycast_dir, Vec3 *raycast_origin);
 

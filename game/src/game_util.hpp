@@ -6,7 +6,7 @@
 ///     General variables used in game.cpp
 ///
 
-
+char fps_text[24];
 SE_UI *ctx;
 
     //@temp a temporary way of loading required meshes once at init_application() time
@@ -17,6 +17,10 @@ u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 mesh_light_pos_gizmos = -1;
 u32 mesh_cube = -1;
+u32 mesh_kitchen = -1;
+u32 mesh_demo_crate = -1;
+u32 mesh_demo_diamond = -1;
+
 u32 current_obj_aabb = -1;
 u32 world_aabb_mesh = -1;
 u32 point_light_1 = -1;
@@ -71,6 +75,12 @@ void App::util_load_meshes_from_disk() {
     current_obj_aabb = se_render3d_add_mesh_empty(&m_renderer);
 
     mesh_cube = se_render3d_load_mesh(&m_renderer, "core/meshes/cube.fbx", false);
+
+    mesh_kitchen = se_render3d_load_mesh(&m_renderer, "game/meshes/kitchen/kitchen.fbx", false);
+
+    mesh_demo_crate = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Crate/Wooden Crate.obj", false);
+
+    mesh_demo_diamond = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Diamond/diamond.obj", false);
 }
 
 void App::util_create_default_scene() {
@@ -119,6 +129,65 @@ void App::util_create_default_scene() {
     m_level.entities.mesh_index[cube_entity] = mesh_cube;
 }
 
+void App::util_create_scene_from_image(const char *filepath) {
+    {   //- Ground
+        u32 entity = m_level.add_entity();
+        m_level.entities.mesh_index[entity] = mesh_plane;
+        m_level.entities.has_mesh[entity] = true;
+        m_level.entities.should_render_mesh[entity] = true;
+        m_level.entities.position[entity] = v3f(5, -1, 5);
+        m_level.entities.scale[entity] = v3f(11, 1, 11);
+    }
+
+    {   //- Player
+        u32 player = m_level.get_player();
+        m_level.entities.mesh_index[player] = mesh_guy;
+        m_level.entities.has_mesh[player] = true;
+        m_level.entities.should_render_mesh[player] = true;
+        m_level.entities.position[player] = v3f(5, 0, 5);
+        // @temp
+        m_level.entities.scale[player] = v3f(0.05f,0.05f,0.05f);
+    }
+
+    {   //- Diamond
+        u32 diamond = m_level.add_entity();
+        m_level.entities.mesh_index[diamond] = mesh_demo_diamond;
+        m_level.entities.has_mesh[diamond] = true;
+        m_level.entities.should_render_mesh[diamond] = true;
+        m_level.entities.position[diamond] = v3f(5, 0, 5);
+    }
+
+    {   //- Entities from image
+        SE_Image image;
+        se_image_load_ext(&image, filepath, 1);
+
+        SE_Grid grid;
+        se_grid_init(&grid, image.width, image.height);
+
+        for (u32 x = 0; x < grid.w; ++x) {
+            for (u32 y = 0; y < grid.h; ++y) {
+                u32 index = y * grid.w + x;
+                se_grid_set(&grid, x, y, (u32)image.data[index]);
+
+                if (se_grid_get(&grid, x, y) != 0) {
+                    u32 entity_index = m_level.add_entity();
+                    m_level.entities.mesh_index[entity_index] = mesh_demo_crate;
+                    m_level.entities.has_mesh[entity_index] = true;
+                    m_level.entities.should_render_mesh[entity_index] = true;
+                    m_level.entities.position[entity_index] = v3f(
+                        x * m_level.cell_size,
+                        0,
+                        y * m_level.cell_size
+                    );
+                }
+            }
+        }
+
+        se_grid_deinit(&grid);
+        se_image_unload(&image);
+    }
+}
+
 ///
 ///     GAME MODE
 ///
@@ -162,7 +231,7 @@ void App::util_render_game_mode() {
 
 void App::util_update_engine_mode(f32 delta_time) {
         //- CAMERA MOVEMENT
-    se_camera3d_input(&m_cameras[main_camera], &m_input);
+    se_camera3d_input(&m_cameras[main_camera], &m_input, delta_time);
 
 
         //- Entities
@@ -214,6 +283,9 @@ void App::util_update_engine_mode(f32 delta_time) {
     // @debug
     seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
     // seui_grid_editor(ctx, &grid, value_mappings);
+
+    sprintf(fps_text, "%f", fps);
+    seui_label_at(ctx, fps_text, {128*2+200, 0, 200, 32});
 }
 
 void App::util_render_engine_mode() {
@@ -263,55 +335,4 @@ void App::util_render_engine_mode() {
 void App::util_switch_mode(GAME_MODES mode) {
     m_has_queued_for_change_of_mode = true;
     m_queued_mode = mode;
-}
-
-void App::util_create_scene_from_image(const char *filepath) {
-    {   //- Ground
-        u32 entity = m_level.add_entity();
-        m_level.entities.mesh_index[entity] = mesh_plane;
-        m_level.entities.has_mesh[entity] = true;
-        m_level.entities.should_render_mesh[entity] = true;
-        m_level.entities.position[entity] = v3f(5, -1, 5);
-        m_level.entities.scale[entity] = v3f(11, 1, 11);
-    }
-
-    {   //- Player
-        u32 player = m_level.get_player();
-        m_level.entities.mesh_index[player] = mesh_guy;
-        m_level.entities.has_mesh[player] = true;
-        m_level.entities.should_render_mesh[player] = true;
-        m_level.entities.position[player] = v3f(5, 0, 5);
-        // @temp
-        m_level.entities.scale[player] = v3f(0.05f,0.05f,0.05f);
-    }
-
-    {   //- Entities from image
-        SE_Image image;
-        se_image_load_ext(&image, filepath, 1);
-
-        SE_Grid grid;
-        se_grid_init(&grid, image.width, image.height);
-
-        for (u32 x = 0; x < grid.w; ++x) {
-            for (u32 y = 0; y < grid.h; ++y) {
-                u32 index = y * grid.w + x;
-                se_grid_set(&grid, x, y, (u32)image.data[index]);
-
-                if (se_grid_get(&grid, x, y) != 0) {
-                    u32 entity_index = m_level.add_entity();
-                    m_level.entities.mesh_index[entity_index] = mesh_cube;
-                    m_level.entities.has_mesh[entity_index] = true;
-                    m_level.entities.should_render_mesh[entity_index] = true;
-                    m_level.entities.position[entity_index] = v3f(
-                        x * m_level.cell_size,
-                        0,
-                        y * m_level.cell_size
-                    );
-                }
-            }
-        }
-
-        se_grid_deinit(&grid);
-        se_image_unload(&image);
-    }
 }

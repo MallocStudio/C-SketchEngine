@@ -20,6 +20,7 @@ public:
     SE_Gizmo_Renderer m_gizmo_renderer;
     SDL_Window *m_window;
     bool should_quit;
+    f32 fps;
 
     GAME_MODES m_mode;
 

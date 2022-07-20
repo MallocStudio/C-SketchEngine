@@ -503,15 +503,19 @@ static void ai_scene_to_mesh_save_data
                     vertex.normal.y = ai_mesh->mNormals[i].y;
                     vertex.normal.z = ai_mesh->mNormals[i].z;
 
-                    // -- tangents // @incomplete we assume we have tangent and bi-tangent (because we've passed in a flag to calculate those) investigate
-                    vertex.tangent.x = ai_mesh->mTangents[i].x;
-                    vertex.tangent.y = ai_mesh->mTangents[i].y;
-                    vertex.tangent.z = ai_mesh->mTangents[i].z;
+                    // -- tangents
+                    if (ai_mesh->mTangents) {
+                        vertex.tangent.x = ai_mesh->mTangents[i].x;
+                        vertex.tangent.y = ai_mesh->mTangents[i].y;
+                        vertex.tangent.z = ai_mesh->mTangents[i].z;
+                    }
 
                     // -- bi-tangents
-                    vertex.bitangent.x = ai_mesh->mBitangents[i].x;
-                    vertex.bitangent.y = ai_mesh->mBitangents[i].y;
-                    vertex.bitangent.z = ai_mesh->mBitangents[i].z;
+                    if (ai_mesh->mBitangents) {
+                        vertex.bitangent.x = ai_mesh->mBitangents[i].x;
+                        vertex.bitangent.y = ai_mesh->mBitangents[i].y;
+                        vertex.bitangent.z = ai_mesh->mBitangents[i].z;
+                    }
 
                     // -- uvs
                     if (ai_mesh->mTextureCoords[0] != NULL) { // if this mesh has uv mapping

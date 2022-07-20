@@ -35,7 +35,7 @@ void se_camera3d_update_projection(SE_Camera3D *cam, i32 window_w, i32 window_h)
     cam->projection = mat4_perspective(SEMATH_PI * 0.25f, window_w / (f32) window_h, 0.1f, 1000.0f);
 }
 
-void se_camera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
+void se_camera3d_input(SE_Camera3D *camera, SE_Input *seinput, f32 delta_time) {
     { // movement
         i32 r       = se_input_is_key_down(seinput, SDL_SCANCODE_D) == true ? 1 : 0;
         i32 l       = se_input_is_key_down(seinput, SDL_SCANCODE_A) == true ? 1 : 0;
@@ -46,12 +46,12 @@ void se_camera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
 
         Vec3 input = vec3_create(r - l, d - u, elevate - dive);
 
-        f32 camera_speed = 0.2f; // adjust accordingly
+        f32 camera_speed = 30.0f * delta_time; // adjust accordingly
 
         Vec3 movement = {
             -input.x * camera_speed,
             -input.y * camera_speed,
-            input.z * camera_speed,
+            +input.z * camera_speed,
         };
 
         Vec3 camera_front = se_camera3d_get_front(camera);
@@ -72,12 +72,12 @@ void se_camera3d_input(SE_Camera3D *camera, SE_Input *seinput) {
         u32 mouse_state = SDL_GetMouseState(NULL, NULL);
         if (mouse_state & SDL_BUTTON_RMASK) {
             se_ui_mouse_fps_activate(seinput);
-            f32 sensitivity = 0.15f;
-            f32 xoffset = seinput->mouse_screen_pos_delta.x * sensitivity;
-            f32 yoffset = seinput->mouse_screen_pos_delta.y * sensitivity;
+            f32 sensitivity = 30.0f;
+            f32 xoffset = seinput->mouse_screen_pos_delta.x * sensitivity * delta_time;;
+            f32 yoffset = seinput->mouse_screen_pos_delta.y * sensitivity * delta_time;;
 
-            if (se_math_abs(xoffset) > sensitivity) camera->yaw += xoffset;
-            if (se_math_abs(yoffset) > sensitivity) camera->pitch += yoffset;
+            if (se_math_abs(xoffset) > 0.01f) camera->yaw += xoffset;
+            if (se_math_abs(yoffset) > 0.01f) camera->pitch += yoffset;
             if(camera->pitch > +89.0f) camera->pitch = +89.0f;
             if(camera->pitch < -89.0f) camera->pitch = -89.0f;
         } else {
