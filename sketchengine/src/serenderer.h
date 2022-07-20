@@ -313,6 +313,8 @@ typedef struct SE_Renderer3D {
     // u32 shadow_depth_map;
     SE_Render_Target shadow_render_target;
     Mat4 light_space_matrix;
+
+    f32 gamma;
 } SE_Renderer3D;
 
 void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera);

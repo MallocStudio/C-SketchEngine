@@ -63,7 +63,7 @@ void App::init_application(SDL_Window *window) {
     se_render3d_init(&m_renderer, &m_cameras[main_camera]);
     m_renderer.light_directional.direction = {-1, -1, -1};
     vec3_normalise(&m_renderer.light_directional.direction);
-    m_renderer.light_directional.ambient   = {50, 50, 50};
+    m_renderer.light_directional.ambient   = {10, 10, 10};
     m_renderer.light_directional.diffuse   = {255, 255, 255};
 
         //- Gizmo Renderer

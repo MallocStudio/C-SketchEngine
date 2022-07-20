@@ -16,8 +16,8 @@ typedef struct SE_Texture {
     b8 loaded;
 } SE_Texture;
 
-void se_texture_load(SE_Texture *texture, const char *filepath);
-void se_texture_load_data(SE_Texture *texture, ubyte *data);
+void se_texture_load(SE_Texture *texture, const char *filepath, b8 convert_to_linear_space);
+void se_texture_load_data(SE_Texture *texture, ubyte *data, b8 convert_to_linear_space);
 void se_texture_unload(SE_Texture *texture);
 void se_texture_bind(const SE_Texture *texture, u32 index);
 void se_texture_unbind();

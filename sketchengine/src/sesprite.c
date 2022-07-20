@@ -7,27 +7,36 @@
 /// TEXTURE
 ///
 
-void se_texture_load(SE_Texture *texture, const char *filepath) {
+void se_texture_load(SE_Texture *texture, const char *filepath, b8 convert_to_linear_space) {
     texture->loaded = true;
 
     ubyte *image_data = stbi_load(filepath, &texture->width, &texture->height, &texture->channel_count, 0);
     if (image_data != NULL) {
-        se_texture_load_data(texture, image_data);
+        se_texture_load_data(texture, image_data, convert_to_linear_space);
     } else {
         printf("ERROR: cannot load %s (%s)\n", filepath, stbi_failure_reason());
         texture->loaded = false;
     }
 }
 
-void se_texture_load_data(SE_Texture *texture, ubyte *image_data) {
+void se_texture_load_data(SE_Texture *texture, ubyte *image_data, b8 convert_to_linear_space) {
     texture->loaded = true;
     glGenTextures(1, &texture->id);
 
     glBindTexture(GL_TEXTURE_2D, texture->id);
     if (texture->channel_count == 3) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+        GLint internal_format = GL_RGB;
+        if (convert_to_linear_space) {
+            internal_format = GL_SRGB;
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
     } else if (texture->channel_count == 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+        GLint internal_format = GL_RGBA;
+        if (convert_to_linear_space) {
+            internal_format = GL_SRGB_ALPHA;
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     } else {
         printf("ERROR: cannot load texture, because we don't support %i channels\n", texture->channel_count);
         texture->loaded = false;
@@ -106,7 +115,7 @@ void se_image_to_texture(const SE_Image *image, SE_Texture *texture) {
         texture->channel_count = image->channel_count;
         texture->height = image->height;
         texture->width  = image->width;
-        se_texture_load_data(texture, image->data);
+        se_texture_load_data(texture, image->data, false);
     }
 }
 
@@ -152,7 +161,7 @@ void se_image_blit_data(SE_Image *dst, ubyte *data, i32 data_width, i32 data_hei
 ///
 
 void se_texture_atlas_load(SE_Texture_Atlas *texture_atlas, const char *filepath, u32 columns, u32 rows) {
-    se_texture_load(&texture_atlas->texture, filepath);
+    se_texture_load(&texture_atlas->texture, filepath, true); // @incomplete add a parameter for convert_to_linear_space of texture load
     if (texture_atlas->texture.loaded) {
         texture_atlas->columns = columns;
         texture_atlas->rows = rows;
@@ -176,7 +185,7 @@ void se_texture_atlas_unbind() {
 /// SPRITES
 
 b8 se_sprite_load(SE_Sprite *sprite, const char *filepath) {
-    se_texture_load(&sprite->texture, filepath);
+    se_texture_load(&sprite->texture, filepath, true);
     sprite->frame = 0;
     sprite->columns = 0;
     sprite->rows = 0;

@@ -922,15 +922,15 @@ u32 se_save_data_mesh_to_mesh
             material->base_diffuse = raw_data->base_diffuse;
 
             if (raw_data->texture_diffuse_filepath.buffer != NULL) {
-                se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer);
+                se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer, true);
             }
 
             if (raw_data->texture_specular_filepath.buffer != NULL) {
-                se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer);
+                se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer, false);
             }
 
             if (raw_data->texture_normal_filepath.buffer != NULL) {
-                se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer);
+                se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer, false);
             }
 
             mesh->line_width   = raw_data->line_width;
@@ -1284,6 +1284,7 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     memset(renderer, 0, sizeof(SE_Renderer3D)); // default everything to zero
     renderer->current_camera = current_camera;
     renderer->light_directional.intensity = 0.5f;
+    renderer->gamma = 2.2f;
 
         //- SHADERS
     // se_shader_init_from(&renderer->shader_lit,
@@ -1404,11 +1405,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     se_assert(default_material_index == SE_DEFAULT_MATERIAL_INDEX && "The default material index that was created in the init() of renderer3D did not match what we expected");
     renderer->user_materials[default_material_index]->base_diffuse = (Vec4) {1, 1, 1, 1};
     se_texture_load(&renderer->user_materials[default_material_index]->texture_diffuse,
-                    default_diffuse_filepath);
+                    default_diffuse_filepath, true);
     se_texture_load(&renderer->user_materials[default_material_index]->texture_normal,
-                    default_normal_filepath);
+                    default_normal_filepath, false);
     se_texture_load(&renderer->user_materials[default_material_index]->texture_specular,
-                    default_specular_filepath);
+                    default_specular_filepath, false);
 
         //- SHADOW MAPPING
     f32 shadow_w = 2048; //1024;
@@ -1492,7 +1493,8 @@ u32 se_render3d_add_point_light_ext(SE_Renderer3D *renderer, f32 constant, f32 l
         // NOTE(Matin): We don't need to generate the cubemap here because all cubemaps
         // have already been generated for the maximum number of point lights
     renderer->point_lights[result].position  = v3f(0, 0, 0);
-    renderer->point_lights[result].ambient   = (RGB) {100, 100, 100};
+    // renderer->point_lights[result].ambient   = (RGB) {100, 100, 100};
+    renderer->point_lights[result].ambient   = (RGB) {10, 10, 10};
     renderer->point_lights[result].diffuse   = (RGB) {255, 255, 255};
     renderer->point_lights[result].specular  = (RGB) {0, 0, 0};
     renderer->point_lights[result].constant  = constant;

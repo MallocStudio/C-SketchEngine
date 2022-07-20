@@ -1034,7 +1034,14 @@ static void util_serender3d_render_set_material_uniforms_lit(SE_Renderer3D *rend
     se_shader_set_uniform_i32 (shader, "material.diffuse", 0);
     se_shader_set_uniform_i32 (shader, "material.specular", 1);
     se_shader_set_uniform_i32 (shader, "material.normal", 2);
-    se_shader_set_uniform_vec4(shader, "material.base_diffuse", material->base_diffuse);
+
+    Vec4 base_diffuse_linear_space = {
+        se_math_power(material->base_diffuse.x, renderer->gamma),
+        se_math_power(material->base_diffuse.y, renderer->gamma),
+        se_math_power(material->base_diffuse.z, renderer->gamma),
+        se_math_power(material->base_diffuse.w, renderer->gamma)
+    };
+    se_shader_set_uniform_vec4(shader, "material.base_diffuse", base_diffuse_linear_space);
 
     // directional light uniforms
     se_shader_set_uniform_vec3(shader, "dir_light.direction", renderer->light_directional.direction);
@@ -1131,7 +1138,14 @@ static void serender3d_render_set_material_uniforms_sprite(SE_Renderer3D *render
     se_shader_set_uniform_mat4(shader, "projection_view_model", pvm);
 
     /* material */
-    se_shader_set_uniform_vec4(shader, "base_diffuse", material->base_diffuse);
+    Vec4 base_diffuse_linear_space = {
+        se_math_power(material->base_diffuse.x, renderer->gamma),
+        se_math_power(material->base_diffuse.y, renderer->gamma),
+        se_math_power(material->base_diffuse.z, renderer->gamma),
+        se_math_power(material->base_diffuse.w, renderer->gamma)
+    };
+
+    se_shader_set_uniform_vec4(shader, "base_diffuse", base_diffuse_linear_space);
     se_shader_set_uniform_i32(shader, "sprite_texture", 0);
 
     /* textures */
@@ -1176,7 +1190,14 @@ set_material_uniforms_skinned
     se_shader_set_uniform_i32 (shader, "material.diffuse", 0);
     se_shader_set_uniform_i32 (shader, "material.specular", 1);
     se_shader_set_uniform_i32 (shader, "material.normal", 2);
-    se_shader_set_uniform_vec4(shader, "material.base_diffuse", material->base_diffuse);
+
+    Vec4 base_diffuse_linear_space = {
+        se_math_power(material->base_diffuse.x, renderer->gamma),
+        se_math_power(material->base_diffuse.y, renderer->gamma),
+        se_math_power(material->base_diffuse.z, renderer->gamma),
+        se_math_power(material->base_diffuse.w, renderer->gamma)
+    };
+    se_shader_set_uniform_vec4(shader, "material.base_diffuse", base_diffuse_linear_space);
 
     // directional light uniforms
     se_shader_set_uniform_vec3(shader, "dir_light.direction", renderer->light_directional.direction);
