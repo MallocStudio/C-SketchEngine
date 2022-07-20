@@ -1479,21 +1479,25 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
 }
 
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {
+    return se_render3d_add_point_light_ext(renderer, 1.0f, 0.22f, 0.20f);
+}
+
+u32 se_render3d_add_point_light_ext(SE_Renderer3D *renderer, f32 constant, f32 linear, f32 quadratic) {
     se_assert(renderer->point_lights_count < SERENDERER3D_MAX_POINT_LIGHTS);
 
     u32 result = renderer->point_lights_count;
     renderer->point_lights_count++;
 
         //- Default values
-        // NOTE(Matin): We don't need to generate the cubmap here because all cubemaps
+        // NOTE(Matin): We don't need to generate the cubemap here because all cubemaps
         // have already been generated for the maximum number of point lights
     renderer->point_lights[result].position  = v3f(0, 0, 0);
     renderer->point_lights[result].ambient   = (RGB) {100, 100, 100};
     renderer->point_lights[result].diffuse   = (RGB) {255, 255, 255};
     renderer->point_lights[result].specular  = (RGB) {0, 0, 0};
-    renderer->point_lights[result].constant  = 1.0f;
-    renderer->point_lights[result].linear    = 0.22f;
-    renderer->point_lights[result].quadratic = 0.20f;
+    renderer->point_lights[result].constant  = constant;
+    renderer->point_lights[result].linear    = linear;
+    renderer->point_lights[result].quadratic = quadratic;
 
     return result;
 }

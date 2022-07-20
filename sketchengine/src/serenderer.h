@@ -343,6 +343,7 @@ u32 se_render3d_add_material(SE_Renderer3D *renderer);
 u32 se_render3d_add_skeleton(SE_Renderer3D *renderer);
     /// Add a point light to the renderer
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer);
+u32 se_render3d_add_point_light_ext(SE_Renderer3D *renderer, f32 constant, f32 linear, f32 quadratic);
     /// Setup renderer for rendering (set the configurations to their default values)
 void se_render3d_reset_render_config();
 void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
