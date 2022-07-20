@@ -179,18 +179,17 @@ float calc_shadows_directional(vec4 param_frag_pos_light_space) {
 	vec3 proj_coords = param_frag_pos_light_space.xyz / param_frag_pos_light_space.w;
 	// transform to [0,1] range
 	proj_coords = proj_coords * 0.5 + 0.5;
-	// get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
-	float closest_depth = texture(shadow_map, proj_coords.xy).r;
 	// get depth of current fragment from light's perspective
 	float current_depth = proj_coords.z;
 	// check whether current frag pos is in shadow
-    float shadow = 0;
+    float shadow = 0.0;
 	float bias = max(0.005 * (1.0 - dot(_Normal, dir_light.direction)), 0.005);
     {   /// NO SMOOTHING
+            // get closest depth value from light's perspective (using [0,1] range frag_pos_light as coords)
+        // float closest_depth = texture(shadow_map, proj_coords.xy).r;
         // shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
     }
     {   /// WITH SMOOTHING
-        shadow = 0.0;
         vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
         int smoothing_amount = 2;
         for(int x = -smoothing_amount; x <= smoothing_amount; ++x)
@@ -217,8 +216,31 @@ float calc_shadows_omnidirectional(vec3 frag_pos, Point_Light light) {
     // checkout how we calculated shadow map (fsd) for more info
     float current_depth = length(frag_to_light);
 
+    float shadow = 0.0;
     float bias = 0.05;
-    float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
+    {   /// NO SMOOTHING
+        shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
+    }
+    {   // WITH SMOOTHING
+        // vec2 texel_size = 1.0 / textureSize(light.shadow_map, 0);
+        // int smoothing_amount = 1;
+        // for(int x = -smoothing_amount; x <= smoothing_amount; ++x)
+        // {
+        //     for(int y = -smoothing_amount; y <= smoothing_amount; ++y)
+        //     {
+        //         for (int z = -smoothing_amount; z <= smoothing_amount; ++z) {
+        //             vec3 move_by = vec3(x, y, z);
+        //             move_by.x *= texel_size.x;
+        //             move_by.y *= texel_size.y;
+        //             move_by.z *= texel_size.y;
+        //             vec3 proj_coords = frag_pos - light.position.xyz + vec3(x, y, z) * move_by;
+        //             float pcf_depth = texture(light.shadow_map, proj_coords).r;
+        //             shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
+        //         }
+        //     }
+        // }
+        // shadow /= 20.0;
+    }
 
     return shadow;
 }

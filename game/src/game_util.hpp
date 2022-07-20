@@ -72,9 +72,9 @@ void App::util_load_meshes_from_disk() {
     m_gizmo_renderer.shapes[mesh_light_pos_gizmos].base_colour = lit;
 
     point_light_1 = se_render3d_add_point_light_ext(&m_renderer, 1.0f, 0.14f, 0.07f);
-    point_light_2 = se_render3d_add_point_light(&m_renderer);
-    point_light_3 = se_render3d_add_point_light(&m_renderer);
-    point_light_4 = se_render3d_add_point_light(&m_renderer);
+    point_light_2 = se_render3d_add_point_light_ext(&m_renderer, 1.0f, 0.14f, 0.07f);
+    point_light_3 = se_render3d_add_point_light_ext(&m_renderer, 1.0f, 0.14f, 0.07f);
+    point_light_4 = se_render3d_add_point_light_ext(&m_renderer, 1.0f, 0.14f, 0.07f);
     current_obj_aabb = se_render3d_add_mesh_empty(&m_renderer);
 
     mesh_cube = se_render3d_load_mesh(&m_renderer, "core/meshes/cube.fbx", false);

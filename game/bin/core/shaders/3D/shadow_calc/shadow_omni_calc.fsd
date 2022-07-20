@@ -12,3 +12,26 @@ void main () {
     // write this as modified depth
     gl_FragDepth = light_distance;
 }
+
+    /// ATTEMPTED SMOOTHING
+// void main () {
+//     // get distance between fragment and light source
+//     float light_distance = far_plane;
+//     int smoothing_amount = 3;
+//     int iter_count = 0;
+//     for(int x = -smoothing_amount; x <= smoothing_amount; ++x)
+//     {
+//         for(int y = -smoothing_amount; y <= smoothing_amount; ++y)
+//         {
+//             for(int z = -smoothing_amount; z <= smoothing_amount; ++z) {
+//                 iter_count += 1;
+//                 light_distance += length(FragPos.xyz - (light_pos + vec3(x,y,z)));
+//             }
+//         }
+//     }
+
+//     // map to [0,1] range by dividing by far_plane
+//     light_distance = light_distance / (far_plane * iter_count);
+//     // write this as modified depth
+//     gl_FragDepth = light_distance;
+// }
