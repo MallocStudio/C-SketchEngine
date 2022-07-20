@@ -25,6 +25,12 @@
 
 #define shader_filename_lit_vsd "core/shaders/3D/lit.vsd"
 #define shader_filename_lit_fsd "core/shaders/3D/lit_better.fsd"
+
+#define shader_filename_lit_header_vsd "core/shaders/3D/lit_header.vsd"
+#define shader_filename_lit_footer_vsd "core/shaders/3D/lit_footer.vsd"
+#define shader_filename_lit_header_fsd "core/shaders/3D/lit_header.fsd"
+#define shader_filename_lit_footer_fsd "core/shaders/3D/lit_footer.fsd"
+
 #define shader_filename_shadow_calc_directional_vsd "core/shaders/3D/shadow_calc.vsd"
 #define shader_filename_shadow_calc_directional_fsd "core/shaders/3D/shadow_calc.fsd"
 #define shader_filename_shadow_calc_directional_skinned_mesh_vsd "core/shaders/3D/shadow_calc_skinned_mesh.vsd"
@@ -39,8 +45,6 @@
 #define shader_filename_sprite_fsd "core/shaders/3D/sprite.fsd"
 #define shader_filename_lit_skinned_vsd "core/shaders/3D/skinned_vertex.vsd"
 #define shader_filename_skeleton_vsd "core/shaders/3D/skinned_skeleton_lines.vsd"
-#define shader_filename_mouse_picking_vsd "core/shaders/3D/mouse_picking.vsd"
-#define shader_filename_mouse_picking_fsd "core/shaders/3D/mouse_picking.fsd"
 
 static void debug_print_skeleton(const SE_Skeleton *skeleton, const SE_Bone_Node *parent) {
     static i32 call = 0;

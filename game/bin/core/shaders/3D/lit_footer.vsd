@@ -1,0 +1,12 @@
+void main() {
+	_Position = (model_matrix * vec4(Position, 1.0)).xyz;
+	_Normal = Normal;
+	_TexCoord = TexCoord;
+	_Tangent = Tangent;
+	_Bitangent = Bitangent;
+	_Frag_Pos = (model_matrix * vec4(Position, 1.0)).xyz;
+
+    frag_pos_light_space = light_space_matrix * vec4(_Position, 1.0);
+
+	gl_Position = projection_view_model * vec4(Position, 1.0); // the correct one
+}

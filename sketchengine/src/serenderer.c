@@ -1275,45 +1275,115 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->light_directional.intensity = 0.5f;
 
         //- SHADERS
-    se_shader_init_from(&renderer->shader_lit,
-        shader_filename_lit_vsd, shader_filename_lit_fsd);
+    // se_shader_init_from(&renderer->shader_lit,
+    //     shader_filename_lit_vsd, shader_filename_lit_fsd);
+    // se_shader_init_from_header_files(&renderer->shader_lit,
+    //                                 shader_filename_lit_header_vsd,
+    //                                 NULL,
+    //                                 shader_filename_lit_footer_vsd,
+    //                                 shader_filename_lit_header_fsd,
+    //                                 NULL,
+    //                                 shader_filename_lit_footer_fsd,
+    //                                 "lit combined vertex", "lit combined fragmnet");
 
-    se_shader_init_from(&renderer->shader_shadow_calc,
-        shader_filename_shadow_calc_directional_vsd,
-        shader_filename_shadow_calc_directional_fsd);
+        // lit
+    const char *lit_vertex_files[2] = {shader_filename_lit_header_vsd, shader_filename_lit_footer_vsd};
+    const char *lit_fragment_files[2] = {shader_filename_lit_header_fsd, shader_filename_lit_footer_fsd};
+    const char *skinned_vertex_files[1] = {shader_filename_lit_skinned_vsd};
 
-    se_shader_init_from(&renderer->shader_shadow_calc_skinned_mesh,
-        shader_filename_shadow_calc_directional_skinned_mesh_vsd,
-        shader_filename_shadow_calc_directional_fsd);
+        // shadow calc
+    const char *shadow_calc_directional_vsd_files[1] = {
+        shader_filename_shadow_calc_directional_vsd
+    };
+    const char *shadow_calc_directional_fsd_files[1] = {
+        shader_filename_shadow_calc_directional_fsd
+    };
+    const char *shadow_calc_directional_skinned_vsd_files[1] = {
+        shader_filename_shadow_calc_directional_skinned_mesh_vsd
+    };
+    const char *shadow_calc_omnidir_vsd_files[1] = {
+        shader_filename_shadow_calc_omnidir_vsd
+    };
+    const char *shadow_calc_omnidir_fsd_files[1] = {
+        shader_filename_shadow_calc_omnidir_fsd
+    };
+    const char *shadow_calc_omnidir_gsd_files[1] = {
+        shader_filename_shadow_calc_omnidir_gsd
+    };
 
-    se_shader_init_from_with_geometry(&renderer->shader_shadow_omnidir_calc,
-        shader_filename_shadow_calc_omnidir_vsd,
-        shader_filename_shadow_calc_omnidir_fsd,
-        shader_filename_shadow_calc_omnidir_gsd);
+        // lines
+    const char *lines_vsd_files[1] = {
+        shader_filename_lines_vsd
+    };
+    const char *lines_fsd_files[1] = {
+        shader_filename_lines_fsd
+    };
 
-    se_shader_init_from(&renderer->shader_lines,
-        shader_filename_lines_vsd,
-        shader_filename_lines_fsd);
+        // outline
+    const char *outline_vsd_files[1] = {
+        shader_filename_outline_vsd
+    };
+    const char *outline_fsd_files[1] = {
+        shader_filename_outline_fsd
+    };
 
-    se_shader_init_from(&renderer->shader_outline,
-        shader_filename_outline_vsd,
-        shader_filename_outline_fsd);
+        // sprite
+    const char *sprite_vsd_files[1] = {
+        shader_filename_sprite_vsd
+    };
+    const char *sprite_fsd_files[1] = {
+        shader_filename_sprite_fsd
+    };
 
-    se_shader_init_from(&renderer->shader_sprite,
-        shader_filename_sprite_vsd,
-        shader_filename_sprite_fsd);
+        // skeleton
+    const char *skeleton_vsd_files[1] = {
+        shader_filename_skeleton_vsd
+    };
 
-    se_shader_init_from(&renderer->shader_skinned_mesh,
-        shader_filename_lit_skinned_vsd,
-        shader_filename_lit_fsd);
+    se_shader_init_from_files(&renderer->shader_lit,
+                                lit_vertex_files, 2,
+                                lit_fragment_files, 2,
+                                NULL, 0);
 
-    se_shader_init_from(&renderer->shader_skinned_mesh_skeleton,
-        shader_filename_skeleton_vsd,
-        shader_filename_lines_fsd);
+    se_shader_init_from_files(&renderer->shader_shadow_calc,
+                            shadow_calc_directional_vsd_files, 1,
+                            shadow_calc_directional_fsd_files, 1,
+                            NULL, 0);
 
-    se_shader_init_from(&renderer->shader_mouse_picking,
-        shader_filename_mouse_picking_vsd,
-        shader_filename_mouse_picking_fsd);
+    se_shader_init_from_files(&renderer->shader_shadow_calc_skinned_mesh,
+        shadow_calc_directional_skinned_vsd_files, 1,
+        shadow_calc_directional_fsd_files, 1,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_shadow_omnidir_calc,
+        shadow_calc_omnidir_vsd_files, 1,
+        shadow_calc_omnidir_fsd_files, 1,
+        shadow_calc_omnidir_gsd_files, 1);
+
+    se_shader_init_from_files(&renderer->shader_lines,
+        lines_vsd_files, 1,
+        lines_fsd_files, 1,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_outline,
+        outline_vsd_files, 1,
+        outline_fsd_files, 1,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_sprite,
+        sprite_vsd_files, 1,
+        sprite_fsd_files, 1,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_skinned_mesh,
+            skinned_vertex_files, 1,
+            lit_fragment_files, 2,
+            NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_skinned_mesh_skeleton,
+        skeleton_vsd_files, 1,
+        lines_fsd_files, 1,
+        NULL, 0);
 
         //- MATERIALS
     //! We must have a default material at index zero.
@@ -1386,7 +1456,6 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     se_shader_deinit(&renderer->shader_lines);
     se_shader_deinit(&renderer->shader_outline);
     se_shader_deinit(&renderer->shader_sprite);
-    se_shader_deinit(&renderer->shader_mouse_picking);
 
         //- User materials
     for (u32 i = 0; i < renderer->user_materials_count; ++i) {

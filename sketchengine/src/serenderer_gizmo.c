@@ -5,8 +5,11 @@ void se_gizmo_renderer_init(SE_Gizmo_Renderer *renderer, SE_Camera3D *current_ca
     renderer->current_camera = current_camera;
 
         //- Shaders
-    se_shader_init_from(&renderer->shader_mesh, "core/shaders/gizmo.vsd", "core/shaders/gizmo.fsd");
-    se_shader_init_from(&renderer->shader_sprite, "core/shaders/gizmo.vsd", "core/shaders/gizmo.fsd");
+    const char* vsd_files[1] = {"core/shaders/gizmo.vsd"};
+    const char* fsd_files[1] = {"core/shaders/gizmo.fsd"};
+
+    se_shader_init_from_files(&renderer->shader_mesh, vsd_files, 1, fsd_files, 1, NULL, 0);
+    se_shader_init_from_files(&renderer->shader_sprite, vsd_files, 1, fsd_files, 1, NULL, 0);
 }
 
 void se_gizmo_renderer_deinit(SE_Gizmo_Renderer *renderer) {

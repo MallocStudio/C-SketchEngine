@@ -1,8 +1,0 @@
-#version 450
-
-uniform vec4 id_as_colour;
-
-out vec4 FragColour;
-void main() {
-	FragColour = id_as_colour;
-}

@@ -19,11 +19,17 @@ typedef struct SE_Shader {
     b8 has_geometry;
 } SE_Shader;
 
-/// Creates GL resources and compiles & links the given shaders
-void se_shader_init_from(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename);
-void se_shader_init_from_with_geometry(SE_Shader *shader_program, const char *vertex_filename, const char *fragment_filename, const char *geometry);
     /// Compile the given source codes. For better error reporting, give each src code a name
 void se_shader_init_from_string(SE_Shader *sp, const char *vertex_src, const char *frag_src, const char* vertex_shader_name, const char *fragment_shader_name);
+
+    /// If no geometry shader is present, pass it as NULL and set geometry_count to zero
+void se_shader_init_from_files (SE_Shader *sp,
+                                const char **vertex_files,
+                                u32 vertex_count,
+                                const char **fragment_files,
+                                u32 fragment_count,
+                                const char **geometry_files,
+                                u32 geometry_count);
 
 /// Unloads GL resources used by the shader program
 void se_shader_deinit(SE_Shader *shader);
@@ -51,5 +57,8 @@ void se_shader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_na
 /// returns a pointer to a string on the heap.
 /// ! Needs to be freed by the caller
 char* se_load_file_as_string(const char *filename);
+/// ! Needs to be freed by the caller
+// char *se_combine_files_to_string(const char *header_file, const char *middle_file, const char *footer_file);
+char *se_combine_files_to_string(const char **files, u32 count);
 
 #endif // SESHADER_H
