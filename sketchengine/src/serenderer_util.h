@@ -598,6 +598,16 @@ static void ai_scene_to_mesh_save_data
                 printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
             }
 
+            struct aiColor4D ai_colour;
+            // if (AI_SUCCESS == aiGetMaterialColor(ai_material, AI_MATKEY_BASE_COLOR, &ai_colour)) { // for pbr
+            if (AI_SUCCESS == aiGetMaterialColor(ai_material, AI_MATKEY_COLOR_DIFFUSE, &ai_colour)) {
+                mesh->base_diffuse = (Vec4) {
+                    ai_colour.r, ai_colour.g, ai_colour.b, ai_colour.a
+                };
+            } else {
+                printf("WARNING: ASSIMP unable to load colour diffuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+            }
+
             /* diffuse */
             if (has_diffuse) {
                 se_string_append(&diffuse_path, ai_texture_path_diffuse->data);

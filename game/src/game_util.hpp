@@ -17,7 +17,6 @@ u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 mesh_light_pos_gizmos = -1;
 u32 mesh_cube = -1;
-u32 mesh_kitchen = -1;
 u32 mesh_demo_crate = -1;
 u32 mesh_demo_diamond = -1;
 
@@ -75,8 +74,6 @@ void App::util_load_meshes_from_disk() {
     current_obj_aabb = se_render3d_add_mesh_empty(&m_renderer);
 
     mesh_cube = se_render3d_load_mesh(&m_renderer, "core/meshes/cube.fbx", false);
-
-    mesh_kitchen = se_render3d_load_mesh(&m_renderer, "game/meshes/kitchen/kitchen.fbx", false);
 
     mesh_demo_crate = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Crate/Wooden Crate.obj", false);
 

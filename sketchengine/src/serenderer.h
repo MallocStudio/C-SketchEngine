@@ -164,6 +164,7 @@ typedef struct SE_Mesh_Raw_Data {
     b8 is_indexed;
     AABB3D aabb;
         //- Material
+    Vec4 base_diffuse;   // in range of [0 - 1]
     SE_String texture_diffuse_filepath;
     SE_String texture_specular_filepath;
     SE_String texture_normal_filepath;

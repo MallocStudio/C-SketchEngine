@@ -788,6 +788,7 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
             fread(&raw_data->aabb, sizeof(AABB3D), 1, file);
 
                 //- Material
+            fread(&raw_data->base_diffuse, sizeof(f32), 4, file);
             u32 diffuse_buffer_size;
             u32 specular_buffer_size;
             u32 normal_buffer_size;
@@ -852,6 +853,7 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
             fwrite(&raw_data->aabb, sizeof(AABB3D), 1, file);
 
                 //- Material
+            fwrite(&raw_data->base_diffuse, sizeof(f32), 4, file);
             fwrite(&raw_data->texture_diffuse_filepath.size, sizeof(u32), 1, file);
             fwrite(&raw_data->texture_specular_filepath.size, sizeof(u32), 1, file);
             fwrite(&raw_data->texture_normal_filepath.size, sizeof(u32), 1, file);
@@ -914,6 +916,8 @@ u32 se_save_data_mesh_to_mesh
 
             SE_Material *material = renderer->user_materials[material_index];
             material->base_diffuse = (Vec4) {1, 1, 1, 1};
+
+            material->base_diffuse = raw_data->base_diffuse;
 
             if (raw_data->texture_diffuse_filepath.buffer != NULL) {
                 se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer);

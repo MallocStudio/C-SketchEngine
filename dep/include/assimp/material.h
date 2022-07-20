@@ -1490,8 +1490,10 @@ ASSIMP_API C_ENUM aiReturn aiGetMaterialProperty(
  * @code
  * aiUVTransform trafo;
  * unsigned int max = sizeof(aiUVTransform);
- * if (AI_SUCCESS != aiGetMaterialFloatArray(mat, AI_MATKEY_UVTRANSFORM(aiTextureType_DIFFUSE,0),
- *    (float*)&trafo, &max) || sizeof(aiUVTransform) != max)
+ *
+ * if (AI_SUCCESS != aiGetMaterialFloatArray(mat,
+ *                                          AI_MATKEY_UVTRANSFORM(aiTextureType_DIFFUSE,0),
+ *                                          (float*)&trafo, &max) || sizeof(aiUVTransform) != max)
  * {
  *   // error handling
  * }
