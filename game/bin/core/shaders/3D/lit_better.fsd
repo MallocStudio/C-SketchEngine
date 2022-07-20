@@ -187,20 +187,25 @@ float calc_shadows_directional(vec4 param_frag_pos_light_space) {
 	// get depth of current fragment from light's perspective
 	float current_depth = proj_coords.z;
 	// check whether current frag pos is in shadow
-
+    float shadow = 0;
 	float bias = max(0.005 * (1.0 - dot(_Normal, dir_light.direction)), 0.005);
-	// float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
-	float shadow = 0.0;
-	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
-	for(int x = -1; x <= 1; ++x)
-	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r;
-			shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
-		}
-	}
-	shadow /= 9.0;
+    {   /// NO SMOOTHING
+        // shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+    }
+    {   /// WITH SMOOTHING
+        shadow = 0.0;
+        vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+        int smoothing_amount = 2;
+        for(int x = -smoothing_amount; x <= smoothing_amount; ++x)
+        {
+            for(int y = -smoothing_amount; y <= smoothing_amount; ++y)
+            {
+                float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r;
+                shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
+            }
+        }
+        shadow /= 20.0;
+    }
 
 	if (proj_coords.z > 1.0) shadow = 0.0;
 	return shadow;

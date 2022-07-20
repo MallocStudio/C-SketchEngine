@@ -15,10 +15,10 @@ void rgb_to_hsv(RGB rgb, i32 *hue, f32 *saturation, f32 *value) {
     f32 g = ((f32)rgb.g) / (f32)255;
     f32 b = ((f32)rgb.b) / (f32)255;
 
-    f32 cmax = semath_max(r, g);
-    cmax = semath_max(cmax, b);
-    f32 cmin = semath_min(r, g);
-    cmin = semath_min(cmin, b);
+    f32 cmax = se_math_max(r, g);
+    cmax = se_math_max(cmax, b);
+    f32 cmin = se_math_min(r, g);
+    cmin = se_math_min(cmin, b);
     f32 delta = cmax - cmin;
 
     i32 h;

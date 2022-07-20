@@ -1261,8 +1261,8 @@ b8 ray_overlaps_aabb3d(Vec3 ray_origin, Vec3 ray_direction, f32 max_distance, AA
     float t5 = (lb.z - ray_origin.z)*dirfrac.z;
     float t6 = (rt.z - ray_origin.z)*dirfrac.z;
 
-    float tmin = semath_max(semath_max(semath_min(t1, t2), semath_min(t3, t4)), semath_min(t5, t6));
-    float tmax = semath_min(semath_min(semath_max(t1, t2), semath_max(t3, t4)), semath_max(t5, t6));
+    float tmin = se_math_max(se_math_max(se_math_min(t1, t2), se_math_min(t3, t4)), se_math_min(t5, t6));
+    float tmax = se_math_min(se_math_min(se_math_max(t1, t2), se_math_max(t3, t4)), se_math_max(t5, t6));
 
     f32 t = max_distance;
 

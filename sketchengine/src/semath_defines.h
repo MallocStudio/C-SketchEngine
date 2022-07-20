@@ -5,11 +5,11 @@
 /// ----------
 #include "sedefines.h"
 
-#ifndef semath_max
-    #define semath_max(a,b) (((a) > (b)) ? (a) : (b))
+#ifndef se_math_max
+    #define se_math_max(a,b) (((a) > (b)) ? (a) : (b))
 #endif
-#ifndef semath_min
-    #define semath_min(a,b) (((a) < (b)) ? (a) : (b))
+#ifndef se_math_min
+    #define se_math_min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
 // * note: we use right handed coordinate system

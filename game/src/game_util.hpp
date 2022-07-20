@@ -212,8 +212,8 @@ void App::util_update_engine_mode(f32 delta_time) {
     }
 
     // @debug
-    // seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
-    seui_grid_editor(ctx, &grid, value_mappings);
+    seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
+    // seui_grid_editor(ctx, &grid, value_mappings);
 }
 
 void App::util_render_engine_mode() {
