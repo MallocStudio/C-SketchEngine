@@ -163,6 +163,7 @@ typedef struct SE_Mesh_Raw_Data {
     f32 point_radius;
     b8 is_indexed;
     AABB3D aabb;
+    b8 should_cast_shadow; // whether or not this mesh should cast shadows
         //- Material
     Vec4 base_diffuse;   // in range of [0 - 1]
     SE_String texture_diffuse_filepath;
@@ -197,6 +198,7 @@ typedef struct SE_Mesh {
     b8 indexed; // whether we're using index buffers
     AABB3D aabb;  // bounding box, calculated on load
     u32 material_index;
+    b8 should_cast_shadow; // whether or not this mesh should cast shadows
 
     // note that based on the material type, different shaders will be used
     SE_MESH_TYPES type;

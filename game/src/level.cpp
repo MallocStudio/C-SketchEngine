@@ -24,7 +24,7 @@ u32 Level::add_entity() {
     return result;
 }
 
-u32 Level::get_player() {
+u32 Level::add_player() {
     u32 player_index;
     if (m_player == nullptr) {
         player_index = this->add_entity();

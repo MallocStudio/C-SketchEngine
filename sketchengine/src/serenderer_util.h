@@ -20,7 +20,7 @@
 ///
 
 #define default_normal_filepath "core/textures/default_normal.png"
-#define default_diffuse_filepath "core/textures/checkerboard.png"
+#define default_diffuse_filepath "core/textures/default_diffuse.png"
 #define default_specular_filepath "core/textures/default_specular.png"
 
 #define shader_filename_lit_vsd "core/shaders/3D/lit.vsd"
@@ -64,6 +64,7 @@ static void sedefault_mesh(SE_Mesh *mesh) {
     mesh->next_mesh_index = -1;
     mesh->type = SE_MESH_TYPE_NORMAL;
     mesh->skeleton = NULL;
+    mesh->should_cast_shadow = true;
 }
 
 static void se_mesh_generate_skinned // same as se_mesh_generate but for skinned vertices
@@ -650,6 +651,12 @@ static void ai_scene_to_mesh_save_data
         {   //- animations
             if (skeleton != NULL && scene->mNumAnimations > 0) {
                 load_animation(skeleton, scene);
+            }
+        }
+
+        {   //- shadow casting
+            if (mesh->type == SE_MESH_TYPE_NORMAL || mesh->type == SE_MESH_TYPE_SKINNED) {
+                mesh->should_cast_shadow = true;
             }
         }
     }

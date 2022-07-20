@@ -17,12 +17,16 @@ u32 mesh_skeleton = -1;
 u32 mesh_gizmos_translate = -1;
 u32 mesh_light_pos_gizmos = -1;
 u32 mesh_cube = -1;
+u32 mesh_cube_tiny = -1;
 u32 mesh_demo_crate = -1;
 u32 mesh_demo_diamond = -1;
 
 u32 current_obj_aabb = -1;
 u32 world_aabb_mesh = -1;
 u32 point_light_1 = -1;
+u32 point_light_2 = -1;
+u32 point_light_3 = -1;
+u32 point_light_4 = -1;
 
     //@temp
 SE_Grid grid;
@@ -68,12 +72,14 @@ void App::util_load_meshes_from_disk() {
     m_gizmo_renderer.shapes[mesh_light_pos_gizmos].base_colour = lit;
 
     point_light_1 = se_render3d_add_point_light(&m_renderer);
-    point_light_1 = se_render3d_add_point_light(&m_renderer);
-    point_light_1 = se_render3d_add_point_light(&m_renderer);
-    point_light_1 = se_render3d_add_point_light(&m_renderer);
+    point_light_2 = se_render3d_add_point_light(&m_renderer);
+    point_light_3 = se_render3d_add_point_light(&m_renderer);
+    point_light_4 = se_render3d_add_point_light(&m_renderer);
     current_obj_aabb = se_render3d_add_mesh_empty(&m_renderer);
 
     mesh_cube = se_render3d_load_mesh(&m_renderer, "core/meshes/cube.fbx", false);
+    mesh_cube_tiny = se_render3d_load_mesh(&m_renderer, "core/meshes/cube_tiny.obj", false);
+    m_renderer.user_meshes[mesh_cube_tiny]->should_cast_shadow = false;
 
     mesh_demo_crate = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Crate/Wooden Crate.obj", false);
 
@@ -137,13 +143,58 @@ void App::util_create_scene_from_image(const char *filepath) {
     }
 
     {   //- Player
-        u32 player = m_level.get_player();
+        u32 player = m_level.add_player();
         m_level.entities.mesh_index[player] = mesh_guy;
         m_level.entities.has_mesh[player] = true;
         m_level.entities.should_render_mesh[player] = true;
         m_level.entities.position[player] = v3f(5, 0, 5);
         // @temp
         m_level.entities.scale[player] = v3f(0.05f,0.05f,0.05f);
+    }
+
+    {   //- Lights
+        u32 light_1 = m_level.add_entity();
+        u32 light_2 = m_level.add_entity();
+        u32 light_3 = m_level.add_entity();
+        u32 light_4 = m_level.add_entity();
+        m_level.entities.has_light[light_1] = true;
+        m_level.entities.has_light[light_2] = true;
+        m_level.entities.has_light[light_3] = true;
+        m_level.entities.has_light[light_4] = true;
+
+        m_level.entities.light_index[light_1] = point_light_1;
+        m_level.entities.light_index[light_2] = point_light_2;
+        m_level.entities.light_index[light_3] = point_light_3;
+        m_level.entities.light_index[light_4] = point_light_4;
+
+        m_level.entities.has_name[light_1] = true;
+        m_level.entities.has_name[light_2] = true;
+        m_level.entities.has_name[light_3] = true;
+        m_level.entities.has_name[light_4] = true;
+        se_string_init(&m_level.entities.name[light_1], "light 1");
+        se_string_init(&m_level.entities.name[light_2], "light 2");
+        se_string_init(&m_level.entities.name[light_3], "light 3");
+        se_string_init(&m_level.entities.name[light_4], "light 4");
+
+        m_level.entities.aabb[light_1] = {v3f(-0.5f, -0.5f, -0.5f), v3f(0.5f, 0.5f, 0.5f)};
+        m_level.entities.aabb[light_2] = {v3f(-0.5f, -0.5f, -0.5f), v3f(0.5f, 0.5f, 0.5f)};
+        m_level.entities.aabb[light_3] = {v3f(-0.5f, -0.5f, -0.5f), v3f(0.5f, 0.5f, 0.5f)};
+        m_level.entities.aabb[light_4] = {v3f(-0.5f, -0.5f, -0.5f), v3f(0.5f, 0.5f, 0.5f)};
+
+        m_level.entities.has_mesh[light_1] = true;
+        m_level.entities.has_mesh[light_2] = true;
+        m_level.entities.has_mesh[light_3] = true;
+        m_level.entities.has_mesh[light_4] = true;
+
+        m_level.entities.should_render_mesh[light_1] = true;
+        m_level.entities.should_render_mesh[light_2] = true;
+        m_level.entities.should_render_mesh[light_3] = true;
+        m_level.entities.should_render_mesh[light_4] = true;
+
+        m_level.entities.mesh_index[light_1] = mesh_cube_tiny;
+        m_level.entities.mesh_index[light_2] = mesh_cube_tiny;
+        m_level.entities.mesh_index[light_3] = mesh_cube_tiny;
+        m_level.entities.mesh_index[light_4] = mesh_cube_tiny;
     }
 
     {   //- Diamond

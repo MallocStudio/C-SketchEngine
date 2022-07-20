@@ -12,7 +12,7 @@ public:
 
         /// Add an entity to the entities array and return its index.
     u32 add_entity();
-    u32 get_player();
+    u32 add_player();
 
         // @incomplete
     // void add_action();

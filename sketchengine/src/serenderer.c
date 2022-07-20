@@ -786,6 +786,7 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
             fread(&raw_data->point_radius, sizeof(f32), 1, file);
             fread(&raw_data->is_indexed, sizeof(b8), 1, file);
             fread(&raw_data->aabb, sizeof(AABB3D), 1, file);
+            fread(&raw_data->should_cast_shadow, sizeof(b8), 1, file);
 
                 //- Material
             fread(&raw_data->base_diffuse, sizeof(f32), 4, file);
@@ -851,6 +852,7 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
             fwrite(&raw_data->point_radius, sizeof(f32), 1, file);
             fwrite(&raw_data->is_indexed, sizeof(b8), 1, file);
             fwrite(&raw_data->aabb, sizeof(AABB3D), 1, file);
+            fwrite(&raw_data->should_cast_shadow, sizeof(b8), 1, file);
 
                 //- Material
             fwrite(&raw_data->base_diffuse, sizeof(f32), 4, file);
@@ -930,6 +932,10 @@ u32 se_save_data_mesh_to_mesh
             if (raw_data->texture_normal_filepath.buffer != NULL) {
                 se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer);
             }
+
+            mesh->line_width   = raw_data->line_width;
+            mesh->point_radius = raw_data->point_radius;
+            mesh->should_cast_shadow = raw_data->should_cast_shadow;
 
                 //- skeleton and animations
             if (raw_data->skeleton_data != NULL) {
@@ -1079,7 +1085,6 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
 }
 
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count, AABB3D world_aabb) {
-    se_assert(count <= renderer->user_meshes_count && "the number of transforms must be less than or equal to the number of meshes");
     SE_Light *light = &renderer->light_directional;
         // -- shadow mapping
     /* calculate the matrices */
@@ -1182,6 +1187,7 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
         for (u32 i = 0; i < count; ++i) {
             u32 mesh_index = mesh_indices[i];
             if (mesh_index >= renderer->user_meshes_count) continue; // this mesh does not exist
+            if (renderer->user_meshes[mesh_index]->should_cast_shadow == false) continue;
             Mat4 model_mat = transforms[i];
             SE_Mesh *mesh = renderer->user_meshes[mesh_index];
 
@@ -1200,8 +1206,6 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
 }
 
 void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count) {
-    se_assert(count <= renderer->user_meshes_count && "the number of transforms must be less than or equal to the number of meshes");
-
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
         SE_Light_Point *point_light = &renderer->point_lights[i];
         glViewport(0, 0, 1024, 1024);
@@ -1249,7 +1253,10 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_ind
             }
             // render scene
             for (u32 i = 0; i < count; ++i) {
-                SE_Mesh *mesh = renderer->user_meshes[mesh_indices[i]];
+                u32 mesh_index = mesh_indices[i];
+                if (mesh_index >= renderer->user_meshes_count) continue; // this mesh does not exist
+                SE_Mesh *mesh = renderer->user_meshes[mesh_index];
+                if (mesh->should_cast_shadow == false) continue;
                 Mat4 model_mat = transforms[i];
 
                 se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc, "model", model_mat);
