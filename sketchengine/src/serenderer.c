@@ -1086,7 +1086,7 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
     glBindVertexArray(0);
 }
 
-void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint previous_pass_texture) {
+void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, const SE_Render_Target *previous_render_pass) {
     SE_Shader *shader;
     switch (post_process) {
         case SE_RENDER_POSTPROCESS_TONEMAP: {
@@ -1094,6 +1094,8 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
         } break;
         case SE_RENDER_POSTPROCESS_BLUR: {
             shader = &renderer->shader_post_process_blur;
+            se_shader_use(shader);
+            se_shader_set_uniform_i32(shader, "texture_to_blur", 1); // get the bright colour channel from lit_footer.fsd
         } break;
         case SE_RENDER_POSTPROCESS_DOWNSAMPLE: {
             shader = &renderer->shader_post_process_downsample;
@@ -1107,19 +1109,30 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
             se_shader_use(shader);
             se_shader_set_uniform_f32(shader, "src_resolution", 3.0f);
         } break;
+        case SE_RENDER_POSTPROCESS_BLOOM: {
+            shader = &renderer->shader_post_process_bloom;
+            se_shader_use(shader);
+            se_shader_set_uniform_i32(shader, "bloom_texture", 1);
+        } break;
     }
 
-    // common
     se_shader_use(shader);
     se_shader_set_uniform_i32(shader, "texture_id", 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, previous_pass_texture);
+
+    for (u32 i = 0; i < previous_render_pass->colour_buffers_count; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, previous_render_pass->colour_buffers[i]);
+    }
 
     glBindVertexArray(renderer->screen_quad_vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void se_render_post_process_on_texture(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint *textures, u32 textures_count) {
+
 }
 
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count, AABB3D world_aabb) {
@@ -1380,6 +1393,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shader_filename_post_process_upsample
     };
 
+    const char *post_process_bloom[2] = {
+        shader_filename_post_process_header_fsd,
+        shader_filename_post_process_bloom
+    };
+
     se_shader_init_from_files(&renderer->shader_lit,
                                 lit_vertex_files, 2,
                                 lit_fragment_files, 2,
@@ -1448,6 +1466,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     se_shader_init_from_files(&renderer->shader_post_process_upsample,
         post_process_vsd, 1,
         post_process_upsample, 2,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_post_process_bloom,
+        post_process_vsd, 1,
+        post_process_bloom, 2,
         NULL, 0);
 
         //- MATERIALS
@@ -1567,6 +1590,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     se_shader_deinit(&renderer->shader_post_process_blur);
     se_shader_deinit(&renderer->shader_post_process_downsample);
     se_shader_deinit(&renderer->shader_post_process_upsample);
+    se_shader_deinit(&renderer->shader_post_process_bloom);
 
         //- Screen Quad (Post Process Quad)
     glDeleteBuffers(1, &renderer->screen_quad_vbo);

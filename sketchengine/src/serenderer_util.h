@@ -54,6 +54,7 @@
 #define shader_filename_post_process_blur "core/shaders/post_process/post_process_blur.fsd"
 #define shader_filename_post_process_downsample "core/shaders/post_process/post_process_downsample.fsd"
 #define shader_filename_post_process_upsample "core/shaders/post_process/post_process_upsample.fsd"
+#define shader_filename_post_process_bloom "core/shaders/post_process/post_process_bloom.fsd"
 
 static void debug_print_skeleton(const SE_Skeleton *skeleton, const SE_Bone_Node *parent) {
     static i32 call = 0;

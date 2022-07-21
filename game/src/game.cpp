@@ -30,8 +30,9 @@ App::App(SDL_Window *window) {
 
         //- Render Targets
     Vec2 render_target_size = {(f32)window_w, (f32)window_h};
-    se_render_target_init_hdr(&m_render_target_scene, render_target_size, 1, true);
-    se_render_target_init_hdr(&m_render_target_blur, render_target_size, 1, true);
+    se_render_target_init_hdr(&m_render_target_scene, render_target_size, 2, true);
+    se_render_target_init_hdr(&m_render_target_blur, render_target_size, 2, true);
+    se_render_target_init_hdr(&m_render_target_bloom, render_target_size, 1, true);
     // se_render_target_init_hdr(&m_render_target_downsample, render_target_size, 1, true);
     // se_render_target_init_hdr(&m_render_target_upsample, render_target_size, 1, true);
 
@@ -89,10 +90,11 @@ App::~App() {
     se_render3d_deinit(&m_renderer);
     se_gizmo_renderer_deinit(&m_gizmo_renderer);
     // se_texture_unload(&debug_screen_quad_texture);
-    serender_target_deinit(&m_render_target_downsample);
     serender_target_deinit(&m_render_target_blur);
+    serender_target_deinit(&m_render_target_bloom);
+    serender_target_deinit(&m_render_target_scene);
+    // serender_target_deinit(&m_render_target_downsample); // @leak
     // serender_target_deinit(&m_render_target_upsample); // @leak
-    // serender_target_deinit(&m_render_target_scene);// @leak
 }
 
 void App::init_engine() {
@@ -167,23 +169,32 @@ void App::render() {
                  1.0f);
 
         //- Render Scene
-    serender_target_use(&m_render_target_scene);                // select framebuffer
+    serender_target_use(&m_render_target_scene);
         glViewport(0, 0, m_render_target_scene.texture_size.x, m_render_target_scene.texture_size.y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        m_level.entities.render(&m_renderer);                   // render the level
+        m_level.entities.render(&m_renderer);
     serender_target_use(NULL);
 
         //- Render Blur
-    serender_target_use(&m_render_target_blur);                 // select framebuffer
+    // the way I have this setup right now, it blurs the bright_colour channel of m_render_target_scene
+    // to be used for bloom
+    serender_target_use(&m_render_target_blur);
         glViewport(0, 0, m_render_target_blur.texture_size.x, m_render_target_blur.texture_size.y);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // apply blur to rendered texture
-        se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLUR, m_render_target_scene.colour_buffers[0]);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLUR, &m_render_target_scene);
+    serender_target_use(NULL);
+
+        //- Combine blurred bloom and scene
+    serender_target_use(&m_render_target_bloom);
+        glViewport(0, 0, m_render_target_bloom.texture_size.x, m_render_target_bloom.texture_size.y);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLOOM, &m_render_target_blur);
     serender_target_use(NULL);
 
         //- Apply Tonemapping
-    glViewport(0, 0, window_w, window_h);                       // we're now rendering to the screen
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         // apply tonemapping before rendering
-    se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_TONEMAP, m_render_target_blur.colour_buffers[0]);
+    glViewport(0, 0, window_w, window_h);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_TONEMAP, &m_render_target_bloom);
 
     glClear(GL_DEPTH_BUFFER_BIT);
     if (m_mode == GAME_MODES::GAME) {

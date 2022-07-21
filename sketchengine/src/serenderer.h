@@ -307,6 +307,7 @@ typedef struct SE_Renderer3D {
     SE_Shader shader_post_process_blur;         // renders the given texture with a blur
     SE_Shader shader_post_process_downsample;
     SE_Shader shader_post_process_upsample;
+    SE_Shader shader_post_process_bloom;        // combines 2 textures, the second one being the bloom effect
 
     // Generated on init. Used for rendering quads to the screen.
     // Use this by simpling binding the vao
@@ -381,11 +382,12 @@ typedef enum SE_RENDER_POSTPROCESS {
     SE_RENDER_POSTPROCESS_BLUR,
     SE_RENDER_POSTPROCESS_DOWNSAMPLE,
     SE_RENDER_POSTPROCESS_UPSAMPLE,
+    SE_RENDER_POSTPROCESS_BLOOM,
 } SE_RENDER_POSTPROCESS;
 
     /// Takes the given texture and renders it to the current selected framebuffer with the given post process shader
-void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint previous_pass_texture);
-
+void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, const SE_Render_Target *previous_render_pass);
+void se_render_post_process_on_texture(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint *textures, u32 textures_count);
 //// UTILITIES ////
 
 /// calculate the bounding box of a collection of vertices

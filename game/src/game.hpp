@@ -60,6 +60,7 @@ private:
     SE_Render_Target m_render_target_downsample;
     SE_Render_Target m_render_target_upsample;
     SE_Render_Target m_render_target_blur;  // blurred scene
+    SE_Render_Target m_render_target_bloom;  // blurred scene
 
 
     ///
