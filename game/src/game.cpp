@@ -111,7 +111,7 @@ void App::update(f32 delta_time) {
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
 
         //- Resize render targets
-    // se_render_target_resize(&m_render_target_test, {0, 0, (f32)window_w, (f32)window_h});
+    se_render_target_resize(&m_render_target_test, {0, 0, (f32)window_w, (f32)window_h});
 
         //- Resize UI
     seui_resize(ctx, window_w, window_h);
@@ -186,9 +186,9 @@ void App::render() {
     // glClear(GL_DEPTH_BUFFER_BIT);
     // se_render_screen_textured_quad(&m_renderer, &debug_screen_quad_texture);
 
-    // glClear(GL_DEPTH_BUFFER_BIT);
-    // glEnable(GL_BLEND);
-    // se_render_screen_textured_quad(&m_renderer, m_render_target_test.texture);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    se_render_screen_textured_quad(&m_renderer, m_render_target_test.texture);
 }
 
 void App::end_of_frame() {

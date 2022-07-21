@@ -1091,7 +1091,7 @@ void se_render_screen_textured_quad(SE_Renderer3D *renderer, GLuint texture_id) 
     se_shader_use(shader);
     se_shader_set_uniform_i32(shader, "texture_id", 0);
 
-    glActiveTexture(GL_TEXTURE0 + 0);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
     glBindVertexArray(renderer->screen_quad_vao);
