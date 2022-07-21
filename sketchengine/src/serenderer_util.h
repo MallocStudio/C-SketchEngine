@@ -1105,7 +1105,7 @@ static void util_serender3d_render_set_material_uniforms_lit(SE_Renderer3D *rend
 
         // - Directional Shadow Map
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
-    glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
+    glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.colour_buffers[0]); // @TODO maybe change to depth buffer
 
         //- Omnidirectional Shadow Map
     for (u32 i = 0; i < SERENDERER3D_MAX_POINT_LIGHTS; ++i) {
@@ -1260,7 +1260,7 @@ set_material_uniforms_skinned
     }
 
     glActiveTexture(GL_TEXTURE0 + 3); // shadow map
-    glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.texture);
+    glBindTexture(GL_TEXTURE_2D, renderer->shadow_render_target.colour_buffers[0]); // @TODO maybe change to depth buffer
 
        //- Omnidirectional Shadow Map
     for (u32 i = 0; i < SERENDERER3D_MAX_POINT_LIGHTS; ++i) {

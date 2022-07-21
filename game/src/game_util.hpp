@@ -242,6 +242,9 @@ void App::util_create_scene_from_image(const char *filepath) {
 ///
 
 void App::util_update_game_mode(f32 delta_time) {
+        //- Camera
+    se_camera3d_input(&m_cameras[main_camera], &m_input, delta_time);
+
             //- Entities
     m_level.entities.update(&m_renderer, delta_time);
     se_animation_update(&animation, delta_time);
@@ -249,16 +252,16 @@ void App::util_update_game_mode(f32 delta_time) {
 
         //- PLAYER MOVEMENT
     if (m_level.m_player) {
-        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_D)) {
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_RIGHT)) {
             m_level.m_player->move(vec3_right());
         }
-        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_A)) {
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_LEFT)) {
             m_level.m_player->move(vec3_left());
         }
-        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_W)) {
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_UP)) {
             m_level.m_player->move(vec3_forward());
         }
-        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_S)) {
+        if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_DOWN)) {
             m_level.m_player->move(vec3_backward());
         }
     }
@@ -312,9 +315,9 @@ void App::util_update_engine_mode(f32 delta_time) {
     m_selected_entity = m_widget_entity.entity;
 
         // make entity widget pop up
-    if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_SPACE)) {
-        m_widget_entity.toggle_visibility(ctx);
-    }
+    // if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_SPACE)) {
+    //     m_widget_entity.toggle_visibility(ctx);
+    // }
 
         // switch to game mode
     if (seui_button_at(ctx, "game mode", {0, 0, 200, 32})) {
@@ -330,7 +333,9 @@ void App::util_update_engine_mode(f32 delta_time) {
     }
 
     // @debug
-    seui_texture_viewer(ctx, m_renderer.shadow_render_target.texture);
+    seui_texture_viewer(ctx, m_renderer.shadow_render_target.colour_buffers[0]);
+    seui_texture_viewer(ctx, m_render_target_scene.colour_buffers[0]);
+
     // seui_grid_editor(ctx, &grid, value_mappings);
 
     sprintf(fps_text, "%f", fps);

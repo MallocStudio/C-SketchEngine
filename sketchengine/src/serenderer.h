@@ -381,8 +381,8 @@ typedef enum SE_RENDER_POSTPROCESS {
     SE_RENDER_POSTPROCESS_UPSAMPLE,
 } SE_RENDER_POSTPROCESS;
 
-    /// Renders the given texture with the given post process shader
-void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint texture_id);
+    /// Takes the given texture and renders it to the current selected framebuffer with the given post process shader
+void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint previous_pass_texture);
 
 //// UTILITIES ////
 

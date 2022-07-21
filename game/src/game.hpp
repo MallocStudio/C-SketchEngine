@@ -56,9 +56,10 @@ private:
     bool m_has_queued_for_change_of_mode;
     GAME_MODES m_queued_mode;
 
+    SE_Render_Target m_render_target_scene; // the geometry in the scene (entities and particles)
     SE_Render_Target m_render_target_downsample;
     SE_Render_Target m_render_target_upsample;
-    SE_Render_Target m_render_target_tonemap;
+    SE_Render_Target m_render_target_blur;  // blurred scene
 
 
     ///

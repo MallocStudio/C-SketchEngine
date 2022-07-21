@@ -1086,7 +1086,7 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
     glBindVertexArray(0);
 }
 
-void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint texture_id) {
+void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint previous_pass_texture) {
     SE_Shader *shader;
     switch (post_process) {
         case SE_RENDER_POSTPROCESS_TONEMAP: {
@@ -1113,7 +1113,7 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
     se_shader_use(shader);
     se_shader_set_uniform_i32(shader, "texture_id", 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glBindTexture(GL_TEXTURE_2D, previous_pass_texture);
 
     glBindVertexArray(renderer->screen_quad_vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1467,7 +1467,7 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         //- SHADOW MAPPING
     f32 shadow_w = 2048; //1024;
     f32 shadow_h = 2048; //1024;
-    serender_target_init(&renderer->shadow_render_target, (Rect) {0, 0, shadow_w, shadow_h}, true, true);
+    serender_target_init(&renderer->shadow_render_target, v2f(shadow_w, shadow_h), 1, true);
 
     {   // - POINT LIGHT SHADOW MAPPING
         for (u32 L = 0; L < SERENDERER3D_MAX_POINT_LIGHTS; ++L) {
