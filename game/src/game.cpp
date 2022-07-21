@@ -169,6 +169,10 @@ void App::render() {
     m_level.entities.render(&m_renderer);
     serender_target_use(NULL);
 
+        //- Post Processing
+    se_render_screen_textured_quad(&m_renderer, m_render_target_test.texture);
+
+    glClear(GL_DEPTH_BUFFER_BIT);
     if (m_mode == GAME_MODES::GAME) {
         //- GAME SPECIFIC
         util_render_game_mode();
@@ -182,13 +186,6 @@ void App::render() {
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
 
-        //- Post Processing
-    // glClear(GL_DEPTH_BUFFER_BIT);
-    // se_render_screen_textured_quad(&m_renderer, &debug_screen_quad_texture);
-
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_BLEND);
-    se_render_screen_textured_quad(&m_renderer, m_render_target_test.texture);
 }
 
 void App::end_of_frame() {
