@@ -173,7 +173,7 @@ void App::render() {
         m_level.entities.render(&m_renderer);                   // render the level
     serender_target_use(NULL);
 
-    //     //- Render Blur
+        //- Render Blur
     serender_target_use(&m_render_target_blur);                 // select framebuffer
         glViewport(0, 0, m_render_target_blur.texture_size.x, m_render_target_blur.texture_size.y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // apply blur to rendered texture

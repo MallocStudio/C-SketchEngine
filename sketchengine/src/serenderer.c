@@ -1094,7 +1094,7 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
         } break;
         case SE_RENDER_POSTPROCESS_BLUR: {
             shader = &renderer->shader_post_process_blur;
-        }
+        } break;
         case SE_RENDER_POSTPROCESS_DOWNSAMPLE: {
             shader = &renderer->shader_post_process_downsample;
             se_shader_use(shader);
