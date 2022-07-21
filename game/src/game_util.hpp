@@ -333,7 +333,7 @@ void App::util_update_engine_mode(f32 delta_time) {
     // seui_grid_editor(ctx, &grid, value_mappings);
 
     sprintf(fps_text, "%f", fps);
-    seui_label_at(ctx, fps_text, {128*2+200, 0, 200, 32});
+    seui_label_at(ctx, fps_text, {128+200+200, 0, 200, 32});
 }
 
 void App::util_render_engine_mode() {

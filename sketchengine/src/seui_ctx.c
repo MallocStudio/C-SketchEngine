@@ -788,8 +788,8 @@ void seui_input_text_at(SE_UI *ctx, SE_String *text, Rect rect) {
                 f32 numerical_value = se_string_as_f32(text);
                 if (ctx->input->mouse_wheel != 0) {
                     char value_as_string[SESTRING_MAX_NUM_OF_DIGITS];
-                    numerical_value += ctx->input->mouse_wheel;
-                    sprintf(value_as_string, "%i", (i32)numerical_value);
+                    numerical_value += ctx->input->mouse_wheel * 0.5f;
+                    sprintf(value_as_string, "%.2f", numerical_value);
                     se_string_clear(text);
                     se_string_append(text, value_as_string);
                 }
