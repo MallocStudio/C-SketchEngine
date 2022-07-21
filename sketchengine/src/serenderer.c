@@ -1086,11 +1086,32 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
     glBindVertexArray(0);
 }
 
-void se_render_screen_textured_quad(SE_Renderer3D *renderer, GLuint texture_id) {
-    SE_Shader *shader = &renderer->shader_screen_textured_quad;
+void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint texture_id) {
+    SE_Shader *shader;
+    switch (post_process) {
+        case SE_RENDER_POSTPROCESS_TONEMAP: {
+            shader = &renderer->shader_post_process_tonemap;
+        } break;
+        case SE_RENDER_POSTPROCESS_BLUR: {
+            shader = &renderer->shader_post_process_blur;
+        }
+        case SE_RENDER_POSTPROCESS_DOWNSAMPLE: {
+            shader = &renderer->shader_post_process_downsample;
+            se_shader_use(shader);
+            se_shader_set_uniform_vec2(shader, "src_resolution",
+                v2f(renderer->viewport.w, renderer->viewport.h));
+
+        } break;
+        case SE_RENDER_POSTPROCESS_UPSAMPLE: {
+            shader = &renderer->shader_post_process_upsample;
+            se_shader_use(shader);
+            se_shader_set_uniform_f32(shader, "src_resolution", 3.0f);
+        } break;
+    }
+
+    // common
     se_shader_use(shader);
     se_shader_set_uniform_i32(shader, "texture_id", 0);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
@@ -1335,12 +1356,28 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shader_filename_skeleton_vsd
     };
 
-        // screen texture quad
-    const char *screen_texture_quad_vsd_files[1] = {
-        "core/shaders/2D/screen_textured_quad.vsd"
+        // post process
+    const char *post_process_vsd[1] = {
+        shader_filename_post_process_header_vsd
     };
-    const char *screen_texture_quad_fsd_files[1] = {
-        "core/shaders/2D/screen_textured_quad.fsd"
+
+    const char *post_process_tonemap[2] = {
+        shader_filename_post_process_header_fsd,
+        shader_filename_post_process_tonemap
+    };
+    const char *post_process_blur[2] = {
+        shader_filename_post_process_header_fsd,
+        shader_filename_post_process_blur
+    };
+
+    const char *post_process_downsample[2] = {
+        shader_filename_post_process_header_fsd,
+        shader_filename_post_process_downsample
+    };
+
+    const char *post_process_upsample[2] = {
+        shader_filename_post_process_header_fsd,
+        shader_filename_post_process_upsample
     };
 
     se_shader_init_from_files(&renderer->shader_lit,
@@ -1393,9 +1430,24 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         lines_fsd_files, 1,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_screen_textured_quad,
-        screen_texture_quad_vsd_files, 1,
-        screen_texture_quad_fsd_files, 1,
+    se_shader_init_from_files(&renderer->shader_post_process_tonemap,
+        post_process_vsd, 1,
+        post_process_tonemap, 2,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_post_process_blur,
+        post_process_vsd, 1,
+        post_process_blur, 2,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_post_process_downsample,
+        post_process_vsd, 1,
+        post_process_downsample, 2,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_post_process_upsample,
+        post_process_vsd, 1,
+        post_process_upsample, 2,
         NULL, 0);
 
         //- MATERIALS
@@ -1506,8 +1558,17 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     se_shader_deinit(&renderer->shader_lines);
     se_shader_deinit(&renderer->shader_outline);
     se_shader_deinit(&renderer->shader_sprite);
-    se_shader_deinit(&renderer->shader_screen_textured_quad);
     se_shader_deinit(&renderer->shader_shadow_omnidir_calc_skinned_mesh);
+
+        //- Post Process shaders
+    se_shader_deinit(&renderer->shader_post_process_tonemap);
+    se_shader_deinit(&renderer->shader_post_process_blur);
+    se_shader_deinit(&renderer->shader_post_process_downsample);
+    se_shader_deinit(&renderer->shader_post_process_upsample);
+
+        //- Screen Quad (Post Process Quad)
+    glDeleteBuffers(1, &renderer->screen_quad_vbo);
+    glDeleteVertexArrays(1, &renderer->screen_quad_vao);
 
         //- User materials
     for (u32 i = 0; i < renderer->user_materials_count; ++i) {
@@ -1521,10 +1582,6 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
         glDeleteTextures(1, &renderer->point_lights[L].depth_cube_map);
         glDeleteFramebuffers(1, &renderer->point_lights[L].depth_map_fbo);
     }
-
-        //- Screen Quad
-    glDeleteBuffers(1, &renderer->screen_quad_vbo);
-    glDeleteVertexArrays(1, &renderer->screen_quad_vao);
 }
 
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {
@@ -1541,8 +1598,8 @@ u32 se_render3d_add_point_light_ext(SE_Renderer3D *renderer, f32 constant, f32 l
         // NOTE(Matin): We don't need to generate the cubemap here because all cubemaps
         // have already been generated for the maximum number of point lights
     renderer->point_lights[result].position  = v3f(0, 0, 0);
-    // renderer->point_lights[result].ambient   = (RGB) {100, 100, 100};
-    renderer->point_lights[result].ambient   = (RGB) {10, 10, 10};
+    // renderer->point_lights[result].ambient   = (RGB) {10, 10, 10};
+    renderer->point_lights[result].ambient   = (RGB) {255, 255, 255};
     renderer->point_lights[result].diffuse   = (RGB) {255, 255, 255};
     renderer->point_lights[result].specular  = (RGB) {0, 0, 0};
     renderer->point_lights[result].constant  = constant;

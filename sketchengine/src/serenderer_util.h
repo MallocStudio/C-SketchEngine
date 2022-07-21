@@ -48,6 +48,13 @@
 #define shader_filename_lit_skinned_vsd "core/shaders/3D/skinned_vertex.vsd"
 #define shader_filename_skeleton_vsd "core/shaders/3D/skinned_skeleton_lines.vsd"
 
+#define shader_filename_post_process_header_vsd "core/shaders/post_process/post_process_header.vsd"
+#define shader_filename_post_process_header_fsd "core/shaders/post_process/post_process_header.fsd"
+#define shader_filename_post_process_tonemap "core/shaders/post_process/post_process_tonemap.fsd"
+#define shader_filename_post_process_blur "core/shaders/post_process/post_process_blur.fsd"
+#define shader_filename_post_process_downsample "core/shaders/post_process/post_process_downsample.fsd"
+#define shader_filename_post_process_upsample "core/shaders/post_process/post_process_upsample.fsd"
+
 static void debug_print_skeleton(const SE_Skeleton *skeleton, const SE_Bone_Node *parent) {
     static i32 call = 0;
     printf("%i: parent id: %i | ", call, parent->bones_info_index);

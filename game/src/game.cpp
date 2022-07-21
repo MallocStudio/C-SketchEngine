@@ -20,26 +20,7 @@ App::App(SDL_Window *window) {
     se_grid_set(&grid, 3, 0, 3);
     se_grid_set(&grid, 2, 1, 4);
 
-    this->init_application(window);
-        //- Start with Engine Mode
-    this->init_engine();
-    debug_raycast_visual = se_render3d_add_mesh_empty(&m_renderer);
-    world_aabb_mesh = se_render3d_add_mesh_empty(&m_renderer);
-
-    // se_texture_load(&debug_screen_quad_texture, "game/textures/Rgnar-Death.png", SE_TEXTURE_LOAD_CONFIG_NULL);
-}
-
-App::~App() {
-    free(ctx);
-    se_render3d_deinit(&m_renderer);
-    se_gizmo_renderer_deinit(&m_gizmo_renderer);
-    // se_texture_unload(&debug_screen_quad_texture);
-    serender_target_deinit(&m_render_target_test);
-}
-
-    /// Init the application. ust be called once, and before init_engine or init_game
-void App::init_application(SDL_Window *window) {
-    //- window and viewport
+        //- window and viewport
     m_window = window;
     i32 window_w;
     i32 window_h;
@@ -47,7 +28,10 @@ void App::init_application(SDL_Window *window) {
     Rect viewport = {0, 0, (f32)window_w, (f32)window_h};
     should_quit = false;
 
-    serender_target_init(&m_render_target_test, viewport, true, true);
+        //- Render Targets
+    se_render_target_init_hdr(&m_render_target_tonemap, viewport);
+    se_render_target_init_hdr(&m_render_target_downsample, viewport);
+    se_render_target_init_hdr(&m_render_target_upsample, viewport);
 
         //- UI
     ctx = NEW(SE_UI);
@@ -89,6 +73,23 @@ void App::init_application(SDL_Window *window) {
     util_create_scene_from_image("game/levels/test_level.png");
     this->save();
 #endif
+
+        //- Start with Engine Mode
+    this->init_engine();
+    debug_raycast_visual = se_render3d_add_mesh_empty(&m_renderer);
+    world_aabb_mesh = se_render3d_add_mesh_empty(&m_renderer);
+
+    // se_texture_load(&debug_screen_quad_texture, "game/textures/Rgnar-Death.png", SE_TEXTURE_LOAD_CONFIG_NULL);
+}
+
+App::~App() {
+    free(ctx);
+    se_render3d_deinit(&m_renderer);
+    se_gizmo_renderer_deinit(&m_gizmo_renderer);
+    // se_texture_unload(&debug_screen_quad_texture);
+    serender_target_deinit(&m_render_target_downsample);
+    serender_target_deinit(&m_render_target_upsample);
+    serender_target_deinit(&m_render_target_tonemap);
 }
 
 void App::init_engine() {
@@ -111,7 +112,10 @@ void App::update(f32 delta_time) {
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
 
         //- Resize render targets
-    se_render_target_resize(&m_render_target_test, {0, 0, (f32)window_w, (f32)window_h});
+    m_renderer.viewport = {0, 0, (f32)window_w, (f32)window_h};
+    se_render_target_resize(&m_render_target_tonemap, {0, 0, (f32)window_w, (f32)window_h});
+    se_render_target_resize(&m_render_target_downsample, {0, 0, (f32)window_w, (f32)window_h});
+    se_render_target_resize(&m_render_target_upsample, {0, 0, (f32)window_w, (f32)window_h});
 
         //- Resize UI
     seui_resize(ctx, window_w, window_h);
@@ -125,7 +129,7 @@ void App::update(f32 delta_time) {
             //- ENGINE INPUT
         util_update_engine_mode(delta_time);
     }
-    seui_texture_viewer(ctx, m_render_target_test.texture);
+    seui_texture_viewer(ctx, m_render_target_tonemap.texture);
 }
 
 void App::render() {
@@ -162,15 +166,22 @@ void App::render() {
     glViewport(0, 0, window_w, window_h);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    serender_target_use(&m_render_target_test);
+    serender_target_use(&m_render_target_tonemap);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, window_w, window_h);
         //- Render Entities
     m_level.entities.render(&m_renderer);
     serender_target_use(NULL);
 
         //- Post Processing
-    se_render_screen_textured_quad(&m_renderer, m_render_target_test.texture);
+    // serender_target_use(&m_render_target_downsample);
+    // se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_DOWNSAMPLE, m_render_target_tonemap.texture);
+    // serender_target_use(&m_render_target_upsample);
+    // se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_UPSAMPLE, m_render_target_downsample.texture);
+    // serender_target_use(NULL);
+
+    // final output
+    se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_TONEMAP, m_render_target_tonemap.texture);
+    // se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_UPSAMPLE, m_render_target_upsample.texture);
 
     glClear(GL_DEPTH_BUFFER_BIT);
     if (m_mode == GAME_MODES::GAME) {

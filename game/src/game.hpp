@@ -35,7 +35,6 @@ public:
     void end_of_frame();
 
 private:
-    void init_application(SDL_Window *window);
         /// This is called at the beginning of init_engine and init_game
         /// to clear out entity data so they can be loaded from a level file
     void clear();
@@ -57,7 +56,9 @@ private:
     bool m_has_queued_for_change_of_mode;
     GAME_MODES m_queued_mode;
 
-    SE_Render_Target m_render_target_test;
+    SE_Render_Target m_render_target_downsample;
+    SE_Render_Target m_render_target_upsample;
+    SE_Render_Target m_render_target_tonemap;
 
 
     ///

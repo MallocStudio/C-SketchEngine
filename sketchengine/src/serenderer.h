@@ -300,8 +300,13 @@ typedef struct SE_Renderer3D {
     SE_Shader shader_outline;                  // handles rendering outlines of static meshes
     SE_Shader shader_sprite;                   // handles rendering sprites
     SE_Shader shader_skinned_mesh_skeleton;    // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
-    SE_Shader shader_screen_textured_quad;            // handles rendering a screen space textured quad to the screen
     SE_Shader shader_shadow_omnidir_calc_skinned_mesh; // handles point light shadow calculation for skinned meshes
+
+        //- Post Process Shaders
+    SE_Shader shader_post_process_tonemap;      // applies tone mapping and gamma correction
+    SE_Shader shader_post_process_blur;         // renders the given texture with a blur
+    SE_Shader shader_post_process_downsample;
+    SE_Shader shader_post_process_upsample;
 
     // Generated on init. Used for rendering quads to the screen.
     // Use this by simpling binding the vao
@@ -320,6 +325,8 @@ typedef struct SE_Renderer3D {
     // u32 shadow_depth_map;
     SE_Render_Target shadow_render_target;
     Mat4 light_space_matrix;
+
+    Rect viewport;
 
     f32 gamma;
 } SE_Renderer3D;
@@ -361,13 +368,21 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
     /// that everything lines up
 void se_render_mesh_with_shader(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
 void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
-    /// Render the given texture to the screen (can be used for post processing)
-void se_render_screen_textured_quad(SE_Renderer3D *renderer, GLuint texture_id);
     /// Render a directional shadow map to the renderer.
     /// "transforms_count" must be equal to or less than the number of meshes in the renderer.
     /// This procedure will render each mesh based on the given array of transforms.
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 transforms_count, AABB3D world_aabb);
 void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count);
+
+typedef enum SE_RENDER_POSTPROCESS {
+    SE_RENDER_POSTPROCESS_TONEMAP,
+    SE_RENDER_POSTPROCESS_BLUR,
+    SE_RENDER_POSTPROCESS_DOWNSAMPLE,
+    SE_RENDER_POSTPROCESS_UPSAMPLE,
+} SE_RENDER_POSTPROCESS;
+
+    /// Renders the given texture with the given post process shader
+void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint texture_id);
 
 //// UTILITIES ////
 
