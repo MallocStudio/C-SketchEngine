@@ -1243,14 +1243,14 @@ void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices
 void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count) {
     for (u32 i = 0; i < renderer->point_lights_count; ++i) {
         SE_Light_Point *point_light = &renderer->point_lights[i];
-        glViewport(0, 0, 1024, 1024);
+        glViewport(0, 0, renderer->omnidirectional_shadow_map_size, renderer->omnidirectional_shadow_map_size);
         glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
             glClear(GL_DEPTH_BUFFER_BIT);
             Mat4 shadow_transforms[6];
             f32 far  = 25.0f;
             { // configure shader and matrices
                 // projection
-                f32 aspect = 1024 / (f32) 1024;
+                f32 aspect = renderer->omnidirectional_shadow_map_size / (f32)renderer->omnidirectional_shadow_map_size;
                 f32 near = 1.0f;
                 Mat4 shadow_proj = mat4_perspective(SEMATH_DEG2RAD_MULTIPLIER * 90.0f, aspect, near, far);
                 // views for each face
@@ -1465,9 +1465,10 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
                     default_specular_filepath, SE_TEXTURE_LOAD_CONFIG_NULL);
 
         //- SHADOW MAPPING
-    f32 shadow_w = 2048; //1024;
-    f32 shadow_h = 2048; //1024;
-    serender_target_init(&renderer->shadow_render_target, v2f(shadow_w, shadow_h), 1, true);
+    renderer->directional_shadow_map_size = 2048;
+    serender_target_init(&renderer->shadow_render_target,
+        v2f(renderer->directional_shadow_map_size, renderer->directional_shadow_map_size), 1, true);
+    renderer->omnidirectional_shadow_map_size = 1024;
 
     {   // - POINT LIGHT SHADOW MAPPING
         for (u32 L = 0; L < SERENDERER3D_MAX_POINT_LIGHTS; ++L) {
@@ -1475,7 +1476,8 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
             glGenTextures(1, &point_light->depth_cube_map);
             glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
             for (u32 i = 0; i < 6; ++i) {
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+                    renderer->omnidirectional_shadow_map_size, renderer->omnidirectional_shadow_map_size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
             }
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

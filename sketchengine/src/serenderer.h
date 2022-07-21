@@ -325,6 +325,8 @@ typedef struct SE_Renderer3D {
     // u32 shadow_depth_map;
     SE_Render_Target shadow_render_target;
     Mat4 light_space_matrix;
+    f32 directional_shadow_map_size;
+    f32 omnidirectional_shadow_map_size;
 
     Rect viewport;
 
