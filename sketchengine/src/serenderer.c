@@ -922,15 +922,17 @@ u32 se_save_data_mesh_to_mesh
             material->base_diffuse = raw_data->base_diffuse;
 
             if (raw_data->texture_diffuse_filepath.buffer != NULL) {
-                se_texture_load(&material->texture_diffuse, raw_data->texture_diffuse_filepath.buffer, true);
+                se_texture_load(&material->texture_diffuse,
+                                raw_data->texture_diffuse_filepath.buffer,
+                                SE_TEXTURE_LOAD_CONFIG_CONVERT_TO_LINEAR_SPACE);
             }
 
             if (raw_data->texture_specular_filepath.buffer != NULL) {
-                se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer, false);
+                se_texture_load(&material->texture_specular, raw_data->texture_specular_filepath.buffer, SE_TEXTURE_LOAD_CONFIG_NULL);
             }
 
             if (raw_data->texture_normal_filepath.buffer != NULL) {
-                se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer, false);
+                se_texture_load(&material->texture_normal, raw_data->texture_normal_filepath.buffer, SE_TEXTURE_LOAD_CONFIG_NULL);
             }
 
             mesh->line_width   = raw_data->line_width;
@@ -1261,17 +1263,6 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     renderer->gamma = 2.2f;
 
         //- SHADERS
-    // se_shader_init_from(&renderer->shader_lit,
-    //     shader_filename_lit_vsd, shader_filename_lit_fsd);
-    // se_shader_init_from_header_files(&renderer->shader_lit,
-    //                                 shader_filename_lit_header_vsd,
-    //                                 NULL,
-    //                                 shader_filename_lit_footer_vsd,
-    //                                 shader_filename_lit_header_fsd,
-    //                                 NULL,
-    //                                 shader_filename_lit_footer_fsd,
-    //                                 "lit combined vertex", "lit combined fragmnet");
-
         // lit
     const char *lit_vertex_files[2] = {shader_filename_lit_header_vsd, shader_filename_lit_footer_vsd};
     const char *lit_fragment_files[2] = {shader_filename_lit_header_fsd, shader_filename_lit_footer_fsd};
@@ -1387,11 +1378,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     se_assert(default_material_index == SE_DEFAULT_MATERIAL_INDEX && "The default material index that was created in the init() of renderer3D did not match what we expected");
     renderer->user_materials[default_material_index]->base_diffuse = (Vec4) {1, 1, 1, 1};
     se_texture_load(&renderer->user_materials[default_material_index]->texture_diffuse,
-                    default_diffuse_filepath, true);
+                    default_diffuse_filepath, SE_TEXTURE_LOAD_CONFIG_CONVERT_TO_LINEAR_SPACE);
     se_texture_load(&renderer->user_materials[default_material_index]->texture_normal,
-                    default_normal_filepath, false);
+                    default_normal_filepath, SE_TEXTURE_LOAD_CONFIG_NULL);
     se_texture_load(&renderer->user_materials[default_material_index]->texture_specular,
-                    default_specular_filepath, false);
+                    default_specular_filepath, SE_TEXTURE_LOAD_CONFIG_NULL);
 
         //- SHADOW MAPPING
     f32 shadow_w = 2048; //1024;
@@ -1401,7 +1392,7 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     {   // - POINT LIGHT SHADOW MAPPING
         for (u32 L = 0; L < SERENDERER3D_MAX_POINT_LIGHTS; ++L) {
             SE_Light_Point *point_light = &renderer->point_lights[L];
-            glGenTextures(1, &point_light->depth_cube_map); // @leak
+            glGenTextures(1, &point_light->depth_cube_map);
             glBindTexture(GL_TEXTURE_CUBE_MAP, point_light->depth_cube_map);
             for (u32 i = 0; i < 6; ++i) {
                 glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -1415,7 +1406,7 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
             // ! each time swiching the depth buffer target of the framebuffer to a different cubemap face. Since we're going to
             // ! use a geometry shader, that allows us to render to all faces in a single pass, we can directly attach the cubemap
             // ! as a framebuffer's depth attachment with glFramebufferTexture (- from learnopengl.com)
-            glGenFramebuffers(1, &point_light->depth_map_fbo); // @leak
+            glGenFramebuffers(1, &point_light->depth_map_fbo);
             glBindFramebuffer(GL_FRAMEBUFFER, point_light->depth_map_fbo);
             glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, point_light->depth_cube_map, 0);
             glDrawBuffer(GL_NONE);
@@ -1460,6 +1451,10 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
 
         //- Shadow mapping
     serender_target_deinit(&renderer->shadow_render_target);
+    for (u32 L = 0; L < SERENDERER3D_MAX_POINT_LIGHTS; ++L) {
+        glDeleteTextures(1, &renderer->point_lights[L].depth_cube_map);
+        glDeleteFramebuffers(1, &renderer->point_lights[L].depth_map_fbo);
+    }
 }
 
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {

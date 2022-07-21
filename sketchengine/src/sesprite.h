@@ -16,8 +16,13 @@ typedef struct SE_Texture {
     b8 loaded;
 } SE_Texture;
 
-void se_texture_load(SE_Texture *texture, const char *filepath, b8 convert_to_linear_space);
-void se_texture_load_data(SE_Texture *texture, ubyte *data, b8 convert_to_linear_space);
+typedef enum SE_TEXTURE_LOAD_CONFIG {
+    SE_TEXTURE_LOAD_CONFIG_NULL                     = 1 << 0,
+    SE_TEXTURE_LOAD_CONFIG_CONVERT_TO_LINEAR_SPACE  = 1 << 1,
+} SE_TEXTURE_LOAD_CONFIG;
+
+void se_texture_load(SE_Texture *texture, const char *filepath, SE_TEXTURE_LOAD_CONFIG config_flags);
+void se_texture_load_data(SE_Texture *texture, ubyte *data, SE_TEXTURE_LOAD_CONFIG config_flags);
 void se_texture_unload(SE_Texture *texture);
 void se_texture_bind(const SE_Texture *texture, u32 index);
 void se_texture_unbind();

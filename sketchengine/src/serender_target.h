@@ -24,10 +24,10 @@ typedef struct SE_Render_Target_Config {
     b8 has_colour;
     // whether we have a depth pass
     b8 has_depth;
-    // options : GL_RED, GL_BLUE, GL_GREEN, GL_RGB
+    // options : GL_RED, GL_BLUE, GL_GREEN, GL_RGB etc...
     GLint  internal_format;
     GLenum format;
-    // options: GL_UNSIGNED_BYTE
+    // options: GL_UNSIGNED_BYTE, GL_FLOAT, etc...
     GLenum type;
 
     /* texture parameter */
@@ -39,6 +39,7 @@ typedef struct SE_Render_Target_Config {
 
 void serender_target_init_ext(SE_Render_Target *render_target, SE_Render_Target_Config config);
 void serender_target_init(SE_Render_Target *render_target, const Rect viewport, const b8 has_colour, const b8 has_depth);
+void se_render_target_init_hdr(SE_Render_Target *render_target, const Rect viewport);
 void serender_target_deinit(SE_Render_Target *render_target);
 void serender_target_use(SE_Render_Target *render_target);
 

@@ -7,35 +7,38 @@
 /// TEXTURE
 ///
 
-void se_texture_load(SE_Texture *texture, const char *filepath, b8 convert_to_linear_space) {
+void se_texture_load(SE_Texture *texture, const char *filepath, SE_TEXTURE_LOAD_CONFIG config_flags) {
     texture->loaded = true;
 
     ubyte *image_data = stbi_load(filepath, &texture->width, &texture->height, &texture->channel_count, 0);
     if (image_data != NULL) {
-        se_texture_load_data(texture, image_data, convert_to_linear_space);
+        se_texture_load_data(texture, image_data, config_flags);
     } else {
         printf("ERROR: cannot load %s (%s)\n", filepath, stbi_failure_reason());
         texture->loaded = false;
     }
 }
 
-void se_texture_load_data(SE_Texture *texture, ubyte *image_data, b8 convert_to_linear_space) {
+void se_texture_load_data(SE_Texture *texture, ubyte *image_data, SE_TEXTURE_LOAD_CONFIG config_flags) {
     texture->loaded = true;
     glGenTextures(1, &texture->id);
 
     glBindTexture(GL_TEXTURE_2D, texture->id);
     if (texture->channel_count == 3) {
         GLint internal_format = GL_RGB;
-        if (convert_to_linear_space) {
+
+        if (config_flags & SE_TEXTURE_LOAD_CONFIG_CONVERT_TO_LINEAR_SPACE) {
             internal_format = GL_SRGB;
         }
 
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
     } else if (texture->channel_count == 4) {
         GLint internal_format = GL_RGBA;
-        if (convert_to_linear_space) {
-            internal_format = GL_SRGB_ALPHA;
+
+        if (config_flags & SE_TEXTURE_LOAD_CONFIG_CONVERT_TO_LINEAR_SPACE) {
+                internal_format = GL_SRGB_ALPHA;
         }
+
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     } else {
         printf("ERROR: cannot load texture, because we don't support %i channels\n", texture->channel_count);
