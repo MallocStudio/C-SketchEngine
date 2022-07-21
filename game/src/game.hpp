@@ -57,6 +57,8 @@ private:
     bool m_has_queued_for_change_of_mode;
     GAME_MODES m_queued_mode;
 
+    SE_Render_Target m_render_target_test;
+
 
     ///
     ///     UTILITY FUNCTIONALITIES

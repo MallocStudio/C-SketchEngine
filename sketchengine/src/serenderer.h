@@ -300,7 +300,13 @@ typedef struct SE_Renderer3D {
     SE_Shader shader_outline;                  // handles rendering outlines of static meshes
     SE_Shader shader_sprite;                   // handles rendering sprites
     SE_Shader shader_skinned_mesh_skeleton;    // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
+    SE_Shader shader_screen_textured_quad;            // handles rendering a screen space textured quad to the screen
     SE_Shader shader_shadow_omnidir_calc_skinned_mesh; // handles point light shadow calculation for skinned meshes
+
+    // Generated on init. Used for rendering quads to the screen.
+    // Use this by simpling binding the vao
+    GLuint screen_quad_vao;
+    GLuint screen_quad_vbo;
 
         //- Camera and Light
     SE_Camera3D *current_camera;
@@ -355,6 +361,8 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
     /// that everything lines up
 void se_render_mesh_with_shader(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
 void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
+    /// Render the given texture to the screen (can be used for post processing)
+void se_render_screen_textured_quad(SE_Renderer3D *renderer, GLuint texture_id);
     /// Render a directional shadow map to the renderer.
     /// "transforms_count" must be equal to or less than the number of meshes in the renderer.
     /// This procedure will render each mesh based on the given array of transforms.

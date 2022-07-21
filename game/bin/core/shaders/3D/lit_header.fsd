@@ -59,8 +59,7 @@ uniform vec3 camera_pos;
 uniform Material material;
 uniform mat4 model_matrix;
 
-out vec4 FragColour;
-
+layout(location = 0) out vec3 FragColour;
 
 ///
 /// lighting calculations

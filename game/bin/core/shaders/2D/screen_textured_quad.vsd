@@ -1,0 +1,11 @@
+#version 330 core
+
+layout ( location = 0) in vec2 Screen_Pos; // must be in range of [0 - 1]
+
+out vec2 _TexCoord;
+
+void main () {
+    _TexCoord = Screen_Pos; // since position must be in a range of [0 - 1] we
+                            // also use it as tex coord
+    gl_Position = vec4(Screen_Pos * 2.0 - 1.0, 0.0, 1.0);
+}

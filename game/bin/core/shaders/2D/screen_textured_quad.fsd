@@ -1,0 +1,11 @@
+#version 330 core
+
+in vec2 _TexCoord;
+uniform sampler2D texture_id;
+
+out vec3 FragColour;
+void main () {
+    // vec4 tint = vec4(0.5, 0.3, 0.3, 0.3);
+    // FragColour = vec4(texture(texture_id, _TexCoord).rgb, 0.0) + tint;
+    FragColour = texture(texture_id, _TexCoord).rgb;
+}

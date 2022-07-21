@@ -1086,6 +1086,21 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
     glBindVertexArray(0);
 }
 
+void se_render_screen_textured_quad(SE_Renderer3D *renderer, GLuint texture_id) {
+    SE_Shader *shader = &renderer->shader_screen_textured_quad;
+    se_shader_use(shader);
+    se_shader_set_uniform_i32(shader, "texture_id", 0);
+
+    glActiveTexture(GL_TEXTURE0 + 0);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    glBindVertexArray(renderer->screen_quad_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count, AABB3D world_aabb) {
     SE_Light *light = &renderer->light_directional;
         // -- shadow mapping
@@ -1320,6 +1335,14 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shader_filename_skeleton_vsd
     };
 
+        // screen texture quad
+    const char *screen_texture_quad_vsd_files[1] = {
+        "core/shaders/2D/screen_textured_quad.vsd"
+    };
+    const char *screen_texture_quad_fsd_files[1] = {
+        "core/shaders/2D/screen_textured_quad.fsd"
+    };
+
     se_shader_init_from_files(&renderer->shader_lit,
                                 lit_vertex_files, 2,
                                 lit_fragment_files, 2,
@@ -1370,6 +1393,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         lines_fsd_files, 1,
         NULL, 0);
 
+    se_shader_init_from_files(&renderer->shader_screen_textured_quad,
+        screen_texture_quad_vsd_files, 1,
+        screen_texture_quad_fsd_files, 1,
+        NULL, 0);
+
         //- MATERIALS
     //! We must have a default material at index zero.
     //! Because by default meshes point to the zero'th material.
@@ -1416,6 +1444,43 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         }
     }
+
+    {   //- Screen Quad
+            // generate buffer
+        glGenBuffers(1, &renderer->screen_quad_vbo);
+        glGenVertexArrays(1, &renderer->screen_quad_vao);
+
+        glBindVertexArray(renderer->screen_quad_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, renderer->screen_quad_vbo);
+
+                // fill it with a quad
+            // f32 vertices[] = {
+            //     +1, -1, // 0
+            //     +1, +1, // 1
+            //     -1, +1, // 2
+
+            //     -1, +1, // 2
+            //     -1, -1, // 3
+            //     +1, -1  // 0
+            // };
+            f32 vertices[] = {
+                +1,  0, // 0
+                +1, +1, // 1
+                 0, +1, // 2
+
+                 0, +1, // 2
+                 0,  0, // 3
+                +1,  0  // 0
+                };
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                // enable attributes
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(f32) * 2, 0);
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
 }
 
 void se_render3d_deinit(SE_Renderer3D *renderer) {
@@ -1441,6 +1506,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
     se_shader_deinit(&renderer->shader_lines);
     se_shader_deinit(&renderer->shader_outline);
     se_shader_deinit(&renderer->shader_sprite);
+    se_shader_deinit(&renderer->shader_screen_textured_quad);
     se_shader_deinit(&renderer->shader_shadow_omnidir_calc_skinned_mesh);
 
         //- User materials
@@ -1455,6 +1521,10 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
         glDeleteTextures(1, &renderer->point_lights[L].depth_cube_map);
         glDeleteFramebuffers(1, &renderer->point_lights[L].depth_map_fbo);
     }
+
+        //- Screen Quad
+    glDeleteBuffers(1, &renderer->screen_quad_vbo);
+    glDeleteVertexArrays(1, &renderer->screen_quad_vao);
 }
 
 u32 se_render3d_add_point_light(SE_Renderer3D *renderer) {

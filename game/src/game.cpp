@@ -25,12 +25,16 @@ App::App(SDL_Window *window) {
     this->init_engine();
     debug_raycast_visual = se_render3d_add_mesh_empty(&m_renderer);
     world_aabb_mesh = se_render3d_add_mesh_empty(&m_renderer);
+
+    // se_texture_load(&debug_screen_quad_texture, "game/textures/Rgnar-Death.png", SE_TEXTURE_LOAD_CONFIG_NULL);
 }
 
 App::~App() {
     free(ctx);
     se_render3d_deinit(&m_renderer);
     se_gizmo_renderer_deinit(&m_gizmo_renderer);
+    // se_texture_unload(&debug_screen_quad_texture);
+    serender_target_deinit(&m_render_target_test);
 }
 
     /// Init the application. ust be called once, and before init_engine or init_game
@@ -42,6 +46,8 @@ void App::init_application(SDL_Window *window) {
     SDL_GetWindowSize(window, &window_w, &window_h);
     Rect viewport = {0, 0, (f32)window_w, (f32)window_h};
     should_quit = false;
+
+    serender_target_init(&m_render_target_test, viewport, true, true);
 
         //- UI
     ctx = NEW(SE_UI);
@@ -104,6 +110,10 @@ void App::update(f32 delta_time) {
     se_camera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
 
+        //- Resize render targets
+    // se_render_target_resize(&m_render_target_test, {0, 0, (f32)window_w, (f32)window_h});
+
+        //- Resize UI
     seui_resize(ctx, window_w, window_h);
     seui_reset(ctx);
 
@@ -115,6 +125,7 @@ void App::update(f32 delta_time) {
             //- ENGINE INPUT
         util_update_engine_mode(delta_time);
     }
+    seui_texture_viewer(ctx, m_render_target_test.texture);
 }
 
 void App::render() {
@@ -148,11 +159,15 @@ void App::render() {
                  1.0f);
 
     glClearDepth(1);
+    glViewport(0, 0, window_w, window_h);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    serender_target_use(&m_render_target_test);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, window_w, window_h);
-
         //- Render Entities
     m_level.entities.render(&m_renderer);
+    serender_target_use(NULL);
 
     if (m_mode == GAME_MODES::GAME) {
         //- GAME SPECIFIC
@@ -166,6 +181,14 @@ void App::render() {
         //- UI
     glClear(GL_DEPTH_BUFFER_BIT);
     seui_render(ctx);
+
+        //- Post Processing
+    // glClear(GL_DEPTH_BUFFER_BIT);
+    // se_render_screen_textured_quad(&m_renderer, &debug_screen_quad_texture);
+
+    // glClear(GL_DEPTH_BUFFER_BIT);
+    // glEnable(GL_BLEND);
+    // se_render_screen_textured_quad(&m_renderer, m_render_target_test.texture);
 }
 
 void App::end_of_frame() {

@@ -39,6 +39,7 @@ RGBA lit = {255, 255, 255, 255};
 
     //@debug
 u32 debug_raycast_visual = -1;
+SE_Texture debug_screen_quad_texture;
 
 u32 main_camera = -1;
 

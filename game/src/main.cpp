@@ -108,7 +108,7 @@ int main() {
         delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
 
         ticks = SDL_GetTicks();
-        game->fps = ticks - initial_tick;
+        game->fps = 0.0f;//1000.0f / se_math_max((initial_tick - ticks), 0.000001f);
 
         game->update((f32)delta_time);
         game->render();
