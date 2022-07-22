@@ -1,6 +1,4 @@
-layout (location = 0) out vec3 FragColour;
-layout (location = 1) out vec3 BlurColour;
-uniform sampler2D texture_to_blur;
+uniform sampler2D texture_to_blur; // select which texture to blur
 
 void main () {
     FragColour = texture(texture_id, _TexCoord).rgb;
@@ -17,5 +15,5 @@ void main () {
         }
     }
     result /= count;
-    BlurColour = result;
+    BrightColour = result;
 }

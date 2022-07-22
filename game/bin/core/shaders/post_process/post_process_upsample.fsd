@@ -7,7 +7,6 @@
 // Remember to use a floating-point texture format (for HDR)!
 // Remember to use edge clamping for this texture!
 uniform float filter_radius;
-out vec3 FragColour;
 
 void main()
 {

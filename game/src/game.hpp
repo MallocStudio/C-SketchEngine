@@ -61,7 +61,8 @@ private:
     SE_Render_Target m_render_target_upsample;
     SE_Render_Target m_render_target_blur;  // blurred scene
     SE_Render_Target m_render_target_bloom;  // blurred scene
-
+    SE_Render_Target m_render_target_gaussian_blur_h;  // horizontally blurred
+    SE_Render_Target m_render_target_gaussian_blur_v;  // vertically blurred
 
     ///
     ///     UTILITY FUNCTIONALITIES

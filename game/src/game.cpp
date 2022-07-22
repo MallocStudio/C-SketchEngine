@@ -31,10 +31,12 @@ App::App(SDL_Window *window) {
         //- Render Targets
     Vec2 render_target_size = {(f32)window_w, (f32)window_h};
     se_render_target_init_hdr(&m_render_target_scene, render_target_size, 2, true);
-    se_render_target_init_hdr(&m_render_target_blur, render_target_size, 2, true);
-    se_render_target_init_hdr(&m_render_target_bloom, render_target_size, 1, true);
-    // se_render_target_init_hdr(&m_render_target_downsample, render_target_size, 1, true);
-    // se_render_target_init_hdr(&m_render_target_upsample, render_target_size, 1, true);
+    se_render_target_init_hdr(&m_render_target_blur, render_target_size, 2, false);
+    se_render_target_init_hdr(&m_render_target_bloom, render_target_size, 2, false);
+    se_render_target_init_hdr(&m_render_target_gaussian_blur_h, render_target_size, 2, false);
+    se_render_target_init_hdr(&m_render_target_gaussian_blur_v, render_target_size, 2, false);
+    // se_render_target_init_hdr(&m_render_target_downsample, render_target_size, 2, true);
+    // se_render_target_init_hdr(&m_render_target_upsample, render_target_size, 2, true);
 
         //- UI
     ctx = NEW(SE_UI);
@@ -93,8 +95,10 @@ App::~App() {
     serender_target_deinit(&m_render_target_blur);
     serender_target_deinit(&m_render_target_bloom);
     serender_target_deinit(&m_render_target_scene);
-    // serender_target_deinit(&m_render_target_downsample); // @leak
-    // serender_target_deinit(&m_render_target_upsample); // @leak
+    serender_target_deinit(&m_render_target_gaussian_blur_h);
+    serender_target_deinit(&m_render_target_gaussian_blur_v);
+    // serender_target_deinit(&m_render_target_downsample);
+    // serender_target_deinit(&m_render_target_upsample);
 }
 
 void App::init_engine() {
@@ -160,13 +164,14 @@ void App::render() {
     se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count);
 
         //- Clear Previous Frame
-    // glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    // glClearColor(130 / 255.0f, 161 / 255.0f, 171 / 255.0f, 1.0f);
+        // cannot use the following for now, until I add a 4th comonent (alpha) to post process textures
+        // so we can ignore the sky's background colour
+    // glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
+    //             m_renderer.light_directional.ambient.g / 255.0f,
+    //             m_renderer.light_directional.ambient.b / 255.0f,
+    //             1.0f);
     glClearDepth(1);
-    glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
-                 m_renderer.light_directional.ambient.g / 255.0f,
-                 m_renderer.light_directional.ambient.b / 255.0f,
-                 1.0f);
+    glClearColor(0, 0, 0, 1);
 
         //- Render Scene
     serender_target_use(&m_render_target_scene);
@@ -175,24 +180,44 @@ void App::render() {
         m_level.entities.render(&m_renderer);
     serender_target_use(NULL);
 
-        //- Render Blur
-    // the way I have this setup right now, it blurs the bright_colour channel of m_render_target_scene
-    // to be used for bloom
-    serender_target_use(&m_render_target_blur);
-        glViewport(0, 0, m_render_target_blur.texture_size.x, m_render_target_blur.texture_size.y);
+        //- Use Gaussian Blur to blur BrightColour channel of scene
+    serender_target_use(&m_render_target_gaussian_blur_h);
+        glViewport(0, 0, m_render_target_gaussian_blur_h.texture_size.x, m_render_target_gaussian_blur_h.texture_size.y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLUR, &m_render_target_scene);
-    serender_target_use(NULL);
+        se_render_post_process_gaussian_blur(&m_renderer, &m_render_target_scene, true);
+    serender_target_use(0);
+    serender_target_use(&m_render_target_gaussian_blur_v);
+        glViewport(0, 0, m_render_target_gaussian_blur_v.texture_size.x, m_render_target_gaussian_blur_v.texture_size.y);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        se_render_post_process_gaussian_blur(&m_renderer, &m_render_target_scene, false);
+    serender_target_use(0);
+        // then blur with the other gaussian framebuffer
+    u32 blur_amount = 50;
+    bool horizontal = true;
+    for (u32 i = 0; i < blur_amount; ++i) {
+        if (!horizontal) {
+            serender_target_use(&m_render_target_gaussian_blur_v);
+            se_render_post_process_gaussian_blur(&m_renderer, &m_render_target_gaussian_blur_h, true);
+        } else {
+            serender_target_use(&m_render_target_gaussian_blur_h);
+            se_render_post_process_gaussian_blur(&m_renderer, &m_render_target_gaussian_blur_v, false);
+        }
+        horizontal = !horizontal;
+    }
 
         //- Combine blurred bloom and scene
     serender_target_use(&m_render_target_bloom);
         glViewport(0, 0, m_render_target_bloom.texture_size.x, m_render_target_bloom.texture_size.y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLOOM, &m_render_target_blur);
+        se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLOOM, &m_render_target_gaussian_blur_v);
     serender_target_use(NULL);
 
         //- Apply Tonemapping
     glViewport(0, 0, window_w, window_h);
+    glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
+                m_renderer.light_directional.ambient.g / 255.0f,
+                m_renderer.light_directional.ambient.b / 255.0f,
+                1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_TONEMAP, &m_render_target_bloom);
 

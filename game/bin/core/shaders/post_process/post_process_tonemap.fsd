@@ -1,5 +1,3 @@
-out vec3 FragColour;
-
 void main () {
     vec3 hdr_colour = texture(texture_id, _TexCoord).rgb;
 

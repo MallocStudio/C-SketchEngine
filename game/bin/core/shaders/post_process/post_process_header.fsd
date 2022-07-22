@@ -1,4 +1,7 @@
 #version 330 core
 
 in vec2 _TexCoord;
-uniform sampler2D texture_id;
+uniform sampler2D texture_id; // @TODO rename to scene_texture
+
+layout (location = 0) out vec3 FragColour; // the reason we have these two is because we want to plug it into the other post processes
+layout (location = 1) out vec3 BrightColour;

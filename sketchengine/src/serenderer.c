@@ -1131,8 +1131,24 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void se_render_post_process_on_texture(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_process, GLuint *textures, u32 textures_count) {
+void se_render_post_process_gaussian_blur(SE_Renderer3D *renderer, const SE_Render_Target *previous_render_pass, b8 horizontal) {
+    SE_Shader *shader = &renderer->shader_post_process_gaussian_blur;
 
+    se_shader_use(shader);
+    se_shader_set_uniform_i32(shader, "texture_id", 0); // the BrightColour channel
+    se_shader_set_uniform_i32(shader, "bright_colour_texture", 1); // the BrightColour channel
+    se_shader_set_uniform_i32(shader, "horizontal", (i32)horizontal);
+
+    for (u32 i = 0; i < previous_render_pass->colour_buffers_count; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, previous_render_pass->colour_buffers[i]);
+    }
+
+    glBindVertexArray(renderer->screen_quad_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count, AABB3D world_aabb) {
@@ -1378,9 +1394,15 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shader_filename_post_process_header_fsd,
         shader_filename_post_process_tonemap
     };
+
     const char *post_process_blur[2] = {
         shader_filename_post_process_header_fsd,
         shader_filename_post_process_blur
+    };
+
+    const char *post_process_gaussian[2] = {
+        shader_filename_post_process_header_fsd,
+        shader_filename_post_process_gaussian
     };
 
     const char *post_process_downsample[2] = {
@@ -1471,6 +1493,11 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
     se_shader_init_from_files(&renderer->shader_post_process_bloom,
         post_process_vsd, 1,
         post_process_bloom, 2,
+        NULL, 0);
+
+    se_shader_init_from_files(&renderer->shader_post_process_gaussian_blur,
+        post_process_vsd, 1,
+        post_process_gaussian, 2,
         NULL, 0);
 
         //- MATERIALS
@@ -1588,6 +1615,7 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
         //- Post Process shaders
     se_shader_deinit(&renderer->shader_post_process_tonemap);
     se_shader_deinit(&renderer->shader_post_process_blur);
+    se_shader_deinit(&renderer->shader_post_process_gaussian_blur);
     se_shader_deinit(&renderer->shader_post_process_downsample);
     se_shader_deinit(&renderer->shader_post_process_upsample);
     se_shader_deinit(&renderer->shader_post_process_bloom);

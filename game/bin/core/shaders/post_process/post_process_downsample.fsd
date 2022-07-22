@@ -9,7 +9,6 @@
 // Remember to use a floating-point texture format (for HDR)!
 // Remember to use edge clamping for this texture!
 uniform vec2 src_resolution;
-out vec3 FragColour;
 
 void main () {
     vec2 src_texel_size = 1.0 / src_resolution;
