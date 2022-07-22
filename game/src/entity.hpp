@@ -23,6 +23,10 @@ public:
     bool should_render_mesh[ENTITIES_MAX];
     u32 mesh_index[ENTITIES_MAX];
 
+        //- Custom Shader
+    bool has_shader[ENTITIES_MAX];
+    u32 shader_index[ENTITIES_MAX];
+
         //- Name
     bool has_name[ENTITIES_MAX];
     SE_String name[ENTITIES_MAX];

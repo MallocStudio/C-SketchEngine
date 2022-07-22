@@ -371,9 +371,11 @@ u32 se_render3d_add_point_light_ext(SE_Renderer3D *renderer, f32 constant, f32 l
 void se_render3d_reset_render_config();
 void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
 void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
-    /// Render the given mesh with the given shader. The called must be passing the uniforms to the shader and make sure
-    /// that everything lines up
-void se_render_mesh_with_lit_shader(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
+
+    /// Renders the given mesh with the given shader.
+    /// The uniforms must be setup by the user.
+void se_render_mesh_with_shader(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform, u32 user_shader_index);
+
 void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
     /// Render a directional shadow map to the renderer.
     /// "transforms_count" must be equal to or less than the number of meshes in the renderer.

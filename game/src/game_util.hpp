@@ -20,6 +20,7 @@ u32 mesh_cube = -1;
 u32 mesh_cube_tiny = -1;
 u32 mesh_demo_crate = -1;
 u32 mesh_demo_diamond = -1;
+u32 diamond_shader = -1;
 
 u32 current_obj_aabb = -1;
 u32 world_aabb_mesh = -1;
@@ -85,6 +86,18 @@ void App::util_load_meshes_from_disk() {
     mesh_demo_crate = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Crate/Wooden Crate.obj", false);
 
     mesh_demo_diamond = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Diamond/diamond.obj", false);
+    {
+        const char *vsd[2] = {
+            "core/shaders/3D/lit_header.vsd",
+            "core/shaders/3D/lit.vsd"
+        };
+
+        const char *fsd[2] = {
+            "core/shaders/3D/lit_header.fsd",
+            "game/shaders/diamond.fsd"
+        };
+        diamond_shader = se_render3d_add_shader(&m_renderer, vsd, 2, fsd, 2, NULL, 0);
+    }
 }
 
 void App::util_create_default_scene() {
@@ -172,10 +185,10 @@ void App::util_create_scene_from_image(const char *filepath) {
         m_level.entities.has_name[light_2] = true;
         m_level.entities.has_name[light_3] = true;
         m_level.entities.has_name[light_4] = true;
-        se_string_init(&m_level.entities.name[light_1], "light 1");
-        se_string_init(&m_level.entities.name[light_2], "light 2");
-        se_string_init(&m_level.entities.name[light_3], "light 3");
-        se_string_init(&m_level.entities.name[light_4], "light 4");
+        se_string_init(&m_level.entities.name[light_1], "light_1");
+        se_string_init(&m_level.entities.name[light_2], "light_2");
+        se_string_init(&m_level.entities.name[light_3], "light_3");
+        se_string_init(&m_level.entities.name[light_4], "light_4");
 
         m_level.entities.aabb[light_1] = {v3f(-0.5f, -0.5f, -0.5f), v3f(0.5f, 0.5f, 0.5f)};
         m_level.entities.aabb[light_2] = {v3f(-0.5f, -0.5f, -0.5f), v3f(0.5f, 0.5f, 0.5f)};
@@ -204,6 +217,8 @@ void App::util_create_scene_from_image(const char *filepath) {
         m_level.entities.has_mesh[diamond] = true;
         m_level.entities.should_render_mesh[diamond] = true;
         m_level.entities.position[diamond] = v3f(5, 0, 5);
+        m_level.entities.has_shader[diamond] = true;
+        m_level.entities.shader_index[diamond] = diamond_shader;
     }
 
     {   //- Entities from image

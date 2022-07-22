@@ -1013,12 +1013,28 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     glBindVertexArray(0);
 }
 
-void se_render_mesh_with_lit_shader
-(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader) {
+void se_render_mesh_with_shader
+(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform, u32 user_shader_index) {
     se_render3d_reset_render_config(); // Reset configs to their default values
+    SE_Mesh *mesh = renderer->user_meshes[mesh_index];
+    SE_Shader *shader = renderer->user_shaders[user_shader_index];
+    SE_Material *material = renderer->user_materials[mesh->material_index];
     se_shader_use(shader);
-    i32 primitive = GL_TRIANGLES;
+    {
+        // Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
+        // pvm = mat4_mul(pvm, renderer->current_camera->projection);
 
+        // // the good old days when debugging:
+        // // material->texture_diffuse.width = 100;
+        // /* vertex */
+        // se_shader_set_uniform_mat4(shader, "projection_view_model", pvm);
+        // se_shader_set_uniform_mat4(shader, "model_matrix", transform);
+        // se_shader_set_uniform_vec3(shader, "camera_pos", renderer->current_camera->position);
+        // se_shader_set_uniform_mat4(shader, "light_space_matrix", renderer->light_space_matrix);
+    }
+    set_material_uniforms_lit_ext(renderer, shader, material, transform);
+
+    i32 primitive = GL_TRIANGLES;
         //- LINE
     if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
         primitive = GL_LINES;

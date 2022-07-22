@@ -73,7 +73,9 @@ void se_shader_deinit(SE_Shader *shader) {
 }
 
 void se_shader_use(const SE_Shader *shader) {
-    glUseProgram(shader->shader_program);
+    if (shader) {
+        glUseProgram(shader->shader_program);
+    }
 }
 
 GLint se_shader_get_uniform_loc(SE_Shader *shader, const char *uniform_name) {

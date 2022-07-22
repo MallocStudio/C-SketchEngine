@@ -1022,8 +1022,7 @@ static void recursive_calc_skeleton_pose_without_animation(SE_Skeleton *skeleton
     }
 }
 
-static void set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
-    SE_Shader *shader = &renderer->shader_lit;
+static void set_material_uniforms_lit_ext(SE_Renderer3D *renderer, SE_Shader *shader, const SE_Material *material, Mat4 transform) {
     se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
@@ -1118,6 +1117,11 @@ static void set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material
         glActiveTexture(GL_TEXTURE0 + 4+i); // shadow map
         glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->point_lights[i].depth_cube_map);
     }
+}
+
+static void set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+    SE_Shader *shader = &renderer->shader_lit;
+    set_material_uniforms_lit_ext(renderer, shader, material, transform);
 }
 
 static void serender3d_render_set_material_uniforms_lines(SE_Renderer3D *renderer, Mat4 transform) {
