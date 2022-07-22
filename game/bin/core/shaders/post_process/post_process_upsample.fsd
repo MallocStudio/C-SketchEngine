@@ -36,8 +36,9 @@ void main()
     //  1   | 1 2 1 |
     // -- * | 2 4 2 |
     // 16   | 1 2 1 |
-    FragColour =  e*4.0;
-    FragColour += (b+d+f+h)*2.0;
-    FragColour += (a+c+g+i);
-    FragColour *= 1.0 / 16.0;
+    vec3 result =  e*4.0;
+    result += (b+d+f+h)*2.0;
+    result += (a+c+g+i);
+    result *= 1.0 / 16.0;
+    FragColour = vec4(result, 1.0);
 }

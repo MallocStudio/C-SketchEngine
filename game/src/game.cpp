@@ -114,6 +114,7 @@ void App::clear() {
 }
 
 void App::update(f32 delta_time) {
+    // @TODO: delete this line, then add the custom shader index to materials, and a type field to materials to determine what uniforms should be set by default
         //- Update Window and Input
     i32 window_w, window_h;
     SDL_GetWindowSize(m_window, &window_w, &window_h);
@@ -164,14 +165,17 @@ void App::render() {
     se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count);
 
         //- Clear Previous Frame
-        // cannot use the following for now, until I add a 4th comonent (alpha) to post process textures
-        // so we can ignore the sky's background colour
     // glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
-    //             m_renderer.light_directional.ambient.g / 255.0f,
-    //             m_renderer.light_directional.ambient.b / 255.0f,
-    //             1.0f);
+    //              m_renderer.light_directional.ambient.g / 255.0f,
+    //              m_renderer.light_directional.ambient.b / 255.0f,
+    //              0.0f);
+    glClearColor(0.3,
+                 0.4,
+                 0.5,
+                 0.0f);
     glClearDepth(1);
-    glClearColor(0, 0, 0, 1);
+    // glClearColor(0.2, 0.1, 0.1, 1);
+    // glClearColor(0, 0, 0, 1.0f);
 
         //- Render Scene
     serender_target_use(&m_render_target_scene);
@@ -183,12 +187,12 @@ void App::render() {
         //- Use Gaussian Blur to blur BrightColour channel of scene
     serender_target_use(&m_render_target_gaussian_blur_h);
         glViewport(0, 0, m_render_target_gaussian_blur_h.texture_size.x, m_render_target_gaussian_blur_h.texture_size.y);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         se_render_post_process_gaussian_blur(&m_renderer, &m_render_target_scene, true);
     serender_target_use(0);
     serender_target_use(&m_render_target_gaussian_blur_v);
         glViewport(0, 0, m_render_target_gaussian_blur_v.texture_size.x, m_render_target_gaussian_blur_v.texture_size.y);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         se_render_post_process_gaussian_blur(&m_renderer, &m_render_target_scene, false);
     serender_target_use(0);
         // then blur with the other gaussian framebuffer
@@ -208,7 +212,7 @@ void App::render() {
         //- Combine blurred bloom and scene
     serender_target_use(&m_render_target_bloom);
         glViewport(0, 0, m_render_target_bloom.texture_size.x, m_render_target_bloom.texture_size.y);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_BLOOM, &m_render_target_gaussian_blur_v);
     serender_target_use(NULL);
 
@@ -218,7 +222,7 @@ void App::render() {
                 m_renderer.light_directional.ambient.g / 255.0f,
                 m_renderer.light_directional.ambient.b / 255.0f,
                 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     se_render_post_process(&m_renderer, SE_RENDER_POSTPROCESS_TONEMAP, &m_render_target_bloom);
 
     glClear(GL_DEPTH_BUFFER_BIT);

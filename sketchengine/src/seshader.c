@@ -327,4 +327,5 @@ void se_shader_init_from_files (SE_Shader *sp,
     free(vertex_src);
     free(fragment_src);
     if (sp->has_geometry) free(geometry_src);
+    se_assert(sp->loaded_successfully && "shader compilation or linking error");
 }

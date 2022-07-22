@@ -1,16 +1,16 @@
 void main () {
-    vec3 hdr_colour = texture(texture_id, _TexCoord).rgb;
+    vec4 hdr_colour = texture(texture_id, _TexCoord);
 
     // reinhard tone mapping
     // vec3 mapped = hdr_colour / (hdr_colour + vec3(1.0));
     // exposure tone mapping
     const float exposure = 0.9;
-    vec3 mapped = vec3(1.0) - exp(-hdr_colour * exposure);
+    vec4 mapped = vec4(1.0) - exp(-hdr_colour * exposure);
 
     // apply gamma correction
     // const float gamma = 2.2;
     const float gamma = 1.5;
-    mapped = pow(mapped.rgb, vec3(1.0/gamma));
+    mapped = pow(mapped, vec4(1.0/gamma));
     // FragColour = vec4(mapped, 1.0);
     FragColour = mapped;
 }

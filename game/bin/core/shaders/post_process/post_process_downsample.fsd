@@ -52,8 +52,9 @@ void main () {
     // contribute 0.5 to the final color output. The code below is written
     // to effectively yield this sum. We get:
     // 0.125*5 + 0.03125*4 + 0.0625*4 = 1
-    FragColour =  e*0.125;
-    FragColour += (a+c+g+i)*0.03125;
-    FragColour += (b+d+f+h)*0.0625;
-    FragColour += (j+k+l+m)*0.125;
+    vec3 result =  e*0.125;
+    result += (a+c+g+i)*0.03125;
+    result += (b+d+f+h)*0.0625;
+    result += (j+k+l+m)*0.125;
+    FragColour = vec4(result, 1.0);
 }

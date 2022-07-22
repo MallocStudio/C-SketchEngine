@@ -228,8 +228,8 @@ void serender_target_init(SE_Render_Target *render_target, Vec2 size, u32 colour
 
 void se_render_target_init_hdr(SE_Render_Target *render_target, Vec2 size, u32 colour_count, b8 has_depth) {
     SE_Render_Target_Config config;
-    config.internal_format = GL_RGB16F;
-    config.format = GL_RGB;
+    config.internal_format = GL_RGBA16F;
+    config.format = GL_RGBA;
     config.type = GL_FLOAT;
     config.filter = GL_NEAREST;
     // config.wrap = GL_CLAMP_TO_BORDER;

@@ -1,12 +1,12 @@
 void main () {
     vec3 result = calc_shading();
 
-    FragColour = result;
+    FragColour = vec4(result, 1.0);
     // We calculate the brightness of a fragment by properly transforming it to grayscale first
     // (by taking the dot product of both vectors we effectively multiply each individual component of both vectors and add the results together)
     float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722)); // uhh idk what this magic value is
     if(brightness > 1.0)
-        BrightColour = result;
+        BrightColour = vec4(result, 1.0);
     else
-        BrightColour = vec3(0.0);
+        BrightColour = vec4(0.0);
 }

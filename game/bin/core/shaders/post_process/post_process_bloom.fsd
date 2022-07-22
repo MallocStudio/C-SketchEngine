@@ -1,6 +1,6 @@
 uniform sampler2D bloom_texture;
 void main () {
-    vec3 result = texture(texture_id, _TexCoord).rgb; // the scene
-    result += texture(bloom_texture, _TexCoord).rgb;  // bright colours
+    vec4 result = texture(texture_id, _TexCoord); // the scene
+    result += texture(bloom_texture, _TexCoord);  // bright colours
     FragColour = result;
 }

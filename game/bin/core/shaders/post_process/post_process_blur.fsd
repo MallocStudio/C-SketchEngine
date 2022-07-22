@@ -1,17 +1,17 @@
 uniform sampler2D texture_to_blur; // select which texture to blur
 
 void main () {
-    FragColour = texture(texture_id, _TexCoord).rgb;
+    FragColour = texture(texture_id, _TexCoord);
 
     int smooth_amount = 10;
     vec2 texel_size = 1.0 / textureSize(texture_to_blur, 0);
-    vec3 result = vec3(0.0);
+    vec4 result = vec4(0.0);
 
     int count = 1;
     for (int x = -smooth_amount; x < smooth_amount; ++x) {
         for (int y = -smooth_amount; y < smooth_amount; ++y) {
             count += 1;
-            result += texture(texture_to_blur, _TexCoord + vec2(x, y) * texel_size).rgb;
+            result += texture(texture_to_blur, _TexCoord + vec2(x, y) * texel_size);
         }
     }
     result /= count;

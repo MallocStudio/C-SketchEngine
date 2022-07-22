@@ -274,5 +274,5 @@ vec3 calc_shading() {
     return result;
 }
 
-layout(location = 0) out vec3 FragColour;
-layout(location = 1) out vec3 BrightColour;
+layout(location = 0) out vec4 FragColour;
+layout(location = 1) out vec4 BrightColour;
