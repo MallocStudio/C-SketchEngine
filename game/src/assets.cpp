@@ -66,12 +66,6 @@ bool Assets::save_level(Level *level, const char *filepath) {
                 file << level->entities.mesh_index[i] << std::endl;
             }
 
-                //- shader data
-            file << level->entities.has_shader[i] << std::endl;
-            if (level->entities.has_shader[i]) {
-                file << level->entities.shader_index[i] << std::endl;
-            }
-
                 //- light data
             file << level->entities.has_light[i] << std::endl;
             if (level->entities.has_light[i]) {
@@ -154,12 +148,6 @@ bool Assets::load_level(Level *level, const char *filepath) {
             if (level->entities.has_mesh[i]) {
                 file >> level->entities.should_render_mesh[i];
                 file >> level->entities.mesh_index[i];
-            }
-
-                //- shader data
-            file >> level->entities.has_shader[i];
-            if (level->entities.has_shader[i]) {
-                file >> level->entities.shader_index[i];
             }
 
                 //- light data

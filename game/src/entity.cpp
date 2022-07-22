@@ -19,11 +19,11 @@ Entities::~Entities() {
 void Entities::update(SE_Renderer3D *renderer, f32 delta_time) {
     for (u32 i = 0; i < this->count; ++i) {
             // @temp
-        if (this->has_shader[i]) {
-            static f32 time = 0;
-            time += delta_time;
-            this->position[i].y = 0.5f * se_math_sin(time) + 1;
-        }
+        // if (this->has_shader[i]) {
+        //     static f32 time = 0;
+        //     time += delta_time;
+        //     this->position[i].y = 0.5f * se_math_sin(time) + 1;
+        // }
             //- Transforms
         this->transform[i] = mat4_identity();
         Vec3 pos   = this->position[i];
@@ -47,27 +47,20 @@ void Entities::update(SE_Renderer3D *renderer, f32 delta_time) {
         }
 
             //- Custom Shader
-        if (this->has_shader[i]) {
-            SE_Shader *shader = renderer->user_shaders[this->shader_index[i]];
-            se_shader_use(shader);
-            static f32 time = 0;
-            time += delta_time * 4;
-            se_shader_set_uniform_f32(shader, "time", time);
-        }
+        // if (this->has_shader[i]) {
+        //     SE_Shader *shader = renderer->user_shaders[this->shader_index[i]];
+        //     se_shader_use(shader);
+        //     static f32 time = 0;
+        //     time += delta_time * 4;
+        //     se_shader_set_uniform_f32(shader, "time", time);
+        // }
     }
 }
 
 void Entities::render(SE_Renderer3D *renderer) {
     for (u32 i = 0; i < this->count; ++i) {
         if (this->has_mesh[i] && this->should_render_mesh[i]) {
-            if (this->has_shader[i]) {
-                se_render_mesh_with_shader(renderer,
-                                               this->mesh_index[i],
-                                               this->transform[i],
-                                               this->shader_index[i]);
-            } else {
-                se_render_mesh_index(renderer, this->mesh_index[i], this->transform[i]);
-            }
+            se_render_mesh_index(renderer, this->mesh_index[i], this->transform[i]);
         }
     }
 }
