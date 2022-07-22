@@ -982,7 +982,7 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         //- STATIC MESH
-        util_serender3d_render_set_material_uniforms_lit(renderer, material, transform);
+        set_material_uniforms_lit(renderer, material, transform);
     } else
     if (mesh->type == SE_MESH_TYPE_SPRITE) { // SPRITE
         //- SPRITE
@@ -1013,7 +1013,7 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     glBindVertexArray(0);
 }
 
-void se_render_mesh_with_shader
+void se_render_mesh_with_lit_shader
 (SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader) {
     se_render3d_reset_render_config(); // Reset configs to their default values
     se_shader_use(shader);
@@ -1591,14 +1591,23 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
         //- User meshes
     for (u32 i = 0; i < renderer->user_meshes_count; ++i) {
         se_mesh_deinit(renderer->user_meshes[i]);
+        free(renderer->user_meshes[i]);
     }
     renderer->user_meshes_count = 0;
 
         //- User skeletons
     for (u32 i = 0; i < renderer->user_skeletons_count; ++i) {
         se_skeleton_deinit(renderer->user_skeletons[i]);
-        free(renderer->user_skeletons[i]); // @leak check if skeleton needs to free things. If so add se_skeleton_deinit
+        free(renderer->user_skeletons[i]);
     }
+    renderer->user_skeletons_count = 0;
+
+        //- User shaders
+    for (u32 i = 0; i < renderer->user_shaders_count; ++i) {
+        se_shader_deinit(renderer->user_shaders[i]);
+        free(renderer->user_shaders[i]);
+    }
+    renderer->user_shaders_count = 0;
 
         //- Default shaders
     se_shader_deinit(&renderer->shader_lit);
@@ -1763,4 +1772,29 @@ void se_render3d_update_gizmos_aabb
 (SE_Renderer3D *renderer, Vec3 min, Vec3 max, f32 line_width, u32 mesh_index) {
     memset(renderer->user_meshes[mesh_index], 0, sizeof(SE_Mesh));
     se_mesh_generate_gizmos_aabb(renderer->user_meshes[mesh_index], min, max, line_width);
+}
+
+u32 se_render3d_add_shader(SE_Renderer3D *renderer,
+                            const char **vsd_files,
+                            u32 vsd_count,
+                            const char **fsd_files,
+                            u32 fsd_count,
+                            const char **gsd_files,
+                            u32 gsd_count) {
+    // add a shader to the renderer and initialise it
+    se_assert(renderer->user_shaders_count < SERENDERER3D_MAX_SHADERS);
+    u32 result = renderer->user_shaders_count;
+    renderer->user_shaders_count++;
+
+    renderer->user_shaders[result] = NEW(SE_Shader);
+    memset(renderer->user_shaders[result], 0, sizeof(SE_Shader));
+
+    se_shader_init_from_files(renderer->user_shaders[result],
+                              vsd_files,
+                              vsd_count,
+                              fsd_files,
+                              fsd_count,
+                              gsd_files,
+                              gsd_count);
+    return result;
 }

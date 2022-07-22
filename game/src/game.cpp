@@ -35,6 +35,18 @@ App::App(SDL_Window *window) {
     se_render_target_init_hdr(&m_render_target_bloom, render_target_size, 2, false);
     se_render_target_init_hdr(&m_render_target_gaussian_blur_h, render_target_size, 2, false);
     se_render_target_init_hdr(&m_render_target_gaussian_blur_v, render_target_size, 2, false);
+    {
+        const char *vsd[] = {
+            "core/shaders/3D/lit_header.vsd",
+            "core/shaders/3D/lit.vsd"
+        };
+
+        const char *fsd[] = {
+            "core/shaders/3D/lit_header.fsd",
+            "game/shaders/diamond.fsd"
+        };
+        se_shader_init_from_files(&m_shader_diamond, vsd, 2, fsd, 2, NULL, 0);
+    }
     // se_render_target_init_hdr(&m_render_target_downsample, render_target_size, 2, true);
     // se_render_target_init_hdr(&m_render_target_upsample, render_target_size, 2, true);
 
@@ -97,6 +109,7 @@ App::~App() {
     serender_target_deinit(&m_render_target_scene);
     serender_target_deinit(&m_render_target_gaussian_blur_h);
     serender_target_deinit(&m_render_target_gaussian_blur_v);
+    se_shader_deinit(&m_shader_diamond);
     // serender_target_deinit(&m_render_target_downsample);
     // serender_target_deinit(&m_render_target_upsample);
 }

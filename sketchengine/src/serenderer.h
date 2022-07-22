@@ -290,6 +290,9 @@ typedef struct SE_Renderer3D {
     u32 user_skeletons_count;
     SE_Skeleton *user_skeletons[SERENDERER3D_MAX_SKELETONS];
 
+    u32 user_shaders_count;
+    SE_Shader *user_shaders[SERENDERER3D_MAX_SHADERS];
+
         //- SHADERS
     SE_Shader shader_lit;                      // handles static meshes affected by light and the material system
     SE_Shader shader_skinned_mesh;             // handles skinned meshes
@@ -370,13 +373,22 @@ void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transfor
 void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform);
     /// Render the given mesh with the given shader. The called must be passing the uniforms to the shader and make sure
     /// that everything lines up
-void se_render_mesh_with_shader(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
+void se_render_mesh_with_lit_shader(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, SE_Shader *shader);
 void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform);
     /// Render a directional shadow map to the renderer.
     /// "transforms_count" must be equal to or less than the number of meshes in the renderer.
     /// This procedure will render each mesh based on the given array of transforms.
 void se_render_directional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 transforms_count, AABB3D world_aabb);
 void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_indices, Mat4 *transforms, u32 count);
+
+    /// Adds a custom shader to the renderer and returns its index
+u32 se_render3d_add_shader(SE_Renderer3D *renderer,
+                            const char **vsd_files,
+                            u32 vsd_count,
+                            const char **fsd_files,
+                            u32 fsd_count,
+                            const char **gsd_files,
+                            u32 gsd_count);
 
 typedef enum SE_RENDER_POSTPROCESS {
     SE_RENDER_POSTPROCESS_TONEMAP,

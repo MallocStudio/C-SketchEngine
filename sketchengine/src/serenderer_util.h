@@ -1022,7 +1022,7 @@ static void recursive_calc_skeleton_pose_without_animation(SE_Skeleton *skeleton
     }
 }
 
-static void util_serender3d_render_set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
+static void set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
     SE_Shader *shader = &renderer->shader_lit;
     se_shader_use(shader);
 

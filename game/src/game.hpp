@@ -63,6 +63,7 @@ private:
     SE_Render_Target m_render_target_bloom;  // blurred scene
     SE_Render_Target m_render_target_gaussian_blur_h;  // horizontally blurred
     SE_Render_Target m_render_target_gaussian_blur_v;  // vertically blurred
+    SE_Shader m_shader_diamond;
 
     ///
     ///     UTILITY FUNCTIONALITIES
