@@ -99,7 +99,7 @@ void App::util_load_meshes_from_disk() {
         diamond_shader = se_render3d_add_shader(&m_renderer, vsd, 2, fsd, 2, NULL, 0);
     }
     m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->shader_index = diamond_shader;
-    m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->type = SE_MATERIAL_TYPE_CUSTOM;
+    m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->type = SE_MATERIAL_TYPE_TRANSPARENT;
 }
 
 void App::util_create_default_scene() {
@@ -365,14 +365,14 @@ void App::util_render_engine_mode() {
             m_level.entities.aabb[m_selected_entity].max,
             2);
 
-        se_render_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity]);
+        se_render_mesh_index(&m_renderer, current_obj_aabb, m_level.entities.transform[m_selected_entity], false);
     }
 
         //- skeleton mesh
 #if 1   // @debug
-    se_render_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy]);
+    se_render_mesh_index(&m_renderer, mesh_skeleton, m_level.entities.transform[mesh_guy], false);
 #endif
-    se_render_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity());
+    se_render_mesh_index(&m_renderer, world_aabb_mesh, mat4_identity(), false);
 
         //- Gizmos
     glClear(GL_DEPTH_BUFFER_BIT);

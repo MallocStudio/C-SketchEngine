@@ -58,9 +58,18 @@ void Entities::update(SE_Renderer3D *renderer, f32 delta_time) {
 }
 
 void Entities::render(SE_Renderer3D *renderer) {
+    // opaque pass
     for (u32 i = 0; i < this->count; ++i) {
         if (this->has_mesh[i] && this->should_render_mesh[i]) {
-            se_render_mesh_index(renderer, this->mesh_index[i], this->transform[i]);
+            if (renderer->user_materials[renderer->user_meshes[this->mesh_index[i]]->material_index]->type == SE_MATERIAL_TYPE_TRANSPARENT) continue;
+            se_render_mesh_index(renderer, this->mesh_index[i], this->transform[i], false);
+        }
+    }
+    // transparent pass
+    for (u32 i = 0; i < this->count; ++i) {
+        if (this->has_mesh[i] && this->should_render_mesh[i]) {
+            if (renderer->user_materials[renderer->user_meshes[this->mesh_index[i]]->material_index]->type != SE_MATERIAL_TYPE_TRANSPARENT) continue;
+            se_render_mesh_index(renderer, this->mesh_index[i], this->transform[i], true);
         }
     }
 }

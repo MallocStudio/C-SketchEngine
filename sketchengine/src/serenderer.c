@@ -216,9 +216,13 @@ static void reset_opengl_parameters() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
 }
 
-void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
+void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform, b8 transparent_pass) {
         //- OpenGL Parameters
     reset_opengl_parameters();
+    if (transparent_pass) {
+        glEnable(GL_BLEND);
+        // glDisable(GL_CULL_FACE);
+    }
 
         //- Mesh Parameters
     i32 primitive = GL_TRIANGLES;
@@ -233,6 +237,11 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
                 set_material_uniforms_lit(renderer, shader, material, transform);
             } else
             if (material->type == SE_MATERIAL_TYPE_CUSTOM) {
+                // @temp think of what we can do here. How can I provide the ability to
+                // add custom uniforms to custom shaders that are part of the lit workflow?
+                set_material_uniforms_lit(renderer, shader, material, transform);
+            } else
+            if (material->type == SE_MATERIAL_TYPE_TRANSPARENT) {
                 // @temp think of what we can do here. How can I provide the ability to
                 // add custom uniforms to custom shaders that are part of the lit workflow?
                 set_material_uniforms_lit(renderer, shader, material, transform);
@@ -292,13 +301,13 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
 }
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
-void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
+void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform, b8 transparent_pass) {
     SE_Mesh *mesh = renderer->user_meshes[mesh_index];
-    se_render_mesh(renderer, mesh, transform);
+    se_render_mesh(renderer, mesh, transform, transparent_pass);
 
     // if (mesh->next_mesh_index > -1 && mesh->type != SE_MESH_TYPE_SKINNED) { // @temp checking if it's not skinned because for some reason the other mesh does not get a proper skeleton final pose
     if (mesh->next_mesh_index > -1) {
-        se_render_mesh_index(renderer, mesh->next_mesh_index, transform);
+        se_render_mesh_index(renderer, mesh->next_mesh_index, transform, transparent_pass);
     }
 }
 
