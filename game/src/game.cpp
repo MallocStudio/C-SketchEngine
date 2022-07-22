@@ -121,6 +121,8 @@ void App::update(f32 delta_time) {
     se_camera3d_update_projection(&m_cameras[main_camera], window_w, window_h);
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
 
+    m_renderer.time += delta_time;
+
         //- Resize UI
     seui_resize(ctx, window_w, window_h);
     seui_reset(ctx);

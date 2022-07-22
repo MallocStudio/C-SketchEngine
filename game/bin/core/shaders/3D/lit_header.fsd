@@ -1,7 +1,12 @@
 #version 450
-///
-/// prototypes
-///
+in vec2 _TexCoord;
+in vec3 _Normal;
+in mat3 _TBN;
+in vec3 _Position;
+in vec3 _Tangent;
+in vec3 _Bitangent;
+in vec3 _Frag_Pos;
+in vec4 frag_pos_light_space;
 
 struct Dir_Light {
     vec3 direction;
@@ -33,20 +38,6 @@ struct Material {
     vec4 base_diffuse;
 };
 
-vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir);
-vec3 calc_point_light(Point_Light light, vec3 normal, vec3 frag_pos, vec3 view_dir);
-float calc_shadows_directional(vec4 param_frag_pos_light_space);
-float calc_shadows_omnidirectional(vec3 frag_pos, Point_Light light);
-
-in vec2 _TexCoord;
-in vec3 _Normal;
-in mat3 _TBN;
-in vec3 _Position;
-in vec3 _Tangent;
-in vec3 _Bitangent;
-in vec3 _Frag_Pos;
-in vec4 frag_pos_light_space;
-
 uniform Dir_Light dir_light;
 
 #define MAX_NUM_POINT_LIGHTS 4
@@ -54,14 +45,19 @@ uniform int num_of_point_lights; // ? why can't I use this instead of MAX_NUM_PO
 uniform Point_Light point_lights[MAX_NUM_POINT_LIGHTS];
 
 uniform sampler2D shadow_map; // directional shadow map
-// uniform mat4 model_matrix;
 uniform vec3 camera_pos;
 uniform Material material;
 uniform mat4 model_matrix;
+uniform float time;
 
 ///
 /// lighting calculations
 ///
+
+vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir);
+vec3 calc_point_light(Point_Light light, vec3 normal, vec3 frag_pos, vec3 view_dir);
+float calc_shadows_directional(vec4 param_frag_pos_light_space);
+float calc_shadows_omnidirectional(vec3 frag_pos, Point_Light light);
 
 vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir) {
 //  { The new method takes normal into account

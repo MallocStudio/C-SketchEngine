@@ -114,7 +114,6 @@ void skeleton_deep_copy(SE_Skeleton *dest, const SE_Skeleton *src);
 //// MATERIAL ////
 typedef enum SE_MATERIAL_TYPES {
     SE_MATERIAL_TYPE_LIT,
-    SE_MATERIAL_TYPE_UNLIT,
     SE_MATERIAL_TYPE_CUSTOM,
 } SE_MATERIAL_TYPES;
     // The default material is stored at the zero'th element during init() of renderer3D.

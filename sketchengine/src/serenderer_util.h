@@ -82,6 +82,9 @@ static void set_material_uniforms_lit(SE_Renderer3D *renderer, SE_Shader *shader
     };
     se_shader_set_uniform_vec4(shader, "material.base_diffuse", base_diffuse_linear_space);
 
+    // misc uniforms
+    se_shader_set_uniform_f32(shader, "time", renderer->time);
+
     // directional light uniforms
     se_shader_set_uniform_vec3(shader, "dir_light.direction", renderer->light_directional.direction);
     se_shader_set_uniform_rgb (shader, "dir_light.ambient", renderer->light_directional.ambient);

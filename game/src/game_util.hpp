@@ -98,6 +98,8 @@ void App::util_load_meshes_from_disk() {
         };
         diamond_shader = se_render3d_add_shader(&m_renderer, vsd, 2, fsd, 2, NULL, 0);
     }
+    m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->shader_index = diamond_shader;
+    m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->type = SE_MATERIAL_TYPE_CUSTOM;
 }
 
 void App::util_create_default_scene() {
@@ -217,8 +219,6 @@ void App::util_create_scene_from_image(const char *filepath) {
         m_level.entities.has_mesh[diamond] = true;
         m_level.entities.should_render_mesh[diamond] = true;
         m_level.entities.position[diamond] = v3f(5, 0, 5);
-        // m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->type = SE_MATERIAL_TYPE_CUSTOM;
-        // m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->shader_index = diamond_shader;
     }
 
     {   //- Entities from image

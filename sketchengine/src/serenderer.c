@@ -135,9 +135,14 @@ u32 se_save_data_mesh_to_mesh
 
     return result;
 }
-
+#if 0 // @remove this version and use the cleaner procedure
 void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
-    se_render3d_reset_render_config(); // Reset configs to their default values
+    /* default */
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glLineWidth(1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
+
     // take the mesh (world space) and project it to view space
     // then take that and project it to the clip space
     // then pass that final projection matrix and give it to the shader
@@ -201,51 +206,90 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
 
     glBindVertexArray(0);
 }
+#endif
 
-// @remove
-// void se_render_mesh_with_shader
-// (SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform, u32 user_shader_index) {
-//     se_render3d_reset_render_config(); // Reset configs to their default values
-//     SE_Mesh *mesh = renderer->user_meshes[mesh_index];
-//     SE_Shader *shader = renderer->user_shaders[user_shader_index];
-//     SE_Material *material = renderer->user_materials[mesh->material_index];
-//     se_shader_use(shader);
-//     {
-//         // Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
-//         // pvm = mat4_mul(pvm, renderer->current_camera->projection);
+static void reset_opengl_parameters() {
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glLineWidth(1.0f);
+    glPointSize(1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
+}
 
-//         // // the good old days when debugging:
-//         // // material->texture_diffuse.width = 100;
-//         // /* vertex */
-//         // se_shader_set_uniform_mat4(shader, "projection_view_model", pvm);
-//         // se_shader_set_uniform_mat4(shader, "model_matrix", transform);
-//         // se_shader_set_uniform_vec3(shader, "camera_pos", renderer->current_camera->position);
-//         // se_shader_set_uniform_mat4(shader, "light_space_matrix", renderer->light_space_matrix);
-//     }
-//     set_material_uniforms_lit(renderer, shader, material, transform);
+void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
+        //- OpenGL Parameters
+    reset_opengl_parameters();
 
-//     i32 primitive = GL_TRIANGLES;
-//         //- LINE
-//     if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
-//         primitive = GL_LINES;
-//         glLineWidth(mesh->line_width);
-//     } else
-//         //- POINT
-//     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
-//         primitive = GL_POINTS;
-//         glPointSize(mesh->point_radius);
-//     }
+        //- Mesh Parameters
+    i32 primitive = GL_TRIANGLES;
+    SE_Material *material = renderer->user_materials[mesh->material_index];
+    SE_Shader *shader = renderer->user_shaders[material->shader_index];
 
-//         //- Draw Call
-//     glBindVertexArray(mesh->vao);
-//     if (mesh->indexed) {
-//         glDrawElements(primitive, mesh->element_count, GL_UNSIGNED_INT, 0);
-//     } else {
-//         glDrawArrays(primitive, 0, mesh->element_count);
-//     }
+    switch (mesh->type) {
+            //- Normal Mesh
+        case SE_MESH_TYPE_NORMAL: {
+            primitive = GL_TRIANGLES;
+            if (material->type == SE_MATERIAL_TYPE_LIT) {
+                set_material_uniforms_lit(renderer, shader, material, transform);
+            } else
+            if (material->type == SE_MATERIAL_TYPE_CUSTOM) {
+                // @temp think of what we can do here. How can I provide the ability to
+                // add custom uniforms to custom shaders that are part of the lit workflow?
+                set_material_uniforms_lit(renderer, shader, material, transform);
+            }
+        } break;
 
-//     glBindVertexArray(0);
-// }
+            //- Skinned Mesh
+        case SE_MESH_TYPE_SKINNED: {
+            primitive = GL_TRIANGLES;
+            if (material->type == SE_MATERIAL_TYPE_LIT) {
+                set_material_uniforms_skinned(renderer, material, transform, mesh->skeleton->final_pose);
+            }
+        } break;
+
+            //- Lines, Skeletons
+        case SE_MESH_TYPE_LINE: {
+            primitive = GL_LINES;
+            glLineWidth(mesh->line_width);
+            if (mesh->skeleton && mesh->skeleton->animations_count > 0) {
+                if (material->type == SE_MATERIAL_TYPE_LIT) {
+                    shader = renderer->user_shaders[renderer->shader_skinned_mesh_skeleton];
+                    set_material_uniforms_skeleton(renderer, shader, material, transform, mesh->skeleton->final_pose);
+                }
+            } else {
+                shader = renderer->user_shaders[renderer->shader_lines];
+                set_material_uniforms_lines(renderer, shader, material, transform);
+            }
+        } break;
+
+            //- Points
+        case SE_MESH_TYPE_POINT: {
+            primitive = GL_POINTS;
+            glPointSize(mesh->point_radius);
+            shader = renderer->user_shaders[renderer->shader_lines]; // I don't bother with assigning this to the generated meshes
+            set_material_uniforms_lines(renderer, shader, material, transform);
+        } break;
+
+            //- Sprites
+        case SE_MESH_TYPE_SPRITE: {
+            shader = renderer->user_shaders[renderer->shader_sprite];
+            set_material_uniforms_sprite(renderer, shader, material, transform);
+            glDisable(GL_CULL_FACE);
+            glEnable(GL_BLEND);
+        } break;
+    }
+
+        //- Draw Call
+    glBindVertexArray(mesh->vao);
+    if (mesh->indexed) {
+        glDrawElements(primitive, mesh->element_count, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(primitive, 0, mesh->element_count);
+    }
+
+    glBindVertexArray(0);
+    reset_opengl_parameters();
+}
 
 // make sure to call serender3d_render_mesh_setup before calling this procedure. Only needs to be done once.
 void se_render_mesh_index(SE_Renderer3D *renderer, u32 mesh_index, Mat4 transform) {
@@ -483,14 +527,6 @@ void se_render_omnidirectional_shadow_map(SE_Renderer3D *renderer, u32 *mesh_ind
             }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-}
-
-void se_render3d_reset_render_config() {
-    /* default */
-    glDisable(GL_BLEND);
-    glEnable(GL_CULL_FACE);
-    glLineWidth(1.0f);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // default blend mode
 }
 
 void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
