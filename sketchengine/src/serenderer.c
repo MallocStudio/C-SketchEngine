@@ -1076,7 +1076,7 @@ void se_render3d_render_mesh_outline(SE_Renderer3D *renderer, u32 mesh_index, Ma
     // then pass that final projection matrix and give it to the shader
 
     { // setup the shader
-        SE_Shader *shader = &renderer->shader_outline;
+        SE_Shader *shader = renderer->user_shaders[renderer->shader_outline];
         se_shader_use(shader); // use the outline shader
 
         Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
@@ -1106,27 +1106,27 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
     SE_Shader *shader;
     switch (post_process) {
         case SE_RENDER_POSTPROCESS_TONEMAP: {
-            shader = &renderer->shader_post_process_tonemap;
+            shader = renderer->user_shaders[renderer->shader_post_process_tonemap];
         } break;
         case SE_RENDER_POSTPROCESS_BLUR: {
-            shader = &renderer->shader_post_process_blur;
+            shader = renderer->user_shaders[renderer->shader_post_process_blur];
             se_shader_use(shader);
             se_shader_set_uniform_i32(shader, "texture_to_blur", 1); // get the bright colour channel from lit_footer.fsd
         } break;
         case SE_RENDER_POSTPROCESS_DOWNSAMPLE: {
-            shader = &renderer->shader_post_process_downsample;
+            shader = renderer->user_shaders[renderer->shader_post_process_downsample];
             se_shader_use(shader);
             se_shader_set_uniform_vec2(shader, "src_resolution",
                 v2f(renderer->viewport.w, renderer->viewport.h));
 
         } break;
         case SE_RENDER_POSTPROCESS_UPSAMPLE: {
-            shader = &renderer->shader_post_process_upsample;
+            shader = renderer->user_shaders[renderer->shader_post_process_upsample];
             se_shader_use(shader);
             se_shader_set_uniform_f32(shader, "src_resolution", 3.0f);
         } break;
         case SE_RENDER_POSTPROCESS_BLOOM: {
-            shader = &renderer->shader_post_process_bloom;
+            shader = renderer->user_shaders[renderer->shader_post_process_bloom];
             se_shader_use(shader);
             se_shader_set_uniform_i32(shader, "bloom_texture", 1);
         } break;
@@ -1148,7 +1148,7 @@ void se_render_post_process(SE_Renderer3D *renderer, SE_RENDER_POSTPROCESS post_
 }
 
 void se_render_post_process_gaussian_blur(SE_Renderer3D *renderer, const SE_Render_Target *previous_render_pass, b8 horizontal) {
-    SE_Shader *shader = &renderer->shader_post_process_gaussian_blur;
+    SE_Shader *shader = renderer->user_shaders[renderer->shader_post_process_gaussian_blur];
 
     se_shader_use(shader);
     se_shader_set_uniform_i32(shader, "texture_id", 0); // the BrightColour channel
@@ -1436,82 +1436,82 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
         shader_filename_post_process_bloom
     };
 
-    se_shader_init_from_files(&renderer->shader_lit,
-                                lit_vertex_files, 2,
-                                lit_fragment_files, 2,
-                                NULL, 0);
+    renderer->shader_lit = se_render3d_add_shader(renderer,
+        lit_vertex_files, 2,
+        lit_fragment_files, 2,
+        NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_shadow_calc,
-                            shadow_calc_directional_vsd_files, 1,
-                            shadow_calc_directional_fsd_files, 1,
-                            NULL, 0);
+    renderer->shader_shadow_calc = se_render3d_add_shader(renderer,
+        shadow_calc_directional_vsd_files, 1,
+        shadow_calc_directional_fsd_files, 1,
+        NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_shadow_calc_skinned_mesh,
+    renderer->shader_shadow_calc_skinned_mesh = se_render3d_add_shader(renderer,
         shadow_calc_directional_skinned_vsd_files, 1,
         shadow_calc_directional_fsd_files, 1,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_shadow_omnidir_calc,
+    renderer->shader_shadow_omnidir_calc = se_render3d_add_shader(renderer,
         shadow_calc_omnidir_vsd_files, 1,
         shadow_calc_omnidir_fsd_files, 1,
         shadow_calc_omnidir_gsd_files, 1);
 
-    se_shader_init_from_files(&renderer->shader_shadow_omnidir_calc_skinned_mesh,
-                            shadow_calc_omnidir_skinned_vsd_files, 1,
-                            shadow_calc_omnidir_fsd_files, 1,
-                            shadow_calc_omnidir_gsd_files, 1);
+    renderer->shader_shadow_omnidir_calc_skinned_mesh = se_render3d_add_shader(renderer,
+        shadow_calc_omnidir_skinned_vsd_files, 1,
+        shadow_calc_omnidir_fsd_files, 1,
+        shadow_calc_omnidir_gsd_files, 1);
 
-    se_shader_init_from_files(&renderer->shader_lines,
+    renderer->shader_lines = se_render3d_add_shader(renderer,
         lines_vsd_files, 1,
         lines_fsd_files, 1,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_outline,
+    renderer->shader_outline = se_render3d_add_shader(renderer,
         outline_vsd_files, 1,
         outline_fsd_files, 1,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_sprite,
+    renderer->shader_sprite = se_render3d_add_shader(renderer,
         sprite_vsd_files, 1,
         sprite_fsd_files, 1,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_skinned_mesh,
-            skinned_vertex_files, 1,
-            lit_fragment_files, 2,
-            NULL, 0);
+    renderer->shader_skinned_mesh = se_render3d_add_shader(renderer,
+        skinned_vertex_files, 1,
+        lit_fragment_files, 2,
+        NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_skinned_mesh_skeleton,
+    renderer->shader_skinned_mesh_skeleton = se_render3d_add_shader(renderer,
         skeleton_vsd_files, 1,
         lines_fsd_files, 1,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_post_process_tonemap,
+    renderer->shader_post_process_tonemap = se_render3d_add_shader(renderer,
         post_process_vsd, 1,
         post_process_tonemap, 2,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_post_process_blur,
+    renderer->shader_post_process_blur = se_render3d_add_shader(renderer,
         post_process_vsd, 1,
         post_process_blur, 2,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_post_process_downsample,
+    renderer->shader_post_process_downsample = se_render3d_add_shader(renderer,
         post_process_vsd, 1,
         post_process_downsample, 2,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_post_process_upsample,
+    renderer->shader_post_process_upsample = se_render3d_add_shader(renderer,
         post_process_vsd, 1,
         post_process_upsample, 2,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_post_process_bloom,
+    renderer->shader_post_process_bloom = se_render3d_add_shader(renderer,
         post_process_vsd, 1,
         post_process_bloom, 2,
         NULL, 0);
 
-    se_shader_init_from_files(&renderer->shader_post_process_gaussian_blur,
+    renderer->shader_post_process_gaussian_blur = se_render3d_add_shader(renderer,
         post_process_vsd, 1,
         post_process_gaussian, 2,
         NULL, 0);
@@ -1529,6 +1529,8 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
                     default_normal_filepath, SE_TEXTURE_LOAD_CONFIG_NULL);
     se_texture_load(&renderer->user_materials[default_material_index]->texture_specular,
                     default_specular_filepath, SE_TEXTURE_LOAD_CONFIG_NULL);
+    renderer->user_materials[default_material_index]->shader_index = renderer->shader_lit;
+    renderer->user_materials[default_material_index]->type = SE_MATERIAL_TYPE_LIT;
 
         //- SHADOW MAPPING
     renderer->directional_shadow_map_size = 2048;
@@ -1624,26 +1626,6 @@ void se_render3d_deinit(SE_Renderer3D *renderer) {
         free(renderer->user_shaders[i]);
     }
     renderer->user_shaders_count = 0;
-
-        //- Default shaders
-    se_shader_deinit(&renderer->shader_lit);
-    se_shader_deinit(&renderer->shader_skinned_mesh);
-    se_shader_deinit(&renderer->shader_skinned_mesh_skeleton);
-    se_shader_deinit(&renderer->shader_shadow_calc);
-    se_shader_deinit(&renderer->shader_shadow_calc_skinned_mesh);
-    se_shader_deinit(&renderer->shader_shadow_omnidir_calc);
-    se_shader_deinit(&renderer->shader_lines);
-    se_shader_deinit(&renderer->shader_outline);
-    se_shader_deinit(&renderer->shader_sprite);
-    se_shader_deinit(&renderer->shader_shadow_omnidir_calc_skinned_mesh);
-
-        //- Post Process shaders
-    se_shader_deinit(&renderer->shader_post_process_tonemap);
-    se_shader_deinit(&renderer->shader_post_process_blur);
-    se_shader_deinit(&renderer->shader_post_process_gaussian_blur);
-    se_shader_deinit(&renderer->shader_post_process_downsample);
-    se_shader_deinit(&renderer->shader_post_process_upsample);
-    se_shader_deinit(&renderer->shader_post_process_bloom);
 
         //- Screen Quad (Post Process Quad)
     glDeleteBuffers(1, &renderer->screen_quad_vbo);

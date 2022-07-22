@@ -114,10 +114,17 @@ void se_skeleton_calculate_pose(SE_Skeleton *skeleton, f32 animation_time);
 void se_skeleton_deinit(SE_Skeleton *skeleton);
 
 //// MATERIAL ////
+typedef enum SE_MATERIAL_TYPES {
+    SE_MATERIAL_TYPE_LIT,
+    SE_MATERIAL_TYPE_UNLIT,
+    SE_MATERIAL_TYPE_CUSTOM,
+} SE_MATERIAL_TYPES;
     // The default material is stored at the zero'th element during init() of renderer3D.
     // It must be zero because by default all meshes point to that index
 #define SE_DEFAULT_MATERIAL_INDEX 0
 typedef struct SE_Material {
+    SE_MATERIAL_TYPES type; // the type of material this is (the default uniforms to be set during rendering)
+    u32 shader_index;       // the index into user shaders
     /* lit, line, sprite */
     Vec4 base_diffuse; // ! [0, 1] range !
     /* lit */
@@ -294,24 +301,24 @@ typedef struct SE_Renderer3D {
     SE_Shader *user_shaders[SERENDERER3D_MAX_SHADERS];
 
         //- SHADERS
-    SE_Shader shader_lit;                      // handles static meshes affected by light and the material system
-    SE_Shader shader_skinned_mesh;             // handles skinned meshes
-    SE_Shader shader_shadow_calc;              // handles directional light shadow calulation
-    SE_Shader shader_shadow_calc_skinned_mesh; // handles directional light shadow calulation
-    SE_Shader shader_shadow_omnidir_calc;      // handls point light shadow calculation
-    SE_Shader shader_lines;                    // handles rendering lines
-    SE_Shader shader_outline;                  // handles rendering outlines of static meshes
-    SE_Shader shader_sprite;                   // handles rendering sprites
-    SE_Shader shader_skinned_mesh_skeleton;    // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
-    SE_Shader shader_shadow_omnidir_calc_skinned_mesh; // handles point light shadow calculation for skinned meshes
+    u32 shader_lit;                      // handles static meshes affected by light and the material system
+    u32 shader_skinned_mesh;             // handles skinned meshes
+    u32 shader_shadow_calc;              // handles directional light shadow calulation
+    u32 shader_shadow_calc_skinned_mesh; // handles directional light shadow calulation
+    u32 shader_shadow_omnidir_calc;      // handls point light shadow calculation
+    u32 shader_lines;                    // handles rendering lines
+    u32 shader_outline;                  // handles rendering outlines of static meshes
+    u32 shader_sprite;                   // handles rendering sprites
+    u32 shader_skinned_mesh_skeleton;    // handles rendering the skeleton (lines) of a given mesh with skeleton and animation
+    u32 shader_shadow_omnidir_calc_skinned_mesh; // handles point light shadow calculation for skinned meshes
 
         //- Post Process Shaders
-    SE_Shader shader_post_process_tonemap;      // applies tone mapping and gamma correction
-    SE_Shader shader_post_process_blur;         // renders the given texture with a blur
-    SE_Shader shader_post_process_downsample;
-    SE_Shader shader_post_process_upsample;
-    SE_Shader shader_post_process_bloom;        // combines 2 textures, the second one being the bloom effect
-    SE_Shader shader_post_process_gaussian_blur;// blurs the BrightColour channel of post process framebuffer
+    u32 shader_post_process_tonemap;      // applies tone mapping and gamma correction
+    u32 shader_post_process_blur;         // renders the given texture with a blur
+    u32 shader_post_process_downsample;
+    u32 shader_post_process_upsample;
+    u32 shader_post_process_bloom;        // combines 2 textures, the second one being the bloom effect
+    u32 shader_post_process_gaussian_blur;// blurs the BrightColour channel of post process framebuffer
 
     // Generated on init. Used for rendering quads to the screen.
     // Use this by simpling binding the vao

@@ -1120,12 +1120,12 @@ static void set_material_uniforms_lit_ext(SE_Renderer3D *renderer, SE_Shader *sh
 }
 
 static void set_material_uniforms_lit(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
-    SE_Shader *shader = &renderer->shader_lit;
+    SE_Shader *shader = renderer->user_shaders[renderer->shader_lit];
     set_material_uniforms_lit_ext(renderer, shader, material, transform);
 }
 
 static void serender3d_render_set_material_uniforms_lines(SE_Renderer3D *renderer, Mat4 transform) {
-    SE_Shader *shader = &renderer->shader_lines;
+    SE_Shader *shader = renderer->user_shaders[renderer->shader_lines];
     se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
@@ -1136,7 +1136,7 @@ static void serender3d_render_set_material_uniforms_lines(SE_Renderer3D *rendere
 }
 
 static void serender3d_render_set_material_uniforms_sprite(SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform) {
-    SE_Shader *shader = &renderer->shader_sprite;
+    SE_Shader *shader = renderer->user_shaders[renderer->shader_sprite];
     se_shader_use(shader);
 
     /* always look at the camera */
@@ -1185,7 +1185,7 @@ static void load_animation_from_file(SE_Skeleton *skeleton, const char *model_fi
 static void
 set_material_uniforms_skinned
 (SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform, Mat4 *final_pose) {
-    SE_Shader *shader = &renderer->shader_skinned_mesh;
+    SE_Shader *shader = renderer->user_shaders[renderer->shader_skinned_mesh];
     se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
@@ -1284,7 +1284,7 @@ set_material_uniforms_skinned
 static void
 set_material_uniforms_skinned_skeleton
 (SE_Renderer3D *renderer, const SE_Material *material, Mat4 transform, Mat4 *final_pose) {
-    SE_Shader *shader = &renderer->shader_skinned_mesh_skeleton;
+    SE_Shader *shader = renderer->user_shaders[renderer->shader_skinned_mesh_skeleton];
     se_shader_use(shader);
 
     Mat4 pvm = mat4_mul(transform, renderer->current_camera->view);
@@ -1305,15 +1305,15 @@ static void recursive_render_directional_shadow_map_for_mesh
 
     if (mesh->should_cast_shadow) {
         if (mesh->type == SE_MESH_TYPE_NORMAL) {
-            se_shader_use(&renderer->shader_shadow_calc);
-            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc, "light_space_matrix", light_space_mat);
-            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc, "model", model_mat);
+            se_shader_use(renderer->user_shaders[renderer->shader_shadow_calc]);
+            se_shader_set_uniform_mat4(renderer->user_shaders[renderer->shader_shadow_calc], "light_space_matrix", light_space_mat);
+            se_shader_set_uniform_mat4(renderer->user_shaders[renderer->shader_shadow_calc], "model", model_mat);
         } else
         if (mesh->type == SE_MESH_TYPE_SKINNED) {
-            se_shader_use(&renderer->shader_shadow_calc_skinned_mesh);
-            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc_skinned_mesh, "light_space_matrix", light_space_mat);
-            se_shader_set_uniform_mat4(&renderer->shader_shadow_calc_skinned_mesh, "model", model_mat);
-            se_shader_set_uniform_mat4_array(&renderer->shader_shadow_calc_skinned_mesh, "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+            se_shader_use(renderer->user_shaders[renderer->shader_shadow_calc_skinned_mesh]);
+            se_shader_set_uniform_mat4(renderer->user_shaders[renderer->shader_shadow_calc_skinned_mesh], "light_space_matrix", light_space_mat);
+            se_shader_set_uniform_mat4(renderer->user_shaders[renderer->shader_shadow_calc_skinned_mesh], "model", model_mat);
+            se_shader_set_uniform_mat4_array(renderer->user_shaders[renderer->shader_shadow_calc_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
         }
 
         glBindVertexArray(mesh->vao);
@@ -1336,9 +1336,9 @@ static void recursive_render_omnidir_shadow_map_for_mesh
 
     if (mesh->should_cast_shadow) {
         // configure shader
-        SE_Shader *shader = &renderer->shader_shadow_omnidir_calc;
+        SE_Shader *shader = renderer->user_shaders[renderer->shader_shadow_omnidir_calc];
         if (mesh->type == SE_MESH_TYPE_SKINNED) {
-            shader = &renderer->shader_shadow_omnidir_calc_skinned_mesh;
+            shader = renderer->user_shaders[renderer->shader_shadow_omnidir_calc_skinned_mesh];
         }
 
         se_shader_use(shader);
@@ -1355,8 +1355,8 @@ static void recursive_render_omnidir_shadow_map_for_mesh
         se_shader_set_uniform_mat4(shader, "model", model_mat);
 
         if (mesh->type == SE_MESH_TYPE_SKINNED) {
-            se_shader_set_uniform_mat4(&renderer->shader_shadow_omnidir_calc_skinned_mesh, "model", model_mat);
-            se_shader_set_uniform_mat4_array(&renderer->shader_shadow_omnidir_calc_skinned_mesh, "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
+            se_shader_set_uniform_mat4(renderer->user_shaders[renderer->shader_shadow_omnidir_calc_skinned_mesh], "model", model_mat);
+            se_shader_set_uniform_mat4_array(renderer->user_shaders[renderer->shader_shadow_omnidir_calc_skinned_mesh], "bones", mesh->skeleton->final_pose, SE_SKELETON_BONES_CAPACITY);
         }
 
         glBindVertexArray(mesh->vao);
