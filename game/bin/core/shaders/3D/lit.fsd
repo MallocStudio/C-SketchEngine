@@ -1,0 +1,23 @@
+void main () {
+        //- properties
+    vec3 norm = normalize(_Normal);
+    vec3 view_dir = normalize(camera_pos - _Frag_Pos);
+
+        //- directional light
+    vec3 result = calc_dir_light(dir_light, norm, view_dir);
+        //- point light
+    for (int i = 0; i < MAX_NUM_POINT_LIGHTS; i++) {
+        if (i < num_of_point_lights) {
+            result += calc_point_light(point_lights[i], norm, _Frag_Pos, view_dir);
+        }
+    }
+
+    FragColour = result;
+    // We calculate the brightness of a fragment by properly transforming it to grayscale first
+    // (by taking the dot product of both vectors we effectively multiply each individual component of both vectors and add the results together)
+    float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722)); // uhh idk what this magic value is
+    if(brightness > 1.0)
+        BrightColour = result;
+    else
+        BrightColour = vec3(0.0);
+}

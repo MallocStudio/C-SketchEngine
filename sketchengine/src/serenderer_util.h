@@ -23,13 +23,10 @@
 #define default_diffuse_filepath "core/textures/default_diffuse.png"
 #define default_specular_filepath "core/textures/default_specular.png"
 
-#define shader_filename_lit_vsd "core/shaders/3D/lit.vsd"
-#define shader_filename_lit_fsd "core/shaders/3D/lit_better.fsd"
-
 #define shader_filename_lit_header_vsd "core/shaders/3D/lit_header.vsd"
-#define shader_filename_lit_footer_vsd "core/shaders/3D/lit_footer.vsd"
+#define shader_filename_lit_vsd "core/shaders/3D/lit.vsd"
 #define shader_filename_lit_header_fsd "core/shaders/3D/lit_header.fsd"
-#define shader_filename_lit_footer_fsd "core/shaders/3D/lit_footer.fsd"
+#define shader_filename_lit_fsd "core/shaders/3D/lit.fsd"
 
 #define shader_filename_shadow_calc_directional_vsd "core/shaders/3D/shadow_calc/shadow_calc.vsd"
 #define shader_filename_shadow_calc_directional_fsd "core/shaders/3D/shadow_calc/shadow_calc.fsd"

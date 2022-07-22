@@ -1329,8 +1329,8 @@ void se_render3d_init(SE_Renderer3D *renderer, SE_Camera3D *current_camera) {
 
         //- SHADERS
         // lit
-    const char *lit_vertex_files[2] = {shader_filename_lit_header_vsd, shader_filename_lit_footer_vsd};
-    const char *lit_fragment_files[2] = {shader_filename_lit_header_fsd, shader_filename_lit_footer_fsd};
+    const char *lit_vertex_files[2] = {shader_filename_lit_header_vsd, shader_filename_lit_vsd};
+    const char *lit_fragment_files[2] = {shader_filename_lit_header_fsd, shader_filename_lit_fsd};
     const char *skinned_vertex_files[1] = {shader_filename_lit_skinned_vsd};
 
         // shadow calc
