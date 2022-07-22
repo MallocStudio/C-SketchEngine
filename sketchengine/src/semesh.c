@@ -1660,6 +1660,8 @@ void se_save_data_mesh_deinit(SE_Save_Data_Meshes *save_data) {
         raw_data->index_count = 0;
 
             //- Material
+        raw_data->type = SE_MATERIAL_TYPE_LIT;
+        raw_data->material_shader_index = -1;
         se_string_deinit(&raw_data->texture_diffuse_filepath);
         se_string_deinit(&raw_data->texture_specular_filepath);
         se_string_deinit(&raw_data->texture_normal_filepath);
@@ -1716,7 +1718,7 @@ void se_save_data_read_mesh(SE_Save_Data_Meshes *save_data, const char *save_fil
             fread(&raw_data->should_cast_shadow, sizeof(b8), 1, file);
 
                 //- Material
-            fread(&raw_data->material_type, sizeof(SE_MATERIAL_TYPES), 1, file);
+            fread(&raw_data->material_type, sizeof(i32), 1, file);
             fread(&raw_data->material_shader_index, sizeof(u32), 1, file);
             fread(&raw_data->base_diffuse, sizeof(f32), 4, file);
             u32 diffuse_buffer_size;
@@ -1784,7 +1786,7 @@ void se_save_data_write_mesh(const SE_Save_Data_Meshes *save_data, const char *s
             fwrite(&raw_data->should_cast_shadow, sizeof(b8), 1, file);
 
                 //- Material
-            fwrite(&raw_data->material_type, sizeof(SE_MATERIAL_TYPES), 1, file);
+            fwrite(&raw_data->material_type, sizeof(i32), 1, file);
             fwrite(&raw_data->material_shader_index, sizeof(u32), 1, file);
             fwrite(&raw_data->base_diffuse, sizeof(f32), 4, file);
             fwrite(&raw_data->texture_diffuse_filepath.size, sizeof(u32), 1, file);

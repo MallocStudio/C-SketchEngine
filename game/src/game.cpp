@@ -172,7 +172,7 @@ void App::render() {
     glClearColor(0.3,
                  0.4,
                  0.5,
-                 0.0f);
+                 1.0f);
     glClearDepth(1);
     // glClearColor(0.2, 0.1, 0.1, 1);
     // glClearColor(0, 0, 0, 1.0f);

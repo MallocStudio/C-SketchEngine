@@ -97,6 +97,7 @@ u32 se_save_data_mesh_to_mesh
                 material->shader_index = renderer->shader_lit;
             }
 
+            material->base_diffuse = (Vec4) {1, 1, 1, 1};
             material->base_diffuse = raw_data->base_diffuse;
 
             if (raw_data->texture_diffuse_filepath.buffer != NULL) {
@@ -143,7 +144,10 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
 
     i32 primitive = GL_TRIANGLES;
     SE_Material *material = renderer->user_materials[mesh->material_index];
-    SE_Shader *shader = renderer->user_shaders[material->shader_index];
+        //@temp assigning the shader to various indices based on mesh type.
+        // rewrite this so that when we generate other meshes (such as plane, lines, sprites)...
+        // we automatically assign the correct shader index to the material
+    SE_Shader *shader = renderer->user_shaders[material->shader_index]; // this is being ignored except for normal and skinned meshes
 
     /* configs for this mesh */
     if (mesh->type == SE_MESH_TYPE_LINE) { // LINE
@@ -151,19 +155,23 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
         glLineWidth(mesh->line_width);
         if (mesh->skeleton != NULL && mesh->skeleton->animations_count > 0) {
         //- ANIMATED LINES
+            shader = renderer->user_shaders[renderer->shader_skinned_mesh_skeleton];
                 // used for animated skeleton
             set_material_uniforms_skeleton(renderer, shader, material, transform, mesh->skeleton->final_pose);
         } else {
         //- LINE
+            shader = renderer->user_shaders[renderer->shader_lines];
                 // render the line without animation
             set_material_uniforms_lines(renderer, shader, material, transform);
         }
     } else
     if (mesh->type == SE_MESH_TYPE_NORMAL) { // NORMAL
         //- STATIC MESH
+        shader = renderer->user_shaders[renderer->shader_lit];
         set_material_uniforms_lit(renderer, shader, material, transform);
     } else
     if (mesh->type == SE_MESH_TYPE_SPRITE) { // SPRITE
+        shader = renderer->user_shaders[renderer->shader_sprite];
         //- SPRITE
         set_material_uniforms_sprite(renderer, shader, material, transform);
         glDisable(GL_CULL_FACE);
@@ -171,10 +179,12 @@ void se_render_mesh(SE_Renderer3D *renderer, SE_Mesh *mesh, Mat4 transform) {
     } else
         //- SKINNED MESH
     if (mesh->type == SE_MESH_TYPE_SKINNED) { // SKELETAL ANIMATION
+        shader = renderer->user_shaders[renderer->shader_skinned_mesh];
         set_material_uniforms_skinned(renderer, material, transform, mesh->skeleton->final_pose);
     } else
     if (mesh->type == SE_MESH_TYPE_POINT) { // MESH MADE OUT OF POINTS
         //- POINT
+        shader = renderer->user_shaders[renderer->shader_lines];
         primitive = GL_POINTS;
         glPointSize(mesh->point_radius);
             // Note: points use the same shader as lines
