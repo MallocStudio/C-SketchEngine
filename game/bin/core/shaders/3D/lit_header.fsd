@@ -58,6 +58,7 @@ vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir);
 vec3 calc_point_light(Point_Light light, vec3 normal, vec3 frag_pos, vec3 view_dir);
 float calc_shadows_directional(vec4 param_frag_pos_light_space);
 float calc_shadows_omnidirectional(vec3 frag_pos, Point_Light light);
+vec3 calc_shading();
 
 vec3 calc_dir_light(Dir_Light light, vec3 normal, vec3 view_dir) {
 //  { The new method takes normal into account

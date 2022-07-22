@@ -84,83 +84,74 @@ GLint se_shader_get_uniform_loc(SE_Shader *shader, const char *uniform_name) {
 
 void se_shader_set_uniform_f32  (SE_Shader *shader, const char *uniform_name, f32 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    // if ((i32)var_loc == -1) printf("Something's boned (%s)\n", uniform_name);
-    se_shader_use(shader);
-    glUniform1f(var_loc, value);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform1f(var_loc, value);
+    }
 }
 
 void se_shader_set_uniform_i32  (SE_Shader *shader, const char *uniform_name, i32 value) {
-    glGetError(); // @debug
-
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-
-        // @debug
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform1i(var_loc, value);
     }
-        // @debug
-    if (var_loc == -1) {
-        printf("Something's boned (%s)\n", uniform_name);
-    }
-    se_shader_use(shader);
-    glUniform1i(var_loc, value);
 }
 
 void se_shader_set_uniform_vec3 (SE_Shader *shader, const char *uniform_name, Vec3 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    se_shader_use(shader);
-    glUniform3f(var_loc, value.x, value.y, value.z);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform3f(var_loc, value.x, value.y, value.z);
+    }
 }
 
 void se_shader_set_uniform_vec4 (SE_Shader *shader, const char *uniform_name, Vec4 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    se_shader_use(shader);
-    glUniform4f(var_loc, value.x, value.y, value.z, value.w);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform4f(var_loc, value.x, value.y, value.z, value.w);
+    }
 }
 
 void se_shader_set_uniform_vec2 (SE_Shader *shader, const char *uniform_name, Vec2 value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    se_shader_use(shader);
-    glUniform2f(var_loc, value.x, value.y);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform2f(var_loc, value.x, value.y);
+    }
 }
 
 void se_shader_set_uniform_rgb (SE_Shader *shader, const char *uniform_name, RGB value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    se_shader_use(shader);
-    glUniform3f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform3f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f);
+    }
 }
 
 void se_shader_set_uniform_rgba (SE_Shader *shader, const char *uniform_name, RGBA value) {
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    se_shader_use(shader);
-    glUniform4f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniform4f(var_loc, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f);
+    }
 }
 
 void se_shader_set_uniform_mat4 (SE_Shader *shader, const char *uniform_name, Mat4 value) {
-    glGetError();
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniformMatrix4fv(var_loc, 1, GL_FALSE, (const GLfloat*)&value);
     }
-    se_shader_use(shader);
-    glUniformMatrix4fv(var_loc, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
 void se_shader_set_uniform_mat4_array (SE_Shader *shader, const char *uniform_name, Mat4 *value, u32 count) {
-    glGetError();
     GLint var_loc = glGetUniformLocation(shader->shader_program, uniform_name);
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        printf("some error has occured at %s : %i\n", __FILE__, __LINE__);
+    if (var_loc != -1) {
+        se_shader_use(shader);
+        glUniformMatrix4fv(var_loc, count, GL_FALSE, (const GLfloat*)value);
     }
-    se_shader_use(shader);
-    // for (u32 i = 0; i < count; ++i) {
-    //     // NOTE(Matin): we're not certain that this is supported on all drivers, not sure if this is part of the spec
-    //     // glUniformMatrix4fv(var_loc + i, 1, GL_FALSE, (const GLfloat*)(&value + i));
-    // }
-    glUniformMatrix4fv(var_loc, count, GL_FALSE, (const GLfloat*)value);
 }
 
 char* se_load_file_as_string(const char *file_name) {

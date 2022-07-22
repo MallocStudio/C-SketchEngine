@@ -1,10 +1,13 @@
 void main () {
-    vec4 custom_colour = vec4(0.2, 0.1, 0.6, 0.3);
-    vec4 custom_colour2 = vec4(0.15, 0.1, 0.6, 0.3);
+    // vec4 custom_colour = vec4(0.2, 0.1, 0.6, 1);
+    // vec4 custom_colour2 = vec4(0.15, 0.1, 0.6, 0.3);
 
     vec4 shading = vec4(calc_shading(), 0.1);
 
-    FragColour = mix(custom_colour, custom_colour2, sin(time) + 0.5) + shading;
-    // BrightColour = custom_colour2; // custom bloom for example
-    BrightColour = vec4(0); // no bloom on diamond for example
+    // FragColour = mix(custom_colour, custom_colour2, sin(time) + 0.5) + shading;
+    // // BrightColour = custom_colour2; // custom bloom for example
+    // BrightColour = vec4(0); // no bloom on diamond for example
+
+    FragColour = vec4(0.3, 0.2, 0.5, 0.5) + shading;
+    BrightColour = vec4(0.3);
 }
