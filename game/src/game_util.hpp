@@ -356,6 +356,12 @@ void App::util_render_engine_mode() {
 
         //- UI: Entity Data
     m_selected_entity = util_show_entity_data(m_selected_entity);
+    util_show_light_data();
+    // util_show_assets();
+    if (m_selected_entity >= 0 && m_level.entities.has_mesh[m_selected_entity]) {
+        u32 material_index = m_renderer.user_meshes[m_level.entities.mesh_index[m_selected_entity]]->material_index;
+        util_show_material(material_index);
+    }
 
 #if 0      //- DEBUG RENDERING
     se_render_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
@@ -374,32 +380,67 @@ void App::util_switch_mode(GAME_MODES mode) {
 }
 
 i32 App::util_show_entity_data(i32 entity_index) {
-    static i32 world_size = 50;
-    UI::window_begin("Entity Data", UI::dock_space_left());
-    if (entity_index >= 0) {
-            // ID
-        ImGui::Text("ID: %i", entity_index);
-        if (m_level.entities.has_name[entity_index]) {
-            ImGui::SameLine();
-            ImGui::LabelText("Name: %s", m_level.entities.name[entity_index].buffer);
+    if (UI::window_begin("Entity Data", UI::dock_space_left())) {
+        if (entity_index >= 0) {
+                // ID
+            ImGui::Text("ID: %i", entity_index);
+            if (m_level.entities.has_name[entity_index]) {
+                ImGui::SameLine();
+                ImGui::LabelText("Name: %s", m_level.entities.name[entity_index].buffer);
+            }
+                // Pos
+            UI::drag_vec3("position", &m_level.entities.position[entity_index], 0.25f);
+
+                // Rot
+            UI::drag_vec3_rotation("rotation", &m_level.entities.oriantation[entity_index]);
+                // Scale
+            UI::drag_vec3("scale", &m_level.entities.scale[entity_index], 0.5f);
+
+                // Mesh Index
+            i32 mesh_index = (i32)m_level.entities.mesh_index[entity_index];
+            ImGui::SliderInt("Mesh", &mesh_index, 0, m_renderer.user_meshes_count - 1);
+            m_level.entities.mesh_index[entity_index] = (u32)mesh_index;
+        } else {
+            ImGui::Text("selected an entity by ctrl + left-click");
         }
-            // Pos
-        UI::drag_vec3("position", &m_level.entities.position[entity_index], 0.25f);
 
-            // Rot
-        UI::drag_vec3_rotation("rotation", &m_level.entities.oriantation[entity_index]);
-            // Scale
-        UI::drag_vec3("scale", &m_level.entities.scale[entity_index], 0.5f);
-
-            // Mesh Index
-        i32 mesh_index = (i32)m_level.entities.mesh_index[entity_index];
-        ImGui::SliderInt("Mesh", &mesh_index, 0, m_renderer.user_meshes_count - 1);
-        m_level.entities.mesh_index[entity_index] = (u32)mesh_index;
-    } else {
-        ImGui::Text("selected an entity by ctrl + left-click");
-    }
-
-    UI::window_end();
-
+    } UI::window_end();
     return entity_index;
+}
+
+void App::util_show_light_data() {
+    if (UI::window_begin("Light Data", UI::dock_space_right())) {
+        f32 indent = 10;
+            // directional light
+        if (ImGui::CollapsingHeader("directional light")) {
+            ImGui::Indent(indent);
+            UI::drag_vec3("direction", &m_renderer.light_directional.direction, 0.1f, -1, 1);
+            ImGui::SliderFloat("intensity", &m_renderer.light_directional.intensity, 0, 2);
+            UI::rgb("diffuse", &m_renderer.light_directional.diffuse);
+            ImGui::Unindent(indent);
+        }
+    } UI::window_end();
+}
+
+void App::util_show_assets() {
+    if (UI::window_begin("Assets", UI::dock_space_bottom())) {
+            // - Materials
+        if (ImGui::BeginTabBar("assets")) {
+            ImGui::BeginTabItem("materials");
+                for (u32 i = 0; i < m_renderer.user_materials_count; ++i) {
+                    ImGui::PushID(i);
+                    UI::material(m_renderer.user_materials[i]);
+                    ImGui::PopID();
+                    ImGui::Separator();
+                    ImGui::NewLine();
+                }
+            ImGui::EndTabItem();
+        } ImGui::EndTabBar();
+    } UI::window_end();
+}
+
+void App::util_show_material(u32 material_index) {
+    if (ImGui::Begin("material")) {
+        UI::material(m_renderer.user_materials[material_index]);
+    } ImGui::End();
 }

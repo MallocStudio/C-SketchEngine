@@ -81,4 +81,7 @@ private:
     /// It has the ability to scroll through all entities and
     /// so it returns the entity_index selected through the UI
     i32 util_show_entity_data(i32 entity_index);
+    void util_show_light_data();
+    void util_show_assets();
+    void util_show_material(u32 material_index);
 };
