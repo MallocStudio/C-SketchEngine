@@ -169,6 +169,14 @@ void UI::texture(SE_Texture *texture, const char *label) {
         ImGui::Text("ID: %i", texture->id);
             // Image
         ImGui::Image((void*)(intptr_t)texture->id, {128, 128});
+        if (ImGui::IsItemHovered()) {
+            ImVec2 size = {(f32)texture->width, (f32)texture->height};
+            ImGui::SetNextWindowPos(ImGui::GetMousePos());
+            ImGui::SetNextWindowSize(size);
+            ImGui::Begin("##Detailed_Texture", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_Tooltip);
+                ImGui::Image((void*)(intptr_t)texture->id, size);
+            ImGui::End();
+        }
     } else {
         ImGui::Text("Loaded: FALSE");
     }
