@@ -38,15 +38,9 @@ App::App(SDL_Window *window) {
     // se_render_target_init_hdr(&m_render_target_downsample, render_target_size, 2, true);
     // se_render_target_init_hdr(&m_render_target_upsample, render_target_size, 2, true);
 
-        //- UI
-    ctx = NEW(SE_UI);
-    seui_init(ctx, &m_input, viewport, -1000, 1000);
-
         // entity widget
     // m_selected_entity = -1; // no entity has been selected
-    m_widget_entity.entities = &m_level.entities;
     m_selected_entity = 0; // select first entity
-    m_widget_entity.entity = m_selected_entity;
 
         //- Input
     se_input_init(&m_input);
@@ -88,7 +82,6 @@ App::App(SDL_Window *window) {
 }
 
 App::~App() {
-    free(ctx);
     se_render3d_deinit(&m_renderer);
     se_gizmo_renderer_deinit(&m_gizmo_renderer);
     // se_texture_unload(&debug_screen_quad_texture);
@@ -122,10 +115,6 @@ void App::update(f32 delta_time) {
     se_input_update(&m_input, m_cameras[main_camera].projection, m_window);
 
     m_renderer.time += delta_time;
-
-        //- Resize UI
-    seui_resize(ctx, window_w, window_h);
-    seui_reset(ctx);
 
     if (m_mode == GAME_MODES::GAME) {
             //- GAME INPUT
@@ -237,10 +226,9 @@ void App::render() {
         util_render_engine_mode();
     }
 
-        //- UI
-    glClear(GL_DEPTH_BUFFER_BIT);
-    seui_render(ctx);
-
+    {   //- UI
+        ImGui::ShowDemoWindow();
+    }
 }
 
 void App::end_of_frame() {

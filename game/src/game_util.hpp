@@ -1,5 +1,6 @@
 #pragma once
 #include "game.hpp"
+#include "imgui.h"
 //! This is meant to be included in game.cpp ONLY. Nowhere else. So this has to be included once.
 
 ///
@@ -7,7 +8,6 @@
 ///
 
 char fps_text[24];
-SE_UI *ctx;
 
     //@temp a temporary way of loading required meshes once at init_application() time
 u32 mesh_soulspear = -1;
@@ -280,12 +280,6 @@ void App::util_update_game_mode(f32 delta_time) {
             m_level.m_player->move(vec3_backward());
         }
     }
-
-        //- UI
-          // switch to engine mode
-    if (seui_button_at(ctx, "engine mode", {0, 0, 200, 32})) {
-        util_switch_mode(GAME_MODES::ENGINE);
-    }
 }
 
 void App::util_render_game_mode() {
@@ -311,7 +305,6 @@ void App::util_update_engine_mode(f32 delta_time) {
         // select entities
     if (se_input_is_mouse_left_released(&m_input) && se_input_is_key_down(&m_input, SDL_SCANCODE_LCTRL)) {
         m_selected_entity = this->raycast_to_select_entity();
-        m_widget_entity.entity = m_selected_entity;
     }
 
     if (m_selected_entity >= 0) {   // @temp
@@ -324,37 +317,6 @@ void App::util_update_engine_mode(f32 delta_time) {
             m_gizmo_renderer.shapes[mesh_gizmos_translate].base_colour = dim;
         }
     }
-
-        //- UI
-    m_widget_entity.construct_panel(ctx, &m_renderer);
-    m_selected_entity = m_widget_entity.entity;
-
-        // make entity widget pop up
-    // if (se_input_is_key_pressed(&m_input, SDL_SCANCODE_SPACE)) {
-    //     m_widget_entity.toggle_visibility(ctx);
-    // }
-
-        // switch to game mode
-    if (seui_button_at(ctx, "game mode", {0, 0, 200, 32})) {
-        util_switch_mode(GAME_MODES::GAME);
-    }
-        // save
-    if (seui_button_at(ctx, "save", {200, 0, 128, 32})) {
-        this->save();
-    }
-        // save camera settings
-    if (seui_button_at(ctx, "save camera", {128+200, 0, 200, 32})) {
-        Assets::update_level_camera_settings(&m_level, m_cameras[main_camera]);
-    }
-
-    // @debug
-    seui_texture_viewer(ctx, m_renderer.shadow_render_target.colour_buffers[0]);
-    seui_texture_viewer(ctx, m_render_target_scene.colour_buffers[0]);
-
-    // seui_grid_editor(ctx, &grid, value_mappings);
-
-    sprintf(fps_text, "%f", fps);
-    seui_label_at(ctx, fps_text, {128+200+200, 0, 200, 32});
 }
 
 void App::util_render_engine_mode() {

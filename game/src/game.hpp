@@ -2,7 +2,6 @@
 
 #include "sketchengine.h"
 #include "level.hpp"
-#include "widgets.hpp"
 
 enum class GAME_MODES {
     GAME,
@@ -50,7 +49,6 @@ private:
         /// It will return the index of the entity, -1 if nothing was being selected.
     i32 raycast_to_select_entity();
 
-    Widget_Entity m_widget_entity;
     u32 m_mesh_assets_count;
     SE_String m_mesh_assets[MAX_NUM_ASSETS]; // @TODO change this to a dynamic array
     bool m_has_queued_for_change_of_mode;

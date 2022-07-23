@@ -134,9 +134,6 @@ int main() {
         game->render();
         game->end_of_frame();
 
-            //@temp
-        ImGui::ShowDemoWindow();
-
             //- Render
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
