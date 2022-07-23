@@ -68,6 +68,7 @@ Thank you for your time.
 	[/] Add HDR textures and tonemapping to main framebuffers
     [/] Add Bloom
 	[/] Work on custom materials and custom shaders
+    [ ] Work on the ability to update material's texture paths
 	[ ] Work on loading and saving custom materials and shaders to the disk
 	[ ] Work on saving light settings to the disk and loading it
 	[ ] Have an animated character that can move around

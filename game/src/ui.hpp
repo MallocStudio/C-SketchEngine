@@ -12,6 +12,7 @@ namespace UI {
 
         // assets
     void material(SE_Material *material);
+    void texture(SE_Texture *texture, const char *label);
 
         // windowing
     bool window_begin(const char *label, Rect rect);

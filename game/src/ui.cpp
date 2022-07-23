@@ -155,19 +155,21 @@ void UI::material(SE_Material *material) {
     ImGui::ColorEdit4("Diffuse", &material->base_diffuse.x);
 
         //- Textures
-    if (material->texture_diffuse.loaded) {
-        ImGui::TextColored(header_colour, "Diffuse Texture");
-        ImGui::SameLine();
-        ImGui::Text("%i", material->texture_diffuse.id);
-    }
-    if (material->texture_specular.loaded) {
-        ImGui::TextColored(header_colour, "Specular Texture");
-        ImGui::SameLine();
-        ImGui::Text("%i", material->texture_specular.id);
-    }
-    if (material->texture_normal.loaded) {
-        ImGui::TextColored(header_colour, "Normal Texture");
-        ImGui::SameLine();
-        ImGui::Text("%i", material->texture_normal.id);
+    UI::texture(&material->texture_diffuse, "Diffuse");
+    UI::texture(&material->texture_specular, "Specular");
+    UI::texture(&material->texture_normal, "Normal");
+}
+
+void UI::texture(SE_Texture *texture, const char *label) {
+    ImGui::Text(label);
+    if (texture->loaded) {
+        ImGui::Text("Loaded: TRUE");
+
+            // ID
+        ImGui::Text("ID: %i", texture->id);
+            // Image
+        ImGui::Image((void*)(intptr_t)texture->id, {128, 128});
+    } else {
+        ImGui::Text("Loaded: FALSE");
     }
 }
