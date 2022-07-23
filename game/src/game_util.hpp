@@ -8,6 +8,8 @@
 ///
 
 char fps_text[24];
+bool show_demo_window = true;
+f32 test_colour[3] = {0};
 
     //@temp a temporary way of loading required meshes once at init_application() time
 u32 mesh_soulspear = -1;
