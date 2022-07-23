@@ -1,6 +1,6 @@
 #pragma once
 #include "game.hpp"
-#include "imgui.h"
+#include "ui.hpp"
 //! This is meant to be included in game.cpp ONLY. Nowhere else. So this has to be included once.
 
 ///
@@ -354,6 +354,9 @@ void App::util_render_engine_mode() {
         se_gizmo_render_index(&m_gizmo_renderer, mesh_gizmos_translate, transform);
     }
 
+        //- UI: Entity Data
+    m_selected_entity = util_show_entity_data(m_selected_entity);
+
 #if 0      //- DEBUG RENDERING
     se_render_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
     {
@@ -368,4 +371,33 @@ void App::util_render_engine_mode() {
 void App::util_switch_mode(GAME_MODES mode) {
     m_has_queued_for_change_of_mode = true;
     m_queued_mode = mode;
+}
+
+i32 App::util_show_entity_data(i32 entity_index) {
+    static i32 world_size = 50;
+    ImGui::Begin("Entity Data");
+    if (entity_index >= 0) {
+            // ID
+        ImGui::Text("ID: %i", entity_index);
+        if (m_level.entities.has_name[entity_index]) {
+            ImGui::SameLine();
+            ImGui::LabelText("Name: %s", m_level.entities.name[entity_index].buffer);
+        }
+            // Pos
+        UI::drag_vec3("position", &m_level.entities.position[entity_index], 0.25f);
+
+            // Rot
+        UI::drag_vec3_rotation("rotation", &m_level.entities.oriantation[entity_index]);
+            // Scale
+        UI::drag_vec3("scale", &m_level.entities.scale[entity_index], 0.5f);
+
+            // Mesh Index
+        i32 mesh_index = (i32)m_level.entities.mesh_index[entity_index];
+        ImGui::SliderInt("Mesh", &mesh_index, 0, m_renderer.user_meshes_count - 1);
+        m_level.entities.mesh_index[entity_index] = (u32)mesh_index;
+    } else {
+        ImGui::Text("selected an entity by ctrl + left-click");
+    }
+    ImGui::End();
+    return entity_index;
 }

@@ -46,8 +46,6 @@ int main() {
         //- Use Vsync
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
 
-    SDL_StopTextInput(); // don't take text input by default
-
     App *game = new App(window);
 
     // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -80,34 +78,34 @@ int main() {
                 case SDL_WINDOWEVENT: { // -- resized window
                     if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                         // printf("window resized\n");
-                        SDL_GetWindowSize(window, &window_w, &window_h);
-                        glViewport(0, 0, window_w, window_h);
+                        // SDL_GetWindowSize(window, &window_w, &window_h);
+                        // glViewport(0, 0, window_w, window_h);
                     }
-                } break;
-                case SDL_KEYDOWN: {
-                    // keyboard_pressed = true;
-                    // keyboard_down = true;
                 } break;
                 case SDL_MOUSEWHEEL: {
                     game->m_input.mouse_wheel = event.wheel.preciseY;
                 } break;
-                case SDL_TEXTINPUT: { // this event happens after SDL_StartTextInput() is called
-                    if (game->m_input.text_input_stream != NULL) {
-                        if (game->m_input.is_text_input_only_numeric) {
-                            if ((event.text.text[0] >= (i32)'0' && event.text.text[0] <= (i32)'9')
-                                || event.text.text[0] == (i32)'-' || event.text.text[0] == (i32)'.') {
-                                se_string_append(game->m_input.text_input_stream, event.text.text);
-                            }
-                        } else {
-                            se_string_append(game->m_input.text_input_stream, event.text.text);
-                            // printf("WHAT!!! %s\n", event.text.text);
-                        }
-                    } else {
-                        printf("Warning: tried to append to input text stream but it was null\n");
-                    }
-                } break;
-                case SDL_TEXTEDITING: {// this event happens after SDL_StartTextInput() is called
-                } break;
+                // case SDL_KEYDOWN: {
+                //     // keyboard_pressed = true;
+                //     // keyboard_down = true;
+                // } break;
+                // case SDL_TEXTINPUT: { // this event happens after SDL_StartTextInput() is called
+                //     if (game->m_input.text_input_stream != NULL) {
+                //         if (game->m_input.is_text_input_only_numeric) {
+                //             if ((event.text.text[0] >= (i32)'0' && event.text.text[0] <= (i32)'9')
+                //                 || event.text.text[0] == (i32)'-' || event.text.text[0] == (i32)'.') {
+                //                 se_string_append(game->m_input.text_input_stream, event.text.text);
+                //             }
+                //         } else {
+                //             se_string_append(game->m_input.text_input_stream, event.text.text);
+                //             // printf("WHAT!!! %s\n", event.text.text);
+                //         }
+                //     } else {
+                //         printf("Warning: tried to append to input text stream but it was null\n");
+                //     }
+                // } break;
+                // case SDL_TEXTEDITING: {// this event happens after SDL_StartTextInput() is called
+                // } break;
                 case SDL_DROPFILE: {
                     //- Drop Files
                     dropped_file_dir = event.drop.file;

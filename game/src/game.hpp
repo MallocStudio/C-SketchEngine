@@ -76,4 +76,9 @@ private:
     void util_render_engine_mode();
 
     void util_switch_mode(GAME_MODES mode);
+
+    /// Displays an ImGui window with entity's data.
+    /// It has the ability to scroll through all entities and
+    /// so it returns the entity_index selected through the UI
+    i32 util_show_entity_data(i32 entity_index);
 };
