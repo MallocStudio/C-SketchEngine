@@ -544,6 +544,8 @@ void ai_scene_to_mesh_save_data
             b8 has_diffuse  = true;
             b8 has_specular = true;
             b8 has_normal   = true;
+            b8 has_embedded_textures = false;
+            if (scene->mNumTextures > 0) has_embedded_textures = true;
 
             // When converting the save data to an actual mesh, the converted should check material type: SE_MATERIAL_TYPE_LIT
             // and assigning the shader_index accordingly
@@ -552,17 +554,23 @@ void ai_scene_to_mesh_save_data
 
             if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_DIFFUSE , 0, ai_texture_path_diffuse, NULL, NULL, NULL, NULL, NULL, NULL)) {
                 has_diffuse = false;
-                printf("WARNING: ASSIMP unable to load dffiuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+                if (!has_embedded_textures) {
+                    printf("WARNING: ASSIMP unable to load dffiuse\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+                }
             }
 
             if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_SPECULAR, 0, ai_texture_path_specular, NULL, NULL, NULL, NULL, NULL, NULL)) {
                 has_specular = false;
-                printf("WARNING: ASSIMP unable to load specular\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+                if (!has_embedded_textures) {
+                    printf("WARNING: ASSIMP unable to load specular\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+                }
             }
 
             if (AI_SUCCESS != aiGetMaterialTexture(ai_material, aiTextureType_NORMALS , 0, ai_texture_path_normal, NULL, NULL, NULL, NULL, NULL, NULL)) {
                 has_normal = false;
-                printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+                if (!has_embedded_textures) {
+                    printf("WARNING: ASSIMP unable to load normals\t for mesh: '%s', report: %s\n", filepath, aiGetErrorString());
+                }
             }
 
             struct aiColor4D ai_colour;

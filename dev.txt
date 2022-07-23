@@ -58,3 +58,21 @@ Discord: ...
 Github: ...
 
 Thank you for your time.
+
+----------------------------------------------------------------------------
+///
+/// Things to complete for the demo of the engine for the artists:
+///
+[/] Fix / improve directional light
+[ ] Import more assets and create a demo scene:
+	[/] Add HDR textures and tonemapping to main framebuffers
+    [/] Add Bloom
+	[/] Work on custom materials and custom shaders
+	[ ] Work on loading and saving custom materials and shaders to the disk
+	[ ] Work on saving light settings to the disk and loading it
+	[ ] Have an animated character that can move around
+	[ ] If time allows, create a simple swapping between timeline mechanic
+	[/] Fix shadow mapping for skinned meshes (point light)
+	[/] Add Gamma Correction
+	[/] Improve shader creation pipeline (more flexible)
+----------------------------------------------------------------------------
