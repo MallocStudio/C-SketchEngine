@@ -3,6 +3,9 @@
 #include "GL/glew.h"
 #include "game.hpp"
 #include "stdio.h"
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
 
 int main() {
     SDL_Window *window;
@@ -30,6 +33,15 @@ int main() {
     if (glew_error != GLEW_OK) {
         printf("ERROR init GLEW! %s\n", glewGetErrorString(glew_error));
     }
+
+        //- Init IMGUI
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    ImGui_ImplSDL2_InitForOpenGL(window, g_context);
+    ImGui_ImplOpenGL3_Init("#version 450");
+    ImGui::StyleColorsDark();
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
         //- Use Vsync
     ERROR_ON_NOTZERO_SDL(SDL_GL_SetSwapInterval(1), "Warning: Unable to set VSync");
@@ -60,6 +72,7 @@ int main() {
         bool keyboard_pressed = false;
         game->m_input.mouse_wheel = 0; // reset this to zero
         while (!game->should_quit && SDL_PollEvent(&event)) {
+            ImGui_ImplSDL2_ProcessEvent(&event);
             switch (event.type) {
                 case SDL_QUIT: { // -- wanting to quit
                     game->should_quit = true;
@@ -105,6 +118,11 @@ int main() {
             }
         }
 
+        //- ImGUI
+        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui::NewFrame();
+
         last = now;
         now = SDL_GetPerformanceCounter();
         delta_time = (f64)((now - last) / (f64)SDL_GetPerformanceFrequency());
@@ -116,11 +134,25 @@ int main() {
         game->render();
         game->end_of_frame();
 
+            //@temp
+        ImGui::ShowDemoWindow();
+
+            //- Render
+        ImGui::Render();
+        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+        // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        // glClear(GL_COLOR_BUFFER_BIT);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
     }
 
     // -- exit
     delete game;
+
+    //- ImGui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+
     SDL_GL_DeleteContext(g_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
