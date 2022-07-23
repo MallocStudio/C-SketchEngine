@@ -54,7 +54,7 @@ bool UI::window_begin(const char *label, Rect rect) {
     ImVec2 window_size = ImVec2(rect.w, rect.h);
     ImGui::SetNextWindowSize(window_size);
     ImGui::SetNextWindowPos(window_pos);
-    return ImGui::Begin(label, (bool*)0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+    return ImGui::Begin(label, (bool*)0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration);
 }
 
 void UI::window_end() {

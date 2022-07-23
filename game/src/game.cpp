@@ -156,14 +156,14 @@ void App::render() {
     se_render_omnidirectional_shadow_map(&m_renderer, m_level.entities.mesh_index, m_level.entities.transform, m_level.entities.count);
 
         //- Clear Previous Frame
-    // glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
-    //              m_renderer.light_directional.ambient.g / 255.0f,
-    //              m_renderer.light_directional.ambient.b / 255.0f,
-    //              0.0f);
-    glClearColor(0.3,
-                 0.4,
-                 0.5,
-                 1.0f);
+    glClearColor(m_renderer.light_directional.ambient.r / 255.0f,
+                 m_renderer.light_directional.ambient.g / 255.0f,
+                 m_renderer.light_directional.ambient.b / 255.0f,
+                 0.0f);
+    // glClearColor(0.3,
+    //              0.4,
+    //              0.5,
+    //              1.0f);
     glClearDepth(1);
     // glClearColor(0.2, 0.1, 0.1, 1);
     // glClearColor(0, 0, 0, 1.0f);
@@ -323,6 +323,7 @@ void App::save() {
     }
 
         //- Level
+    m_level.main_camera_settings = m_cameras[main_camera];
     Assets::save_level(&m_level, SAVE_FILE_NAME);
 }
 

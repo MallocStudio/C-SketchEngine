@@ -84,4 +84,5 @@ private:
     void util_show_light_data();
     void util_show_assets();
     void util_show_material(u32 material_index);
+    void util_show_menubar();
 };

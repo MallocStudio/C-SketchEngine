@@ -22,6 +22,9 @@ u32 mesh_cube = -1;
 u32 mesh_cube_tiny = -1;
 u32 mesh_demo_crate = -1;
 u32 mesh_demo_diamond = -1;
+u32 mesh_wall = -1;
+u32 mesh_box1 = -1;
+
 u32 diamond_shader = -1;
 
 u32 current_obj_aabb = -1;
@@ -102,6 +105,9 @@ void App::util_load_meshes_from_disk() {
     }
     m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->shader_index = diamond_shader;
     m_renderer.user_materials[m_renderer.user_meshes[mesh_demo_diamond]->material_index]->type = SE_MATERIAL_TYPE_TRANSPARENT;
+
+    mesh_wall = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Stone/STONES.fbx", false);
+    mesh_box1 = se_render3d_load_mesh(&m_renderer, "game/meshes/demo/Box2/TestCube.fbx", false);
 }
 
 void App::util_create_default_scene() {
@@ -221,6 +227,30 @@ void App::util_create_scene_from_image(const char *filepath) {
         m_level.entities.has_mesh[diamond] = true;
         m_level.entities.should_render_mesh[diamond] = true;
         m_level.entities.position[diamond] = v3f(5, 0, 5);
+    }
+
+    {   //- Walls
+        for (u32 i = 0; i < 2; ++i) {
+            u32 wall = m_level.add_entity();
+            m_level.entities.has_name[wall] = true;
+            se_string_init(&m_level.entities.name[wall], "wall");
+
+            m_level.entities.has_mesh[wall] = true;
+            m_level.entities.mesh_index[wall] = mesh_wall;
+            m_level.entities.should_render_mesh[wall] = true;
+        }
+    }
+
+    {   //- Special Cube
+        for (u32 i = 0; i < 3; ++i) {
+            u32 entity = m_level.add_entity();
+            m_level.entities.has_name[entity] = true;
+            se_string_init(&m_level.entities.name[entity], "box1");
+
+            m_level.entities.has_mesh[entity] = true;
+            m_level.entities.mesh_index[entity] = mesh_box1;
+            m_level.entities.should_render_mesh[entity] = true;
+        }
     }
 
     {   //- Entities from image
@@ -362,6 +392,7 @@ void App::util_render_engine_mode() {
         u32 material_index = m_renderer.user_meshes[m_level.entities.mesh_index[m_selected_entity]]->material_index;
         util_show_material(material_index);
     }
+    util_show_menubar();
 
 #if 0      //- DEBUG RENDERING
     se_render_mesh_index(&m_renderer, debug_raycast_visual, mat4_identity());
@@ -417,6 +448,7 @@ void App::util_show_light_data() {
             UI::drag_vec3("direction", &m_renderer.light_directional.direction, 0.1f, -1, 1);
             ImGui::SliderFloat("intensity", &m_renderer.light_directional.intensity, 0, 2);
             UI::rgb("diffuse", &m_renderer.light_directional.diffuse);
+            UI::rgb("ambient", &m_renderer.light_directional.ambient);
             ImGui::Unindent(indent);
         }
     } UI::window_end();
@@ -443,4 +475,16 @@ void App::util_show_material(u32 material_index) {
     if (ImGui::Begin("material")) {
         UI::material(m_renderer.user_materials[material_index]);
     } ImGui::End();
+}
+
+void App::util_show_menubar() {
+    if (UI::window_begin("Menu", UI::dock_space_top())) {
+        if (ImGui::Button("save")) {
+            this->save();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("load level")) {
+            this->load_assets_and_level();
+        }
+    } UI::window_end();
 }
