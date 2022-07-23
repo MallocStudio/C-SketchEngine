@@ -375,7 +375,7 @@ void App::util_switch_mode(GAME_MODES mode) {
 
 i32 App::util_show_entity_data(i32 entity_index) {
     static i32 world_size = 50;
-    ImGui::Begin("Entity Data");
+    UI::window_begin("Entity Data", UI::dock_space_left());
     if (entity_index >= 0) {
             // ID
         ImGui::Text("ID: %i", entity_index);
@@ -398,6 +398,8 @@ i32 App::util_show_entity_data(i32 entity_index) {
     } else {
         ImGui::Text("selected an entity by ctrl + left-click");
     }
-    ImGui::End();
+
+    UI::window_end();
+
     return entity_index;
 }
